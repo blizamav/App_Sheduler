@@ -8,6 +8,7 @@
 * Diseno UI/UX base responsive de Fase 2.
 * Propuesta de modelo SQL Server inicial en Fase 3, sin implementacion fisica.
 * Ajuste documental Fase 3A para versionamiento controlado de scripts con maximo 3 versiones.
+* Scripts SQL Server versionados de Fase 3B creados en `database/`, sin ejecucion automatica.
 
 ## Modulos pendientes
 
@@ -31,7 +32,7 @@
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 3A: modelo de base de datos propuesto y ajustado para versionamiento de scripts. Aun no existen conexion real, scripts SQL ejecutados, CRUD, scheduler ni usuarios en base de datos.
+La aplicacion esta en Fase 3B: scripts SQL versionados creados, no ejecutados. Aun no existen conexion real Flask-SQL Server, CRUD, scheduler ni usuarios en base de datos.
 
 ## Impacto del versionamiento de scripts
 

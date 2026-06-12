@@ -37,11 +37,13 @@ La capa visual sigue siendo estatica y no consume base de datos. Los datos del p
 
 SQL Server sera incorporado desde Fase 3. Base objetivo: `APP_SCHEDULER_QA`, configurable por `.env`.
 
-En la primera parte de Fase 3 se documento una propuesta relacional inicial, sin conexion real ni ejecucion de scripts. La capa de datos futura debe aislarse en repositorios/servicios para evitar consultas SQL directas desde rutas Flask.
+En Fase 3B se crearon scripts SQL versionados bajo `database/migrations/` y `database/seeds/`. Estos scripts no se ejecutan automaticamente y Flask aun no se conecta a SQL Server. La capa de datos futura debe aislarse en repositorios/servicios para evitar consultas SQL directas desde rutas Flask.
 
 Entidades principales propuestas: usuarios, roles, permisos, clientes, categorias, tipos, tareas, programaciones, scripts, scripts_versiones, ejecuciones, logs_tareas, logs_sistema, auditoria_cambios y configuracion_sistema.
 
 Para versionamiento controlado, `scripts` representa el script logico de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registraran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuaran asociados a `id_ejecucion`.
+
+La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
 

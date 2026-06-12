@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-06-12 - Fase 3B scripts SQL versionados
+
+### Agregado
+
+* Carpeta `database/migrations/`.
+* Carpeta `database/seeds/`.
+* Script `001_crear_base_datos.sql`.
+* Script `002_crear_catalogos.sql`.
+* Script `003_crear_tablas_seguridad.sql`.
+* Script `004_crear_tablas_negocio.sql`.
+* Script `005_crear_tablas_ejecucion_logs.sql`.
+* Script `006_crear_indices.sql`.
+* Seed `001_datos_iniciales_catalogos.sql`.
+* Seed `002_roles_permisos_iniciales.sql`.
+
+### Incluye
+
+* Tablas catalogo, seguridad, negocio, ejecucion, logs y auditoria.
+* `scripts` y `scripts_versiones` con versionamiento controlado.
+* Foreign keys desde estados/tipos operativos hacia catalogos.
+* `CHECK(numero_version BETWEEN 1 AND 3)`.
+* `UNIQUE(id_script, numero_version)`.
+* Indice unico filtrado para una sola version activa.
+* FK diferida `scripts.id_version_activa` en script de indices por dependencia circular.
+* Seeds de catalogos, roles, permisos y roles_permisos.
+
+### No implementado
+
+* No se ejecuto SQL.
+* No se conecto Flask a SQL Server.
+* No se creo usuario `blizama` en base de datos.
+* No se implemento CRUD ni scheduler.
+
+### Documentacion
+
+* `docs/BASE_DATOS.md`
+* `docs/ARQUITECTURA.md`
+* `docs/MODULOS.md`
+* `docs/DESPLIEGUE.md`
+* `docs/CHANGELOG.md`
+* `log_codex.md`
+
 ## 2026-06-12 - Fase 3A ajuste versionamiento scripts
 
 ### Aprobado

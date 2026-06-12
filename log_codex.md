@@ -5,17 +5,17 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
-* Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, modelo inicial aprobado para versionamiento de scripts, aun no implementado.
-* Estado actual: Fase 3A aprobada documentalmente, sin conexion ni ejecucion de scripts.
+* Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, scripts SQL versionados creados, aun no ejecutados.
+* Estado actual: Fase 3B completada como creacion de scripts SQL, sin conexion Flask-SQL Server ni ejecucion de SQL.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 3A - Propuesta de modelo SQL Server con versionamiento de scripts.
-* Ultima actualizacion: 2026-06-12 16:03
+* Fase actual: Fase 3B - Scripts SQL Server versionados.
+* Ultima actualizacion: 2026-06-12 16:12
 
 ## 2. Decisiones tecnicas vigentes
 
 * Backend: Flask con fabrica `crear_app()` y Blueprint principal.
 * Frontend: HTML/CSS/JS sin Streamlit.
-* Base de datos: SQL Server aprobado conceptualmente con tablas principales, relaciones, indices, estados y versionamiento controlado de scripts; implementacion fisica pendiente.
+* Base de datos: SQL Server aprobado conceptualmente; scripts versionados creados en `database/`, ejecucion fisica pendiente.
 * Autenticacion: Login inicial desde variables `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO`.
 * Scheduler: Pendiente para Fase 8.
 * Logs: Rutas configurables por `.env`, implementacion pendiente.
@@ -26,9 +26,9 @@
 
 ## 3. Estructura actual del proyecto
 
-* Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`.
+* Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, propuesta documental de modelo SQL Server con versionamiento de scripts.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, propuesta documental de modelo SQL Server con versionamiento de scripts, scripts SQL versionados no ejecutados.
 * Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, usuarios, roles, permisos, scheduler, logs, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -42,11 +42,22 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Definir estrategia exacta de migraciones o scripts SQL versionados para Fase 3B.
+* Pendiente 1: Revisar/aprobar ejecucion manual de scripts SQL en SQL Server Management Studio.
 * Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
-* Pendiente 3: Implementar conexion, repositorios y scripts SQL solo al iniciar Fase 3B.
+* Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 16:12 - Fase 3B / Creacion de scripts SQL Server versionados
+
+* Archivos creados: `database/migrations/001_crear_base_datos.sql`, `database/migrations/002_crear_catalogos.sql`, `database/migrations/003_crear_tablas_seguridad.sql`, `database/migrations/004_crear_tablas_negocio.sql`, `database/migrations/005_crear_tablas_ejecucion_logs.sql`, `database/migrations/006_crear_indices.sql`, `database/seeds/001_datos_iniciales_catalogos.sql`, `database/seeds/002_roles_permisos_iniciales.sql`.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se crearon scripts SQL Server versionados para base, catalogos, seguridad, negocio, ejecucion/logs/auditoria, indices y seeds iniciales.
+* Por que se hizo: Para preparar la implementacion fisica ordenada del modelo aprobado sin ejecutar SQL ni conectar Flask todavia.
+* Decisiones tomadas: Mantener scripts idempotentes cuando sea razonable; agregar FK `scripts.id_version_activa` en `006_crear_indices.sql` por dependencia circular; reforzar estados/tipos con FKs hacia catalogos; no crear usuario `blizama` en seeds.
+* Pruebas realizadas: Revision de archivos y estructura; no se ejecutaron scripts SQL por regla de fase.
+* Riesgos detectados: Los scripts deben probarse primero en ambiente local/QA; SQL Server validara compatibilidad final de constraints e indices.
+* Proximos pasos: Ejecutar manualmente en SSMS solo con aprobacion; luego iniciar fase de conexion Flask-SQL Server si se solicita.
 
 ### 2026-06-12 16:03 - Fase 3A / Aprobacion de decisiones de versionamiento
 

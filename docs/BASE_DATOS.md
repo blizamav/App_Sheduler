@@ -2,7 +2,7 @@
 
 ## Estado
 
-Fase 3A - Propuesta ajustada de modelo relacional SQL Server con versionamiento controlado de scripts. No se ha creado conexion real, no se han ejecutado scripts y no se han creado tablas en SQL Server.
+Fase 3B - Scripts SQL Server versionados creados. No se ha creado conexion real desde Flask, no se han ejecutado scripts automaticamente y no se ha creado ninguna tabla desde Codex.
 
 ## Base objetivo
 
@@ -10,6 +10,57 @@ Fase 3A - Propuesta ajustada de modelo relacional SQL Server con versionamiento 
 * Base: `APP_SCHEDULER_QA`.
 * Variable de entorno: `DB_DATABASE`.
 * Servidor, usuario, clave y driver deben venir desde `.env`.
+
+## Scripts SQL versionados
+
+Estructura creada:
+
+```text
+database/
+  migrations/
+    001_crear_base_datos.sql
+    002_crear_catalogos.sql
+    003_crear_tablas_seguridad.sql
+    004_crear_tablas_negocio.sql
+    005_crear_tablas_ejecucion_logs.sql
+    006_crear_indices.sql
+  seeds/
+    001_datos_iniciales_catalogos.sql
+    002_roles_permisos_iniciales.sql
+```
+
+Orden correcto de ejecucion manual en SQL Server Management Studio:
+
+1. `database/migrations/001_crear_base_datos.sql`
+2. `database/migrations/002_crear_catalogos.sql`
+3. `database/migrations/003_crear_tablas_seguridad.sql`
+4. `database/migrations/004_crear_tablas_negocio.sql`
+5. `database/migrations/005_crear_tablas_ejecucion_logs.sql`
+6. `database/migrations/006_crear_indices.sql`
+7. `database/seeds/001_datos_iniciales_catalogos.sql`
+8. `database/seeds/002_roles_permisos_iniciales.sql`
+
+Resumen por script:
+
+* `001_crear_base_datos.sql`: crea `APP_SCHEDULER_QA` si no existe.
+* `002_crear_catalogos.sql`: crea catalogos de estados, tipos y niveles.
+* `003_crear_tablas_seguridad.sql`: crea usuarios, roles, permisos, usuarios_roles y roles_permisos. No crea usuario inicial.
+* `004_crear_tablas_negocio.sql`: crea clientes, categorias, tipos, tareas, programaciones, scripts, scripts_versiones y configuracion_sistema.
+* `005_crear_tablas_ejecucion_logs.sql`: crea ejecuciones, logs_tareas, logs_sistema y auditoria_cambios.
+* `006_crear_indices.sql`: crea indices recomendados, indice unico filtrado para version activa y FK diferida `scripts.id_version_activa`.
+* `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
+* `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
+
+Restricciones implementadas en scripts:
+
+* `IF DB_ID(...) IS NULL` para crear base.
+* `IF OBJECT_ID(...) IS NULL` para crear tablas.
+* PK, FK y `UNIQUE` principales.
+* FK desde estados/tipos operativos hacia tablas catalogo.
+* `CHECK(numero_version BETWEEN 1 AND 3)`.
+* `UNIQUE(id_script, numero_version)`.
+* Indice unico filtrado `UX_scripts_versiones_script_activa` para una sola version activa por `id_script`.
+* `CHECK` para estados simples de versiones, origen de ejecucion, niveles de log y rangos basicos.
 
 ## Resumen del ajuste de versionamiento
 
@@ -413,4 +464,5 @@ Estos fragmentos son propuesta para discusion; no deben ejecutarse hasta aprobar
 ## Decisiones pendientes antes de implementar
 
 * Confirmar estrategia exacta de reemplazo fisico: sobrescribir carpeta `vN` con auditoria previa o preservar copia historica adicional antes de reemplazar.
-* Confirmar herramienta de migraciones o uso de scripts SQL versionados manuales.
+* Ejecutar scripts manualmente en SQL Server Management Studio cuando se apruebe la aplicacion fisica del modelo.
+* Fase posterior: crear conexion Flask-SQL Server y repositorios, sin quemar credenciales.
