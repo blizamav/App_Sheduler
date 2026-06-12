@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block titulo %}Login | APP Scheduler{% endblock %}
+
+{% block contenido %}
+<section class="login-page">
+    <div class="login-panel">
+        <div class="brand login-brand">
+            <span class="brand-mark">AS</span>
+            <span>APP Scheduler</span>
+        </div>
+        <h1>Acceso corporativo</h1>
+        <p>Ingreso seguro para gestion de tareas TI automatizadas.</p>
+        <form method="post" class="formulario-login">
+            <label for="usuario">Usuario</label>
+            <input id="usuario" name="usuario" type="text" autocomplete="username" required>
+
+            <label for="password">Contrasena</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+            <button class="btn primario" type="submit">Ingresar</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

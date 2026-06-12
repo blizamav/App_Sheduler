@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titulo %}APP Scheduler{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        {% if session.get("usuario") %}
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-mark">AS</span>
+                <span>APP Scheduler</span>
+            </div>
+            <nav class="nav">
+                <a class="nav-link activo" href="{{ url_for('principal.panel') }}">Panel</a>
+                <a class="nav-link deshabilitado" href="#">Tareas</a>
+                <a class="nav-link deshabilitado" href="#">Scripts</a>
+                <a class="nav-link deshabilitado" href="#">Logs</a>
+                <a class="nav-link deshabilitado" href="#">Auditoria</a>
+            </nav>
+        </aside>
+        {% endif %}
+
+        <main class="contenido">
+            {% if session.get("usuario") %}
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Ambiente local</p>
+                    <h1>{% block encabezado %}Panel principal{% endblock %}</h1>
+                </div>
+                <form method="post" action="{{ url_for('principal.logout') }}">
+                    <span class="usuario">{{ session.get("usuario") }}</span>
+                    <button class="btn secundario" type="submit">Salir</button>
+                </form>
+            </header>
+            {% endif %}
+
+            {% with mensajes = get_flashed_messages(with_categories=true) %}
+                {% if mensajes %}
+                <section class="mensajes">
+                    {% for categoria, mensaje in mensajes %}
+                    <div class="alerta {{ categoria }}">{{ mensaje }}</div>
+                    {% endfor %}
+                </section>
+                {% endif %}
+            {% endwith %}
+
+            {% block contenido %}{% endblock %}
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

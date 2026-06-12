@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block encabezado %}Panel principal{% endblock %}
+
+{% block contenido %}
+<section class="bienvenida">
+    <div>
+        <p class="eyebrow">Centro de control TI</p>
+        <h2>Bienvenido, usuario {{ session.get("usuario") }}</h2>
+        <p>Base inicial lista para incorporar tareas, scripts, scheduler, logs y auditoria.</p>
+    </div>
+    <button class="btn primario" type="button" disabled>Crear tarea</button>
+</section>
+
+<section class="metricas">
+    <article class="card">
+        <span>Total tareas</span>
+        <strong>{{ resumen.total_tareas }}</strong>
+    </article>
+    <article class="card exito">
+        <span>Activas</span>
+        <strong>{{ resumen.tareas_activas }}</strong>
+    </article>
+    <article class="card alerta-card">
+        <span>Inactivas</span>
+        <strong>{{ resumen.tareas_inactivas }}</strong>
+    </article>
+    <article class="card info">
+        <span>Scheduler</span>
+        <strong>{{ resumen.estado_scheduler }}</strong>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <h3>Ultimas ejecuciones</h3>
+        <p class="estado-vacio">Sin ejecuciones registradas en Fase 1.</p>
+    </article>
+    <article class="bloque">
+        <h3>Ultimos errores</h3>
+        <p class="estado-vacio">Sin errores registrados en Fase 1.</p>
+    </article>
+</section>
+{% endblock %}

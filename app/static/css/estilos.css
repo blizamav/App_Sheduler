@@ -1,0 +1,255 @@
+:root {
+    --azul: #0f4cbd;
+    --azul-oscuro: #0b1f3a;
+    --cyan: #17b7d8;
+    --fondo: #f5f8fc;
+    --borde: #d9e2ef;
+    --texto: #152033;
+    --muted: #63718a;
+    --verde: #168a4a;
+    --rojo: #c93636;
+    --amarillo: #b97900;
+    --blanco: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--texto);
+    background: linear-gradient(135deg, #f8fbff 0%, #edf4fb 100%);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background: var(--azul-oscuro);
+    color: var(--blanco);
+    padding: 24px 18px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--cyan);
+    color: #06243a;
+}
+
+.nav {
+    display: grid;
+    gap: 8px;
+    margin-top: 34px;
+}
+
+.nav-link {
+    color: #dbe8ff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.nav-link.activo,
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-link.deshabilitado {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.contenido {
+    flex: 1;
+    padding: 28px;
+}
+
+.topbar,
+.bienvenida {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.topbar h1,
+.bienvenida h2,
+.login-panel h1 {
+    margin: 0;
+}
+
+.eyebrow {
+    margin: 0 0 5px;
+    color: var(--azul);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.usuario {
+    margin-right: 12px;
+    color: var(--muted);
+}
+
+.btn {
+    min-height: 40px;
+    border: 0;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn.primario {
+    background: var(--azul);
+    color: var(--blanco);
+}
+
+.btn.secundario {
+    background: #e7eef8;
+    color: var(--azul-oscuro);
+}
+
+.mensajes {
+    margin-bottom: 18px;
+}
+
+.alerta {
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #e7f7ef;
+    color: var(--verde);
+}
+
+.alerta.error {
+    background: #fdecec;
+    color: var(--rojo);
+}
+
+.login-page {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+}
+
+.login-panel {
+    width: min(430px, 92vw);
+    padding: 34px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 24px 80px rgba(15, 76, 189, 0.12);
+}
+
+.login-brand {
+    margin-bottom: 24px;
+}
+
+.formulario-login {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+label {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+input {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 0 12px;
+    font: inherit;
+}
+
+.metricas {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.card,
+.bloque {
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: var(--blanco);
+    padding: 20px;
+}
+
+.card span {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+.card strong {
+    font-size: 1.8rem;
+}
+
+.card.exito strong {
+    color: var(--verde);
+}
+
+.card.alerta-card strong {
+    color: var(--amarillo);
+}
+
+.card.info strong {
+    color: var(--azul);
+    font-size: 1rem;
+}
+
+.panel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.estado-vacio {
+    color: var(--muted);
+}
+
+@media (max-width: 860px) {
+    .app-shell,
+    .topbar,
+    .bienvenida {
+        display: block;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .metricas,
+    .panel-grid {
+        grid-template-columns: 1fr;
+    }
+}
