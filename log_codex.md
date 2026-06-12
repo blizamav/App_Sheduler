@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
 * Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, scripts SQL versionados creados, aun no ejecutados.
-* Estado actual: Fase 3B completada como creacion de scripts SQL, sin conexion Flask-SQL Server ni ejecucion de SQL.
+* Estado actual: Fase 3B revisada tecnicamente, scripts SQL no ejecutados, sin conexion Flask-SQL Server.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Fase 3B - Scripts SQL Server versionados.
-* Ultima actualizacion: 2026-06-12 16:12
+* Ultima actualizacion: 2026-06-12 16:28
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -42,11 +42,22 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Revisar/aprobar ejecucion manual de scripts SQL en SQL Server Management Studio.
+* Pendiente 1: Ejecutar manualmente los scripts SQL en SQL Server Management Studio si se aprueba la prueba local/QA.
 * Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 16:28 - Fase 3B / Revision tecnica previa de scripts SQL
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se revisaron estaticamente los scripts SQL versionados, dependencias por orden, FKs, CHECKs, indices, seeds idempotentes, ausencia de secretos y trazabilidad de scripts/versiones.
+* Por que se hizo: Para detectar errores evidentes antes de ejecutar manualmente en SQL Server Management Studio.
+* Decisiones tomadas: No ejecutar SQL ni conectar Flask; corregir solo documentacion menor para alinear `logs_tareas.nombre_archivo_log` y `logs_sistema.nivel varchar(30)` con los scripts.
+* Pruebas realizadas: Lectura completa de scripts, chequeo automatico de orden de FKs, busqueda de secretos reales, verificacion de `id_script`/`id_version` en `ejecuciones`, `CHECK(numero_version BETWEEN 1 AND 3)`, `UNIQUE(id_script, numero_version)` e indice unico filtrado de version activa.
+* Riesgos detectados: Aun falta validacion real por motor SQL Server; la ejecucion debe hacerse primero en ambiente local/QA y no en produccion.
+* Proximos pasos: Ejecutar manualmente en SSMS en el orden documentado, revisar mensajes de SQL Server y reportar cualquier error antes de avanzar a conexion Flask-SQL Server.
 
 ### 2026-06-12 16:12 - Fase 3B / Creacion de scripts SQL Server versionados
 

@@ -348,7 +348,7 @@ Observacion: el servicio debe validar que `id_version` pertenezca al `id_script`
 
 Objetivo: vincular ejecuciones con logs fisicos y metadatos.
 
-Campos: `id_log bigint identity`, `id_tarea int`, `id_ejecucion bigint`, `nombre_tarea nvarchar(200)`, `nombre_script nvarchar(255)`, `ruta_fisica_log nvarchar(500)`, `ruta_relativa_log nvarchar(500)`, `fecha_hora_inicio datetime2(0)`, `fecha_hora_termino datetime2(0) null`, `duracion_segundos int null`, `estado_final varchar(30)`, `codigo_salida int null`, `mensaje_error nvarchar(max) null`, `usuario_ejecucion nvarchar(100) null`, `fecha_creacion datetime2(0)`.
+Campos: `id_log bigint identity`, `id_tarea int`, `id_ejecucion bigint`, `nombre_tarea nvarchar(200)`, `nombre_script nvarchar(255)`, `nombre_archivo_log nvarchar(255)`, `ruta_fisica_log nvarchar(500)`, `ruta_relativa_log nvarchar(500)`, `fecha_hora_inicio datetime2(0)`, `fecha_hora_termino datetime2(0) null`, `duracion_segundos int null`, `estado_final varchar(30)`, `codigo_salida int null`, `mensaje_error nvarchar(max) null`, `usuario_ejecucion nvarchar(100) null`, `fecha_creacion datetime2(0)`.
 PK: `id_log`.
 FK: `id_tarea -> tareas.id_tarea`, `id_ejecucion -> ejecuciones.id_ejecucion`.
 Indices: `IX_logs_tareas_tarea_fecha`, `IX_logs_tareas_ejecucion`, `IX_logs_tareas_estado`.
@@ -358,7 +358,7 @@ Observacion: no duplica `id_version`; se obtiene desde `ejecuciones`.
 
 Objetivo: registrar eventos internos de seguridad, sistema y operacion.
 
-Campos: `id bigint identity`, `usuario nvarchar(100) null`, `accion nvarchar(100)`, `modulo nvarchar(100)`, `descripcion nvarchar(max)`, `valor_anterior nvarchar(max) null`, `valor_nuevo nvarchar(max) null`, `ip varchar(45) null`, `user_agent nvarchar(500) null`, `fecha_hora datetime2(0)`, `nivel varchar(20)`, `fecha_creacion datetime2(0)`.
+Campos: `id bigint identity`, `usuario nvarchar(100) null`, `accion nvarchar(100)`, `modulo nvarchar(100)`, `descripcion nvarchar(max)`, `valor_anterior nvarchar(max) null`, `valor_nuevo nvarchar(max) null`, `ip varchar(45) null`, `user_agent nvarchar(500) null`, `fecha_hora datetime2(0)`, `nivel varchar(30)`, `fecha_creacion datetime2(0)`.
 PK: `id`.
 Indices: `IX_logs_sistema_fecha`, `IX_logs_sistema_usuario`, `IX_logs_sistema_modulo_nivel`.
 

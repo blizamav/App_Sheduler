@@ -2,6 +2,12 @@
 
 ## 2026-06-12 - Fase 3B scripts SQL versionados
 
+### Revisado
+
+* Revision tecnica previa de scripts SQL antes de ejecucion manual en SSMS.
+* Confirmado orden de claves foraneas y FK diferida `scripts.id_version_activa`.
+* Ajustada documentacion de `logs_tareas.nombre_archivo_log` y `logs_sistema.nivel varchar(30)`.
+
 ### Agregado
 
 * Carpeta `database/migrations/`.
