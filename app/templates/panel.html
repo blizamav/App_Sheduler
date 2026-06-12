@@ -3,42 +3,103 @@
 {% block encabezado %}Panel principal{% endblock %}
 
 {% block contenido %}
-<section class="bienvenida">
+<section class="bienvenida contenedor">
     <div>
         <p class="eyebrow">Centro de control TI</p>
         <h2>Bienvenido, usuario {{ session.get("usuario") }}</h2>
-        <p>Base inicial lista para incorporar tareas, scripts, scheduler, logs y auditoria.</p>
+        <p>Interfaz base preparada para incorporar tareas, scripts, scheduler, logs y auditoria en fases posteriores.</p>
     </div>
-    <button class="btn primario" type="button" disabled>Crear tarea</button>
+    <div class="acciones-rapidas">
+        <button class="btn primario" type="button" disabled>Crear tarea</button>
+        <button class="btn secundario" type="button" disabled>Ejecutar manual</button>
+    </div>
 </section>
 
 <section class="metricas">
-    <article class="card">
+    <article class="card metrica">
+        <span class="badge info">Pendiente</span>
         <span>Total tareas</span>
         <strong>{{ resumen.total_tareas }}</strong>
+        <small>Se conectara a SQL Server en Fase 3.</small>
     </article>
-    <article class="card exito">
+    <article class="card metrica exito">
+        <span class="badge activo">Activo</span>
         <span>Activas</span>
         <strong>{{ resumen.tareas_activas }}</strong>
+        <small>Dato simulado hasta implementar tareas.</small>
     </article>
-    <article class="card alerta-card">
-        <span>Inactivas</span>
+    <article class="card metrica error">
+        <span class="badge error">Error</span>
+        <span>Con error</span>
         <strong>{{ resumen.tareas_inactivas }}</strong>
+        <small>Reservado para ejecuciones fallidas.</small>
     </article>
-    <article class="card info">
+    <article class="card metrica info">
+        <span class="badge advertencia">Fase futura</span>
         <span>Scheduler</span>
         <strong>{{ resumen.estado_scheduler }}</strong>
+        <small>Motor de ejecucion pendiente.</small>
     </article>
 </section>
 
 <section class="panel-grid">
     <article class="bloque">
-        <h3>Ultimas ejecuciones</h3>
-        <p class="estado-vacio">Sin ejecuciones registradas en Fase 1.</p>
+        <div class="bloque-header">
+            <h3>Ultimas ejecuciones</h3>
+            <span class="badge inactivo">Sin datos</span>
+        </div>
+        <div class="tabla-base">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tarea</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="3">Sin ejecuciones registradas. Se implementara en fases posteriores.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </article>
     <article class="bloque">
-        <h3>Ultimos errores</h3>
-        <p class="estado-vacio">Sin errores registrados en Fase 1.</p>
+        <div class="bloque-header">
+            <h3>Estado general</h3>
+            <span class="badge info">Preparado</span>
+        </div>
+        <div class="estado-lista">
+            <div><span class="punto activo"></span>Login desde .env operativo</div>
+            <div><span class="punto advertencia"></span>Base de datos pendiente</div>
+            <div><span class="punto inactivo"></span>Scheduler no implementado</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <h3>Componentes visuales</h3>
+            <span class="badge activo">Fase 2</span>
+        </div>
+        <div class="componentes-demo">
+            <button class="btn primario" type="button" disabled>Primario</button>
+            <button class="btn secundario" type="button" disabled>Secundario</button>
+            <span class="badge activo">Activo</span>
+            <span class="badge inactivo">Inactivo</span>
+            <span class="badge error">Error</span>
+            <span class="badge advertencia">Advertencia</span>
+            <span class="badge info">Informativo</span>
+        </div>
+    </article>
+    <article class="bloque panel-terminal">
+        <div class="bloque-header">
+            <h3>Panel lateral de logs</h3>
+            <span class="badge advertencia">Visual</span>
+        </div>
+        <p class="estado-vacio">El boton "Panel logs" abre una vista lateral preparada. La lectura real de logs queda para Fase 9.</p>
     </article>
 </section>
 {% endblock %}

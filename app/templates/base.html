@@ -9,32 +9,50 @@
 <body>
     <div class="app-shell">
         {% if session.get("usuario") %}
-        <aside class="sidebar">
-            <div class="brand">
-                <span class="brand-mark">AS</span>
-                <span>APP Scheduler</span>
+        <div class="overlay-sidebar" data-sidebar-cerrar></div>
+        <aside class="sidebar" id="sidebarPrincipal" aria-label="Navegacion principal">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <span class="brand-mark">AS</span>
+                    <span>
+                        APP Scheduler
+                        <small>Control TI</small>
+                    </span>
+                </div>
+                <button class="icon-btn solo-mobile" type="button" data-sidebar-cerrar aria-label="Cerrar menu">x</button>
             </div>
             <nav class="nav">
-                <a class="nav-link activo" href="{{ url_for('principal.panel') }}">Panel</a>
-                <a class="nav-link deshabilitado" href="#">Tareas</a>
-                <a class="nav-link deshabilitado" href="#">Scripts</a>
-                <a class="nav-link deshabilitado" href="#">Logs</a>
-                <a class="nav-link deshabilitado" href="#">Auditoria</a>
+                <a class="nav-link activo" href="{{ url_for('principal.panel') }}"><span>01</span>Panel</a>
+                <a class="nav-link deshabilitado" href="#"><span>02</span>Tareas</a>
+                <a class="nav-link deshabilitado" href="#"><span>03</span>Scripts</a>
+                <a class="nav-link deshabilitado" href="#"><span>04</span>Logs</a>
+                <a class="nav-link deshabilitado" href="#"><span>05</span>Auditoria</a>
             </nav>
+            <div class="sidebar-footer">
+                <span class="badge info">Fase 2 UI</span>
+                <p>Interfaz base preparada para modulos posteriores.</p>
+            </div>
         </aside>
         {% endif %}
 
         <main class="contenido">
             {% if session.get("usuario") %}
             <header class="topbar">
+                <button class="icon-btn solo-mobile" type="button" data-sidebar-toggle aria-label="Abrir menu">=</button>
                 <div>
                     <p class="eyebrow">Ambiente local</p>
                     <h1>{% block encabezado %}Panel principal{% endblock %}</h1>
                 </div>
-                <form method="post" action="{{ url_for('principal.logout') }}">
-                    <span class="usuario">{{ session.get("usuario") }}</span>
-                    <button class="btn secundario" type="submit">Salir</button>
-                </form>
+                <div class="topbar-actions">
+                    <button class="btn secundario" type="button" data-panel-logs-toggle>Panel logs</button>
+                    <div class="usuario-chip">
+                        <span class="avatar">{{ session.get("usuario")[0:1]|upper }}</span>
+                        <span>{{ session.get("usuario") }}</span>
+                    </div>
+                    <form method="post" action="{{ url_for('principal.logout') }}">
+                        <button class="btn secundario" type="submit">Salir</button>
+                    </form>
+                </div>
             </header>
             {% endif %}
 
@@ -50,6 +68,22 @@
 
             {% block contenido %}{% endblock %}
         </main>
+
+        {% if session.get("usuario") %}
+        <aside class="panel-logs" id="panelLogs" aria-label="Panel lateral visual de logs">
+            <div class="panel-logs-header">
+                <div>
+                    <p class="eyebrow">Vista preparada</p>
+                    <h2>Logs en vivo</h2>
+                </div>
+                <button class="icon-btn" type="button" data-panel-logs-toggle aria-label="Cerrar panel de logs">x</button>
+            </div>
+            <div class="terminal-visual">
+                <p><span>15:14</span> Esperando implementacion de ejecuciones.</p>
+                <p><span>Fase 9</span> Consola funcional pendiente.</p>
+            </div>
+        </aside>
+        {% endif %}
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>

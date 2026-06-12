@@ -29,7 +29,9 @@ Backend Python Flask con estructura inicial:
 
 ## Frontend
 
-HTML/CSS/JS sin Streamlit. El layout inicial incluye login, sidebar, topbar, tarjetas y panel base.
+HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
+
+La capa visual sigue siendo estatica y no consume base de datos. Los datos del panel son placeholders hasta las fases funcionales.
 
 ## Base de datos
 
