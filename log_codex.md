@@ -9,7 +9,7 @@
 * Estado actual: Fase 3D implementada como conexion inicial y diagnostico, sin CRUD ni usuarios en base de datos.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Fase 3D - Conexion Flask con SQL Server desde .env.
-* Ultima actualizacion: 2026-06-12 16:58
+* Ultima actualizacion: 2026-06-12 17:05
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -48,6 +48,17 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 17:05 - Documentacion / Actualizacion README principal
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `README.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se actualizo el README principal para reflejar el estado real del proyecto hasta Fase 3D.
+* Por que se hizo: El README seguia indicando Fase 2 y no reflejaba scripts SQL, base validada ni conexion Flask-SQL Server inicial.
+* Decisiones tomadas: Mantener README como resumen ejecutivo y dejar detalle tecnico en `docs/` y `log_codex.md`.
+* Pruebas realizadas: Revision documental; no se modifico logica funcional.
+* Riesgos detectados: README debe seguir actualizandose al cerrar nuevas fases para evitar divergencia.
+* Proximos pasos: No avanzar a Fase 4; continuar solo cuando se solicite la siguiente fase.
 
 ### 2026-06-12 16:58 - Fase 3D / Conexion Flask SQL Server y diagnostico
 

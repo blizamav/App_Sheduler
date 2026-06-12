@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-12 - README actualizado
+
+### Documentado
+
+* README principal actualizado al estado Fase 3D.
+* Estado actual, stack, funcionalidades actuales y pendientes.
+* Ejecucion local en Windows.
+* Variables de entorno principales.
+* Ubicacion y orden de scripts SQL.
+* Referencias a `docs/` y `log_codex.md`.
+
 ## 2026-06-12 - Fase 3D conexion Flask SQL Server
 
 ### Agregado
