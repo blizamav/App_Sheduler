@@ -60,6 +60,7 @@ class Configuracion:
     PASSWORD_ADMIN_DEFECTO = os.getenv("PASSWORD_ADMIN_DEFECTO", "")
 
     RUTA_BASE_SCRIPTS = os.getenv("RUTA_BASE_SCRIPTS", "scripts")
+    RUTA_BASE_ENV_SCRIPTS = os.getenv("RUTA_BASE_ENV_SCRIPTS", "env_scripts")
     RUTA_BASE_LOGS_TAREAS = os.getenv("RUTA_BASE_LOGS_TAREAS", "logs_tareas")
     RUTA_BASE_LOGS_SISTEMA = os.getenv("RUTA_BASE_LOGS_SISTEMA", "logs_sistema")
     ZONA_HORARIA = os.getenv("ZONA_HORARIA", "America/Santiago")

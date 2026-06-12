@@ -60,9 +60,32 @@ Pendiente para Fase 8. Debe ejecutarse como servicio separado dentro de la aplic
 
 Cuando se implemente, la ejecucion automatica debera resolver siempre `scripts.id_version_activa`. La ejecucion manual podra recibir una version especifica disponible, previa confirmacion si no coincide con la activa.
 
+## Ejecucion segura de scripts
+
+Fase 4.3 define que la ejecucion futura debe aislar tres responsabilidades:
+
+* Codigo Python cargado por usuarios en `scripts/`.
+* Variables sensibles por script/version en `env_scripts/`.
+* Salida y trazabilidad en `logs_tareas/`.
+
+El servicio de ejecucion debera:
+
+1. Resolver tarea, script logico y version exacta.
+2. Validar estado y ruta del archivo `.py`.
+3. Validar si la version requiere `.env`.
+4. Cargar variables del `.env` de script sin guardar ni mostrar secretos.
+5. Iniciar el proceso y registrar `pid_proceso`.
+6. Actualizar estados, logs y auditoria.
+
+## Detencion manual de ejecuciones
+
+Cuando una ejecucion este `EN_EJECUCION`, la interfaz futura debe mostrar accion `Detener ejecucion` solo a usuarios autorizados. La accion debe usar modal corporativo, intentar termino controlado, forzar termino si no responde y registrar resultado en `ejecuciones`, `logs_tareas` y `logs_sistema`.
+
 ## Logs
 
 Pendiente para Fase 9. Rutas configurables por `.env`: `logs_tareas` y `logs_sistema`.
+
+Los logs de tarea no deben incluir secretos provenientes del `.env` de script. La salida capturada debe filtrarse cuando sea posible y el sistema debe documentar que los scripts cargados no deben imprimir credenciales.
 
 ## Seguridad
 

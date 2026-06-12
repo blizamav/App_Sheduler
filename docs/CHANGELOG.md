@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-06-12 - Fase 4.3 definiciones de ejecucion segura
+
+### Agregado
+
+* Definicion tecnica para detener ejecuciones en curso.
+* Definicion tecnica para `.env` propio por script/version.
+* Estructura fisica recomendada `scripts/`, `env_scripts/` y `logs_tareas/`.
+* Migracion propuesta `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`.
+* Variable de plantilla `RUTA_BASE_ENV_SCRIPTS`.
+* Exclusiones `env_scripts/` y `**/.env` en `.gitignore`.
+
+### Base de datos
+
+* `scripts_versiones`: propuesta de `requiere_env`, `ruta_env_fisica`, `ruta_env_relativa`.
+* `ejecuciones`: propuesta de `usuario_detencion`, `fecha_hora_detencion`, `motivo_detencion`, `fue_detencion_forzada`.
+* Catalogo `DETENIDA_MANUALMENTE` para `cat_estados_ejecucion`.
+
+### Seguridad
+
+* No guardar contenido de `.env` de scripts en BD.
+* No mostrar ni registrar secretos.
+* Separar `.env` principal de `.env` por script.
+* Validar rutas para evitar path traversal.
+* Detencion de ejecuciones solo para usuarios autorizados y con confirmacion.
+
+### No implementado
+
+* No se implementaron tareas.
+* No se implemento scheduler.
+* No se implemento carga funcional de scripts.
+* No se ejecuto SQL desde Codex.
+
 ## 2026-06-12 - Fase 4.2 modal corporativo de confirmacion
 
 ### Corregido

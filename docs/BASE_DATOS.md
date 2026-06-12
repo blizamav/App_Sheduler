@@ -40,6 +40,7 @@ database/
     004_crear_tablas_negocio.sql
     005_crear_tablas_ejecucion_logs.sql
     006_crear_indices.sql
+    007_agregar_control_ejecucion_y_env_scripts.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -55,6 +56,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 6. `database/migrations/006_crear_indices.sql`
 7. `database/seeds/001_datos_iniciales_catalogos.sql`
 8. `database/seeds/002_roles_permisos_iniciales.sql`
+9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql` cuando sea aprobado para Fase 4.3.
 
 Resumen por script:
 
@@ -64,6 +66,7 @@ Resumen por script:
 * `004_crear_tablas_negocio.sql`: crea clientes, categorias, tipos, tareas, programaciones, scripts, scripts_versiones y configuracion_sistema.
 * `005_crear_tablas_ejecucion_logs.sql`: crea ejecuciones, logs_tareas, logs_sistema y auditoria_cambios.
 * `006_crear_indices.sql`: crea indices recomendados, indice unico filtrado para version activa y FK diferida `scripts.id_version_activa`.
+* `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 
@@ -127,7 +130,7 @@ Reglas principales:
 
 ### estado_ejecucion
 
-`PENDIENTE`, `EN_EJECUCION`, `EXITOSA`, `ERROR`, `CANCELADA`, `OMITIDA`, `OMITIDA_FERIADO`, `OMITIDA_FIN_SEMANA`.
+`PENDIENTE`, `EN_EJECUCION`, `EXITOSA`, `ERROR`, `CANCELADA`, `DETENIDA_MANUALMENTE`, `OMITIDA`, `OMITIDA_FERIADO`, `OMITIDA_FIN_SEMANA`.
 
 ### tipo_programacion
 
@@ -259,6 +262,9 @@ Objetivo: registrar tareas ejecutables asociadas a cliente, categoria, tipo y sc
 | permite_ejecucion_manual | bit | Habilita ejecucion manual |
 | fecha_creacion | datetime2(0) | Auditoria |
 | fecha_actualizacion | datetime2(0) null | Auditoria |
+| requiere_env | bit | Indica si la version requiere archivo `.env` propio |
+| ruta_env_fisica | nvarchar(500) null | Ruta fisica del `.env` de la version |
+| ruta_env_relativa | nvarchar(500) null | Ruta relativa desde `RUTA_BASE_ENV_SCRIPTS` |
 | usuario_creacion | nvarchar(100) null | Auditoria |
 | usuario_actualizacion | nvarchar(100) null | Auditoria |
 | activo | bit | Estado logico |
@@ -328,6 +334,8 @@ Observaciones:
 * Para deshabilitar una version se debe usar `estado_version = INACTIVA`.
 * Para reemplazar una version se debe usar `estado_version = REEMPLAZADA` sobre la version anterior y registrar auditoria.
 * Los archivos fisicos deben conservarse para trazabilidad; cualquier politica futura de limpieza debe ser posterior, controlada y auditada.
+* Si `requiere_env = 1`, el servicio de ejecucion debe validar que exista `ruta_env_fisica` antes de iniciar el proceso.
+* La base solo guarda rutas del `.env` de script; nunca contenido sensible.
 
 ### programaciones
 
@@ -357,12 +365,18 @@ Objetivo: registrar cada intento de ejecucion manual o automatica, indicando exa
 | mensaje_error | nvarchar(max) null | Error resumido |
 | usuario_ejecucion | nvarchar(100) null | Usuario o scheduler |
 | pid_proceso | int null | Proceso local si aplica |
+| usuario_detencion | nvarchar(100) null | Usuario que solicito detener |
+| fecha_hora_detencion | datetime2(0) null | Fecha/hora de detencion |
+| motivo_detencion | nvarchar(500) null | Motivo informado |
+| fue_detencion_forzada | bit | Indica si fue necesario forzar termino |
 | fecha_creacion | datetime2(0) | Auditoria |
 
 PK: `id_ejecucion`.
 FK: `id_tarea -> tareas.id_tarea`, `id_script -> scripts.id_script`, `id_version -> scripts_versiones.id_version`.
 Indices: `IX_ejecuciones_tarea_fecha`, `IX_ejecuciones_script_version`, `IX_ejecuciones_estado`, `IX_ejecuciones_inicio`.
 Observacion: el servicio debe validar que `id_version` pertenezca al `id_script` informado.
+
+Para detencion manual, el servicio debe actualizar `estado_ejecucion` a `DETENIDA_MANUALMENTE` o `CANCELADA`, cerrar `fecha_hora_termino`, calcular duracion y registrar usuario/motivo de detencion.
 
 ### logs_tareas
 
@@ -448,6 +462,48 @@ scripts/AUDIOS/VENTAS/BECS/PROGRAMADAS/SCRIPT1/v1/SCRIPT1.py
 scripts/AUDIOS/VENTAS/BECS/PROGRAMADAS/SCRIPT1/v2/SCRIPT1.py
 scripts/AUDIOS/VENTAS/BECS/PROGRAMADAS/SCRIPT1/v3/SCRIPT1.py
 ```
+
+## Estructura fisica para env por script y logs
+
+Fase 4.3 define separar codigo, variables sensibles y logs:
+
+```text
+scripts/CATEGORIA/TIPO/CLIENTE/TIPO_TAREA/NOMBRE_SCRIPT/v1/NOMBRE_SCRIPT.py
+env_scripts/CATEGORIA/TIPO/CLIENTE/TIPO_TAREA/NOMBRE_SCRIPT/v1/.env
+logs_tareas/ANIO/MES/DIA/LOG_NombreScript_fecha_hora.log
+```
+
+Reglas:
+
+* `scripts/` contiene codigo cargado por usuarios.
+* `env_scripts/` contiene variables sensibles por script/version.
+* `logs_tareas/` contiene trazabilidad de ejecucion.
+* `env_scripts/` y cualquier `.env` interno no se versionan.
+* La app no debe guardar contenido de `.env` de script en base de datos.
+
+## Migracion propuesta Fase 4.3
+
+Se requiere nueva migracion porque los scripts ejecutados en Fase 3B no tienen todos los campos necesarios para detencion manual ni `.env` por version.
+
+Archivo creado:
+
+```text
+database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql
+```
+
+Incluye:
+
+* Catalogo `DETENIDA_MANUALMENTE` en `cat_estados_ejecucion`.
+* `scripts_versiones.requiere_env`.
+* `scripts_versiones.ruta_env_fisica`.
+* `scripts_versiones.ruta_env_relativa`.
+* `ejecuciones.usuario_detencion`.
+* `ejecuciones.fecha_hora_detencion`.
+* `ejecuciones.motivo_detencion`.
+* `ejecuciones.fue_detencion_forzada`.
+* Indices de apoyo para busqueda por `requiere_env` y detenciones.
+
+No modifica scripts ya ejecutados. Debe ejecutarse manualmente en SSMS solo despues de aprobacion.
 
 ## Scripts SQL sugeridos, no ejecutados
 

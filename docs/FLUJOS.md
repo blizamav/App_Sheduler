@@ -57,6 +57,33 @@ Pendiente para Fase 8.
 
 Pendiente para Fase 8.
 
+## Flujo de ejecucion con env por script
+
+1. Servicio resuelve tarea, script logico y version exacta.
+2. Valida que el archivo `.py` exista y pertenezca a rutas permitidas.
+3. Revisa `scripts_versiones.requiere_env`.
+4. Si no requiere `.env`, continua ejecucion normal.
+5. Si requiere `.env`, valida `ruta_env_fisica` y `ruta_env_relativa`.
+6. Si falta el `.env`, marca ejecucion como `ERROR` controlado antes de iniciar proceso.
+7. Si existe, carga variables en el entorno del proceso sin guardar ni imprimir secretos.
+8. Inicia proceso, registra `pid_proceso` y estado `EN_EJECUCION`.
+9. Captura salida hacia `logs_tareas`.
+10. Al terminar, actualiza estado final, duracion, codigo de salida y logs.
+
+## Flujo de detencion manual de ejecucion
+
+1. Usuario autorizado visualiza una ejecucion `EN_EJECUCION`.
+2. Interfaz muestra boton `Detener ejecucion`.
+3. Usuario presiona detener y el sistema muestra modal corporativo de confirmacion.
+4. Si cancela, no se ejecuta accion ni se registran cambios.
+5. Si confirma, el backend valida permisos y estado actual.
+6. Servicio intenta detener el proceso de forma controlada usando `pid_proceso`.
+7. Si el proceso no responde, se fuerza termino y se marca `fue_detencion_forzada = 1`.
+8. Se actualiza `ejecuciones` con usuario, fecha/hora y motivo de detencion.
+9. Se registra evento en `logs_tareas`.
+10. Se registra evento en `logs_sistema`.
+11. La consola lateral muestra estado detenido y mensaje amigable.
+
 ## Flujo de reemplazo de script
 
 Propuesta documental Fase 3A; implementacion pendiente para Fase 7.

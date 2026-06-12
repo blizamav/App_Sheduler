@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 4.2 implementada con modal corporativo reutilizable de confirmacion.
+* Estado actual: Fase 4.3 documentada con definiciones de ejecucion segura, detencion manual y `.env` por script.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 4.2 - Reemplazo de confirmaciones nativas por modales corporativos.
-* Ultima actualizacion: 2026-06-12 19:05
+* Fase actual: Fase 4.3 - Definiciones de ejecucion segura, cancelacion de procesos y variables por script.
+* Ultima actualizacion: 2026-06-12 19:25
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1 y modal de confirmacion Fase 4.2.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2 y definicion tecnica Fase 4.3.
 * Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, scheduler, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -49,6 +49,18 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 19:25 - Fase 4.3 / Definiciones de ejecucion segura y env por script
+
+* Archivos creados: `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`.
+* Archivos modificados: `.gitignore`, `.env.example`, `app/config.py`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `docs/DESPLIEGUE.md`, `log_codex.md`.
+* Que se hizo: Se definio manejo futuro de detencion manual de procesos, `.env` por script/version, estructura fisica `scripts/`, `env_scripts/`, `logs_tareas/`, y seguridad asociada. Se creo migracion propuesta 007 para campos faltantes.
+* Por que se hizo: Antes de implementar tareas, scripts o scheduler era necesario resolver trazabilidad de procesos en ejecucion y manejo seguro de credenciales por script.
+* Decisiones tomadas: No guardar secretos en base; guardar solo rutas de `.env`; validar rutas contra path traversal; detener ejecuciones solo con usuario autorizado y modal; no modificar scripts SQL ya ejecutados, sino crear migracion nueva versionada.
+* Migracion propuesta: `007_agregar_control_ejecucion_y_env_scripts.sql` agrega `DETENIDA_MANUALMENTE`, campos `requiere_env`/rutas env en `scripts_versiones` y campos de detencion en `ejecuciones`.
+* Pruebas realizadas: Revision de scripts SQL existentes; confirmacion de que `pid_proceso` ya existia; verificacion de `.gitignore`; `python -m compileall app`.
+* Riesgos detectados: La detencion real dependera del sistema operativo, permisos del proceso hijo y manejo de procesos descendientes; se debe disenar cuidadosamente para no dejar procesos colgados.
+* Proximos pasos: Revisar/aprobar migracion 007 y reglas de seguridad antes de iniciar Fase 5; no implementar scheduler ni tareas todavia.
 
 ### 2026-06-12 18:45 - Fase 4.2 / Modal corporativo de confirmacion
 

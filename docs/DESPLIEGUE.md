@@ -94,8 +94,11 @@ Pendiente para Fase 11.
 ## Volumenes
 
 * Scripts: `RUTA_BASE_SCRIPTS`
+* Env de scripts: `RUTA_BASE_ENV_SCRIPTS`
 * Logs de tareas: `RUTA_BASE_LOGS_TAREAS`
 * Logs de sistema: `RUTA_BASE_LOGS_SISTEMA`
+
+`env_scripts/` debe tratarse como volumen privado por ambiente. No debe versionarse, copiarse a repositorios ni exponerse por servidor web.
 
 ## Consideraciones de seguridad
 

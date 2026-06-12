@@ -15,6 +15,8 @@ El proyecto avanzo hasta Fase 4.1:
 * Fase 3D: conexion Flask con SQL Server desde `.env` y diagnostico controlado.
 * Fase 4: usuarios, roles y permisos iniciales con login hibrido.
 * Fase 4.1: mejoras UX del modulo usuarios, filtros y confirmaciones.
+* Fase 4.2: modal corporativo reutilizable para confirmaciones.
+* Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
 
 ## Stack actual
 
@@ -44,14 +46,17 @@ El proyecto avanzo hasta Fase 4.1:
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
 * Logs de sistema iniciales para login y cambios de usuarios.
+* Definicion tecnica de `.env` por script y detencion manual de ejecuciones.
 
 ## Funcionalidades pendientes
 
 * CRUD de clientes, categorias y tipos.
 * CRUD de tareas.
 * Carga y versionamiento real de scripts.
+* Carga funcional de `.env` por script.
 * Scheduler.
 * Ejecuciones manuales y automaticas.
+* Detencion real de procesos en ejecucion.
 * Logs reales de tareas y panel funcional de logs.
 * Auditoria funcional.
 * Docker QA/produccion.
@@ -107,6 +112,11 @@ DB_DRIVER=ODBC Driver 17 for SQL Server
 
 USUARIO_ADMIN_DEFECTO=blizama
 PASSWORD_ADMIN_DEFECTO=CAMBIAR_EN_ENV_REAL
+
+RUTA_BASE_SCRIPTS=scripts
+RUTA_BASE_ENV_SCRIPTS=env_scripts
+RUTA_BASE_LOGS_TAREAS=logs_tareas
+RUTA_BASE_LOGS_SISTEMA=logs_sistema
 ```
 
 ## Base de datos
@@ -130,6 +140,14 @@ Orden documentado:
 8. `database/seeds/002_roles_permisos_iniciales.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
+
+Fase 4.3 agrega una migracion propuesta, no ejecutada automaticamente:
+
+```text
+database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql
+```
+
+Esta migracion prepara rutas `.env` por version de script y campos para detencion manual de ejecuciones.
 
 ## Documentacion
 

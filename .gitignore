@@ -22,6 +22,8 @@ __pycache__/
 logs_tareas/
 logs_sistema/
 scripts/
+env_scripts/
+**/.env
 instance/
 
 # Testing y cobertura

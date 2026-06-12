@@ -14,6 +14,7 @@
 * Fase 4 inicial: administracion basica de usuarios, roles y permisos.
 * Fase 4 inicial: logs de sistema para login y cambios de usuarios.
 * Fase 4.1: filtros, confirmaciones y mejoras UX del modulo usuarios.
+* Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
 
 ## Modulos pendientes
 
@@ -32,6 +33,17 @@
 * Calendario laboral y feriados.
 * Dashboard ejecutivo.
 * Notificaciones.
+
+## Definicion Fase 4.3
+
+Antes de implementar tareas, scripts y scheduler se definio:
+
+* Cada version de script podra indicar si requiere `.env`.
+* Los `.env` de scripts viviran en `env_scripts/`, separados del codigo en `scripts/`.
+* La base guardara solo rutas de `.env`, no secretos.
+* Las ejecuciones registraran `pid_proceso` y datos de detencion manual.
+* La interfaz futura debera permitir detener ejecuciones solo si estan `EN_EJECUCION`.
+* Toda detencion debe confirmarse con modal corporativo y registrarse en logs.
 
 ## Estado de implementacion
 
