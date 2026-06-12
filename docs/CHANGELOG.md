@@ -1,5 +1,69 @@
 # Changelog
 
+## 2026-06-12 - Fase 3A ajuste versionamiento scripts
+
+### Aprobado
+
+* Se aprueba mantener `scripts` + `scripts_versiones`.
+* Se aprueba mantener `id_version_activa` en `scripts`.
+* Versiones `REEMPLAZADA` no cuentan dentro del maximo de 3 versiones disponibles.
+* Primera version controla maximo 3 en capa de servicio.
+* Base de datos se refuerza con `CHECK(numero_version BETWEEN 1 AND 3)`, `UNIQUE(id_script, numero_version)` e indice unico filtrado para una sola version activa.
+* Trigger o procedimiento almacenado queda como mejora futura.
+* Se aprueba estructura fisica `v1`, `v2`, `v3`.
+
+### Documentado
+
+* Separacion entre `scripts` como script logico y `scripts_versiones` como archivos versionados.
+* Regla de maximo 3 versiones disponibles por script.
+* Regla de una sola version activa por script.
+* Ejecuciones con `id_script` e `id_version` para trazabilidad exacta.
+* Rutas fisicas versionadas con carpetas `v1`, `v2`, `v3`.
+* Flujos de carga, activacion, ejecucion manual/automatica, reemplazo y auditoria de versiones.
+* Estrategia recomendada: validacion inicial en capa de servicio, con constraints simples e indice filtrado para una version activa.
+
+### No implementado
+
+* No se creo conexion SQL Server.
+* No se ejecutaron scripts SQL.
+* No se crearon tablas.
+* No se modifico logica funcional Flask.
+
+### Archivos modificados
+
+* `docs/BASE_DATOS.md`
+* `docs/ARQUITECTURA.md`
+* `docs/MODULOS.md`
+* `docs/FLUJOS.md`
+* `docs/CHANGELOG.md`
+* `log_codex.md`
+
+## 2026-06-12 - Fase 3 parte 1
+
+### Documentado
+
+* Propuesta inicial de modelo relacional SQL Server para `APP_SCHEDULER_QA`.
+* Tablas criticas y tablas futuras.
+* Campos principales, claves primarias, claves foraneas e indices recomendados.
+* Estados propuestos para tareas, ejecuciones y programaciones.
+* Reglas para rutas fisicas/relativas de scripts y logs.
+* Propuesta de auditoria y logs de sistema.
+
+### No implementado
+
+* No se creo conexion SQL Server.
+* No se ejecutaron scripts SQL.
+* No se crearon tablas.
+* No se modifico CRUD ni logica funcional.
+
+### Archivos modificados
+
+* `docs/BASE_DATOS.md`
+* `docs/ARQUITECTURA.md`
+* `docs/MODULOS.md`
+* `docs/CHANGELOG.md`
+* `log_codex.md`
+
 ## 2026-06-12 - Fase 2
 
 ### Mejorado

@@ -5,17 +5,17 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
-* Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, aun no implementada.
-* Estado actual: Fase 2 completada en interfaz base visual, sin avance funcional a base de datos o scheduler.
+* Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, modelo inicial aprobado para versionamiento de scripts, aun no implementado.
+* Estado actual: Fase 3A aprobada documentalmente, sin conexion ni ejecucion de scripts.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 2 - Diseno UI/UX base.
-* Ultima actualizacion: 2026-06-12 15:23
+* Fase actual: Fase 3A - Propuesta de modelo SQL Server con versionamiento de scripts.
+* Ultima actualizacion: 2026-06-12 16:03
 
 ## 2. Decisiones tecnicas vigentes
 
 * Backend: Flask con fabrica `crear_app()` y Blueprint principal.
 * Frontend: HTML/CSS/JS sin Streamlit.
-* Base de datos: SQL Server sera propuesto e implementado en Fase 3.
+* Base de datos: SQL Server aprobado conceptualmente con tablas principales, relaciones, indices, estados y versionamiento controlado de scripts; implementacion fisica pendiente.
 * Autenticacion: Login inicial desde variables `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO`.
 * Scheduler: Pendiente para Fase 8.
 * Logs: Rutas configurables por `.env`, implementacion pendiente.
@@ -28,7 +28,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, propuesta documental de modelo SQL Server con versionamiento de scripts.
 * Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, usuarios, roles, permisos, scheduler, logs, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -42,11 +42,44 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Iniciar Fase 3 solo despues de aprobacion, proponiendo primero el modelo SQL Server.
-* Pendiente 2: Proponer modelo SQL Server en Fase 3 antes de crear scripts.
-* Pendiente 3: Implementar roles, permisos, logs, auditoria y scheduler en fases posteriores.
+* Pendiente 1: Definir estrategia exacta de migraciones o scripts SQL versionados para Fase 3B.
+* Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
+* Pendiente 3: Implementar conexion, repositorios y scripts SQL solo al iniciar Fase 3B.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 16:03 - Fase 3A / Aprobacion de decisiones de versionamiento
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se registraron las aprobaciones del modelo de versionamiento controlado de scripts.
+* Por que se hizo: Para dejar cerradas las decisiones necesarias antes de avanzar a Fase 3B.
+* Decisiones tomadas: Se aprueba `scripts` + `scripts_versiones`, `id_version_activa`, maximo 3 controlado por servicio en primera version, refuerzo con `CHECK`, `UNIQUE` e indice filtrado, trigger/procedimiento como mejora futura y estructura fisica `v1`, `v2`, `v3`.
+* Pruebas realizadas: Revision documental; no aplica prueba de ejecucion porque no se implemento conexion ni SQL.
+* Riesgos detectados: Aun falta definir si al reemplazar una version fisica se preservara copia historica adicional o solo auditoria/hash/ruta previa.
+* Proximos pasos: Iniciar Fase 3B solo cuando se solicite, creando scripts SQL versionados y capa de conexion/repositorios sin quemar credenciales.
+
+### 2026-06-12 15:54 - Fase 3A / Ajuste versionamiento controlado de scripts
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se ajusto el modelo propuesto para separar `scripts` como script logico y `scripts_versiones` como versiones fisicas maximo v1-v3; se documento version activa, ejecuciones con `id_script` e `id_version`, rutas versionadas, auditoria y flujos operativos.
+* Por que se hizo: Para soportar que cada tarea mantenga hasta 3 versiones de script disponibles y que cada ejecucion sea trazable a una version exacta.
+* Decisiones tomadas: Priorizar validacion de maximo 3 versiones en capa de servicio para primera version; proponer constraints simples, indice unico filtrado para una sola version activa y posible trigger/procedimiento como refuerzo futuro.
+* Pruebas realizadas: Revision documental; no aplica prueba de ejecucion porque no se implemento conexion, scripts SQL ni cambios funcionales.
+* Riesgos detectados: Se debe aprobar si versiones reemplazadas cuentan o no como disponibles y si se requiere blindaje en SQL Server con trigger/procedimiento.
+* Proximos pasos: Esperar aprobacion o ajustes; no avanzar a Fase 3B hasta cerrar esta propuesta.
+
+### 2026-06-12 15:35 - Fase 3 parte 1 / Propuesta modelo SQL Server
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se documento el modelo relacional inicial para SQL Server, incluyendo tablas criticas, tablas futuras, campos, tipos sugeridos, claves primarias, foraneas, indices, estados, rutas de scripts/logs, auditoria y scripts SQL sugeridos como propuesta no ejecutada.
+* Por que se hizo: La Fase 3 exige aprobar el modelo antes de implementar conexion, crear tablas o generar scripts finales.
+* Decisiones tomadas: Mantener secretos en `.env`; proponer rutas relativas y fisicas para scripts/logs; usar campos estandar de auditoria; mantener tablas futuras fuera de implementacion inicial.
+* Pruebas realizadas: Revision documental; no aplica prueba de ejecucion porque no se implemento conexion ni scripts SQL.
+* Riesgos detectados: Deben aprobarse convenciones, estados, uso de JSON en programaciones y estrategia de migraciones antes de implementar.
+* Proximos pasos: Esperar aprobacion o ajustes del usuario; luego crear scripts SQL versionados y capa de conexion/repositorios sin quemar credenciales.
 
 ### 2026-06-12 15:23 - Fase 2 / Diseno UI UX base
 

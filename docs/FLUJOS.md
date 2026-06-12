@@ -22,7 +22,83 @@ Pendiente para Fase 8.
 
 ## Flujo de reemplazo de script
 
-Pendiente para Fase 7.
+Propuesta documental Fase 3A; implementacion pendiente para Fase 7.
+
+## Flujo de carga de primera version
+
+1. Usuario crea o edita una tarea.
+2. El sistema crea el script logico en `scripts`.
+3. Usuario carga archivo `.py`.
+4. Servicio valida extension, nombre seguro, ruta permitida y hash.
+5. Se crea `scripts_versiones` con `numero_version = 1`, `estado_version = ACTIVA`, `es_activa = 1`.
+6. `scripts.id_version_activa` queda apuntando a la version 1.
+7. Se registra evento en `logs_sistema` y `auditoria_cambios`.
+
+## Flujo de carga de segunda o tercera version
+
+1. Usuario selecciona script logico existente.
+2. Servicio cuenta versiones disponibles del `id_script`.
+3. Si existen menos de 3, permite cargar nueva version.
+4. Se asigna el siguiente `numero_version` disponible.
+5. La nueva version queda `DISPONIBLE` por defecto, salvo que el usuario confirme activarla.
+6. Si se activa, la version anterior pasa a `DISPONIBLE`, y solo una queda `ACTIVA`.
+7. Se registra auditoria con hash, usuario, fecha y rutas.
+
+## Flujo cuando ya existen 3 versiones
+
+1. Usuario intenta cargar otra version.
+2. Servicio detecta 3 versiones disponibles.
+3. Sistema impide carga directa.
+4. Sistema solicita seleccionar una version existente para reemplazar.
+5. Si cancela, no se modifica nada.
+6. Si confirma, se ejecuta flujo de reemplazo de version.
+
+## Flujo para seleccionar version activa
+
+1. Usuario visualiza versiones disponibles del script.
+2. Selecciona una version como activa.
+3. Sistema muestra confirmacion indicando version actual y version nueva.
+4. Servicio desmarca `es_activa` en las demas versiones.
+5. Servicio marca la version seleccionada como `ACTIVA` y actualiza `scripts.id_version_activa`.
+6. Se registra auditoria con valor anterior y valor nuevo.
+
+## Flujo para ejecucion automatica con version activa
+
+1. Scheduler selecciona tareas activas segun programacion.
+2. Servicio obtiene `scripts.id_version_activa`.
+3. Valida que la version exista, este activa/disponible y el archivo exista.
+4. Crea registro en `ejecuciones` con `id_script` e `id_version`.
+5. Ejecuta el archivo de `scripts_versiones.ruta_fisica`.
+6. Registra resultado y log asociado a `id_ejecucion`.
+
+## Flujo para ejecucion manual seleccionando version
+
+1. Usuario abre tarea.
+2. Sistema muestra version activa y versiones disponibles.
+3. Usuario elige version activa o una version especifica.
+4. Si elige una version distinta a la activa, sistema muestra advertencia y pide confirmacion.
+5. Si cancela, no ejecuta.
+6. Si confirma, crea `ejecuciones` con `id_script` e `id_version`.
+7. Se ejecuta la version elegida y se registra log.
+
+## Flujo de reemplazo de version
+
+1. Usuario selecciona version existente a reemplazar.
+2. Sistema muestra advertencia con numero de version, hash actual y fecha de carga.
+3. Usuario carga nuevo archivo `.py`.
+4. Servicio valida archivo, ruta, nombre seguro y hash.
+5. Servicio registra auditoria del valor anterior.
+6. Version reemplazada cambia a `REEMPLAZADA` o se actualiza segun estrategia aprobada.
+7. Nueva informacion de version queda registrada en `scripts_versiones`.
+8. Si la version reemplazada era activa, el sistema debe confirmar si la nueva queda activa.
+
+## Flujo de auditoria de cambios de version
+
+1. Toda carga, activacion, inactivacion o reemplazo genera registro en `auditoria_cambios`.
+2. `tabla_afectada` debe ser `scripts` o `scripts_versiones`.
+3. `valor_anterior` debe guardar numero de version, hash, ruta, estado y usuario previo cuando aplique.
+4. `valor_nuevo` debe guardar numero de version, hash, ruta, estado y usuario nuevo.
+5. Tambien se registra evento operativo en `logs_sistema`.
 
 ## Flujo de logs
 
