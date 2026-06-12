@@ -56,7 +56,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 6. `database/migrations/006_crear_indices.sql`
 7. `database/seeds/001_datos_iniciales_catalogos.sql`
 8. `database/seeds/002_roles_permisos_iniciales.sql`
-9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql` cuando sea aprobado para Fase 4.3.
+9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
 
 Resumen por script:
 
@@ -481,15 +481,17 @@ Reglas:
 * `env_scripts/` y cualquier `.env` interno no se versionan.
 * La app no debe guardar contenido de `.env` de script en base de datos.
 
-## Migracion propuesta Fase 4.3
+## Migracion Fase 4.3 ejecutada
 
-Se requiere nueva migracion porque los scripts ejecutados en Fase 3B no tienen todos los campos necesarios para detencion manual ni `.env` por version.
+Se requirio nueva migracion porque los scripts ejecutados en Fase 3B no tenian todos los campos necesarios para detencion manual ni `.env` por version.
 
 Archivo creado:
 
 ```text
 database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql
 ```
+
+Ejecutada y validada manualmente en SQL Server local el 2026-06-12.
 
 Incluye:
 
@@ -503,7 +505,13 @@ Incluye:
 * `ejecuciones.fue_detencion_forzada`.
 * Indices de apoyo para busqueda por `requiere_env` y detenciones.
 
-No modifica scripts ya ejecutados. Debe ejecutarse manualmente en SSMS solo despues de aprobacion.
+Validaciones reportadas:
+
+* `DETENIDA_MANUALMENTE` existe en `cat_estados_ejecucion`.
+* `scripts_versiones` contiene `requiere_env`, `ruta_env_fisica` y `ruta_env_relativa`.
+* `ejecuciones` contiene `usuario_detencion`, `fecha_hora_detencion`, `motivo_detencion` y `fue_detencion_forzada`.
+
+No se implemento ejecucion real, scheduler ni tareas en Flask.
 
 ## Scripts SQL sugeridos, no ejecutados
 

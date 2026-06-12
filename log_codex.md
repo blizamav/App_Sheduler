@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 4.3 documentada con definiciones de ejecucion segura, detencion manual y `.env` por script.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
+* Estado actual: Fase 4.3 documentada y migracion 007 ejecutada/validada localmente.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Fase 4.3 - Definiciones de ejecucion segura, cancelacion de procesos y variables por script.
-* Ultima actualizacion: 2026-06-12 19:25
+* Ultima actualizacion: 2026-06-12 19:35
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -49,6 +49,17 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 19:35 - Fase 4.3 / Migracion 007 ejecutada y validada localmente
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `log_codex.md`.
+* Que se hizo: Se registro que la migracion `007_agregar_control_ejecucion_y_env_scripts.sql` fue ejecutada correctamente en SQL Server local.
+* Validaciones reportadas: Existe `DETENIDA_MANUALMENTE` en `cat_estados_ejecucion`; `scripts_versiones` tiene `requiere_env`, `ruta_env_fisica`, `ruta_env_relativa`; `ejecuciones` tiene `usuario_detencion`, `fecha_hora_detencion`, `motivo_detencion`, `fue_detencion_forzada`.
+* Decisiones tomadas: Mantener documentado que la base local ya contiene los campos necesarios para `.env` por script y detencion manual, sin implementar todavia tareas, scripts ni scheduler.
+* Pruebas realizadas: Validacion manual reportada por el usuario en SQL Server local.
+* Riesgos detectados: La migracion fue validada localmente; QA/produccion requeriran ejecucion controlada con respaldo.
+* Proximos pasos: No avanzar a Fase 5 hasta aprobacion explicita; mantener pendiente la implementacion funcional de tareas/scripts/scheduler.
 
 ### 2026-06-12 19:25 - Fase 4.3 / Definiciones de ejecucion segura y env por script
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-12 - Migracion 007 validada localmente
+
+### Validado Manualmente
+
+* Migracion `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql` ejecutada correctamente en SQL Server local.
+* Confirmado estado `DETENIDA_MANUALMENTE` en `cat_estados_ejecucion`.
+* Confirmados campos `requiere_env`, `ruta_env_fisica` y `ruta_env_relativa` en `scripts_versiones`.
+* Confirmados campos `usuario_detencion`, `fecha_hora_detencion`, `motivo_detencion` y `fue_detencion_forzada` en `ejecuciones`.
+
+### No implementado
+
+* No se avanzo a Fase 5.
+* No se implementaron tareas, scripts ni scheduler.
+
 ## 2026-06-12 - Fase 4.3 definiciones de ejecucion segura
 
 ### Agregado
