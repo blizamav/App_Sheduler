@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block titulo %}Usuarios - APP Scheduler{% endblock %}
+{% block encabezado %}Usuarios{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Seguridad</p>
+        <h2>Administracion de usuarios</h2>
+        <p>Gestion inicial de usuarios, roles y estado. El login administrativo desde .env se mantiene como acceso base y no se almacena en la base de datos.</p>
+    </div>
+    <a class="btn primario" href="{{ url_for('usuarios.nuevo') }}">Nuevo usuario</a>
+</section>
+
+<section class="bloque filtros-usuarios">
+    <form method="get" action="{{ url_for('usuarios.listado') }}" class="formulario-filtros">
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                <option value="activo" {% if filtros.estado == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if filtros.estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="rol">Rol</label>
+            <select id="rol" name="rol">
+                <option value="">Todos</option>
+                {% for rol in roles %}
+                <option value="{{ rol.codigo_rol }}" {% if filtros.rol == rol.codigo_rol %}selected{% endif %}>{{ rol.nombre_rol or rol.codigo_rol|replace("_", " ")|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo campo-busqueda">
+            <label for="buscar">Buscar</label>
+            <input id="buscar" name="buscar" value="{{ filtros.buscar or '' }}" placeholder="Usuario, nombre o correo">
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('usuarios.listado') }}">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Directorio</p>
+            <h3>Usuarios registrados</h3>
+        </div>
+        <div class="badges-linea">
+            <span class="badge info">Mostrando {{ total_usuarios }} usuarios</span>
+            <span class="badge info">Sin eliminacion fisica</span>
+        </div>
+    </div>
+
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Creacion</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in usuarios %}
+                <tr>
+                    <td>{{ item.usuario }}</td>
+                    <td>{{ item.nombre_completo }}</td>
+                    <td>{{ item.email or "-" }}</td>
+                    <td>
+                        {% if item.nombre_rol or item.codigo_rol %}
+                        <span class="badge rol">{{ item.nombre_rol or item.codigo_rol|replace("_", " ")|title }}</span>
+                        {% else %}
+                        <span class="badge inactivo">Sin rol</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.activo %}
+                        <span class="badge activo">Activo</span>
+                        {% else %}
+                        <span class="badge inactivo">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.fecha_creacion }}</td>
+                    <td>
+                        <div class="acciones-tabla">
+                            <a class="btn secundario compacto" href="{{ url_for('usuarios.editar', id_usuario=item.id_usuario) }}">Editar</a>
+                            <form method="post" action="{{ url_for('usuarios.estado', id_usuario=item.id_usuario) }}">
+                                <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="{{ 'Deshabilitar usuario' if item.activo else 'Activar usuario' }}"
+                                    data-confirm-message="{{ 'Estas seguro de deshabilitar este usuario? El usuario no podra iniciar sesion hasta que sea activado nuevamente.' if item.activo else 'Deseas activar este usuario? El usuario podra iniciar sesion nuevamente.' }}"
+                                    data-confirm-ok="{{ 'Si, deshabilitar' if item.activo else 'Si, activar' }}"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="{{ 'danger' if item.activo else 'success' }}"
+                                >
+                                    {{ "Desactivar" if item.activo else "Activar" }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="estado-vacio">No hay usuarios registrados en base de datos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

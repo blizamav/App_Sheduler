@@ -9,6 +9,11 @@
 * Propuesta de modelo SQL Server inicial en Fase 3, sin implementacion fisica.
 * Ajuste documental Fase 3A para versionamiento controlado de scripts con maximo 3 versiones.
 * Scripts SQL Server versionados de Fase 3B creados en `database/`, sin ejecucion automatica.
+* Conexion Flask-SQL Server desde `.env` y diagnostico `/diagnostico/bd`.
+* Fase 4 inicial: login hibrido `.env` + SQL Server.
+* Fase 4 inicial: administracion basica de usuarios, roles y permisos.
+* Fase 4 inicial: logs de sistema para login y cambios de usuarios.
+* Fase 4.1: filtros, confirmaciones y mejoras UX del modulo usuarios.
 
 ## Modulos pendientes
 
@@ -17,13 +22,11 @@
 * Gestion de clientes.
 * Gestion de categorias.
 * Gestion de tipos.
-* Gestion de usuarios.
-* Roles y permisos.
 * Scheduler.
 * Ejecucion manual.
 * Ejecucion automatica.
 * Logs de tareas.
-* Logs de sistema.
+* Logs de sistema completos.
 * Auditoria.
 * Configuracion.
 * Calendario laboral y feriados.
@@ -32,7 +35,23 @@
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 3B: scripts SQL versionados creados, no ejecutados. Aun no existen conexion real Flask-SQL Server, CRUD, scheduler ni usuarios en base de datos.
+La aplicacion esta en Fase 4 inicial: usuarios, roles y permisos conectados a SQL Server para administracion basica. Aun no existen CRUD de tareas, carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+
+## Modulo de usuarios
+
+Implementado en Fase 4:
+
+* Login hibrido: primero `.env`, luego tabla `usuarios`.
+* Usuario `.env` con rol de sesion `SUPER_ADMIN_ENV`.
+* Usuarios de base de datos con roles y permisos desde tablas de seguridad.
+* Pantalla `/usuarios` para listar, filtrar, crear, editar, activar y desactivar usuarios.
+* Filtros por estado, rol y busqueda general.
+* Confirmacion antes de activar o desactivar usuarios.
+* Advertencias visuales al cambiar rol o contrasena.
+* Asignacion de un rol activo por usuario desde el formulario inicial.
+* Contrasenas con hash seguro.
+* Sin eliminacion fisica de usuarios.
+* Eventos principales registrados en `logs_sistema`.
 
 ## Impacto del versionamiento de scripts
 

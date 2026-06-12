@@ -4,24 +4,25 @@
 
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
-* Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
+* Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 3D implementada como conexion inicial y diagnostico, sin CRUD ni usuarios en base de datos.
+* Estado actual: Fase 4.2 implementada con modal corporativo reutilizable de confirmacion.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 3D - Conexion Flask con SQL Server desde .env.
-* Ultima actualizacion: 2026-06-12 17:05
+* Fase actual: Fase 4.2 - Reemplazo de confirmaciones nativas por modales corporativos.
+* Ultima actualizacion: 2026-06-12 19:05
 
 ## 2. Decisiones tecnicas vigentes
 
 * Backend: Flask con fabrica `crear_app()` y Blueprint principal.
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
-* Autenticacion: Login inicial desde variables `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO`.
+* Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
 * Scheduler: Pendiente para Fase 8.
 * Logs: Rutas configurables por `.env`, implementacion pendiente.
 * Auditoria: Pendiente para Fase 10.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
+* Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color.
 
@@ -29,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server y diagnostico local/QA.
-* Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, usuarios, roles, permisos, scheduler, logs, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1 y modal de confirmacion Fase 4.2.
+* Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, scheduler, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
 
@@ -48,6 +49,51 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 18:45 - Fase 4.2 / Modal corporativo de confirmacion
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/base.html`, `app/templates/usuarios/listado.html`, `app/templates/usuarios/formulario.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `app/rutas_usuarios.py`, `app/servicios/servicio_usuarios.py`, `docs/UI_UX.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se reemplazo `window.confirm()` por un modal global reutilizable con titulo, mensaje, botones, tipo visual y envio del formulario solo al confirmar. Se amplio el modal para interceptar formularios de crear/editar usuario.
+* Por que se hizo: Las confirmaciones nativas del navegador no cumplen el estandar visual corporativo definido para la aplicacion.
+* Decisiones tomadas: Mantener POST actual del backend; configurar textos por atributos `data-*`; soportar variantes `danger`, `warning`, `info` y `success`; permitir cancelar por boton, overlay o ESC; regla general de usuarios: todo cambio debe pedir confirmacion.
+* Confirmaciones agregadas: crear usuario, guardar edicion, cambio de rol, cambio de contrasena y cambios criticos combinados de rol/contrasena.
+* Pruebas realizadas: `python -m compileall app`; busqueda sin coincidencias de `window.confirm` ni `confirm(`; login `.env` redirige a `/panel`; GET `/usuarios/` y `/usuarios/nuevo` responden 200; `/usuarios/nuevo` renderiza formulario confirmable.
+* Riesgos detectados: Falta validacion visual manual final en navegador con datos reales; el modal queda preparado para futuros modulos pero no se conecto a tareas, scripts ni scheduler.
+* Proximos pasos: Validar en navegador crear/editar usuario con cancelar y confirmar; no avanzar a Fase 5 hasta aprobacion.
+
+### 2026-06-12 18:25 - Seguridad / No sobrescribir archivo .env
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `README.md`, `docs/DESPLIEGUE.md`, `docs/SEGURIDAD.md`, `docs/README_PROYECTO.md`, `docs/CHANGELOG.md`, `log_codex.md`, `app/config.py`, `app/__init__.py`, `app/rutas.py`, `app/templates/login.html`.
+* Que se hizo: Se reemplazaron comandos inseguros `copy .env.example .env` / `Copy-Item .env.example .env` por comandos seguros que no sobrescriben `.env` existente; se documento la regla; se agrego validacion controlada de variables criticas.
+* Por que se hizo: El archivo `.env` real fue sobrescrito por la plantilla y se perdieron credenciales locales. La documentacion no debe inducir a repetir ese problema.
+* Decisiones tomadas: `.env.example` se mantiene solo como plantilla; `.env` debe reconstruirse manualmente por ambiente; Codex no debe recuperar, inventar ni registrar credenciales reales.
+* Pruebas realizadas: Verificacion de `.gitignore`; busqueda de comandos inseguros; `python -m compileall app`; carga de aplicacion con validacion de configuracion.
+* Riesgos detectados: El usuario debe restaurar manualmente `APP_SECRET_KEY`, credenciales SQL Server, usuario/password admin y rutas locales si aplica.
+* Proximos pasos: Reconstruir `.env` manualmente con valores reales y validar `/diagnostico/bd`; no avanzar a Fase 5.
+
+### 2026-06-12 18:05 - Fase 4.1 / Mejoras UX, filtros y correcciones visuales del modulo usuarios
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/repositorios/repositorio_usuarios.py`, `app/servicios/servicio_usuarios.py`, `app/rutas.py`, `app/rutas_usuarios.py`, `app/seguridad.py`, `app/templates/usuarios/listado.html`, `app/templates/usuarios/formulario.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `README.md`, `docs/SEGURIDAD.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se agregaron filtros por estado, rol y busqueda general en `/usuarios`; contador de resultados; boton limpiar; confirmaciones antes de activar/deshabilitar; advertencias al cambiar rol o contrasena; visualizacion de rol con nombre amigable sin redundancia.
+* Por que se hizo: Para mejorar claridad, seguridad operativa y experiencia de administracion de usuarios antes de cerrar Fase 4.
+* Decisiones tomadas: Mantener filtros en backend con query parameters; mantener `USUARIOS_ADMIN`; no agregar permisos nuevos; no modificar SQL; registrar logs solo cuando la accion confirmada llega al backend.
+* Pruebas realizadas: `python -m compileall app`; login `.env` redirige a `/panel`; GET `/usuarios/`, `/usuarios/?estado=activo`, `/usuarios/?estado=inactivo`, `/usuarios/?rol=TI`, `/usuarios/?rol=ADMIN`, `/usuarios/?buscar=test` y `/usuarios/nuevo` responden 200.
+* Riesgos detectados: La validacion completa de filtros con datos reales y login de usuario DB debe probarse contra SQL Server local del usuario; las confirmaciones usan `window.confirm`, suficiente para esta fase pero reemplazable por modal corporativo futuro.
+* Proximos pasos: Cerrar validacion manual de Fase 4.1 en navegador y luego definir la siguiente fase sin avanzar aun a tareas, scripts o scheduler.
+
+### 2026-06-12 17:40 - Fase 4 / Usuarios, roles y permisos iniciales
+
+* Archivos creados: `app/seguridad.py`, `app/rutas_usuarios.py`, `app/repositorios/__init__.py`, `app/repositorios/repositorio_usuarios.py`, `app/repositorios/repositorio_roles.py`, `app/repositorios/repositorio_permisos.py`, `app/repositorios/repositorio_logs_sistema.py`, `app/servicios/__init__.py`, `app/servicios/servicio_usuarios.py`, `app/servicios/servicio_roles.py`, `app/servicios/servicio_permisos.py`, `app/servicios/servicio_logs_sistema.py`, `app/templates/usuarios/listado.html`, `app/templates/usuarios/formulario.html`.
+* Archivos modificados: `app/__init__.py`, `app/rutas.py`, `app/templates/base.html`, `app/static/css/estilos.css`, `README.md`, `docs/SEGURIDAD.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ARQUITECTURA.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implemento login hibrido, validando primero administrador desde `.env` y luego usuarios activos en SQL Server; se agrego administracion inicial de usuarios en `/usuarios`; se separaron repositorios, servicios y decoradores de seguridad; se agregaron logs de sistema para login y cambios de usuarios.
+* Por que se hizo: Para iniciar Fase 4 usando las tablas de seguridad ya creadas, sin avanzar a tareas, scripts, scheduler ni paneles funcionales posteriores.
+* Decisiones tomadas: Mantener `blizama` solo desde `.env`; usar `USUARIOS_ADMIN` como permiso inicial de administracion; no permitir eliminacion fisica de usuarios; guardar contrasenas con hash de Werkzeug; dejar el administrador `.env` con permisos totales de sesion.
+* Pruebas realizadas: `python -m compileall app`; GET `/login` 200; POST `/login` con credenciales `.env` redirige a `/panel`; GET `/panel` 200; GET `/usuarios/` 200 con sesion `.env`.
+* Riesgos detectados: La creacion/login de usuario de base de datos debe validarse manualmente contra SQL Server local con `.env` correctamente configurado; si la conexion falla, `/usuarios` muestra error amigable y no rompe el login `.env`.
+* Proximos pasos: Probar creacion de usuario DB, login con usuario DB, permisos por rol y bloqueo por usuario inactivo; no avanzar a CRUD de tareas ni scheduler hasta nueva aprobacion.
 
 ### 2026-06-12 17:05 - Documentacion / Actualizacion README principal
 

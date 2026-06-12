@@ -22,7 +22,7 @@ Centralizar la ejecucion controlada de scripts, reducir trabajo manual, mantener
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
 python run.py
 ```
 

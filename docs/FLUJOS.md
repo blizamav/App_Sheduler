@@ -4,9 +4,46 @@
 
 1. Usuario abre `/login`.
 2. Ingresa usuario y contrasena.
-3. El backend valida contra `.env`.
-4. Si es correcto, crea sesion y redirige a `/panel`.
-5. Si falla, muestra mensaje amigable.
+3. El backend valida primero contra `.env`.
+4. Si coincide, crea sesion `SUPER_ADMIN_ENV` con permisos totales y redirige a `/panel`.
+5. Si no coincide, valida contra la tabla `usuarios`.
+6. Si el usuario de base de datos esta activo, no bloqueado y la contrasena coincide con el hash, carga roles/permisos y redirige a `/panel`.
+7. Si falla, muestra mensaje amigable y registra evento en `logs_sistema` cuando la base de datos esta disponible.
+
+## Flujo de administracion de usuarios
+
+1. Usuario con `USUARIOS_ADMIN` o administrador `.env` abre `/usuarios`.
+2. El sistema lista usuarios de base de datos con rol y estado.
+3. Puede filtrar por estado, rol o busqueda general por usuario, nombre y correo.
+4. Para crear usuario, se exige usuario unico, nombre, rol, contrasena y confirmacion.
+5. Para editar usuario, se permite cambiar nombre, email, rol, estado y contrasena opcional.
+6. Si cambia el rol, el formulario muestra una advertencia de permisos.
+7. Si ingresa nueva contrasena, el formulario advierte que sera actualizada.
+8. Para activar o desactivar usuario, se abre un modal corporativo de confirmacion antes de enviar el cambio.
+9. Si el administrador cancela la confirmacion, no se ejecuta accion ni se registra log.
+10. No existe eliminacion fisica desde la app.
+11. Cada creacion, edicion o cambio confirmado registra evento en `logs_sistema`.
+
+## Flujo de confirmacion critica
+
+1. Usuario presiona un boton marcado como accion critica.
+2. El frontend evita el envio inmediato del formulario.
+3. Se abre el modal reutilizable del sistema con titulo, mensaje, tipo visual y botones configurados por `data-*`.
+4. Si el usuario cancela, se cierra el modal y no se envia el formulario.
+5. Si el usuario confirma, el formulario original se envia por POST al backend.
+6. El backend mantiene la logica existente y registra logs solo cuando recibe una accion confirmada.
+
+## Flujo de confirmacion al guardar usuario
+
+1. Usuario presiona guardar en creacion o edicion de usuario.
+2. El frontend intercepta el submit del formulario.
+3. En creacion se muestra modal `Crear usuario`.
+4. En edicion sin cambios criticos se muestra modal `Guardar cambios del usuario`.
+5. Si el rol cambio, se muestra modal `Confirmar cambio de rol`.
+6. Si se ingreso nueva contrasena, se muestra modal `Confirmar cambio de contrasena`.
+7. Si cambia rol y contrasena al mismo tiempo, se muestra modal `Confirmar cambios criticos`.
+8. Si cancela, no se envia el formulario.
+9. Si confirma, se envia el POST normal y el backend guarda cambios.
 
 ## Flujo de creacion de tarea
 

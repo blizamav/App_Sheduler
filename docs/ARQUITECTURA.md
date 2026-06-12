@@ -9,8 +9,8 @@ La Fase 1 define una aplicacion Flask modular con fabrica `crear_app()`, configu
 * Presentacion: templates HTML y assets CSS/JS.
 * Aplicacion: rutas Flask y control de sesion.
 * Configuracion: lectura de `.env`.
-* Datos: pendiente para Fase 3 con SQL Server.
-* Servicios: pendientes para tareas, scripts, logs, auditoria y scheduler.
+* Datos: SQL Server mediante `pyodbc` y repositorios dedicados.
+* Servicios: reglas de negocio iniciales para usuarios, roles, permisos y logs de sistema.
 
 ## Flujo de datos inicial
 
@@ -21,17 +21,22 @@ La Fase 1 define una aplicacion Flask modular con fabrica `crear_app()`, configu
 
 ## Backend
 
-Backend Python Flask con estructura inicial:
+Backend Python Flask con estructura inicial y modulos Fase 4:
 
 * `app/__init__.py`
 * `app/config.py`
 * `app/rutas.py`
+* `app/rutas_usuarios.py`
+* `app/seguridad.py`
+* `app/database/conexion.py`
+* `app/repositorios/`
+* `app/servicios/`
 
 ## Frontend
 
 HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
 
-La capa visual sigue siendo estatica y no consume base de datos. Los datos del panel son placeholders hasta las fases funcionales.
+La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; la pantalla `/usuarios` consume datos reales de SQL Server para seguridad.
 
 ## Base de datos
 
@@ -61,7 +66,16 @@ Pendiente para Fase 9. Rutas configurables por `.env`: `logs_tareas` y `logs_sis
 
 ## Seguridad
 
-Fase 1 usa login inicial desde `.env`. En fases posteriores se incorporan usuarios, roles, permisos, auditoria y logs de seguridad.
+Fase 4 usa login hibrido:
+
+* Primero valida el administrador inicial desde `.env`.
+* Si no coincide, valida usuarios activos en SQL Server.
+* Las contrasenas de base de datos usan hash de Werkzeug.
+* Roles y permisos se cargan en sesion desde tablas de seguridad.
+* `permiso_requerido()` protege rutas funcionales.
+* `logs_sistema` registra eventos iniciales de login y administracion de usuarios.
+
+El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Docker
 

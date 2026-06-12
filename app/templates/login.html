@@ -16,6 +16,11 @@
         <span class="badge info">Ambiente local</span>
         <h1>Acceso corporativo</h1>
         <p>Gestion centralizada para tareas Python, trazabilidad y automatizacion controlada.</p>
+        {% if advertencias_configuracion %}
+        <div class="alerta advertencia">
+            Configuracion local incompleta o con valores de plantilla. Reconstruye manualmente el archivo .env antes de usar credenciales reales.
+        </div>
+        {% endif %}
         <form method="post" class="formulario-login">
             <div class="campo">
                 <label for="usuario">Usuario</label>

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ "Nuevo usuario" if modo == "crear" else "Editar usuario" }} - APP Scheduler{% endblock %}
+{% block encabezado %}{{ "Nuevo usuario" if modo == "crear" else "Editar usuario" }}{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Seguridad</p>
+        <h2>{{ "Crear usuario" if modo == "crear" else "Editar usuario" }}</h2>
+        <p>Las contrasenas se guardan con hash seguro. Los usuarios no se eliminan fisicamente; se activan o desactivan por estado.</p>
+    </div>
+    <a class="btn secundario" href="{{ url_for('usuarios.listado') }}">Volver</a>
+</section>
+
+<section class="bloque">
+    <form
+        method="post"
+        class="formulario-admin requiere-confirmacion-form"
+        data-form-modo="{{ modo }}"
+        data-confirm-title="{{ 'Crear usuario' if modo == 'crear' else 'Guardar cambios del usuario' }}"
+        data-confirm-message="{{ 'Se creara un nuevo usuario con los datos ingresados. Deseas continuar?' if modo == 'crear' else 'Estas por modificar la informacion de este usuario. Deseas guardar los cambios?' }}"
+        data-confirm-ok="{{ 'Si, crear usuario' if modo == 'crear' else 'Si, guardar cambios' }}"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="{{ 'info' if modo == 'crear' else 'warning' }}"
+    >
+        <div class="form-grid">
+            <div class="campo">
+                <label for="usuario">Usuario</label>
+                <input id="usuario" name="usuario" value="{{ usuario.usuario or '' }}" {% if modo == "editar" %}disabled{% endif %} required>
+            </div>
+            <div class="campo">
+                <label for="nombre_completo">Nombre completo</label>
+                <input id="nombre_completo" name="nombre_completo" value="{{ usuario.nombre_completo or '' }}" required>
+            </div>
+            <div class="campo">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" value="{{ usuario.email or '' }}">
+            </div>
+            <div class="campo">
+                <label for="id_rol">Rol</label>
+                <select id="id_rol" name="id_rol" required data-rol-original="{{ usuario.id_rol or '' }}">
+                    <option value="">Seleccionar rol</option>
+                    {% for rol in roles %}
+                    <option value="{{ rol.id_rol }}" {% if usuario.id_rol|string == rol.id_rol|string %}selected{% endif %}>
+                        {{ rol.nombre_rol or rol.codigo_rol|replace("_", " ")|title }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if modo == "editar" %}
+                <div class="alerta advertencia alerta-inline oculto" data-alerta-rol>
+                    Estas modificando el rol del usuario. Esto puede cambiar sus permisos dentro del sistema.
+                </div>
+                {% endif %}
+            </div>
+            <div class="campo">
+                <label for="password">{{ "Contrasena" if modo == "crear" else "Nueva contrasena opcional" }}</label>
+                <input id="password" name="password" type="password" {% if modo == "crear" %}required{% endif %} autocomplete="new-password" data-password-edicion="{{ '1' if modo == 'editar' else '0' }}">
+                {% if modo == "editar" %}
+                <div class="alerta advertencia alerta-inline oculto" data-alerta-password>
+                    Se actualizara la contrasena del usuario.
+                </div>
+                {% endif %}
+            </div>
+            <div class="campo">
+                <label for="confirmacion_password">Confirmar contrasena</label>
+                <input id="confirmacion_password" name="confirmacion_password" type="password" {% if modo == "crear" %}required{% endif %} autocomplete="new-password">
+            </div>
+        </div>
+
+        <label class="checkline">
+            <input type="checkbox" name="activo" value="1" {% if modo == "crear" or usuario.activo or usuario.activo == "1" %}checked{% endif %}>
+            Usuario activo
+        </label>
+
+        <div class="acciones-formulario">
+            <button class="btn primario" type="submit">{{ "Crear usuario" if modo == "crear" else "Guardar cambios" }}</button>
+            <a class="btn secundario" href="{{ url_for('usuarios.listado') }}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

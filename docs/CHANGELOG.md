@@ -1,5 +1,127 @@
 # Changelog
 
+## 2026-06-12 - Fase 4.2 modal corporativo de confirmacion
+
+### Corregido
+
+* Los formularios de crear y editar usuario ahora tambien requieren modal de confirmacion antes de guardar.
+* Edicion de usuario detecta cambio de rol y muestra confirmacion especial.
+* Edicion de usuario detecta nueva contrasena y muestra confirmacion especial.
+* Si cambian rol y contrasena juntos, se muestra confirmacion de cambios criticos.
+* Se registra cambio de contrasena en `logs_sistema` sin valores sensibles.
+
+### Agregado
+
+* Modal global reutilizable de confirmacion en `base.html`.
+* Variantes visuales `danger`, `warning`, `info` y `success`.
+* Cierre por boton cancelar, clic en overlay y tecla ESC.
+* Atributos `data-*` para configurar titulo, mensaje, botones y tipo visual.
+
+### Cambiado
+
+* Activar/deshabilitar usuario ya no usa `window.confirm()`.
+* Las acciones de usuarios abren modal propio y solo envian el formulario al confirmar.
+
+### Validado
+
+* `python -m compileall app`.
+* Busqueda sin coincidencias de `window.confirm` ni `confirm(` en `app/static/js` y `app/templates`.
+* Login `.env` redirige a `/panel`.
+* `/panel`, `/usuarios/`, `/usuarios/?estado=activo`, `/usuarios/?rol=TI` y `/usuarios/nuevo` responden 200.
+
+### No implementado
+
+* No se avanzo a Fase 5.
+* No se implementaron tareas, scripts ni scheduler.
+* No se modifico SQL ni permisos.
+
+## 2026-06-12 - Seguridad .env y comandos de configuracion
+
+### Corregido
+
+* Reemplazadas instrucciones inseguras que copiaban `.env.example` sobre `.env`.
+* Agregados comandos seguros para PowerShell y CMD que solo crean `.env` si no existe.
+* Documentada regla de no sobrescribir `.env` real.
+* Agregada validacion controlada de variables criticas de configuracion.
+* Login muestra advertencia amigable si `.env` falta o contiene valores de plantilla.
+
+### Seguridad
+
+* `.env` se mantiene excluido por `.gitignore`.
+* `.env.example` se mantiene como plantilla.
+* No se agregaron credenciales reales a codigo, README, docs ni logs.
+* No se modifico `.env`.
+
+## 2026-06-12 - Fase 4.1 mejoras UX modulo usuarios
+
+### Agregado
+
+* Filtros en `/usuarios` por estado, rol y busqueda general.
+* Contador de resultados del listado de usuarios.
+* Boton para limpiar filtros.
+* Confirmacion antes de activar o deshabilitar usuarios.
+* Advertencia visual al cambiar rol de usuario.
+* Advertencia visual al ingresar nueva contrasena en edicion.
+
+### Mejorado
+
+* Visualizacion de roles con nombre amigable, sin codigo redundante.
+* Badges de rol y estado.
+* Mensajes amigables de login, permisos y acciones de usuarios.
+* Registro separado de cambio de rol en `logs_sistema`.
+
+### Validado
+
+* `python -m compileall app`.
+* Login `.env` redirige a `/panel`.
+* `/usuarios/` responde 200.
+* `/usuarios/?estado=activo` responde 200.
+* `/usuarios/?estado=inactivo` responde 200.
+* `/usuarios/?rol=TI` responde 200.
+* `/usuarios/?rol=ADMIN` responde 200.
+* `/usuarios/?buscar=test` responde 200.
+* `/usuarios/nuevo` responde 200.
+
+### No implementado
+
+* No se modificaron scripts SQL.
+* No se cambio estructura de base de datos.
+* No se avanzo a Fase 5.
+* No se implementaron tareas, scripts ni scheduler.
+
+## 2026-06-12 - Fase 4 usuarios, roles y permisos iniciales
+
+### Agregado
+
+* Login hibrido: primero `.env`, luego tabla `usuarios`.
+* Decoradores `login_requerido` y `permiso_requerido`.
+* Sesion con roles y permisos.
+* Modulo `/usuarios` para listar, crear, editar, activar y desactivar usuarios.
+* Repositorios y servicios para usuarios, roles, permisos y logs de sistema.
+* Registro inicial en `logs_sistema` para login y cambios de usuarios.
+* Templates `usuarios/listado.html` y `usuarios/formulario.html`.
+
+### Seguridad
+
+* Contrasenas de usuarios de base de datos con `generate_password_hash` y `check_password_hash`.
+* Sin eliminacion fisica de usuarios.
+* Usuario inicial de `.env` mantiene acceso total y no se crea en base de datos.
+
+### Validado
+
+* `python -m compileall app`.
+* GET `/login` responde 200.
+* Login por `.env` redirige a `/panel`.
+* GET `/panel` responde 200.
+* GET `/usuarios/` responde 200 con sesion `.env`.
+
+### No implementado
+
+* CRUD de tareas.
+* Carga real de scripts.
+* Scheduler.
+* Panel funcional de logs/auditoria.
+
 ## 2026-06-12 - README actualizado
 
 ### Documentado

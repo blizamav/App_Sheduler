@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 3D:
+El proyecto avanzo hasta Fase 4.1:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -13,6 +13,8 @@ El proyecto avanzo hasta Fase 3D:
 * Fase 3B: scripts SQL Server versionados.
 * Fase 3C: validacion manual de scripts SQL en SQL Server local.
 * Fase 3D: conexion Flask con SQL Server desde `.env` y diagnostico controlado.
+* Fase 4: usuarios, roles y permisos iniciales con login hibrido.
+* Fase 4.1: mejoras UX del modulo usuarios, filtros y confirmaciones.
 
 ## Stack actual
 
@@ -36,17 +38,21 @@ El proyecto avanzo hasta Fase 3D:
 * Base `APP_SCHEDULER_QA` validada en SQL Server local.
 * Conexion Flask-SQL Server mediante `.env`.
 * Ruta de diagnostico de base de datos para `LOCAL` y `QA`: `/diagnostico/bd`.
+* Login hibrido: administrador inicial desde `.env` y usuarios desde SQL Server.
+* Administracion basica de usuarios en `/usuarios`.
+* Filtros de usuarios por estado, rol y busqueda general.
+* Confirmaciones para activar/deshabilitar usuarios.
+* Roles y permisos iniciales desde base de datos.
+* Logs de sistema iniciales para login y cambios de usuarios.
 
 ## Funcionalidades pendientes
 
-* Usuarios desde base de datos.
-* Roles y permisos funcionales.
 * CRUD de clientes, categorias y tipos.
 * CRUD de tareas.
 * Carga y versionamiento real de scripts.
 * Scheduler.
 * Ejecuciones manuales y automaticas.
-* Logs reales.
+* Logs reales de tareas y panel funcional de logs.
 * Auditoria funcional.
 * Docker QA/produccion.
 * Calendario laboral y feriados.
@@ -57,8 +63,14 @@ El proyecto avanzo hasta Fase 3D:
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
 python run.py
+```
+
+En CMD:
+
+```cmd
+if not exist .env copy .env.example .env
 ```
 
 Luego abrir:
@@ -76,6 +88,8 @@ http://127.0.0.1:5000/diagnostico/bd
 ## Variables de entorno
 
 El archivo `.env` no se sube a Git. El archivo `.env.example` sirve como plantilla.
+
+No ejecutes `copy .env.example .env` si ya existe `.env`, porque sobrescribe credenciales locales. Si `.env` fue sobrescrito, reconstruyelo manualmente con tus valores reales; no inventar ni publicar credenciales.
 
 Variables principales:
 

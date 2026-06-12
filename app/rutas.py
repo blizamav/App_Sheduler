@@ -1,21 +1,9 @@
-from functools import wraps
-
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
+from app.seguridad import login_requerido
+from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 bp_principal = Blueprint("principal", __name__)
-
-
-def login_requerido(vista):
-    """Protege rutas internas validando que exista usuario en sesion."""
-
-    @wraps(vista)
-    def wrapper(*args, **kwargs):
-        if not session.get("usuario"):
-            return redirect(url_for("principal.login"))
-        return vista(*args, **kwargs)
-
-    return wrapper
 
 
 @bp_principal.route("/")
@@ -27,9 +15,11 @@ def inicio():
 
 @bp_principal.route("/login", methods=["GET", "POST"])
 def login():
-    """Valida el usuario inicial desde .env y abre una sesion local."""
+    """Valida primero el usuario .env y luego usuarios activos de base de datos."""
     if session.get("usuario"):
         return redirect(url_for("principal.panel"))
+
+    advertencias_configuracion = current_app.config.get("ADVERTENCIAS_CONFIGURACION", [])
 
     if request.method == "POST":
         usuario = request.form.get("usuario", "").strip()
@@ -38,13 +28,52 @@ def login():
         password_esperado = current_app.config["PASSWORD_ADMIN_DEFECTO"]
 
         if usuario == usuario_esperado and password and password == password_esperado:
+            session.clear()
             session["usuario"] = usuario
+            session["usuario_nombre"] = usuario
+            session["id_usuario"] = None
+            session["roles"] = ["SUPER_ADMIN_ENV"]
+            session["permisos"] = ["*"]
+            session["es_admin_env"] = True
+            registrar_log_sistema(
+                "LOGIN_EXITOSO",
+                "AUTH",
+                "Login correcto con administrador inicial desde .env.",
+                usuario=usuario,
+            )
             flash("Sesion iniciada correctamente.", "success")
             return redirect(url_for("principal.panel"))
 
-        flash("Usuario o contrasena no validos.", "error")
+        try:
+            from app.servicios.servicio_usuarios import autenticar_usuario_bd
 
-    return render_template("login.html")
+            ok, mensaje, datos_usuario = autenticar_usuario_bd(usuario, password)
+        except Exception:
+            ok = False
+            mensaje = "No fue posible validar el usuario en este momento. Revisa la conexion."
+            datos_usuario = None
+            registrar_log_sistema(
+                "LOGIN_ERROR",
+                "AUTH",
+                "Error al intentar validar usuario de base de datos.",
+                usuario=usuario,
+                nivel="ERROR",
+            )
+
+        if ok:
+            session.clear()
+            session["usuario"] = datos_usuario["usuario"]
+            session["usuario_nombre"] = datos_usuario["nombre_completo"]
+            session["id_usuario"] = datos_usuario["id_usuario"]
+            session["roles"] = datos_usuario["roles"]
+            session["permisos"] = datos_usuario["permisos"]
+            session["es_admin_env"] = False
+            flash(mensaje, "success")
+            return redirect(url_for("principal.panel"))
+
+        flash(mensaje, "error")
+
+    return render_template("login.html", advertencias_configuracion=advertencias_configuracion)
 
 
 @bp_principal.route("/panel")

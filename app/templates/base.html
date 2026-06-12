@@ -22,15 +22,18 @@
                 <button class="icon-btn solo-mobile" type="button" data-sidebar-cerrar aria-label="Cerrar menu">x</button>
             </div>
             <nav class="nav">
-                <a class="nav-link activo" href="{{ url_for('principal.panel') }}"><span>01</span>Panel</a>
-                <a class="nav-link deshabilitado" href="#"><span>02</span>Tareas</a>
-                <a class="nav-link deshabilitado" href="#"><span>03</span>Scripts</a>
-                <a class="nav-link deshabilitado" href="#"><span>04</span>Logs</a>
-                <a class="nav-link deshabilitado" href="#"><span>05</span>Auditoria</a>
+                <a class="nav-link {% if request.endpoint == 'principal.panel' %}activo{% endif %}" href="{{ url_for('principal.panel') }}"><span>01</span>Panel</a>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span>02</span>Usuarios</a>
+                {% endif %}
+                <a class="nav-link deshabilitado" href="#"><span>03</span>Tareas</a>
+                <a class="nav-link deshabilitado" href="#"><span>04</span>Scripts</a>
+                <a class="nav-link deshabilitado" href="#"><span>05</span>Logs</a>
+                <a class="nav-link deshabilitado" href="#"><span>06</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 2 UI</span>
-                <p>Interfaz base preparada para modulos posteriores.</p>
+                <span class="badge info">Fase 4</span>
+                <p>Usuarios y permisos iniciales conectados a SQL Server.</p>
             </div>
         </aside>
         {% endif %}
@@ -47,7 +50,7 @@
                     <button class="btn secundario" type="button" data-panel-logs-toggle>Panel logs</button>
                     <div class="usuario-chip">
                         <span class="avatar">{{ session.get("usuario")[0:1]|upper }}</span>
-                        <span>{{ session.get("usuario") }}</span>
+                        <span>{{ session.get("usuario_nombre") or session.get("usuario") }}</span>
                     </div>
                     <form method="post" action="{{ url_for('principal.logout') }}">
                         <button class="btn secundario" type="submit">Salir</button>
@@ -83,6 +86,21 @@
                 <p><span>Fase 9</span> Consola funcional pendiente.</p>
             </div>
         </aside>
+
+        <div class="modal-overlay" id="modalConfirmacion" aria-hidden="true">
+            <section class="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="modalConfirmacionTitulo">
+                <div class="modal-icono" data-modal-icono>!</div>
+                <div class="modal-contenido">
+                    <p class="eyebrow" data-modal-tipo>Confirmacion</p>
+                    <h2 id="modalConfirmacionTitulo" data-modal-titulo>Confirmar accion</h2>
+                    <p data-modal-mensaje>Confirma si deseas continuar.</p>
+                    <div class="modal-acciones">
+                        <button class="btn secundario" type="button" data-modal-cancelar>Cancelar</button>
+                        <button class="btn primario" type="button" data-modal-confirmar>Confirmar</button>
+                    </div>
+                </div>
+            </section>
+        </div>
         {% endif %}
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

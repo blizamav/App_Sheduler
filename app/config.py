@@ -8,6 +8,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
+VALORES_PLANTILLA = {
+    "",
+    "CAMBIAR_EN_ENV_REAL",
+    "SERVIDOR_O_INSTANCIA",
+    "USUARIO_SQL",
+    "PASSWORD_SQL",
+}
+
+
+VARIABLES_CRITICAS = [
+    "APP_SECRET_KEY",
+    "DB_SERVER",
+    "DB_DATABASE",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_DRIVER",
+    "USUARIO_ADMIN_DEFECTO",
+    "PASSWORD_ADMIN_DEFECTO",
+]
+
+
+def validar_configuracion_critica():
+    """Retorna variables criticas faltantes o con valores de plantilla."""
+    advertencias = []
+
+    for nombre in VARIABLES_CRITICAS:
+        valor = os.getenv(nombre, "")
+        if str(valor or "").strip() in VALORES_PLANTILLA:
+            advertencias.append(nombre)
+
+    return advertencias
+
+
 class Configuracion:
     """Configuracion central de la aplicacion cargada desde variables de entorno."""
 

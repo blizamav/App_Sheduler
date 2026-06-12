@@ -6,9 +6,18 @@
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
 python run.py
 ```
+
+En CMD:
+
+```cmd
+if not exist .env copy .env.example .env
+```
+
+IMPORTANTE:
+No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque puede sobrescribir credenciales locales. Usar siempre comandos seguros que copien solo si `.env` no existe.
 
 ## QA Ubuntu
 
@@ -20,7 +29,7 @@ Pendiente para Fase 11. Debe usar Docker, volumenes persistentes, respaldo de ba
 
 ## Variables por ambiente
 
-Cada ambiente debe tener su propio `.env`; nunca debe versionarse.
+Cada ambiente debe tener su propio `.env`; nunca debe versionarse ni sobrescribirse automaticamente. `.env.example` es solo plantilla.
 
 ## Configuracion SQL Server local
 
