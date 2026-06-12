@@ -24,7 +24,7 @@ Cada ambiente debe tener su propio `.env`; nunca debe versionarse.
 
 ## Ejecucion manual de scripts SQL Server
 
-Los scripts de Fase 3B se encuentran en `database/` y deben ejecutarse manualmente desde SQL Server Management Studio cuando se apruebe crear la base fisicamente.
+Los scripts de Fase 3B se encuentran en `database/` y ya fueron ejecutados correctamente de forma manual en SQL Server local para crear `APP_SCHEDULER_QA`.
 
 Orden:
 
@@ -39,6 +39,7 @@ Orden:
 
 Consideraciones:
 
+* Validacion local realizada: tablas existentes, catalogos cargados, roles/permisos cargados y usuario `blizama` no creado en base de datos.
 * No ejecutar contra produccion sin respaldo y aprobacion.
 * No modificar scripts para incluir claves, usuarios o servidores reales.
 * El usuario inicial de aplicacion sigue validandose desde `.env`; los seeds no crean usuario `blizama`.

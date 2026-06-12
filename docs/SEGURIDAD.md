@@ -16,6 +16,17 @@ Credenciales, servidores, rutas y secret keys deben vivir en `.env`. El archivo 
 
 Pendiente para Fase 7. Los scripts deberan validar extension `.py`, nombre seguro y rutas internas.
 
+## Eliminacion fisica de scripts
+
+En la primera version del sistema no debe existir eliminacion fisica de scripts ni versiones desde la app. Las versiones deben gestionarse por estado:
+
+* `ACTIVA`
+* `DISPONIBLE`
+* `REEMPLAZADA`
+* `INACTIVA`
+
+Toda inactivacion o reemplazo debe registrarse en auditoria y logs de sistema. Cualquier limpieza fisica futura debera ser una funcionalidad posterior, restringida, confirmada y auditable.
+
 ## Validacion de rutas
 
 No se deben quemar rutas absolutas. Toda ruta operativa debe venir desde `.env`.

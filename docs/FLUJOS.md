@@ -88,9 +88,19 @@ Propuesta documental Fase 3A; implementacion pendiente para Fase 7.
 3. Usuario carga nuevo archivo `.py`.
 4. Servicio valida archivo, ruta, nombre seguro y hash.
 5. Servicio registra auditoria del valor anterior.
-6. Version reemplazada cambia a `REEMPLAZADA` o se actualiza segun estrategia aprobada.
+6. Version anterior cambia a `REEMPLAZADA`; no se elimina fisicamente desde la app.
 7. Nueva informacion de version queda registrada en `scripts_versiones`.
 8. Si la version reemplazada era activa, el sistema debe confirmar si la nueva queda activa.
+
+## Flujo para deshabilitar version
+
+1. Usuario selecciona una version disponible.
+2. Sistema muestra confirmacion indicando que no se borrara fisicamente el archivo.
+3. Si confirma, servicio cambia `estado_version` a `INACTIVA`.
+4. Si la version era activa, el sistema debe exigir seleccionar otra version activa antes de completar la operacion.
+5. Se registra evento en `logs_sistema`.
+6. Se registra cambio en `auditoria_cambios` con estado anterior y nuevo.
+7. El archivo fisico permanece disponible para trazabilidad y revision historica.
 
 ## Flujo de auditoria de cambios de version
 

@@ -2,6 +2,17 @@
 
 ## 2026-06-12 - Fase 3B scripts SQL versionados
 
+### Validado Manualmente
+
+* Scripts `001` a `006` ejecutados correctamente en SQL Server local.
+* Seeds `001` y `002` ejecutados correctamente.
+* Base `APP_SCHEDULER_QA` creada.
+* Tablas creadas y verificadas.
+* Catalogos con datos iniciales cargados.
+* Roles, permisos y relaciones iniciales cargados.
+* Confirmado que no se creo el usuario `blizama` en base de datos.
+* Flask aun no se conecta a SQL Server.
+
 ### Revisado
 
 * Revision tecnica previa de scripts SQL antes de ejecucion manual en SSMS.

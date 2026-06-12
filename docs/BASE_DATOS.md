@@ -83,6 +83,7 @@ Reglas principales:
 * Los reemplazos de version quedan en `auditoria_cambios` y `logs_sistema`.
 * Una version `REEMPLAZADA` no cuenta dentro del maximo de 3 versiones disponibles.
 * `scripts.id_version_activa` se mantiene como referencia directa a la version activa.
+* En la primera version del sistema no existe eliminacion fisica de scripts ni versiones desde la app; las versiones se gestionan por `estado_version`.
 
 ## Convenciones propuestas
 
@@ -307,7 +308,10 @@ Observaciones:
 
 * La ruta relativa debe seguir `CATEGORIA/TIPO/CLIENTE/TIPO_TAREA/NOMBRE_SCRIPT/vN/NOMBRE_SCRIPT.py`.
 * `ruta_fisica` se deriva de `RUTA_BASE_SCRIPTS` y no debe quemarse en codigo.
-* Una version reemplazada no debe borrarse sin auditoria; puede cambiar a `REEMPLAZADA` y actualizar ruta/hash segun estrategia aprobada.
+* No se permite eliminacion fisica desde la app en primera version.
+* Para deshabilitar una version se debe usar `estado_version = INACTIVA`.
+* Para reemplazar una version se debe usar `estado_version = REEMPLAZADA` sobre la version anterior y registrar auditoria.
+* Los archivos fisicos deben conservarse para trazabilidad; cualquier politica futura de limpieza debe ser posterior, controlada y auditada.
 
 ### programaciones
 

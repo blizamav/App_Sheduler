@@ -5,30 +5,31 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
-* Base de datos: SQL Server objetivo `APP_SCHEDULER_QA`, scripts SQL versionados creados, aun no ejecutados.
-* Estado actual: Fase 3B revisada tecnicamente, scripts SQL no ejecutados, sin conexion Flask-SQL Server.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server aun no implementada.
+* Estado actual: Fase 3B ejecutada y validada manualmente en SQL Server local, sin conexion Flask-SQL Server.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Fase 3B - Scripts SQL Server versionados.
-* Ultima actualizacion: 2026-06-12 16:28
+* Ultima actualizacion: 2026-06-12 16:46
 
 ## 2. Decisiones tecnicas vigentes
 
 * Backend: Flask con fabrica `crear_app()` y Blueprint principal.
 * Frontend: HTML/CSS/JS sin Streamlit.
-* Base de datos: SQL Server aprobado conceptualmente; scripts versionados creados en `database/`, ejecucion fisica pendiente.
+* Base de datos: SQL Server local creado con scripts versionados; tablas, catalogos, roles y permisos validados manualmente.
 * Autenticacion: Login inicial desde variables `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO`.
 * Scheduler: Pendiente para Fase 8.
 * Logs: Rutas configurables por `.env`, implementacion pendiente.
 * Auditoria: Pendiente para Fase 10.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
+* Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color.
 
 ## 3. Estructura actual del proyecto
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, propuesta documental de modelo SQL Server con versionamiento de scripts, scripts SQL versionados no ejecutados.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local.
 * Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, usuarios, roles, permisos, scheduler, logs, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -42,11 +43,33 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Ejecutar manualmente los scripts SQL en SQL Server Management Studio si se aprueba la prueba local/QA.
+* Pendiente 1: Implementar conexion Flask-SQL Server y repositorios cuando se solicite, sin avanzar a Fase 4.
 * Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 16:46 - Fase 3B / Decision sin eliminacion fisica de scripts
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se documento oficialmente que en la primera version no existe eliminacion fisica de scripts ni versiones desde la app.
+* Por que se hizo: Para asegurar trazabilidad completa y evitar perdida de evidencia de versiones cargadas o reemplazadas.
+* Decisiones tomadas: Las versiones se gestionan por estado: `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`; inactivacion y reemplazo deben auditarse.
+* Pruebas realizadas: Se verifico que `cat_estados_version_script` y `CK_scripts_versiones_estado` ya incluyen `INACTIVA`; no se modifico SQL.
+* Riesgos detectados: Cualquier limpieza fisica futura debe disenarse como funcionalidad separada, restringida y auditable.
+* Proximos pasos: Mantener esta regla al implementar modulo de scripts en fases posteriores.
+
+### 2026-06-12 16:38 - Fase 3B / Ejecucion manual validada en SQL Server local
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/DESPLIEGUE.md`, `log_codex.md`.
+* Que se hizo: Se registro que los scripts SQL de Fase 3B fueron ejecutados correctamente de forma manual en SQL Server local.
+* Por que se hizo: Para dejar trazabilidad de que la base `APP_SCHEDULER_QA` ya existe localmente y que el modelo fue validado por el motor SQL Server.
+* Decisiones tomadas: Mantener pendiente la conexion Flask-SQL Server; no avanzar a CRUD ni Fase 4.
+* Pruebas realizadas: Usuario reporto ejecucion exitosa de `001` a `006` y seeds `001` a `002`; valido existencia de tablas, datos de catalogos, roles/permisos y ausencia del usuario `blizama` en base de datos.
+* Riesgos detectados: La validacion fue local; QA/produccion requeriran ejecucion controlada, respaldo y revision de variables de entorno.
+* Proximos pasos: Preparar conexion Flask-SQL Server y capa de repositorios solo cuando se solicite explicitamente.
 
 ### 2026-06-12 16:28 - Fase 3B / Revision tecnica previa de scripts SQL
 

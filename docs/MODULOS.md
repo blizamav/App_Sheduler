@@ -39,6 +39,8 @@ La aplicacion esta en Fase 3B: scripts SQL versionados creados, no ejecutados. A
 * Gestion de scripts debe permitir cargar version 1, 2 o 3.
 * Gestion de scripts debe impedir una cuarta version directa.
 * Gestion de scripts debe permitir reemplazar una version existente con auditoria.
+* Gestion de scripts debe manejar versiones por estado: `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
+* Gestion de scripts no debe permitir eliminacion fisica desde la app en la primera version.
 * Ejecucion manual debe permitir elegir version disponible.
 * Ejecucion automatica debe usar la version activa.
 * Logs y auditoria deben permitir reconstruir que version se ejecuto.
