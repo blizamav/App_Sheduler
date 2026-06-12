@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 
 bp_principal = Blueprint("principal", __name__)
@@ -57,6 +57,20 @@ def panel():
         "estado_scheduler": "Pendiente de implementar",
     }
     return render_template("panel.html", resumen=resumen)
+
+
+@bp_principal.route("/diagnostico/bd")
+@login_requerido
+def diagnostico_bd():
+    """Muestra diagnostico controlado de conexion a base de datos en LOCAL/QA."""
+    ambiente = current_app.config.get("APP_ENV", "LOCAL").upper()
+    if ambiente not in {"LOCAL", "QA"}:
+        abort(404)
+
+    from app.database.conexion import probar_conexion_bd
+
+    resultado = probar_conexion_bd()
+    return render_template("diagnostico_bd.html", resultado=resultado, ambiente=ambiente)
 
 
 @bp_principal.route("/logout", methods=["POST"])

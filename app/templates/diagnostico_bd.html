@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block titulo %}Diagnostico BD | APP Scheduler{% endblock %}
+{% block encabezado %}Diagnostico de base de datos{% endblock %}
+
+{% block contenido %}
+<section class="bienvenida contenedor">
+    <div>
+        <p class="eyebrow">Ambiente {{ ambiente }}</p>
+        <h2>Conexion SQL Server</h2>
+        <p>Diagnostico temporal para validar conectividad sin mostrar credenciales ni datos sensibles.</p>
+    </div>
+    <span class="badge {% if resultado.estado == 'OK' %}activo{% else %}error{% endif %}">
+        {{ resultado.estado }}
+    </span>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <h3>Resultado</h3>
+            <span class="badge {% if resultado.estado == 'OK' %}activo{% else %}error{% endif %}">
+                {{ resultado.estado }}
+            </span>
+        </div>
+        <p>{{ resultado.mensaje }}</p>
+        <p class="estado-vacio">{{ resultado.detalle }}</p>
+    </article>
+    <article class="bloque">
+        <div class="bloque-header">
+            <h3>Alcance</h3>
+            <span class="badge info">Fase 3D</span>
+        </div>
+        <p class="estado-vacio">Esta vista solo valida conexion. No habilita CRUD, usuarios en base de datos, tareas ni scheduler.</p>
+    </article>
+</section>
+{% endblock %}

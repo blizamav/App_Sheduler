@@ -5,17 +5,17 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server aun no implementada.
-* Estado actual: Fase 3B ejecutada y validada manualmente en SQL Server local, sin conexion Flask-SQL Server.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
+* Estado actual: Fase 3D implementada como conexion inicial y diagnostico, sin CRUD ni usuarios en base de datos.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 3B - Scripts SQL Server versionados.
-* Ultima actualizacion: 2026-06-12 16:46
+* Fase actual: Fase 3D - Conexion Flask con SQL Server desde .env.
+* Ultima actualizacion: 2026-06-12 16:58
 
 ## 2. Decisiones tecnicas vigentes
 
 * Backend: Flask con fabrica `crear_app()` y Blueprint principal.
 * Frontend: HTML/CSS/JS sin Streamlit.
-* Base de datos: SQL Server local creado con scripts versionados; tablas, catalogos, roles y permisos validados manualmente.
+* Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login inicial desde variables `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO`.
 * Scheduler: Pendiente para Fase 8.
 * Logs: Rutas configurables por `.env`, implementacion pendiente.
@@ -29,7 +29,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server y diagnostico local/QA.
 * Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, usuarios, roles, permisos, scheduler, logs, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -43,11 +43,22 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Implementar conexion Flask-SQL Server y repositorios cuando se solicite, sin avanzar a Fase 4.
+* Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
 * Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-12 16:58 - Fase 3D / Conexion Flask SQL Server y diagnostico
+
+* Archivos creados: `app/database/__init__.py`, `app/database/conexion.py`, `app/templates/diagnostico_bd.html`.
+* Archivos modificados: `requirements.txt`, `.env.example`, `app/rutas.py`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se agrego conexion inicial con SQL Server usando `pyodbc`, variables de entorno y ruta `/diagnostico/bd` protegida por sesion y disponible solo en `LOCAL`/`QA`.
+* Por que se hizo: Para validar conectividad Flask-SQL Server antes de implementar repositorios, CRUD, usuarios en base de datos o scheduler.
+* Decisiones tomadas: Login inicial sigue desde `.env`; no se crea usuario `blizama` en base de datos; no se muestran credenciales ni datos sensibles en diagnostico.
+* Pruebas realizadas: `python -m py_compile`; GET `/login` 200; POST `/login` redirige a `/panel`; GET `/panel` 200; GET `/diagnostico/bd` 200 en LOCAL. La prueba real de conexion retorno `OperationalError` amigable sin exponer credenciales en esta sesion.
+* Riesgos detectados: El resultado de conexion depende del driver ODBC, red, instancia SQL Server, cifrado y permisos locales.
+* Proximos pasos: Corregir configuracion local si `/diagnostico/bd` muestra error; luego crear repositorios base solo cuando se solicite explicitamente.
 
 ### 2026-06-12 16:46 - Fase 3B / Decision sin eliminacion fisica de scripts
 

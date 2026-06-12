@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-06-12 - Fase 3D conexion Flask SQL Server
+
+### Agregado
+
+* Dependencia `pyodbc`.
+* Modulo `app/database/conexion.py`.
+* Funcion `probar_conexion_bd()`.
+* Ruta temporal `/diagnostico/bd` disponible solo en `LOCAL` y `QA`.
+* Template de diagnostico de conexion.
+
+### Validado
+
+* La app sigue levantando.
+* Login desde `.env` sigue funcionando.
+* `/panel` sigue funcionando.
+* `/diagnostico/bd` responde sin exponer credenciales.
+
+### Pendiente
+
+* Resolver cualquier error local de driver/red/cifrado que aparezca en `/diagnostico/bd`.
+* No hay CRUD, usuarios en base de datos ni scheduler.
+
 ## 2026-06-12 - Fase 3B scripts SQL versionados
 
 ### Validado Manualmente

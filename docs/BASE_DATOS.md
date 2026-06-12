@@ -11,6 +11,22 @@ Fase 3B - Scripts SQL Server versionados creados. No se ha creado conexion real 
 * Variable de entorno: `DB_DATABASE`.
 * Servidor, usuario, clave y driver deben venir desde `.env`.
 
+## Conexion desde Flask
+
+Fase 3D agrega conexion inicial desde Flask mediante `pyodbc`, sin CRUD ni repositorios funcionales aun.
+
+Variables requeridas en `.env`:
+
+* `DB_SERVER`
+* `DB_DATABASE`
+* `DB_USER`
+* `DB_PASSWORD`
+* `DB_DRIVER`
+
+El modulo `app/database/conexion.py` construye la cadena ODBC y expone `probar_conexion_bd()`, que ejecuta `SELECT 1`, cierra la conexion y retorna estado `OK` o `ERROR` sin exponer credenciales.
+
+La ruta `/diagnostico/bd` solo esta disponible en `APP_ENV=LOCAL` o `APP_ENV=QA`.
+
 ## Scripts SQL versionados
 
 Estructura creada:
