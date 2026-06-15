@@ -65,6 +65,8 @@ Implementado en Fase 7:
 * Fase 7.1: mensajes contextuales diferenciando primer script, nueva version, maximo de 3 versiones y gestion de `.env`.
 * Fase 7.2: bloque superior muestra el archivo activo real desde la version activa.
 * Fase 7.3: el nombre logico se mantiene internamente, pero no se muestra en la vista principal para evitar confusion operativa.
+* Fase 7.4: se diferencia `Eliminar script completo` de `Eliminar version`; la accion superior afecta todo el script logico y la accion de tabla afecta solo una version.
+* Fase 7.4: la eliminacion de version activa, unica version o version con historial se bloquea con mensaje controlado y log de sistema.
 
 No implementado en Fase 7:
 

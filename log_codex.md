@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 7.3 implementada con bloque de script activo simplificado.
+* Estado actual: Fase 7.4 implementada con eliminacion diferenciada de script completo y version.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 7.3 - Simplificar bloque de script activo y ocultar nombre logico.
+* Fase actual: Fase 7.4 - Diferenciar eliminacion de script completo y eliminacion de version.
 * Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2 y simplificacion visual Fase 7.3.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3 y eliminacion diferenciada Fase 7.4.
 * Modulos pendientes: Scheduler, ejecucion real, consola en vivo, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -49,6 +49,19 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 7.4 / Diferenciar eliminacion de script completo y version
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/scripts/listado.html`, `app/servicios/servicio_scripts.py`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Problema detectado: El boton `Eliminar script` era ambiguo y podia interpretarse como eliminacion del archivo activo, aunque afectaba el script logico completo.
+* Decision UX: Renombrar la accion superior a `Eliminar script completo` y usar `Eliminar version` en cada fila de la tabla.
+* Correccion aplicada: Los modales explican si la accion afecta todas las versiones o solo una version especifica.
+* Reglas aplicadas: La eliminacion de version activa se bloquea; la eliminacion de unica version se bloquea; la version con historial se bloquea; una version eliminada no elimina otras versiones.
+* Logs: Se agregaron registros diferenciados para script completo eliminado, eliminacion completa bloqueada por historial, version eliminada y bloqueos por activa, unica o historial.
+* Pruebas realizadas: `python -m compileall app`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`; verificacion de textos `Eliminar script completo`, `Activar version`, `Desactivar version` y `Eliminar version`; prueba simulada de `eliminar_version_script` confirmando que v2 no activa elimina solo esa version, version activa se bloquea y unica version se bloquea.
+* Riesgos detectados: Validar en navegador con datos reales v1/v2/v3 que los botones largos no rompan la tabla en resoluciones pequenas.
+* Proximos pasos: Probar eliminacion de v2 no activa, intento de eliminar activa y unica version; no avanzar a Fase 8 sin aprobacion.
 
 ### 2026-06-15 00:00 - Fase 7.3 / Simplificar bloque de script activo
 

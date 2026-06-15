@@ -151,6 +151,7 @@ def desactivar_version_script(id_version, usuario):
     if not version:
         return False, "Version no encontrada."
     if version.get("es_activa"):
+        registrar_log_sistema("SCRIPT_VERSION_DESACTIVACION_BLOQUEADA_ACTIVA", "SCRIPTS", f"Intento bloqueado de desactivar version activa v{version['numero_version']}.", usuario=usuario, nivel="WARNING")
         return False, "No puedes desactivar la version activa. Activa otra version primero."
     desactivar_version(id_version)
     registrar_log_sistema("SCRIPT_VERSION_DESACTIVADA", "SCRIPTS", f"Version v{version['numero_version']} desactivada.", usuario=usuario)
@@ -161,9 +162,15 @@ def eliminar_version_script(id_version, usuario):
     version = obtener_version(id_version)
     if not version:
         return False, "Version no encontrada."
+    versiones = listar_versiones(version["id_script"])
+    if len(versiones) <= 1:
+        registrar_log_sistema("SCRIPT_VERSION_ELIMINACION_BLOQUEADA_UNICA", "SCRIPTS", f"Intento bloqueado de eliminar unica version v{version['numero_version']}.", usuario=usuario, nivel="WARNING")
+        return False, "Esta es la unica version del script. Para quitarla, usa la opcion Eliminar script completo."
     if version.get("es_activa"):
-        return False, "No puedes eliminar la version activa. Activa otra version primero."
+        registrar_log_sistema("SCRIPT_VERSION_ELIMINACION_BLOQUEADA_ACTIVA", "SCRIPTS", f"Intento bloqueado de eliminar version activa v{version['numero_version']}.", usuario=usuario, nivel="WARNING")
+        return False, "No puedes eliminar directamente la version activa. Activa otra version antes de eliminar esta."
     if contar_uso_version(id_version) > 0:
+        registrar_log_sistema("SCRIPT_VERSION_ELIMINACION_BLOQUEADA_HISTORIAL", "SCRIPTS", f"Intento bloqueado de eliminar version v{version['numero_version']} con historial asociado.", usuario=usuario, nivel="WARNING")
         return False, "No se puede eliminar esta version porque ya tiene historial asociado."
     eliminar_archivo_seguro(version.get("ruta_relativa"))
     eliminar_archivo_seguro(version.get("ruta_env_relativa"))
@@ -210,7 +217,7 @@ def desactivar_script_logico(id_script, usuario):
     if not script:
         return False, "Script no encontrado.", None
     desactivar_script(id_script, usuario)
-    registrar_log_sistema("SCRIPT_DESACTIVADO", "SCRIPTS", f"Script desactivado: {script['nombre_script']}.", usuario=usuario)
+    registrar_log_sistema("SCRIPT_COMPLETO_DESACTIVADO", "SCRIPTS", f"Script completo desactivado: {script['nombre_script']}.", usuario=usuario)
     return True, "Script desactivado.", script["id_tarea"]
 
 
@@ -219,14 +226,15 @@ def eliminar_script_logico(id_script, usuario):
     if not script:
         return False, "Script no encontrado.", None
     if contar_uso_script(id_script) > 0:
-        return False, "No se puede eliminar este script porque ya tiene historial asociado. Puedes desactivarlo.", script["id_tarea"]
+        registrar_log_sistema("SCRIPT_COMPLETO_ELIMINACION_BLOQUEADA_HISTORIAL", "SCRIPTS", f"Intento bloqueado de eliminar script completo con historial: {script['nombre_script']}.", usuario=usuario, nivel="WARNING")
+        return False, "No se puede eliminar fisicamente este script porque ya tiene historial asociado. Puedes desactivarlo para que no vuelva a usarse.", script["id_tarea"]
     versiones = listar_versiones(id_script)
     for version in versiones:
         eliminar_archivo_seguro(version.get("ruta_relativa"))
         eliminar_archivo_seguro(version.get("ruta_env_relativa"))
     eliminar_script(id_script)
-    registrar_log_sistema("SCRIPT_ELIMINADO", "SCRIPTS", f"Script eliminado fisicamente: {script['nombre_script']}.", usuario=usuario)
-    return True, "Script eliminado definitivamente.", script["id_tarea"]
+    registrar_log_sistema("SCRIPT_COMPLETO_ELIMINADO", "SCRIPTS", f"Script completo eliminado fisicamente: {script['nombre_script']}.", usuario=usuario)
+    return True, "Script completo eliminado definitivamente.", script["id_tarea"]
 
 
 def _siguiente_version(versiones):

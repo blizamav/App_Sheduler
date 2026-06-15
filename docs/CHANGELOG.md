@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-06-15 - Fase 7.4 eliminacion clara de scripts y versiones
+
+### Corregido
+
+* El boton superior ahora dice `Eliminar script completo` para aclarar que afecta el script logico y todas sus versiones.
+* El modal de script completo advierte que la accion afecta todas las versiones cargadas.
+* En la tabla, los botones ahora dicen `Activar version`, `Desactivar version` y `Eliminar version`.
+* El modal de `Eliminar version` aclara que solo afecta la version seleccionada y no las demas.
+* La eliminacion de version activa se bloquea y pide activar otra version antes.
+* La eliminacion de la unica version se bloquea y sugiere usar `Eliminar script completo`.
+* Los bloqueos y eliminaciones quedan diferenciados en `logs_sistema`.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 8.
+
 ## 2026-06-15 - Fase 7.3 simplificacion de script activo
 
 ### Corregido

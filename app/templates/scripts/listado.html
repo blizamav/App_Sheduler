@@ -50,7 +50,7 @@
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script logico quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>
             </form>
             <form method="post" action="{{ url_for('scripts.eliminar_script', id_script=script.id_script) }}">
-                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script" data-confirm-message="Se eliminara el script logico solo si no tiene historial operativo. Deseas continuar?" data-confirm-ok="Si, eliminar" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script</button>
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script completo" data-confirm-message="Estas a punto de eliminar el script asociado a esta tarea. Esta accion afectara todas las versiones cargadas del script. Si alguna version tiene historial de ejecucion, no se eliminara fisicamente y solo podra desactivarse. Deseas continuar?" data-confirm-ok="Si, eliminar script completo" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script completo</button>
             </form>
         </div>
         {% endif %}
@@ -152,18 +152,18 @@
                             {% if not version.es_activa %}
                             <form method="post" action="{{ url_for('scripts.activar_version', id_version=version.id_version) }}">
                                 <input type="hidden" name="volver" value="{{ request.path }}">
-                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Cambiar version activa" data-confirm-message="Estas a punto de cambiar la version activa del script. Las proximas ejecuciones usaran la version v{{ version.numero_version }}. Deseas continuar?" data-confirm-ok="Si, cambiar version" data-confirm-cancel="Cancelar" data-confirm-type="warning">Activar</button>
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Cambiar version activa" data-confirm-message="Estas a punto de cambiar la version activa del script. Las proximas ejecuciones usaran la version v{{ version.numero_version }}. Deseas continuar?" data-confirm-ok="Si, cambiar version" data-confirm-cancel="Cancelar" data-confirm-type="warning">Activar version</button>
                             </form>
                             {% endif %}
                             <button class="btn secundario compacto" type="button" data-panel-env-toggle="env-{{ version.id_version }}">.env</button>
                             <button class="btn secundario compacto" type="button" data-panel-env-toggle="reemplazar-{{ version.id_version }}">Reemplazar</button>
                             <form method="post" action="{{ url_for('scripts.desactivar_version', id_version=version.id_version) }}">
                                 <input type="hidden" name="volver" value="{{ request.path }}">
-                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar version" data-confirm-message="La version quedara inactiva y no podra activarse hasta reversion manual. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning" {% if version.es_activa %}disabled{% endif %}>Desactivar</button>
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar version" data-confirm-message="La version quedara inactiva y no podra activarse hasta reversion manual. Esta accion solo afecta esta version. Deseas continuar?" data-confirm-ok="Si, desactivar version" data-confirm-cancel="Cancelar" data-confirm-type="warning" {% if version.es_activa %}disabled{% endif %}>Desactivar version</button>
                             </form>
                             <form method="post" action="{{ url_for('scripts.eliminar_version', id_version=version.id_version) }}">
                                 <input type="hidden" name="volver" value="{{ request.path }}">
-                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar version" data-confirm-message="Estas a punto de eliminar esta version. Solo se permite si nunca fue usada. Deseas continuar?" data-confirm-ok="Si, eliminar version" data-confirm-cancel="Cancelar" data-confirm-type="danger" {% if version.es_activa %}disabled{% endif %}>Eliminar</button>
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar version" data-confirm-message="Estas a punto de eliminar la version v{{ version.numero_version }} del script. Esta accion solo afectara esta version. Las demas versiones no seran eliminadas. Deseas continuar?" data-confirm-ok="Si, eliminar version" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar version</button>
                             </form>
                         </div>
                     </td>

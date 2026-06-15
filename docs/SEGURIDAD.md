@@ -140,6 +140,10 @@ Reglas:
 * No se muestra contenido de `.env`.
 * No se guardan secretos en base de datos.
 * La eliminacion fisica de versiones se bloquea si la version esta activa o tiene historial.
+* La eliminacion de una version unica se bloquea para evitar dejar el script logico sin versiones.
+* El boton `Eliminar script completo` es la unica accion visual que puede afectar todo el conjunto de versiones.
+* El boton `Eliminar version` solo puede afectar la version de su fila; no elimina otras versiones ni el script completo.
+* Todo bloqueo por version activa, version unica o historial se registra en `logs_sistema` con nivel `WARNING`.
 
 ## Variables sensibles por script
 
@@ -168,16 +172,28 @@ Solo usuarios autorizados podran detener ejecuciones. Toda detencion debe:
 * Actualizar `ejecuciones`.
 * No exponer datos sensibles del proceso ni variables de entorno.
 
-## Eliminacion fisica de scripts
+## Eliminacion controlada de scripts
 
-En la primera version del sistema no debe existir eliminacion fisica de scripts ni versiones desde la app. Las versiones deben gestionarse por estado:
+La eliminacion fisica desde la app solo se permite de forma controlada cuando no existe historial operativo asociado.
+
+Reglas:
+
+* `Eliminar script completo` afecta el script logico y todas sus versiones, solo si no tienen historial.
+* `Eliminar version` afecta solo una version especifica y no toca las demas.
+* Si una version esta activa, se debe activar otra antes de eliminarla.
+* Si una version es la unica del script, se debe usar `Eliminar script completo`.
+* Si existe historial en ejecuciones o logs, se bloquea la eliminacion fisica y se recomienda desactivar.
+* Al eliminar una version sin historial se eliminan tambien su archivo `.py` y `.env` asociado, si existen.
+* No se muestra ni registra contenido de `.env`.
+
+Los estados vigentes para versiones siguen siendo:
 
 * `ACTIVA`
 * `DISPONIBLE`
 * `REEMPLAZADA`
 * `INACTIVA`
 
-Toda inactivacion o reemplazo debe registrarse en auditoria y logs de sistema. Cualquier limpieza fisica futura debera ser una funcionalidad posterior, restringida, confirmada y auditable.
+Toda eliminacion, inactivacion, reemplazo o bloqueo debe registrarse en logs de sistema.
 
 ## Validacion de rutas
 

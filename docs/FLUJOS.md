@@ -35,6 +35,19 @@
 5. `scripts.id_version_activa` apunta a esa version.
 6. Futuras ejecuciones usaran esa version, cuando exista Fase 8.
 
+## Flujo de eliminacion de script completo y version
+
+1. El boton superior `Eliminar script completo` representa la eliminacion del script logico asociado a la tarea.
+2. Esa accion afecta a todo el conjunto de versiones solo si el usuario la confirma explicitamente.
+3. Si el script completo no tiene historial, se eliminan registros y archivos asociados de todas sus versiones.
+4. Si el script completo tiene historial, se bloquea la eliminacion fisica y se sugiere desactivarlo.
+5. En la tabla de versiones, `Eliminar version` intenta eliminar solo la version de esa fila.
+6. Eliminar una version nunca elimina el script completo ni las demas versiones.
+7. Si la version es activa, se bloquea la eliminacion y se pide activar otra version primero.
+8. Si es la unica version del script, se bloquea la eliminacion individual y se indica usar `Eliminar script completo`.
+9. Si la version tiene historial, se bloquea la eliminacion fisica y se muestra mensaje amigable.
+10. Todo bloqueo o eliminacion confirmada se registra en `logs_sistema` sin exponer contenido de `.env`.
+
 ## Flujo de env por version
 
 1. Usuario abre panel `.env` de una version.
