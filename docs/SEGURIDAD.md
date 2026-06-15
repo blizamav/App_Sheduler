@@ -116,9 +116,30 @@ Reglas obligatorias:
 * Usar comandos seguros, por ejemplo PowerShell: `if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }`.
 * Si faltan variables criticas, la app debe mostrar advertencia controlada sin exponer valores.
 
-## Validacion de archivos
+## Scripts y versiones
 
-Pendiente para Fase 7. Los scripts deberan validar extension `.py`, nombre seguro y rutas internas.
+Fase 7 agrega permisos especificos:
+
+* `SCRIPTS_VER`
+* `SCRIPTS_CREAR`
+* `SCRIPTS_EDITAR`
+* `SCRIPTS_VERSIONAR`
+* `SCRIPTS_ACTIVAR_VERSION`
+* `SCRIPTS_DESACTIVAR`
+* `SCRIPTS_ELIMINAR`
+* `SCRIPTS_ENV_GESTIONAR`
+
+Reglas:
+
+* Solo se aceptan archivos `.py` para scripts.
+* Solo se aceptan archivos `.env` para variables por version.
+* Se valida tamano maximo con `MAX_SCRIPT_SIZE_MB` y `MAX_ENV_SIZE_KB`.
+* Los archivos se guardan solo bajo `scripts/` y `env_scripts/`.
+* No se permiten rutas absolutas ni path traversal.
+* No se ejecutan scripts en Fase 7.
+* No se muestra contenido de `.env`.
+* No se guardan secretos en base de datos.
+* La eliminacion fisica de versiones se bloquea si la version esta activa o tiene historial.
 
 ## Variables sensibles por script
 

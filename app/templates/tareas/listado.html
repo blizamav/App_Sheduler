@@ -123,6 +123,9 @@
                     <td>
                         <div class="acciones-tabla">
                             <a class="btn secundario compacto" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea) }}">Editar</a>
+                            {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCRIPTS_VER" in session.get("permisos", []) %}
+                            <a class="btn secundario compacto" href="{{ url_for('scripts.por_tarea', id_tarea=tarea.id_tarea) }}">Scripts</a>
+                            {% endif %}
                             <form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if tarea.activo else 1 }}">
                                 <button

@@ -100,6 +100,15 @@ Pendiente para Fase 11.
 
 `env_scripts/` debe tratarse como volumen privado por ambiente. No debe versionarse, copiarse a repositorios ni exponerse por servidor web.
 
+Variables de tamano para Fase 7:
+
+```env
+MAX_SCRIPT_SIZE_MB=5
+MAX_ENV_SIZE_KB=100
+```
+
+`scripts/` contiene archivos cargados por usuarios y tambien debe tratarse como volumen de datos, no como codigo fuente del sistema.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordEdicion = document.querySelector("[data-password-edicion='1']");
     const alertaPassword = document.querySelector("[data-alerta-password]");
     const formulariosProgramacion = document.querySelectorAll("[data-programacion-form]");
+    const togglesPanelEnv = document.querySelectorAll("[data-panel-env-toggle]");
     let formularioPendiente = null;
     let envioConfirmado = false;
 
@@ -40,6 +41,13 @@ document.addEventListener("DOMContentLoaded", () => {
     botonesLogs.forEach((boton) => {
         boton.addEventListener("click", () => {
             cuerpo.classList.toggle("panel-logs-abierto");
+        });
+    });
+
+    togglesPanelEnv.forEach((boton) => {
+        boton.addEventListener("click", () => {
+            const panel = document.getElementById(boton.dataset.panelEnvToggle);
+            panel?.classList.toggle("oculto");
         });
     });
 

@@ -40,7 +40,7 @@
                 {% else %}
                 <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
                 {% endif %}
-                <a class="nav-link deshabilitado" href="#"><span>07</span>Scripts</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>07</span>Scripts</a>
                 <a class="nav-link deshabilitado" href="#"><span>08</span>Logs</a>
                 <a class="nav-link deshabilitado" href="#"><span>09</span>Auditoria</a>
             </nav>

@@ -61,6 +61,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 10. `database/seeds/003_permisos_mantenedores.sql`
 11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
 12. `database/seeds/004_permisos_tareas.sql`
+13. `database/seeds/005_permisos_scripts.sql`
 
 Resumen por script:
 
@@ -76,6 +77,24 @@ Resumen por script:
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
 * `004_permisos_tareas.sql`: inserta permisos incrementales para tareas y los asigna a roles base.
+* `005_permisos_scripts.sql`: inserta permisos incrementales para gestion de scripts, versiones y env.
+
+## Fase 7 - Scripts y versiones
+
+No se crea migracion nueva porque el modelo vigente ya contiene:
+
+* `scripts.id_tarea`
+* `scripts.id_version_activa`
+* `scripts_versiones.numero_version`
+* `scripts_versiones.ruta_fisica`
+* `scripts_versiones.ruta_relativa`
+* `scripts_versiones.hash_archivo`
+* `scripts_versiones.estado_version`
+* `scripts_versiones.requiere_env`
+* `scripts_versiones.ruta_env_fisica`
+* `scripts_versiones.ruta_env_relativa`
+
+Se agrega solo seed incremental `005_permisos_scripts.sql`, que debe ejecutarse manualmente para usuarios de base de datos.
 
 Restricciones implementadas en scripts:
 

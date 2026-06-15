@@ -63,4 +63,6 @@ class Configuracion:
     RUTA_BASE_ENV_SCRIPTS = os.getenv("RUTA_BASE_ENV_SCRIPTS", "env_scripts")
     RUTA_BASE_LOGS_TAREAS = os.getenv("RUTA_BASE_LOGS_TAREAS", "logs_tareas")
     RUTA_BASE_LOGS_SISTEMA = os.getenv("RUTA_BASE_LOGS_SISTEMA", "logs_sistema")
+    MAX_SCRIPT_SIZE_MB = int(os.getenv("MAX_SCRIPT_SIZE_MB", "5"))
+    MAX_ENV_SIZE_KB = int(os.getenv("MAX_ENV_SIZE_KB", "100"))
     ZONA_HORARIA = os.getenv("ZONA_HORARIA", "America/Santiago")

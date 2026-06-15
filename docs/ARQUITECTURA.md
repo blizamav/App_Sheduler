@@ -29,6 +29,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/rutas_usuarios.py`
 * `app/rutas_mantenedores.py`
 * `app/rutas_tareas.py`
+* `app/rutas_scripts.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -59,6 +60,15 @@ Fase 6 agrega repositorio y servicio de tareas:
 * `app/rutas_tareas.py`: endpoints protegidos por permisos para listado, formulario, estado y eliminacion.
 
 La programacion de Fase 6 es declarativa. No existe proceso scheduler ni ejecucion real de scripts en esta fase.
+
+Fase 7 agrega capa de scripts:
+
+* `app/rutas_scripts.py`: endpoints de scripts, versiones y env.
+* `app/repositorios/repositorio_scripts.py`: persistencia de scripts y versiones.
+* `app/servicios/servicio_scripts.py`: reglas de negocio.
+* `app/servicios/servicio_archivos.py`: validacion y guardado seguro de archivos.
+
+Los archivos cargados viven fuera del codigo fuente operativo bajo `scripts/` y `env_scripts/`, ambos excluidos de Git.
 
 Para versionamiento controlado, `scripts` representa el script logico de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registraran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuaran asociados a `id_ejecucion`.
 

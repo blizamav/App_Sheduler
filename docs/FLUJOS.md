@@ -1,5 +1,49 @@
 # Flujos
 
+## Flujo de gestion de scripts por tarea
+
+1. Usuario autorizado abre `/tareas`.
+2. Selecciona `Scripts` en una tarea.
+3. El sistema muestra datos de la tarea, script asociado y tabla de versiones.
+4. Si no existe script logico, el boton dice `Asociar script` y el modal informa que se creara v1 activa.
+5. Si ya existe v1 o v2, el modal informa que se creara v2 o v3.
+6. Si ya existen v1, v2 y v3, no se ofrece crear v4; se indica reemplazar una version existente.
+7. Usuario carga archivo `.py`.
+8. El backend valida extension, tamano, nombre y ruta segura.
+9. Si no existe script logico, lo crea y registra v1 activa.
+10. Si ya existe, crea la siguiente version disponible hasta v3.
+11. Si ya existen v1, v2 y v3, bloquea la carga directa y solicita reemplazar una version.
+12. El archivo queda guardado bajo `scripts/CATEGORIA/TIPO/CLIENTE/TAREA/vX/`.
+13. Solo se guardan rutas y hash en base de datos; no se ejecuta el archivo.
+
+## Flujo de version activa
+
+1. Usuario selecciona activar una version disponible.
+2. Se muestra modal corporativo.
+3. Al confirmar, todas las versiones del script dejan de ser activas.
+4. La version seleccionada queda `ACTIVA`.
+5. `scripts.id_version_activa` apunta a esa version.
+6. Futuras ejecuciones usaran esa version, cuando exista Fase 8.
+
+## Flujo de env por version
+
+1. Usuario abre panel `.env` de una version.
+2. Marca si la version requiere `.env`.
+3. Puede subir archivo `.env`.
+4. Si no existe `.env`, el modal dice `Asociar archivo .env`.
+5. Si ya existe `.env`, el modal dice `Reemplazar archivo .env`.
+6. El backend valida tamano, nombre y ruta segura.
+7. El archivo queda guardado bajo `env_scripts/CATEGORIA/TIPO/CLIENTE/TAREA/vX/.env`.
+8. La base guarda solo rutas, nunca contenido.
+9. Si una version requiere `.env` y no lo tiene, se muestra `Pendiente .env`.
+
+## Estandar futuro para scripts
+
+1. El script cargado debe leer variables usando `os.getenv()`.
+2. No debe tener credenciales quemadas.
+3. No debe ejecutar `load_dotenv()` con ruta fija.
+4. En Fase 8 la aplicacion cargara el `.env` correspondiente a la version que se ejecute.
+
 ## Flujo de login
 
 1. Usuario abre `/login`.

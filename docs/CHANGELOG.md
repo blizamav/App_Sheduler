@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-06-15 - Fase 7.1 mensajes contextuales de scripts
+
+### Corregido
+
+* Cuando una tarea no tiene script, el formulario ahora indica `Asociar script` y el modal explica que se creara v1 activa.
+* Cuando ya existe v1 o v2, el modal indica que se creara v2 o v3 segun corresponda.
+* Cuando ya existen tres versiones, la pantalla indica que se debe reemplazar una version existente y no sugiere crear v4.
+* Los modales de reemplazo de version, cambio de version activa y gestion de `.env` usan textos contextuales.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 8.
+
+## 2026-06-15 - Fase 7 gestion de scripts versiones y env
+
+### Agregado
+
+* Modulo de scripts por tarea en `/tareas/<id_tarea>/scripts`.
+* Carga segura de archivos `.py` dentro de `scripts/`.
+* Versionamiento v1, v2 y v3 por script logico.
+* Bloqueo de cuarta version directa; se debe reemplazar una existente.
+* Cambio de version activa con modal corporativo.
+* Reemplazo, desactivacion y eliminacion controlada de versiones.
+* Gestion de `.env` por version dentro de `env_scripts/`, sin mostrar contenido.
+* Seed incremental `database/seeds/005_permisos_scripts.sql`.
+
+### Seguridad
+
+* Validacion de extension, tamano y rutas internas.
+* No se ejecutan scripts cargados.
+* No se lee ni muestra contenido de `.env`.
+* No se guardan secretos en base de datos; solo rutas.
+
+### No implementado
+
+* No se implemento scheduler.
+* No se implemento ejecucion real.
+* No se implemento consola en vivo.
+* No se avanzo a Fase 8.
+
 ## 2026-06-15 - Fase 6.2 ajuste visual de aviso sin cambios
 
 ### Cambiado

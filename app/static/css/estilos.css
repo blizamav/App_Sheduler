@@ -670,6 +670,14 @@ tr:last-child td {
     border-bottom: 0;
 }
 
+.fila-panel td {
+    background: var(--color-superficie-suave);
+}
+
+.fila-panel .formulario-admin {
+    margin-bottom: 12px;
+}
+
 .estado-lista {
     display: grid;
     gap: 13px;

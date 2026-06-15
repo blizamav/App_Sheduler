@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 6:
+El proyecto avanzo hasta Fase 7:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -20,6 +20,7 @@ El proyecto avanzo hasta Fase 6:
 * Fase 5: mantenedores de clientes, categorias y tipos.
 * Fase 5.1: eliminacion controlada en mantenedores.
 * Fase 6: tareas con programacion base, sin ejecucion real ni scheduler.
+* Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version, sin ejecucion real.
 
 ## Stack actual
 
@@ -51,6 +52,9 @@ El proyecto avanzo hasta Fase 6:
 * Eliminacion controlada en mantenedores solo si no existen dependencias.
 * Modulo de tareas en `/tareas`.
 * Programacion base declarativa: manual, diaria, semanal, mensual y fecha especifica.
+* Gestion de scripts por tarea.
+* Versionamiento de scripts hasta v3.
+* Asociacion de `.env` por version sin mostrar contenido.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -59,8 +63,6 @@ El proyecto avanzo hasta Fase 6:
 
 ## Funcionalidades pendientes
 
-* Carga y versionamiento real de scripts.
-* Carga funcional de `.env` por script.
 * Scheduler.
 * Ejecuciones manuales y automaticas.
 * Detencion real de procesos en ejecucion.
@@ -124,6 +126,8 @@ RUTA_BASE_SCRIPTS=scripts
 RUTA_BASE_ENV_SCRIPTS=env_scripts
 RUTA_BASE_LOGS_TAREAS=logs_tareas
 RUTA_BASE_LOGS_SISTEMA=logs_sistema
+MAX_SCRIPT_SIZE_MB=5
+MAX_ENV_SIZE_KB=100
 ```
 
 ## Base de datos
@@ -149,6 +153,7 @@ Orden documentado:
 10. `database/seeds/003_permisos_mantenedores.sql`
 11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
 12. `database/seeds/004_permisos_tareas.sql`
+13. `database/seeds/005_permisos_scripts.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 
@@ -168,6 +173,14 @@ database/seeds/004_permisos_tareas.sql
 ```
 
 Ejecutalos manualmente en SSMS antes de usar persistencia completa del modulo `/tareas`.
+
+Fase 7 no requiere migracion nueva si la migracion 007 ya fue aplicada. Solo agrega permisos:
+
+```text
+database/seeds/005_permisos_scripts.sql
+```
+
+Ejecutalo manualmente en SSMS para usuarios de base de datos. El administrador desde `.env` puede acceder sin seed.
 
 ## Documentacion
 

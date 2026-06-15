@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block titulo %}Scripts - {{ tarea.nombre_tarea }}{% endblock %}
+{% block encabezado %}Scripts de tarea{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 7</p>
+        <h2>{{ tarea.nombre_tarea }}</h2>
+        <p>{{ tarea.nombre_categoria }} / {{ tarea.nombre_tipo }} / {{ tarea.nombre_cliente }} - {{ tarea.resumen_programacion }}</p>
+    </div>
+    <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver a tareas</a>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Script asociado</p>
+                <h3>{{ script.nombre_script if script else "Sin script cargado" }}</h3>
+            </div>
+            {% if script and script.activo %}
+            <span class="badge activo">Activo</span>
+            {% else %}
+            <span class="badge inactivo">Pendiente</span>
+            {% endif %}
+        </div>
+        <p class="estado-vacio">En esta fase los scripts solo se cargan y versionan. No se ejecutan.</p>
+        {% if script %}
+        <div class="badges-linea">
+            <span class="badge info">Version activa: {{ "v" ~ (versiones|selectattr("es_activa")|map(attribute="numero_version")|first) if versiones|selectattr("es_activa")|list else "Sin activa" }}</span>
+            <span class="badge advertencia">Maximo 3 versiones</span>
+        </div>
+        <div class="acciones-formulario">
+            <form method="post" action="{{ url_for('scripts.desactivar_script', id_script=script.id_script) }}">
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script logico quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>
+            </form>
+            <form method="post" action="{{ url_for('scripts.eliminar_script', id_script=script.id_script) }}">
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script" data-confirm-message="Se eliminara el script logico solo si no tiene historial operativo. Deseas continuar?" data-confirm-ok="Si, eliminar" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script</button>
+            </form>
+        </div>
+        {% endif %}
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">{{ "Primer script" if not script else "Nueva version" if not maximo_versiones else "Maximo alcanzado" }}</p>
+                <h3>
+                    {% if not script %}
+                    Asociar script
+                    {% elif maximo_versiones %}
+                    Reemplazar version existente
+                    {% else %}
+                    Subir v{{ proxima_version }}
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+        {% if maximo_versiones %}
+        <div class="alerta advertencia alerta-inline">
+            Este script ya tiene el maximo de 3 versiones permitidas. Para continuar debes reemplazar una version existente. No se creara una v4.
+        </div>
+        <p class="estado-vacio">Usa el boton Reemplazar en la version que corresponda.</p>
+        {% else %}
+        <form
+            method="post"
+            enctype="multipart/form-data"
+            action="{{ url_for('scripts.nueva_version', id_tarea=tarea.id_tarea) }}"
+            class="formulario-admin requiere-confirmacion-form"
+            data-confirm-title="{{ 'Asociar script a la tarea' if not script else 'Subir nueva version' }}"
+            data-confirm-message="{{ 'Estas a punto de asociar el primer script a esta tarea. Se creara la version v1 y quedara como version activa. No se ejecutara en esta fase. Deseas continuar?' if not script else 'Estas a punto de subir una nueva version del script. Se creara la version v' ~ proxima_version ~ '. No se ejecutara en esta fase. Deseas continuar?' }}"
+            data-confirm-ok="{{ 'Si, asociar script' if not script else 'Si, subir version' }}"
+            data-confirm-cancel="Cancelar"
+            data-confirm-type="info"
+        >
+            <div class="campo">
+                <label for="archivo_script">Archivo Python</label>
+                <input id="archivo_script" name="archivo_script" type="file" accept=".py" required>
+            </div>
+            <label class="checkline">
+                <input name="requiere_env" type="checkbox" value="1">
+                Esta version requiere .env
+            </label>
+            <div class="campo">
+                <label for="observacion">Observacion</label>
+                <textarea id="observacion" name="observacion" rows="2"></textarea>
+            </div>
+            <button class="btn primario" type="submit">{{ "Asociar script" if not script else "Subir version v" ~ proxima_version }}</button>
+        </form>
+        {% endif %}
+    </article>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Versiones</p>
+            <h3>Archivos cargados</h3>
+        </div>
+        <span class="badge info">{{ versiones|length }} de 3 versiones</span>
+    </div>
+
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Archivo</th>
+                    <th>Estado</th>
+                    <th>.env</th>
+                    <th>Ruta relativa</th>
+                    <th>Fecha carga</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for version in versiones %}
+                <tr>
+                    <td><strong>v{{ version.numero_version }}</strong></td>
+                    <td>{{ version.nombre_archivo }}</td>
+                    <td>
+                        <span class="badge {{ 'activo' if version.es_activa else 'info' if version.estado_version == 'DISPONIBLE' else 'inactivo' }}">{{ version.estado_version }}</span>
+                    </td>
+                    <td>
+                        {% if version.estado_env == "Asociado" %}
+                        <span class="badge activo">Asociado</span>
+                        {% elif version.estado_env == "Pendiente .env" %}
+                        <span class="badge advertencia">Pendiente .env</span>
+                        {% else %}
+                        <span class="badge inactivo">No requiere</span>
+                        {% endif %}
+                    </td>
+                    <td><small class="texto-tabla">{{ version.ruta_relativa }}</small></td>
+                    <td>{{ version.fecha_carga }}</td>
+                    <td>
+                        <div class="acciones-tabla">
+                            {% if not version.es_activa %}
+                            <form method="post" action="{{ url_for('scripts.activar_version', id_version=version.id_version) }}">
+                                <input type="hidden" name="volver" value="{{ request.path }}">
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Cambiar version activa" data-confirm-message="Estas a punto de cambiar la version activa del script. Las proximas ejecuciones usaran la version v{{ version.numero_version }}. Deseas continuar?" data-confirm-ok="Si, cambiar version" data-confirm-cancel="Cancelar" data-confirm-type="warning">Activar</button>
+                            </form>
+                            {% endif %}
+                            <button class="btn secundario compacto" type="button" data-panel-env-toggle="env-{{ version.id_version }}">.env</button>
+                            <button class="btn secundario compacto" type="button" data-panel-env-toggle="reemplazar-{{ version.id_version }}">Reemplazar</button>
+                            <form method="post" action="{{ url_for('scripts.desactivar_version', id_version=version.id_version) }}">
+                                <input type="hidden" name="volver" value="{{ request.path }}">
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar version" data-confirm-message="La version quedara inactiva y no podra activarse hasta reversion manual. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning" {% if version.es_activa %}disabled{% endif %}>Desactivar</button>
+                            </form>
+                            <form method="post" action="{{ url_for('scripts.eliminar_version', id_version=version.id_version) }}">
+                                <input type="hidden" name="volver" value="{{ request.path }}">
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar version" data-confirm-message="Estas a punto de eliminar esta version. Solo se permite si nunca fue usada. Deseas continuar?" data-confirm-ok="Si, eliminar version" data-confirm-cancel="Cancelar" data-confirm-type="danger" {% if version.es_activa %}disabled{% endif %}>Eliminar</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="env-{{ version.id_version }}" class="fila-panel oculto">
+                    <td colspan="7">
+                        <form method="post" enctype="multipart/form-data" action="{{ url_for('scripts.guardar_env', id_version=version.id_version) }}" class="formulario-admin requiere-confirmacion-form" data-confirm-title="{{ 'Reemplazar archivo .env' if version.ruta_env_relativa else 'Asociar archivo .env' }}" data-confirm-message="{{ 'Esta version ya tiene un archivo .env asociado. Si continuas, sera reemplazado. El contenido no sera mostrado ni registrado. Deseas continuar?' if version.ruta_env_relativa else 'Estas a punto de asociar un archivo .env a esta version. El contenido no sera mostrado ni registrado. Deseas continuar?' }}" data-confirm-ok="{{ 'Si, reemplazar .env' if version.ruta_env_relativa else 'Si, asociar .env' }}" data-confirm-cancel="Cancelar" data-confirm-type="warning">
+                            <input type="hidden" name="volver" value="{{ request.path }}">
+                            <label class="checkline"><input name="requiere_env" type="checkbox" value="1" {% if version.requiere_env %}checked{% endif %}> Requiere .env</label>
+                            <div class="campo"><label>Archivo .env</label><input name="archivo_env" type="file" accept=".env"></div>
+                            <div class="acciones-formulario">
+                            <button class="btn primario" type="submit">{{ "Reemplazar .env" if version.ruta_env_relativa else "Asociar .env" }}</button>
+                            </div>
+                        </form>
+                        <form method="post" action="{{ url_for('scripts.eliminar_env', id_version=version.id_version) }}">
+                            <input type="hidden" name="volver" value="{{ request.path }}">
+                            <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar archivo .env" data-confirm-message="Estas a punto de eliminar el archivo .env asociado. Si esta version lo requiere, no podra ejecutarse hasta asociar uno nuevo. Deseas continuar?" data-confirm-ok="Si, eliminar .env" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar .env asociado</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr id="reemplazar-{{ version.id_version }}" class="fila-panel oculto">
+                    <td colspan="7">
+                        <form method="post" enctype="multipart/form-data" action="{{ url_for('scripts.reemplazar_version', id_version=version.id_version) }}" class="formulario-admin requiere-confirmacion-form" data-confirm-title="Reemplazar version" data-confirm-message="Estas a punto de reemplazar la version v{{ version.numero_version }}. Esta accion actualizara el archivo asociado a esa version y quedara registrada en el sistema. Deseas continuar?" data-confirm-ok="Si, reemplazar version" data-confirm-cancel="Cancelar" data-confirm-type="danger">
+                            <input type="hidden" name="volver" value="{{ request.path }}">
+                            <div class="campo"><label>Nuevo archivo .py</label><input name="archivo_script" type="file" accept=".py" required></div>
+                            <div class="campo"><label>Observacion</label><textarea name="observacion" rows="2"></textarea></div>
+                            <button class="btn primario" type="submit">Reemplazar version v{{ version.numero_version }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="estado-vacio">No hay versiones cargadas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

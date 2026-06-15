@@ -18,10 +18,10 @@
 * Fase 5: mantenedores funcionales de clientes, categorias y tipos.
 * Fase 5.1: eliminacion fisica controlada en mantenedores solo cuando no existen dependencias.
 * Fase 6: tareas con programacion base.
+* Fase 7: gestion de scripts, versiones y `.env` por version.
 
 ## Modulos pendientes
 
-* Gestion de scripts.
 * Scheduler.
 * Ejecucion manual.
 * Ejecucion automatica.
@@ -46,7 +46,30 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 6: usuarios, roles, permisos, mantenedores base y tareas con programacion declarativa conectadas a SQL Server. Aun no existen carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+La aplicacion esta en Fase 7: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa y gestion de scripts/versiones conectadas a SQL Server. Aun no existen scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+
+## Modulo de scripts
+
+Implementado en Fase 7:
+
+* `/tareas/<id_tarea>/scripts`: vista de scripts y versiones de una tarea.
+* Carga de archivos `.py` con validacion de extension, tamano y ruta segura.
+* Creacion automatica de v1, v2 y v3.
+* v1 queda activa automaticamente si es la primera version.
+* Bloqueo de v4; si existen tres versiones, se debe reemplazar una existente.
+* Cambio de version activa con confirmacion.
+* Desactivacion y eliminacion controlada de versiones.
+* Reemplazo de version solo si no tiene historial.
+* Asociacion, reemplazo y eliminacion de `.env` por version.
+* Registro de eventos principales en `logs_sistema`.
+* Fase 7.1: mensajes contextuales diferenciando primer script, nueva version, maximo de 3 versiones y gestion de `.env`.
+
+No implementado en Fase 7:
+
+* No se ejecutan scripts.
+* No se leen secretos de `.env`.
+* No existe scheduler real.
+* No existe consola en vivo.
 
 ## Modulo de tareas
 

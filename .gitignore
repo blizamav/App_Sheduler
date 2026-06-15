@@ -19,10 +19,10 @@ __pycache__/
 
 # Logs y archivos generados por usuarios
 *.log
-logs_tareas/
-logs_sistema/
-scripts/
-env_scripts/
+/logs_tareas/
+/logs_sistema/
+/scripts/
+/env_scripts/
 **/.env
 instance/
 

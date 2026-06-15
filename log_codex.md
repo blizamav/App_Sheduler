@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 6.2 implementada con deteccion de cambios reales en tareas.
+* Estado actual: Fase 7.1 implementada con mensajes contextuales en gestion de scripts.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 6.2 - Detectar cambios reales antes de guardar tareas.
+* Fase actual: Fase 7.1 - Mensajes contextuales correctos en gestion de scripts.
 * Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1 y deteccion de cambios reales Fase 6.2.
-* Modulos pendientes: Scripts, scheduler, logs completos, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7 y mensajes contextuales Fase 7.1.
+* Modulos pendientes: Scheduler, ejecucion real, consola en vivo, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
 
@@ -49,6 +49,29 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 7.1 / Mensajes contextuales correctos en gestion de scripts
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_scripts.py`, `app/templates/scripts/listado.html`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Que se corrigio: La primera carga de script ya no se presenta como `Subir nueva version`; ahora indica que se asociara el primer script y se creara v1 activa.
+* Mensajes contextuales: Primer script, subida de v2/v3, maximo de 3 versiones, reemplazo de version, cambio de version activa, asociacion/reemplazo/eliminacion de `.env`.
+* Pruebas realizadas: `python -m compileall app`; render de `scripts/listado.html` en escenarios sin script, con v1 y con v1-v3; listado de rutas Flask de scripts; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`.
+* Riesgos detectados: Validar visualmente con datos reales en una tarea sin script, una con v1, una con v1-v2 y una con v1-v3.
+* Proximos pasos: Probar en navegador y mantener Fase 8 pendiente hasta aprobacion.
+
+### 2026-06-15 00:00 - Fase 7 / Gestion de scripts, versiones y env por tarea
+
+* Archivos creados: `app/rutas_scripts.py`, `app/repositorios/repositorio_scripts.py`, `app/servicios/servicio_scripts.py`, `app/servicios/servicio_archivos.py`, `app/templates/scripts/listado.html`, `database/seeds/005_permisos_scripts.sql`.
+* Archivos modificados: `app/__init__.py`, `app/config.py`, `.env.example`, `.gitignore`, `app/seguridad.py`, `app/templates/base.html`, `app/templates/tareas/listado.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `README.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `log_codex.md`.
+* Que se hizo: Se implemento gestion de scripts por tarea, carga segura de `.py`, versionamiento v1-v3, version activa, reemplazo/desactivacion/eliminacion controlada de versiones y gestion de `.env` por version.
+* Migraciones: No se creo migracion nueva; las tablas existentes y la migracion 007 ya contienen los campos necesarios.
+* Seed creado: `database/seeds/005_permisos_scripts.sql` con permisos `SCRIPTS_*`; debe ejecutarse manualmente en SSMS para usuarios DB.
+* Seguridad: No se ejecutan scripts, no se importa codigo cargado, no se muestra contenido de `.env`, no se guardan secretos en base y se validan extension, tamano y rutas seguras.
+* Decisiones tomadas: Bloquear v4 directa; reemplazo de version solo si no tiene historial; no eliminar version activa; `.env` se guarda separado en `env_scripts/`.
+* Pruebas realizadas: `python -m compileall app`; listado de rutas Flask para `/scripts` y `/tareas`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`; render de `scripts/listado.html` con datos simulados.
+* Riesgos detectados: Debe ejecutarse seed 005 para roles DB; pruebas funcionales completas requieren base local con migraciones 007/008 aplicadas.
+* Proximos pasos: Ejecutar seed 005 en SSMS, probar carga de v1-v3 y mantener Fase 8 pendiente hasta aprobacion.
 
 ### 2026-06-15 00:00 - Fase 6.2 / Ajuste visual de aviso sin cambios
 
