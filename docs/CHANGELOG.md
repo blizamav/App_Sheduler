@@ -1,10 +1,28 @@
 # Changelog
 
+## 2026-06-15 - Fase 7.5 contenedor de script y archivo versionado
+
+### Corregido
+
+* Al asociar el primer archivo `.py`, `scripts.nombre_script` deja de tomar el nombre del archivo cargado.
+* El contenedor `scripts` ahora usa nombre descriptivo `Script de {nombre_tarea}`.
+* Los nombres reales de archivos `.py` quedan exclusivamente en `scripts_versiones.nombre_archivo`.
+* La vista de scripts mantiene como protagonista el archivo activo real desde la version activa.
+* Se agrega migracion correctiva `009_corregir_nombre_script_contenedor.sql` para registros antiguos cuyo `nombre_script` termine en `.py`.
+
+### No implementado
+
+* No se ejecuto la migracion 009 automaticamente.
+* No se modifico SQL ya ejecutado.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 8.
+
 ## 2026-06-15 - Fase 7.4 eliminacion clara de scripts y versiones
 
 ### Corregido
 
-* El boton superior ahora dice `Eliminar script completo` para aclarar que afecta el script logico y todas sus versiones.
+* El boton superior ahora dice `Eliminar script completo` para aclarar que afecta el contenedor de script y todas sus versiones.
 * El modal de script completo advierte que la accion afecta todas las versiones cargadas.
 * En la tabla, los botones ahora dicen `Activar version`, `Desactivar version` y `Eliminar version`.
 * El modal de `Eliminar version` aclara que solo afecta la version seleccionada y no las demas.

@@ -42,6 +42,7 @@ database/
     006_crear_indices.sql
     007_agregar_control_ejecucion_y_env_scripts.sql
     008_ajustar_tareas_y_programaciones_base.sql
+    009_corregir_nombre_script_contenedor.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -62,6 +63,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
 12. `database/seeds/004_permisos_tareas.sql`
 13. `database/seeds/005_permisos_scripts.sql`
+14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
 
 Resumen por script:
 
@@ -73,6 +75,7 @@ Resumen por script:
 * `006_crear_indices.sql`: crea indices recomendados, indice unico filtrado para version activa y FK diferida `scripts.id_version_activa`.
 * `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
 * `008_ajustar_tareas_y_programaciones_base.sql`: ajusta `tareas` y `programaciones` para Fase 6.
+* `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -111,15 +114,15 @@ Restricciones implementadas en scripts:
 
 El modelo separa el concepto de script en dos niveles:
 
-* `scripts`: script logico asociado a una tarea. Representa el proceso/script como entidad estable.
-* `scripts_versiones`: archivos Python versionados disponibles para ese script logico.
+* `scripts`: contenedor estable asociado a una tarea. Su `nombre_script` debe ser descriptivo, por ejemplo `Script de Carga audios BECS`.
+* `scripts_versiones`: archivos Python reales versionados disponibles para ese contenedor.
 
 Decision aprobada: se mantiene esta separacion `scripts` + `scripts_versiones`.
 
 Reglas principales:
 
-* Cada tarea puede tener un script logico asociado.
-* Cada script logico puede mantener maximo 3 versiones disponibles.
+* Cada tarea puede tener un contenedor de script asociado.
+* Cada contenedor puede mantener maximo 3 versiones disponibles.
 * Solo una version puede estar activa por script.
 * La ejecucion automatica usa siempre la version activa.
 * La ejecucion manual puede usar la activa o una version especifica disponible.
@@ -128,7 +131,9 @@ Reglas principales:
 * Los reemplazos de version quedan en `auditoria_cambios` y `logs_sistema`.
 * Una version `REEMPLAZADA` no cuenta dentro del maximo de 3 versiones disponibles.
 * `scripts.id_version_activa` se mantiene como referencia directa a la version activa.
-* En la primera version del sistema no existe eliminacion fisica de scripts ni versiones desde la app; las versiones se gestionan por `estado_version`.
+* El archivo activo real siempre se obtiene desde `scripts_versiones.nombre_archivo` de la version activa.
+* El nombre del primer archivo cargado no define `scripts.nombre_script`.
+* La eliminacion fisica desde la app se permite solo de forma controlada cuando no existe historial operativo asociado.
 
 ## Fase 6 - Tareas y programacion base
 
@@ -217,11 +222,11 @@ Reglas de persistencia:
 * Un usuario puede tener varios roles mediante `usuarios_roles`.
 * Un rol puede tener varios permisos mediante `permisos`.
 * Una tarea pertenece a un cliente, categoria y tipo.
-* Una tarea tiene un script logico mediante `scripts.id_tarea`.
-* Un script logico tiene hasta 3 versiones disponibles en `scripts_versiones`.
+* Una tarea tiene un contenedor de script mediante `scripts.id_tarea`.
+* Un contenedor de script tiene hasta 3 versiones disponibles en `scripts_versiones`.
 * `scripts.id_version_activa` referencia la version activa vigente.
 * Una programacion pertenece a una tarea.
-* Una ejecucion pertenece a una tarea, script logico y version exacta ejecutada.
+* Una ejecucion pertenece a una tarea, contenedor de script y version exacta ejecutada.
 * Un log de tarea pertenece a una ejecucion.
 * Auditoria registra cambios de versiones, activaciones y reemplazos.
 
@@ -288,7 +293,7 @@ Indices: `UX_tipos_nombre_normalizado`.
 
 ### tareas
 
-Objetivo: registrar tareas ejecutables asociadas a cliente, categoria, tipo y script logico.
+Objetivo: registrar tareas ejecutables asociadas a cliente, categoria, tipo y contenedor de script.
 
 | Campo | Tipo SQL Server | Descripcion |
 | --- | --- | --- |
@@ -316,17 +321,17 @@ Objetivo: registrar tareas ejecutables asociadas a cliente, categoria, tipo y sc
 PK: `id_tarea`.
 FK: `id_cliente`, `id_categoria`, `id_tipo`.
 Indices: `IX_tareas_estado`, `IX_tareas_cliente_categoria_tipo`, `IX_tareas_proxima_ejecucion`, `IX_tareas_tipo_tarea`, `IX_tareas_nombre`.
-Observacion: se elimina `id_script_actual` de `tareas`; el script logico se resuelve desde `scripts.id_tarea`.
+Observacion: se elimina `id_script_actual` de `tareas`; el contenedor de script se resuelve desde `scripts.id_tarea`.
 
 ### scripts
 
-Objetivo: representar el script logico asociado a una tarea/proceso, sin guardar versiones fisicas directamente.
+Objetivo: representar el contenedor estable de scripts asociado a una tarea/proceso, sin guardar archivos fisicos directamente.
 
 | Campo | Tipo SQL Server | Descripcion |
 | --- | --- | --- |
 | id_script | int identity(1,1) | PK |
 | id_tarea | int | FK tareas |
-| nombre_script | nvarchar(200) | Nombre logico |
+| nombre_script | nvarchar(200) | Nombre descriptivo del contenedor, no nombre de archivo `.py` |
 | descripcion | nvarchar(1000) null | Descripcion funcional |
 | id_version_activa | int null | FK a `scripts_versiones.id_version` |
 | fecha_creacion | datetime2(0) | Auditoria |
@@ -338,11 +343,11 @@ Objetivo: representar el script logico asociado a una tarea/proceso, sin guardar
 PK: `id_script`.
 FK: `id_tarea -> tareas.id_tarea`, `id_version_activa -> scripts_versiones.id_version`.
 Indices: `UX_scripts_id_tarea`, `IX_scripts_version_activa`, `IX_scripts_activo`.
-Observacion: `id_version_activa` fue aprobado como FK directa. Puede quedar `null` durante la creacion inicial antes de cargar la primera version; luego debe apuntar a una version activa.
+Observacion: `id_version_activa` fue aprobado como FK directa. Puede quedar `null` durante la creacion inicial antes de cargar la primera version; luego debe apuntar a una version activa. Desde Fase 7.5, al crear el primer archivo el contenedor usa formato `Script de {nombre_tarea}` y el archivo real queda en `scripts_versiones.nombre_archivo`.
 
 ### scripts_versiones
 
-Objetivo: almacenar hasta 3 versiones disponibles por script logico con trazabilidad de carga, hash, rutas y estado.
+Objetivo: almacenar hasta 3 versiones disponibles por contenedor de script con trazabilidad de carga, hash, rutas y estado.
 
 | Campo | Tipo SQL Server | Descripcion |
 | --- | --- | --- |
@@ -398,7 +403,7 @@ Objetivo: registrar cada intento de ejecucion manual o automatica, indicando exa
 | --- | --- | --- |
 | id_ejecucion | bigint identity(1,1) | PK |
 | id_tarea | int | FK tareas |
-| id_script | int | FK script logico ejecutado |
+| id_script | int | FK contenedor de script ejecutado |
 | id_version | int | FK version exacta ejecutada |
 | origen_ejecucion | varchar(20) | MANUAL o AUTOMATICA |
 | estado_ejecucion | varchar(30) | Estado |

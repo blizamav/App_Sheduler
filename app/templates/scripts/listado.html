@@ -18,7 +18,7 @@
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Script activo</p>
-                <h3>{{ version_activa.nombre_archivo if version_activa else "Sin script asociado todavia" }}</h3>
+                <h3>{{ nombre_archivo_activo if nombre_archivo_activo else "Sin script asociado todavia" }}</h3>
             </div>
             {% if script and script.activo %}
             <span class="badge activo">Activo</span>
@@ -29,15 +29,15 @@
         {% if version_activa %}
         <div class="script-activo-resumen">
             <div class="badges-linea">
-                <span class="badge activo">Version activa: v{{ version_activa.numero_version }}</span>
-                {% if version_activa.estado_env == "Asociado" %}
+                <span class="badge activo">Version activa: v{{ numero_version_activa }}</span>
+                {% if estado_env_activa == "Asociado" %}
                 <span class="badge activo">.env: Asociado</span>
-                {% elif version_activa.estado_env == "Pendiente .env" %}
+                {% elif estado_env_activa == "Pendiente .env" %}
                 <span class="badge advertencia">.env: Pendiente .env</span>
                 {% else %}
                 <span class="badge inactivo">.env: No requiere</span>
                 {% endif %}
-                <span class="badge info">Estado: {{ "Activo" if script.activo else "Inactivo" }}</span>
+                <span class="badge info">Estado: {{ estado_script }}</span>
             </div>
             <p class="estado-vacio">Este es el archivo real de la version activa. En esta fase solo se carga y versiona; no se ejecuta.</p>
         </div>
@@ -47,7 +47,7 @@
         {% if script %}
         <div class="acciones-formulario">
             <form method="post" action="{{ url_for('scripts.desactivar_script', id_script=script.id_script) }}">
-                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script logico quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script asociado a esta tarea quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>
             </form>
             <form method="post" action="{{ url_for('scripts.eliminar_script', id_script=script.id_script) }}">
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script completo" data-confirm-message="Estas a punto de eliminar el script asociado a esta tarea. Esta accion afectara todas las versiones cargadas del script. Si alguna version tiene historial de ejecucion, no se eliminara fisicamente y solo podra desactivarse. Deseas continuar?" data-confirm-ok="Si, eliminar script completo" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script completo</button>

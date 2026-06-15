@@ -48,6 +48,12 @@ def obtener_vista_scripts_tarea(id_tarea):
         "script": script,
         "versiones": versiones,
         "version_activa": version_activa,
+        "nombre_archivo_activo": version_activa.get("nombre_archivo") if version_activa else None,
+        "numero_version_activa": version_activa.get("numero_version") if version_activa else None,
+        "requiere_env_activa": version_activa.get("requiere_env") if version_activa else None,
+        "ruta_env_relativa_activa": version_activa.get("ruta_env_relativa") if version_activa else None,
+        "estado_env_activa": version_activa.get("estado_env") if version_activa else None,
+        "estado_script": "Activo" if script and script.get("activo") else "Pendiente",
         "total_versiones": len(versiones),
         "proxima_version": _siguiente_version(versiones),
         "maximo_versiones": len(versiones) >= 3,
@@ -87,7 +93,13 @@ def subir_version(id_tarea, archivo, observacion, requiere_env, usuario):
             crear_version(script["id_script"], version, usuario)
             accion = "SCRIPT_VERSION_CREADA"
         else:
-            crear_script_con_version(id_tarea, nombre_archivo, "Script asociado a tarea.", version, usuario)
+            crear_script_con_version(
+                id_tarea,
+                _nombre_contenedor_script(tarea),
+                "Contenedor de scripts asociado a tarea.",
+                version,
+                usuario,
+            )
             accion = "SCRIPT_CREADO"
         registrar_log_sistema(accion, "SCRIPTS", f"Version v{numero_version} cargada para tarea {tarea['nombre_tarea']}.", usuario=usuario)
         return True, f"Version v{numero_version} cargada correctamente."
@@ -264,3 +276,7 @@ def _obtener_version_activa(script, versiones):
         if version.get("id_version") == id_version_activa:
             return version
     return None
+
+
+def _nombre_contenedor_script(tarea):
+    return f"Script de {tarea.get('nombre_tarea') or 'tarea'}"

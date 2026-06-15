@@ -139,8 +139,10 @@ Reglas:
 * No se ejecutan scripts en Fase 7.
 * No se muestra contenido de `.env`.
 * No se guardan secretos en base de datos.
+* `scripts.nombre_script` es solo un nombre descriptivo de contenedor; no debe contener secretos ni rutas.
+* Los nombres reales de archivos `.py` se guardan en `scripts_versiones.nombre_archivo`.
 * La eliminacion fisica de versiones se bloquea si la version esta activa o tiene historial.
-* La eliminacion de una version unica se bloquea para evitar dejar el script logico sin versiones.
+* La eliminacion de una version unica se bloquea para evitar dejar el contenedor de script sin versiones.
 * El boton `Eliminar script completo` es la unica accion visual que puede afectar todo el conjunto de versiones.
 * El boton `Eliminar version` solo puede afectar la version de su fila; no elimina otras versiones ni el script completo.
 * Todo bloqueo por version activa, version unica o historial se registra en `logs_sistema` con nivel `WARNING`.
@@ -178,7 +180,7 @@ La eliminacion fisica desde la app solo se permite de forma controlada cuando no
 
 Reglas:
 
-* `Eliminar script completo` afecta el script logico y todas sus versiones, solo si no tienen historial.
+* `Eliminar script completo` afecta el contenedor de script y todas sus versiones, solo si no tienen historial.
 * `Eliminar version` afecta solo una version especifica y no toca las demas.
 * Si una version esta activa, se debe activar otra antes de eliminarla.
 * Si una version es la unica del script, se debe usar `Eliminar script completo`.

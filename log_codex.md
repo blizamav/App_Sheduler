@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 7.4 implementada con eliminacion diferenciada de script completo y version.
+* Estado actual: Fase 7.5 implementada con separacion correcta entre contenedor de script y archivo versionado.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 7.4 - Diferenciar eliminacion de script completo y eliminacion de version.
+* Fase actual: Fase 7.5 - Corregir concepto de script principal y archivo de version.
 * Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3 y eliminacion diferenciada Fase 7.4.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4 y separacion contenedor/archivo Fase 7.5.
 * Modulos pendientes: Scheduler, ejecucion real, consola en vivo, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -49,6 +49,19 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 7.5 / Corregir concepto de script principal y archivo de version
+
+* Archivos creados: `database/migrations/009_corregir_nombre_script_contenedor.sql`.
+* Archivos modificados: `app/servicios/servicio_scripts.py`, `app/templates/scripts/listado.html`, `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Problema detectado: Al cargar el primer `.py`, `scripts.nombre_script` quedaba con el nombre del archivo, por ejemplo `prueba_1.py`.
+* Decision tecnica: `scripts` representa el contenedor asociado a la tarea y `scripts_versiones` representa los archivos `.py` reales.
+* Correccion aplicada: Al crear el primer script, `scripts.nombre_script` se guarda como `Script de {nombre_tarea}` y el archivo cargado queda en `scripts_versiones.nombre_archivo`.
+* Migracion 009: Corrige registros existentes cuyo `scripts.nombre_script` termine en `.py`, usando `Script de ` + `tareas.nombre_tarea`; no se ejecuto automaticamente.
+* Vista: El bloque superior sigue mostrando el archivo activo real desde la version activa y no muestra nombre logico ni contenedor interno.
+* Pruebas realizadas: `python -m compileall app`; busqueda sin `script logico`, `Nombre logico`, `alert(`, `window.confirm`, `confirm(` ni `prompt(` en UI; prueba simulada de `subir_version` confirmando `scripts.nombre_script = Script de Pruebaa3` y `scripts_versiones.nombre_archivo = prueba_1.py`; render de `scripts/listado.html` confirmando bloque activo con `prueba_4.py`, sin `Nombre logico` ni `prueba_1.py`.
+* Riesgos detectados: Ejecutar migracion 009 manualmente en SSMS antes de seguir probando con registros antiguos.
+* Proximos pasos: Ejecutar 009 en SQL Server local, validar que registros antiguos cambien a `Script de {nombre_tarea}` y mantener Fase 8 pendiente.
 
 ### 2026-06-15 00:00 - Fase 7.4 / Diferenciar eliminacion de script completo y version
 

@@ -5,26 +5,27 @@
 1. Usuario autorizado abre `/tareas`.
 2. Selecciona `Scripts` en una tarea.
 3. El sistema muestra datos de la tarea, archivo activo real y tabla de versiones.
-4. Si no existe script logico, el boton dice `Asociar script` y el modal informa que se creara v1 activa.
+4. Si no existe contenedor de script, el boton dice `Asociar script` y el modal informa que se creara v1 activa.
 5. Si ya existe v1 o v2, el modal informa que se creara v2 o v3.
 6. Si ya existen v1, v2 y v3, no se ofrece crear v4; se indica reemplazar una version existente.
 7. Usuario carga archivo `.py`.
 8. El backend valida extension, tamano, nombre y ruta segura.
-9. Si no existe script logico, lo crea y registra v1 activa.
+9. Si no existe contenedor de script, lo crea con nombre `Script de {nombre_tarea}` y registra v1 activa.
 10. Si ya existe, crea la siguiente version disponible hasta v3.
 11. Si ya existen v1, v2 y v3, bloquea la carga directa y solicita reemplazar una version.
 12. El archivo queda guardado bajo `scripts/CATEGORIA/TIPO/CLIENTE/TAREA/vX/`.
 13. Solo se guardan rutas y hash en base de datos; no se ejecuta el archivo.
 
-## Diferencia entre script logico y archivo activo
+## Diferencia entre contenedor y archivo activo
 
-1. `scripts.nombre_script` representa el nombre logico o historico asociado a la tarea.
+1. `scripts.nombre_script` representa un contenedor descriptivo asociado a la tarea.
 2. El archivo activo se obtiene desde la version activa en `scripts_versiones`.
 3. El bloque superior muestra como protagonista `scripts_versiones.nombre_archivo` de la version activa.
-4. El nombre logico se conserva internamente, pero no se muestra por defecto en la vista principal.
+4. El nombre interno del contenedor se conserva en base de datos, pero no se muestra por defecto en la vista principal.
 5. Si se reemplaza la version activa, el bloque superior cambia al nuevo archivo de esa version.
 6. Si se reemplaza una version no activa, el bloque superior no cambia porque la version activa sigue siendo la misma.
 7. La tabla de versiones sigue mostrando el detalle completo de cada version.
+8. El nombre del primer archivo cargado no define el nombre del contenedor principal.
 
 ## Flujo de version activa
 
@@ -37,7 +38,7 @@
 
 ## Flujo de eliminacion de script completo y version
 
-1. El boton superior `Eliminar script completo` representa la eliminacion del script logico asociado a la tarea.
+1. El boton superior `Eliminar script completo` representa la eliminacion del contenedor de script asociado a la tarea.
 2. Esa accion afecta a todo el conjunto de versiones solo si el usuario la confirma explicitamente.
 3. Si el script completo no tiene historial, se eliminan registros y archivos asociados de todas sus versiones.
 4. Si el script completo tiene historial, se bloquea la eliminacion fisica y se sugiere desactivarlo.
@@ -208,7 +209,7 @@ Pendiente para Fase 8.
 
 ## Flujo de ejecucion con env por script
 
-1. Servicio resuelve tarea, script logico y version exacta.
+1. Servicio resuelve tarea, contenedor de script y version exacta.
 2. Valida que el archivo `.py` exista y pertenezca a rutas permitidas.
 3. Revisa `scripts_versiones.requiere_env`.
 4. Si no requiere `.env`, continua ejecucion normal.
@@ -240,7 +241,7 @@ Propuesta documental Fase 3A; implementacion pendiente para Fase 7.
 ## Flujo de carga de primera version
 
 1. Usuario crea o edita una tarea.
-2. El sistema crea el script logico en `scripts`.
+2. El sistema crea el contenedor en `scripts` con nombre `Script de {nombre_tarea}`.
 3. Usuario carga archivo `.py`.
 4. Servicio valida extension, nombre seguro, ruta permitida y hash.
 5. Se crea `scripts_versiones` con `numero_version = 1`, `estado_version = ACTIVA`, `es_activa = 1`.
@@ -249,7 +250,7 @@ Propuesta documental Fase 3A; implementacion pendiente para Fase 7.
 
 ## Flujo de carga de segunda o tercera version
 
-1. Usuario selecciona script logico existente.
+1. Usuario selecciona una tarea con contenedor de script existente.
 2. Servicio cuenta versiones disponibles del `id_script`.
 3. Si existen menos de 3, permite cargar nueva version.
 4. Se asigna el siguiente `numero_version` disponible.

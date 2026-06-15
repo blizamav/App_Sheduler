@@ -64,9 +64,11 @@ Implementado en Fase 7:
 * Registro de eventos principales en `logs_sistema`.
 * Fase 7.1: mensajes contextuales diferenciando primer script, nueva version, maximo de 3 versiones y gestion de `.env`.
 * Fase 7.2: bloque superior muestra el archivo activo real desde la version activa.
-* Fase 7.3: el nombre logico se mantiene internamente, pero no se muestra en la vista principal para evitar confusion operativa.
-* Fase 7.4: se diferencia `Eliminar script completo` de `Eliminar version`; la accion superior afecta todo el script logico y la accion de tabla afecta solo una version.
+* Fase 7.3: el nombre interno se mantiene en base de datos, pero no se muestra en la vista principal para evitar confusion operativa.
+* Fase 7.4: se diferencia `Eliminar script completo` de `Eliminar version`; la accion superior afecta todo el contenedor de script y la accion de tabla afecta solo una version.
 * Fase 7.4: la eliminacion de version activa, unica version o version con historial se bloquea con mensaje controlado y log de sistema.
+* Fase 7.5: `scripts` queda como contenedor descriptivo asociado a la tarea; los nombres reales de archivos `.py` viven en `scripts_versiones`.
+* Fase 7.5: al crear el primer script, `scripts.nombre_script` usa `Script de {nombre_tarea}` y no el nombre del archivo cargado.
 
 No implementado en Fase 7:
 
