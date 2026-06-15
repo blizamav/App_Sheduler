@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ejecucion {{ ejecucion.id_ejecucion }} - APP Scheduler{% endblock %}
+{% block encabezado %}Consola de ejecucion{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 8</p>
+        <h2>{{ ejecucion.nombre_tarea }}</h2>
+        <p>{{ ejecucion.nombre_categoria }} / {{ ejecucion.nombre_tipo }} / {{ ejecucion.nombre_cliente }}</p>
+    </div>
+    <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver a tareas</a>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Estado</p>
+                <h3 data-ejecucion-estado>{{ ejecucion.estado_ejecucion }}</h3>
+            </div>
+            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
+        </div>
+        <div class="detalle-grid">
+            <div><strong>Script activo</strong><span>{{ ejecucion.nombre_archivo }}</span></div>
+            <div><strong>Version</strong><span>v{{ ejecucion.numero_version }}</span></div>
+            <div><strong>PID</strong><span>{{ ejecucion.pid_proceso or "-" }}</span></div>
+            <div><strong>Usuario</strong><span>{{ ejecucion.usuario_ejecucion or "-" }}</span></div>
+            <div><strong>Inicio</strong><span>{{ ejecucion.fecha_hora_inicio }}</span></div>
+            <div><strong>Termino</strong><span data-ejecucion-termino>{{ ejecucion.fecha_hora_termino or "-" }}</span></div>
+        </div>
+        <div class="acciones-formulario">
+            <a class="btn secundario compacto" href="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">Actualizar log</a>
+            {% if ejecucion.en_ejecucion %}
+            <form method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}">
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Detener ejecucion" data-confirm-message="Estas a punto de detener esta ejecucion en curso. El proceso sera finalizado y quedara registrado en el sistema. Deseas continuar?" data-confirm-ok="Si, detener ejecucion" data-confirm-cancel="Cancelar" data-confirm-type="danger">Detener ejecucion</button>
+            </form>
+            {% endif %}
+        </div>
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Log</p>
+                <h3>{{ ejecucion.nombre_archivo_log or "Consola" }}</h3>
+            </div>
+            <span class="badge info">Polling 3s</span>
+        </div>
+        <p class="estado-vacio">Se muestran los ultimos 120 KB del archivo de log. No se muestra contenido de archivos .env.</p>
+    </article>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Consola</p>
+            <h3>Salida stdout/stderr</h3>
+        </div>
+        <span class="badge advertencia" data-ejecucion-indicador>{{ "En ejecucion..." if ejecucion.en_ejecucion else "Finalizada" }}</span>
+    </div>
+    <pre class="consola-ejecucion" data-ejecucion-log data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">{{ ejecucion.log }}</pre>
+</section>
+{% endblock %}

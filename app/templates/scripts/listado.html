@@ -52,6 +52,11 @@
             <form method="post" action="{{ url_for('scripts.eliminar_script', id_script=script.id_script) }}">
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script completo" data-confirm-message="Estas a punto de eliminar el script asociado a esta tarea. Esta accion afectara todas las versiones cargadas del script. Si alguna version tiene historial de ejecucion, no se eliminara fisicamente y solo podra desactivarse. Deseas continuar?" data-confirm-ok="Si, eliminar script completo" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script completo</button>
             </form>
+            {% if version_activa and (session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", [])) %}
+            <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
+                <button class="btn primario compacto requiere-confirmacion" type="submit" data-confirm-title="Ejecutar tarea" data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando {{ nombre_archivo_activo }} v{{ numero_version_activa }}. Requiere .env: {{ 'Si' if requiere_env_activa else 'No' }}. No se usara scheduler en esta accion. Deseas continuar?" data-confirm-ok="Si, ejecutar ahora" data-confirm-cancel="Cancelar" data-confirm-type="warning">Ejecutar ahora</button>
+            </form>
+            {% endif %}
         </div>
         {% endif %}
     </article>

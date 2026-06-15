@@ -147,6 +147,35 @@ Reglas:
 * El boton `Eliminar version` solo puede afectar la version de su fila; no elimina otras versiones ni el script completo.
 * Todo bloqueo por version activa, version unica o historial se registra en `logs_sistema` con nivel `WARNING`.
 
+## Ejecucion manual
+
+Fase 8 agrega permisos:
+
+* `EJECUCIONES_VER`.
+* `EJECUCIONES_EJECUTAR`.
+* `EJECUCIONES_DETENER`.
+* `EJECUCIONES_LOG_VER`.
+
+Reglas:
+
+* La ejecucion manual usa siempre la version activa.
+* No se usa `shell=True`.
+* Se ejecuta con el interprete Python actual.
+* Se bloquea una segunda ejecucion si la misma tarea ya esta `EN_EJECUCION`.
+* Si la version requiere `.env`, el archivo debe existir antes de iniciar.
+* El `.env` se carga al entorno del proceso sin mostrar ni registrar contenido.
+* El log de consola puede contener lo que imprima el script; los scripts no deben imprimir secretos.
+* La detencion requiere permiso `EJECUCIONES_DETENER` y modal corporativo.
+* La detencion registra usuario, fecha, motivo y si fue forzada.
+
+Validacion local:
+
+* `006_permisos_ejecuciones.sql` fue ejecutado correctamente en SQL Server local.
+* Se valido que la ejecucion con `.env` de prueba carga variables mediante `os.getenv()` sin mostrar contenido sensible.
+* La consola mostro stdout del script y no expuso secretos.
+* La detencion manual registro estado `DETENIDA_MANUALMENTE` y PID asociado.
+* No se implemento scheduler automatico ni API de feriados.
+
 ## Variables sensibles por script
 
 Fase 4.3 define que cada script/version podra tener un `.env` propio bajo `env_scripts/`.

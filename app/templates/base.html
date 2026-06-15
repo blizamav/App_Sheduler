@@ -41,12 +41,12 @@
                 <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
                 {% endif %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>07</span>Scripts</a>
-                <a class="nav-link deshabilitado" href="#"><span>08</span>Logs</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>08</span>Ejecuciones</a>
                 <a class="nav-link deshabilitado" href="#"><span>09</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 6</span>
-                <p>Tareas con programacion base, sin scheduler real.</p>
+                <span class="badge info">Fase 8</span>
+                <p>Ejecucion manual con consola. Scheduler pendiente.</p>
             </div>
         </aside>
         {% endif %}
@@ -95,8 +95,8 @@
                 <button class="icon-btn" type="button" data-panel-logs-toggle aria-label="Cerrar panel de logs">x</button>
             </div>
             <div class="terminal-visual">
-                <p><span>15:14</span> Esperando implementacion de ejecuciones.</p>
-                <p><span>Fase 9</span> Consola funcional pendiente.</p>
+                <p><span>Fase 8</span> Consola manual disponible por ejecucion.</p>
+                <p><span>Scheduler</span> Pendiente para fase posterior.</p>
             </div>
         </aside>
 

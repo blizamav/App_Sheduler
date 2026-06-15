@@ -74,12 +74,18 @@ def listar_tareas(filtros=None):
                p.intervalo_minutos,
                p.hora_inicio AS hora_inicio_intervalo,
                p.hora_termino AS hora_fin_intervalo,
-               p.ejecutar_en_feriados
+               p.ejecutar_en_feriados,
+               s.id_script,
+               s.activo AS script_activo,
+               v.id_version AS id_version_activa,
+               v.nombre_archivo AS nombre_archivo_activo
         FROM dbo.tareas t
         INNER JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
         INNER JOIN dbo.categorias ca ON ca.id_categoria = t.id_categoria
         INNER JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
         LEFT JOIN dbo.programaciones p ON p.id_tarea = t.id_tarea AND p.activo = 1
+        LEFT JOIN dbo.scripts s ON s.id_tarea = t.id_tarea
+        LEFT JOIN dbo.scripts_versiones v ON v.id_version = s.id_version_activa
         {where}
         ORDER BY t.fecha_creacion DESC, t.nombre_tarea
     """

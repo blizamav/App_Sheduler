@@ -19,11 +19,11 @@
 * Fase 5.1: eliminacion fisica controlada en mantenedores solo cuando no existen dependencias.
 * Fase 6: tareas con programacion base.
 * Fase 7: gestion de scripts, versiones y `.env` por version.
+* Fase 8: ejecucion manual con consola, logs y detencion controlada.
 
 ## Modulos pendientes
 
 * Scheduler.
-* Ejecucion manual.
 * Ejecucion automatica.
 * Logs de tareas.
 * Logs de sistema completos.
@@ -46,7 +46,30 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 7: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa y gestion de scripts/versiones conectadas a SQL Server. Aun no existen scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+La aplicacion esta en Fase 8: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones y ejecucion manual conectadas a SQL Server. Aun no existe scheduler automatico ni panel avanzado de auditoria.
+
+## Modulo de ejecuciones
+
+Implementado en Fase 8:
+
+* `/tareas/<id_tarea>/ejecutar`: inicia ejecucion manual usando la version activa.
+* `/ejecuciones/<id_ejecucion>`: consola visual de ejecucion.
+* `/ejecuciones/<id_ejecucion>/log`: polling JSON del log.
+* `/ejecuciones/<id_ejecucion>/detener`: detencion manual con modal corporativo.
+* Validaciones previas de tarea, script, version activa, archivo fisico, `.env` requerido y ejecucion simultanea.
+* Registro de `pid_proceso` en `ejecuciones`.
+* Archivo de log por ejecucion bajo `logs_tareas/AAAA/MM/DD/`.
+* Registro de metadatos en `logs_tareas`.
+* Carga de `.env` de la version activa sin mostrar contenido.
+* Estados `EN_EJECUCION`, `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`.
+* Seed incremental `database/seeds/006_permisos_ejecuciones.sql`.
+
+No implementado en Fase 8:
+
+* No existe scheduler automatico.
+* No existe ejecucion programada por calendario.
+* No existe API de feriados.
+* No existe cola avanzada de trabajos.
 
 ## Modulo de scripts
 
@@ -75,7 +98,7 @@ No implementado en Fase 7:
 * No se ejecutan scripts.
 * No se leen secretos de `.env`.
 * No existe scheduler real.
-* No existe consola en vivo.
+* La consola de ejecucion se implementa recien en Fase 8.
 
 ## Modulo de tareas
 

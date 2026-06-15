@@ -109,6 +109,24 @@ MAX_ENV_SIZE_KB=100
 
 `scripts/` contiene archivos cargados por usuarios y tambien debe tratarse como volumen de datos, no como codigo fuente del sistema.
 
+## Ejecucion manual Fase 8
+
+Antes de probar ejecuciones manuales con usuarios de base de datos, ejecutar manualmente en SSMS:
+
+```text
+database/seeds/006_permisos_ejecuciones.sql
+```
+
+El administrador desde `.env` puede acceder sin ejecutar el seed, porque tiene permisos totales de sesion.
+
+Rutas usadas por Fase 8:
+
+* Scripts cargados: `RUTA_BASE_SCRIPTS`.
+* Env por version: `RUTA_BASE_ENV_SCRIPTS`.
+* Logs de ejecucion: `RUTA_BASE_LOGS_TAREAS`.
+
+Los procesos se ejecutan con el interprete Python actual del entorno donde corre Flask. En Windows, levantar la app desde el entorno virtual correcto antes de ejecutar tareas.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

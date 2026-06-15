@@ -126,6 +126,25 @@
                             {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCRIPTS_VER" in session.get("permisos", []) %}
                             <a class="btn secundario compacto" href="{{ url_for('scripts.por_tarea', id_tarea=tarea.id_tarea) }}">Scripts</a>
                             {% endif %}
+                            {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", []) %}
+                            {% if tarea.activo and tarea.id_script and tarea.script_activo and tarea.id_version_activa %}
+                            <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
+                                <button
+                                    class="btn primario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Ejecutar tarea"
+                                    data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando el script activo {{ tarea.nombre_archivo_activo }}. No se usara scheduler en esta accion. Deseas continuar?"
+                                    data-confirm-ok="Si, ejecutar ahora"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="warning"
+                                >
+                                    Ejecutar ahora
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn secundario compacto" type="button" disabled title="La tarea no tiene script activo asociado.">Ejecutar ahora</button>
+                            {% endif %}
+                            {% endif %}
                             <form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if tarea.activo else 1 }}">
                                 <button

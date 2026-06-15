@@ -46,6 +46,7 @@ database/
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
+    006_permisos_ejecuciones.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -64,6 +65,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 12. `database/seeds/004_permisos_tareas.sql`
 13. `database/seeds/005_permisos_scripts.sql`
 14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
+15. `database/seeds/006_permisos_ejecuciones.sql`
 
 Resumen por script:
 
@@ -81,6 +83,7 @@ Resumen por script:
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
 * `004_permisos_tareas.sql`: inserta permisos incrementales para tareas y los asigna a roles base.
 * `005_permisos_scripts.sql`: inserta permisos incrementales para gestion de scripts, versiones y env.
+* `006_permisos_ejecuciones.sql`: inserta permisos incrementales para ejecucion manual, consola, log y detencion.
 
 ## Fase 7 - Scripts y versiones
 
@@ -98,6 +101,28 @@ No se crea migracion nueva porque el modelo vigente ya contiene:
 * `scripts_versiones.ruta_env_relativa`
 
 Se agrega solo seed incremental `005_permisos_scripts.sql`, que debe ejecutarse manualmente para usuarios de base de datos.
+
+## Fase 8 - Ejecucion manual
+
+No se crea migracion nueva para Fase 8 porque el modelo vigente ya contiene:
+
+* `ejecuciones.pid_proceso`.
+* `ejecuciones.usuario_detencion`.
+* `ejecuciones.fecha_hora_detencion`.
+* `ejecuciones.motivo_detencion`.
+* `ejecuciones.fue_detencion_forzada`.
+* `logs_tareas` para registrar metadatos del archivo de log por ejecucion.
+
+Se agrega seed incremental `006_permisos_ejecuciones.sql`, que debe ejecutarse manualmente para usuarios de base de datos.
+
+Permisos:
+
+* `EJECUCIONES_VER`.
+* `EJECUCIONES_EJECUTAR`.
+* `EJECUCIONES_DETENER`.
+* `EJECUCIONES_LOG_VER`.
+
+La ejecucion manual registra `id_tarea`, `id_script`, `id_version`, estado, fechas, usuario, PID y codigo de salida. El archivo de log se registra en `logs_tareas` con ruta fisica y relativa.
 
 Restricciones implementadas en scripts:
 

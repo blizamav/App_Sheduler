@@ -23,6 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertaPassword = document.querySelector("[data-alerta-password]");
     const formulariosProgramacion = document.querySelectorAll("[data-programacion-form]");
     const togglesPanelEnv = document.querySelectorAll("[data-panel-env-toggle]");
+    const consolaEjecucion = document.querySelector("[data-ejecucion-log]");
+    const estadoEjecucion = document.querySelector("[data-ejecucion-estado]");
+    const terminoEjecucion = document.querySelector("[data-ejecucion-termino]");
+    const indicadorEjecucion = document.querySelector("[data-ejecucion-indicador]");
     let formularioPendiente = null;
     let envioConfirmado = false;
 
@@ -226,6 +230,42 @@ document.addEventListener("DOMContentLoaded", () => {
         passwordEdicion.addEventListener("input", () => {
             alertaPassword.classList.toggle("oculto", passwordEdicion.value.length === 0);
         });
+    }
+
+    if (consolaEjecucion?.dataset.logUrl) {
+        const actualizarConsola = async () => {
+            try {
+                const respuesta = await fetch(consolaEjecucion.dataset.logUrl, {
+                    headers: { Accept: "application/json" },
+                });
+                if (!respuesta.ok) {
+                    return true;
+                }
+                const datos = await respuesta.json();
+                consolaEjecucion.textContent = datos.log || "";
+                consolaEjecucion.scrollTop = consolaEjecucion.scrollHeight;
+                if (estadoEjecucion) {
+                    estadoEjecucion.textContent = datos.estado || "";
+                }
+                if (terminoEjecucion && datos.fecha_hora_termino) {
+                    terminoEjecucion.textContent = datos.fecha_hora_termino;
+                }
+                if (indicadorEjecucion) {
+                    indicadorEjecucion.textContent = datos.es_final ? "Finalizada" : "En ejecucion...";
+                }
+                return datos.es_final;
+            } catch (error) {
+                return false;
+            }
+        };
+
+        const intervalo = setInterval(async () => {
+            const finalizada = await actualizarConsola();
+            if (finalizada) {
+                clearInterval(intervalo);
+            }
+        }, 3000);
+        actualizarConsola();
     }
 
     const alternarGrupo = (formulario, selector, visible) => {

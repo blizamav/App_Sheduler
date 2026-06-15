@@ -66,7 +66,7 @@
 1. El script cargado debe leer variables usando `os.getenv()`.
 2. No debe tener credenciales quemadas.
 3. No debe ejecutar `load_dotenv()` con ruta fija.
-4. En Fase 8 la aplicacion cargara el `.env` correspondiente a la version que se ejecute.
+4. En Fase 8 la aplicacion carga el `.env` correspondiente a la version que se ejecute.
 
 ## Flujo de login
 
@@ -201,11 +201,32 @@
 
 ## Flujo de ejecucion automatica
 
-Pendiente para Fase 8.
+Pendiente para fase posterior. No se implementa scheduler automatico en Fase 8.
 
 ## Flujo de ejecucion manual
 
-Pendiente para Fase 8.
+Validacion local Fase 8:
+
+* El seed `006_permisos_ejecuciones.sql` fue ejecutado correctamente en SQL Server local.
+* Se valido ejecucion manual con script activo, consola, polling, estado `EXITOSA`, detencion `DETENIDA_MANUALMENTE`, PID y archivo de log.
+* Se probo ejecucion sin `.env` y con `.env` de prueba cargado mediante `os.getenv()`.
+* No se mostraron secretos, no se implemento scheduler automatico y no se conecto API de feriados.
+
+1. Usuario autorizado presiona `Ejecutar ahora` desde `/tareas` o desde la pantalla de scripts.
+2. Se muestra modal corporativo indicando tarea, script activo, version activa y que no se usara scheduler.
+3. Al confirmar, el servicio valida tarea activa, script activo, version activa y archivo `.py` fisico.
+4. Si la version requiere `.env`, valida que exista archivo `.env` asociado.
+5. Si ya existe una ejecucion `EN_EJECUCION` para la misma tarea, bloquea la nueva ejecucion.
+6. Crea registro en `ejecuciones` con origen `MANUAL` y estado `EN_EJECUCION`.
+7. Crea archivo de log en `logs_tareas/AAAA/MM/DD/`.
+8. Crea registro en `logs_tareas` con rutas del log.
+9. Ejecuta el script con el interprete Python actual y `subprocess` sin `shell=True`.
+10. Registra `pid_proceso`.
+11. Redirige a `/ejecuciones/<id_ejecucion>`.
+12. La consola consulta `/ejecuciones/<id_ejecucion>/log` cada 3 segundos.
+13. Si el proceso termina con codigo 0, marca `EXITOSA`.
+14. Si termina con codigo distinto de 0 o error controlado, marca `ERROR`.
+15. No se muestran secretos ni contenido del `.env`.
 
 ## Flujo de ejecucion con env por script
 
@@ -232,7 +253,7 @@ Pendiente para Fase 8.
 8. Se actualiza `ejecuciones` con usuario, fecha/hora y motivo de detencion.
 9. Se registra evento en `logs_tareas`.
 10. Se registra evento en `logs_sistema`.
-11. La consola lateral muestra estado detenido y mensaje amigable.
+11. La consola muestra estado detenido y mensaje amigable.
 
 ## Flujo de reemplazo de script
 

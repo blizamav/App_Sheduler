@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 7.5 implementada con separacion correcta entre contenedor de script y archivo versionado.
+* Estado actual: Fase 8 implementada con ejecucion manual, consola y detencion controlada.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 7.5 - Corregir concepto de script principal y archivo de version.
+* Fase actual: Fase 8 - Ejecucion manual con consola y control de detencion.
 * Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -17,8 +17,8 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Pendiente para Fase 8.
-* Logs: Rutas configurables por `.env`, implementacion pendiente.
+* Scheduler: Pendiente para fase posterior.
+* Logs: Logs de tarea para ejecucion manual implementados en Fase 8; logs avanzados pendientes.
 * Auditoria: Pendiente para Fase 10.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4 y separacion contenedor/archivo Fase 7.5.
-* Modulos pendientes: Scheduler, ejecucion real, consola en vivo, logs completos, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5 y ejecucion manual Fase 8.
+* Modulos pendientes: Scheduler automatico, ejecucion programada, API feriados, logs avanzados, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
 
@@ -45,10 +45,36 @@
 ## 5. Pendientes
 
 * Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
-* Pendiente 2: Confirmar estrategia de reemplazo fisico de una version existente.
-* Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
+* Pendiente 2: Ejecutar seed 006 en SQL Server local para usuarios de base de datos.
+* Pendiente 3: Validar ejecucion manual con script exitoso, script con error y detencion manual.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 8 / Seed 006 ejecutado y validacion local completada
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se registro que `database/seeds/006_permisos_ejecuciones.sql` fue ejecutado correctamente en SQL Server local.
+* Validaciones reportadas: Permisos `EJECUCIONES_*` insertados; ejecucion manual con script activo; consola con stdout; polling de log; estado `EXITOSA`; detencion manual con estado `DETENIDA_MANUALMENTE`; `pid_proceso` registrado; archivo de log generado en `logs_tareas/`.
+* Pruebas con env: Se valido ejecucion sin `.env` y con `.env` de prueba `AMBIENTE=QA`, leido por el script mediante `os.getenv()`.
+* Seguridad: No se mostraron secretos; no se registro contenido sensible del `.env`.
+* No implementado: No se implemento scheduler automatico, no se conecto API de feriados y no se avanzo a Fase 9.
+* Riesgos detectados: Mantener la regla de que los scripts cargados no deben imprimir secretos, porque stdout/stderr se muestra en consola.
+* Proximos pasos: Cerrar validacion funcional de Fase 8 o definir ajustes menores antes de iniciar Fase 9.
+
+### 2026-06-15 00:00 - Fase 8 / Ejecucion manual con consola y detencion
+
+* Archivos creados: `app/rutas_ejecuciones.py`, `app/repositorios/repositorio_ejecuciones.py`, `app/servicios/servicio_ejecuciones.py`, `app/servicios/servicio_env_scripts.py`, `app/servicios/servicio_procesos.py`, `app/templates/ejecuciones/consola.html`, `database/seeds/006_permisos_ejecuciones.sql`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/repositorios/repositorio_tareas.py`, `app/templates/base.html`, `app/templates/tareas/listado.html`, `app/templates/scripts/listado.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `docs/DESPLIEGUE.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se implemento ejecucion manual de tareas usando la version activa del script, consola visual con polling, archivo de log por ejecucion y detencion manual.
+* Permisos: Se creo seed incremental `006_permisos_ejecuciones.sql` con `EJECUCIONES_VER`, `EJECUCIONES_EJECUTAR`, `EJECUCIONES_DETENER` y `EJECUCIONES_LOG_VER`; debe ejecutarse manualmente en SSMS para usuarios DB.
+* Decision tecnica: No se creo migracion 010 porque `ejecuciones` y `logs_tareas` ya contienen los campos necesarios.
+* Seguridad: La ejecucion usa `subprocess` sin `shell=True`, carga `.env` por version en el entorno del proceso sin mostrar contenido y bloquea ejecuciones simultaneas por tarea.
+* Logs: Se registra `pid_proceso`, salida stdout/stderr en archivo `logs_tareas/AAAA/MM/DD/`, metadatos en `logs_tareas` y eventos en `logs_sistema`.
+* Detencion: Se implemento detencion controlada del proceso registrado y cierre forzado por PID si corresponde, actualizando `DETENIDA_MANUALMENTE`.
+* Pruebas realizadas: `python -m compileall app`; carga de `crear_app()` y listado de rutas `/tareas/<id_tarea>/ejecutar`, `/ejecuciones/<id_ejecucion>`, `/ejecuciones/<id_ejecucion>/log`, `/ejecuciones/<id_ejecucion>/detener`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`; render de `ejecuciones/consola.html` con datos simulados confirmando consola, log y boton de detencion; verificacion de seed 006 contra columnas reales `codigo_rol` y `codigo_permiso`.
+* Riesgos detectados: La detencion de arbol completo depende del sistema operativo; en Windows se usa `taskkill` como respaldo. Los scripts no deben imprimir secretos, porque stdout/stderr se muestra en consola.
+* Proximos pasos: Ejecutar seed 006 en SSMS, probar script exitoso, script con error y detencion manual; no avanzar a Fase 9.
 
 ### 2026-06-15 00:00 - Fase 7.5 / Migracion 009 ejecutada y validada localmente
 

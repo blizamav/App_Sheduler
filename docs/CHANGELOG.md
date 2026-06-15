@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-06-15 - Fase 8 validada localmente
+
+### Validado
+
+* Se ejecuto `database/seeds/006_permisos_ejecuciones.sql` en SQL Server local.
+* Los permisos `EJECUCIONES_*` fueron insertados correctamente.
+* La ejecucion manual de tarea con script activo funciona.
+* La consola muestra stdout y el polling actualiza el log.
+* La ejecucion finaliza como `EXITOSA` cuando el script termina bien.
+* La detencion manual deja la ejecucion en `DETENIDA_MANUALMENTE`.
+* Se registra `pid_proceso`.
+* Se genera archivo de log en `logs_tareas/`.
+* Se valido ejecucion sin `.env` y con `.env` de prueba usando `os.getenv()`.
+* No se mostraron secretos.
+
+### No implementado
+
+* No se implemento scheduler automatico.
+* No se conecto API de feriados.
+* No se avanzo a Fase 9.
+
+## 2026-06-15 - Fase 8 ejecucion manual con consola
+
+### Agregado
+
+* Modulo de ejecuciones manuales.
+* Boton `Ejecutar ahora` en tareas y scripts.
+* Validaciones previas de tarea, script, version activa, archivo `.py`, `.env` requerido y ejecucion simultanea.
+* Registro en `ejecuciones` con origen `MANUAL`, estado y `pid_proceso`.
+* Archivo de log por ejecucion en `logs_tareas/AAAA/MM/DD/`.
+* Vista `/ejecuciones/<id_ejecucion>` con consola visual.
+* Polling HTTP cada 3 segundos en `/ejecuciones/<id_ejecucion>/log`.
+* Boton `Detener ejecucion` con modal corporativo.
+* Seed incremental `database/seeds/006_permisos_ejecuciones.sql`.
+
+### Seguridad
+
+* No se muestra contenido de `.env`.
+* No se usa `shell=True`.
+* No se implemento scheduler automatico.
+* No se conecto API de feriados.
+* No se avanzo a Fase 9.
+
 ## 2026-06-15 - Migracion 009 validada localmente
 
 ### Validado

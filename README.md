@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 7:
+El proyecto avanzo hasta Fase 8:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -20,7 +20,8 @@ El proyecto avanzo hasta Fase 7:
 * Fase 5: mantenedores de clientes, categorias y tipos.
 * Fase 5.1: eliminacion controlada en mantenedores.
 * Fase 6: tareas con programacion base, sin ejecucion real ni scheduler.
-* Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version, sin ejecucion real.
+* Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version.
+* Fase 8: ejecucion manual con consola, logs y detencion controlada.
 
 ## Stack actual
 
@@ -55,6 +56,9 @@ El proyecto avanzo hasta Fase 7:
 * Gestion de scripts por tarea.
 * Versionamiento de scripts hasta v3.
 * Asociacion de `.env` por version sin mostrar contenido.
+* Ejecucion manual de version activa.
+* Consola visual de ejecucion con polling.
+* Detencion manual de ejecucion.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -63,10 +67,9 @@ El proyecto avanzo hasta Fase 7:
 
 ## Funcionalidades pendientes
 
-* Scheduler.
-* Ejecuciones manuales y automaticas.
-* Detencion real de procesos en ejecucion.
-* Logs reales de tareas y panel funcional de logs.
+* Scheduler automatico.
+* Ejecuciones automaticas por calendario.
+* Panel avanzado de logs.
 * Auditoria funcional.
 * Docker QA/produccion.
 * Calendario laboral y feriados.
@@ -154,6 +157,8 @@ Orden documentado:
 11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
 12. `database/seeds/004_permisos_tareas.sql`
 13. `database/seeds/005_permisos_scripts.sql`
+14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
+15. `database/seeds/006_permisos_ejecuciones.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 

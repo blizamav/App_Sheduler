@@ -30,6 +30,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/rutas_mantenedores.py`
 * `app/rutas_tareas.py`
 * `app/rutas_scripts.py`
+* `app/rutas_ejecuciones.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -70,13 +71,23 @@ Fase 7 agrega capa de scripts:
 
 Los archivos cargados viven fuera del codigo fuente operativo bajo `scripts/` y `env_scripts/`, ambos excluidos de Git.
 
-Para versionamiento controlado, `scripts` representa el script logico de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registraran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuaran asociados a `id_ejecucion`.
+Para versionamiento controlado, `scripts` representa el contenedor de script de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuan asociados a `id_ejecucion`.
+
+Fase 8 agrega capa de ejecucion manual:
+
+* `app/rutas_ejecuciones.py`: endpoints para iniciar, ver consola, consultar log y detener.
+* `app/repositorios/repositorio_ejecuciones.py`: persistencia en `ejecuciones` y `logs_tareas`.
+* `app/servicios/servicio_ejecuciones.py`: validaciones, creacion de ejecucion, archivo de log y actualizacion de estado.
+* `app/servicios/servicio_env_scripts.py`: carga segura de `.env` por version.
+* `app/servicios/servicio_procesos.py`: inicio y detencion de procesos.
+
+La ejecucion manual usa `subprocess` sin `shell=True`, registra PID y captura stdout/stderr hacia archivo. La consola se actualiza por polling HTTP cada 3 segundos.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
 
-Pendiente para Fase 8. Debe ejecutarse como servicio separado dentro de la aplicacion.
+Pendiente para fase posterior. Debe ejecutarse como servicio separado dentro de la aplicacion.
 
 Cuando se implemente, la ejecucion automatica debera resolver siempre `scripts.id_version_activa`. La ejecucion manual podra recibir una version especifica disponible, previa confirmacion si no coincide con la activa.
 
@@ -99,11 +110,11 @@ El servicio de ejecucion debera:
 
 ## Detencion manual de ejecuciones
 
-Cuando una ejecucion este `EN_EJECUCION`, la interfaz futura debe mostrar accion `Detener ejecucion` solo a usuarios autorizados. La accion debe usar modal corporativo, intentar termino controlado, forzar termino si no responde y registrar resultado en `ejecuciones`, `logs_tareas` y `logs_sistema`.
+Cuando una ejecucion esta `EN_EJECUCION`, la interfaz muestra accion `Detener ejecucion` solo a usuarios autorizados. La accion usa modal corporativo, intenta termino controlado, fuerza termino si no responde y registra resultado en `ejecuciones`, `logs_tareas` y `logs_sistema`.
 
 ## Logs
 
-Pendiente para Fase 9. Rutas configurables por `.env`: `logs_tareas` y `logs_sistema`.
+Fase 8 implementa archivo de log por ejecucion manual bajo `logs_tareas/`. Rutas configurables por `.env`: `logs_tareas` y `logs_sistema`.
 
 Los logs de tarea no deben incluir secretos provenientes del `.env` de script. La salida capturada debe filtrarse cuando sea posible y el sistema debe documentar que los scripts cargados no deben imprimir credenciales.
 
