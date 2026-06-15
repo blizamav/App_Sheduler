@@ -42,10 +42,12 @@ def obtener_vista_scripts_tarea(id_tarea):
     for version in versiones:
         version["estado_env"] = _estado_env(version)
         version["usada"] = contar_uso_version(version["id_version"]) > 0
+    version_activa = _obtener_version_activa(script, versiones)
     return {
         "tarea": tarea,
         "script": script,
         "versiones": versiones,
+        "version_activa": version_activa,
         "total_versiones": len(versiones),
         "proxima_version": _siguiente_version(versiones),
         "maximo_versiones": len(versiones) >= 3,
@@ -241,3 +243,16 @@ def _estado_env(version):
     if version.get("ruta_env_relativa"):
         return "Asociado"
     return "Pendiente .env"
+
+
+def _obtener_version_activa(script, versiones):
+    if not script or not versiones:
+        return None
+    for version in versiones:
+        if version.get("es_activa"):
+            return version
+    id_version_activa = script.get("id_version_activa")
+    for version in versiones:
+        if version.get("id_version") == id_version_activa:
+            return version
+    return None

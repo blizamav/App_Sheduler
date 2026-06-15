@@ -4,7 +4,7 @@
 
 1. Usuario autorizado abre `/tareas`.
 2. Selecciona `Scripts` en una tarea.
-3. El sistema muestra datos de la tarea, script asociado y tabla de versiones.
+3. El sistema muestra datos de la tarea, archivo activo real y tabla de versiones.
 4. Si no existe script logico, el boton dice `Asociar script` y el modal informa que se creara v1 activa.
 5. Si ya existe v1 o v2, el modal informa que se creara v2 o v3.
 6. Si ya existen v1, v2 y v3, no se ofrece crear v4; se indica reemplazar una version existente.
@@ -15,6 +15,16 @@
 11. Si ya existen v1, v2 y v3, bloquea la carga directa y solicita reemplazar una version.
 12. El archivo queda guardado bajo `scripts/CATEGORIA/TIPO/CLIENTE/TAREA/vX/`.
 13. Solo se guardan rutas y hash en base de datos; no se ejecuta el archivo.
+
+## Diferencia entre script logico y archivo activo
+
+1. `scripts.nombre_script` representa el nombre logico o historico asociado a la tarea.
+2. El archivo activo se obtiene desde la version activa en `scripts_versiones`.
+3. El bloque superior muestra como protagonista `scripts_versiones.nombre_archivo` de la version activa.
+4. El nombre logico se conserva internamente, pero no se muestra por defecto en la vista principal.
+5. Si se reemplaza la version activa, el bloque superior cambia al nuevo archivo de esa version.
+6. Si se reemplaza una version no activa, el bloque superior no cambia porque la version activa sigue siendo la misma.
+7. La tabla de versiones sigue mostrando el detalle completo de cada version.
 
 ## Flujo de version activa
 

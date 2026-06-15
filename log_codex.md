@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 7.1 implementada con mensajes contextuales en gestion de scripts.
+* Estado actual: Fase 7.3 implementada con bloque de script activo simplificado.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 7.1 - Mensajes contextuales correctos en gestion de scripts.
+* Fase actual: Fase 7.3 - Simplificar bloque de script activo y ocultar nombre logico.
 * Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7 y mensajes contextuales Fase 7.1.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2 y simplificacion visual Fase 7.3.
 * Modulos pendientes: Scheduler, ejecucion real, consola en vivo, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -49,6 +49,28 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 7.3 / Simplificar bloque de script activo
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/scripts/listado.html`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Que se corrigio: El bloque superior de scripts ya no muestra `Nombre logico`, para evitar confusion cuando el archivo activo real fue reemplazado.
+* Decision visual: Mostrar solo el archivo activo real desde `scripts_versiones`, version activa, estado `.env`, estado del script y texto descriptivo operativo.
+* Decision tecnica: Mantener `scripts.nombre_script` internamente sin modificar SQL, modelo, servicios ni registros historicos.
+* Pruebas realizadas: `python -m compileall app`; render de `scripts/listado.html` validando que `prueba_4.py` aparece como archivo activo y que no aparecen `Nombre logico` ni `prueba_1.py`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`.
+* Riesgos detectados: Validar en navegador que una version activa reemplazada muestre solo el archivo nuevo y que la tabla siga mostrando v1, v2 y v3.
+* Proximos pasos: Probar visualmente en `/tareas/<id_tarea>/scripts`; no avanzar a Fase 8 sin aprobacion.
+
+### 2026-06-15 00:00 - Fase 7.2 / Mostrar script activo de forma clara
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_scripts.py`, `app/templates/scripts/listado.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Problema detectado: El bloque superior mostraba `scripts.nombre_script`, aunque el archivo activo real podia haber cambiado al reemplazar la version activa.
+* Decision visual: Mostrar como protagonista el archivo activo obtenido desde `scripts_versiones`; dejar el nombre logico como dato secundario.
+* Datos mostrados: Archivo activo, version activa, estado `.env`, estado del script y nombre logico.
+* Pruebas realizadas: `python -m compileall app`; render de `scripts/listado.html` en casos sin script, version activa reemplazada y version no activa reemplazada; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`.
+* Riesgos detectados: Validar visualmente con reemplazo real de version activa y de version no activa.
+* Proximos pasos: Probar en navegador con datos reales y mantener Fase 8 pendiente hasta aprobacion.
 
 ### 2026-06-15 00:00 - Fase 7.1 / Mensajes contextuales correctos en gestion de scripts
 

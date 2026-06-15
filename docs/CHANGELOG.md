@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-06-15 - Fase 7.3 simplificacion de script activo
+
+### Corregido
+
+* El bloque superior de `Scripts de tarea` deja de mostrar el nombre logico del script.
+* La vista principal muestra solo el archivo activo real, version activa, estado `.env` y estado del script.
+* El nombre logico se mantiene internamente en base de datos y servicios, sin exponerse por defecto al usuario operativo.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 8.
+
+## 2026-06-15 - Fase 7.2 script activo visible
+
+### Corregido
+
+* El bloque superior de `Scripts de tarea` ahora muestra el archivo activo real desde `scripts_versiones`.
+* El nombre logico del script se mantenia como dato secundario hasta Fase 7.3.
+* Se muestra version activa, estado `.env` y estado del script en badges.
+* Si no hay script asociado, el bloque indica `Sin script asociado todavia`.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 8.
+
 ## 2026-06-15 - Fase 7.1 mensajes contextuales de scripts
 
 ### Corregido

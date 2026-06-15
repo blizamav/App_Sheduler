@@ -587,6 +587,17 @@ textarea {
     color: var(--color-texto-suave);
 }
 
+.texto-secundario {
+    margin: 8px 0 0;
+    color: var(--color-texto-suave);
+    font-size: 0.92rem;
+}
+
+.script-activo-resumen {
+    display: grid;
+    gap: 10px;
+}
+
 .checkline {
     display: inline-flex;
     align-items: center;

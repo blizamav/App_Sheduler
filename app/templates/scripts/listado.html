@@ -17,8 +17,8 @@
     <article class="bloque">
         <div class="bloque-header">
             <div>
-                <p class="eyebrow">Script asociado</p>
-                <h3>{{ script.nombre_script if script else "Sin script cargado" }}</h3>
+                <p class="eyebrow">Script activo</p>
+                <h3>{{ version_activa.nombre_archivo if version_activa else "Sin script asociado todavia" }}</h3>
             </div>
             {% if script and script.activo %}
             <span class="badge activo">Activo</span>
@@ -26,12 +26,25 @@
             <span class="badge inactivo">Pendiente</span>
             {% endif %}
         </div>
-        <p class="estado-vacio">En esta fase los scripts solo se cargan y versionan. No se ejecutan.</p>
-        {% if script %}
-        <div class="badges-linea">
-            <span class="badge info">Version activa: {{ "v" ~ (versiones|selectattr("es_activa")|map(attribute="numero_version")|first) if versiones|selectattr("es_activa")|list else "Sin activa" }}</span>
-            <span class="badge advertencia">Maximo 3 versiones</span>
+        {% if version_activa %}
+        <div class="script-activo-resumen">
+            <div class="badges-linea">
+                <span class="badge activo">Version activa: v{{ version_activa.numero_version }}</span>
+                {% if version_activa.estado_env == "Asociado" %}
+                <span class="badge activo">.env: Asociado</span>
+                {% elif version_activa.estado_env == "Pendiente .env" %}
+                <span class="badge advertencia">.env: Pendiente .env</span>
+                {% else %}
+                <span class="badge inactivo">.env: No requiere</span>
+                {% endif %}
+                <span class="badge info">Estado: {{ "Activo" if script.activo else "Inactivo" }}</span>
+            </div>
+            <p class="estado-vacio">Este es el archivo real de la version activa. En esta fase solo se carga y versiona; no se ejecuta.</p>
         </div>
+        {% else %}
+        <p class="estado-vacio">Todavia no hay archivo activo para esta tarea. Asocia un script para crear v1 activa.</p>
+        {% endif %}
+        {% if script %}
         <div class="acciones-formulario">
             <form method="post" action="{{ url_for('scripts.desactivar_script', id_script=script.id_script) }}">
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script logico quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>

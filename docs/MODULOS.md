@@ -63,6 +63,8 @@ Implementado en Fase 7:
 * Asociacion, reemplazo y eliminacion de `.env` por version.
 * Registro de eventos principales en `logs_sistema`.
 * Fase 7.1: mensajes contextuales diferenciando primer script, nueva version, maximo de 3 versiones y gestion de `.env`.
+* Fase 7.2: bloque superior muestra el archivo activo real desde la version activa.
+* Fase 7.3: el nombre logico se mantiene internamente, pero no se muestra en la vista principal para evitar confusion operativa.
 
 No implementado en Fase 7:
 
