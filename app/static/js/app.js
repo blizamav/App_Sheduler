@@ -13,12 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalMensaje = document.querySelector("[data-modal-mensaje]");
     const modalTipo = document.querySelector("[data-modal-tipo]");
     const modalIcono = document.querySelector("[data-modal-icono]");
+    const modalResumen = document.querySelector("[data-modal-resumen]");
     const modalConfirmar = document.querySelector("[data-modal-confirmar]");
     const modalCancelar = document.querySelector("[data-modal-cancelar]");
+    const toastStack = document.querySelector("[data-toast-stack]");
     const selectorRol = document.querySelector("[data-rol-original]");
     const alertaRol = document.querySelector("[data-alerta-rol]");
     const passwordEdicion = document.querySelector("[data-password-edicion='1']");
     const alertaPassword = document.querySelector("[data-alerta-password]");
+    const formulariosProgramacion = document.querySelectorAll("[data-programacion-form]");
     let formularioPendiente = null;
     let envioConfirmado = false;
 
@@ -61,6 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
         modalCancelar.textContent = dataset.confirmCancel || "Cancelar";
         modalTipo.textContent = tipo.toUpperCase();
         modalIcono.textContent = { danger: "!", warning: "!", success: "OK", info: "i" }[tipo] || "i";
+        if (modalResumen) {
+            modalResumen.replaceChildren();
+            modalResumen.classList.add("oculto");
+            if (dataset.confirmSummaryNode) {
+                modalResumen.appendChild(dataset.confirmSummaryNode);
+                modalResumen.classList.remove("oculto");
+            }
+        }
         modalConfirmacion.classList.add("abierto");
         modalConfirmacion.setAttribute("aria-hidden", "false");
         cuerpo.classList.add("modal-abierto");
@@ -76,6 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
         modalConfirmacion.setAttribute("aria-hidden", "true");
         cuerpo.classList.remove("modal-abierto");
         formularioPendiente = null;
+        if (modalResumen) {
+            modalResumen.replaceChildren();
+            modalResumen.classList.add("oculto");
+        }
         if (!mantenerEnvioConfirmado) {
             envioConfirmado = false;
         }
@@ -83,6 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const obtenerConfirmacionFormulario = (formulario) => {
         const dataset = formulario.dataset;
+        if (dataset.confirmSummary === "tarea") {
+            return obtenerConfirmacionTarea(formulario);
+        }
+
         if (dataset.formModo === "crear") {
             return dataset;
         }
@@ -142,6 +161,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             evento.preventDefault();
+            if (formulario.dataset.confirmSummary === "tarea" && !validarFormularioTarea(formulario)) {
+                return;
+            }
+            if (
+                formulario.dataset.confirmSummary === "tarea" &&
+                formulario.dataset.formModo === "editar" &&
+                !formularioTareaTieneCambios(formulario)
+            ) {
+                mostrarToast("No hay cambios para guardar.", "info");
+                return;
+            }
             abrirModalConfirmacion(obtenerConfirmacionFormulario(formulario), formulario);
         });
     });
@@ -189,4 +219,305 @@ document.addEventListener("DOMContentLoaded", () => {
             alertaPassword.classList.toggle("oculto", passwordEdicion.value.length === 0);
         });
     }
+
+    const alternarGrupo = (formulario, selector, visible) => {
+        formulario.querySelectorAll(selector).forEach((elemento) => {
+            elemento.classList.toggle("oculto", !visible);
+        });
+    };
+
+    const valorCampo = (formulario, selector) => formulario.querySelector(selector)?.value?.trim() || "";
+
+    const normalizarTexto = (valor) => (valor || "").trim().replace(/\s+/g, " ");
+
+    const textoSeleccionado = (formulario, selector) => {
+        const campo = formulario.querySelector(selector);
+        return campo?.selectedOptions?.[0]?.textContent?.trim() || "";
+    };
+
+    const normalizarEtiqueta = (valor) => {
+        const etiquetas = {
+            MANUAL: "Manual",
+            DIARIA: "Diaria",
+            SEMANAL: "Semanal",
+            MENSUAL: "Mensual",
+            FECHA_ESPECIFICA: "Fecha especifica",
+            UNA_VEZ: "Una vez",
+            INTERVALO: "Intervalo",
+        };
+        return etiquetas[valor] || valor || "-";
+    };
+
+    const diasSeleccionados = (formulario) => {
+        const nombres = {
+            LUNES: "lunes",
+            MARTES: "martes",
+            MIERCOLES: "miercoles",
+            JUEVES: "jueves",
+            VIERNES: "viernes",
+            SABADO: "sabado",
+            DOMINGO: "domingo",
+        };
+        return Array.from(formulario.querySelectorAll("input[name='dias_semana']:checked"))
+            .map((campo) => nombres[campo.value] || campo.value.toLowerCase());
+    };
+
+    const codigosDiasSeleccionados = (formulario) => Array.from(formulario.querySelectorAll("input[name='dias_semana']:checked"))
+        .map((campo) => campo.value)
+        .sort();
+
+    const unirLista = (valores) => {
+        if (valores.length <= 1) {
+            return valores[0] || "";
+        }
+        return `${valores.slice(0, -1).join(", ")} y ${valores[valores.length - 1]}`;
+    };
+
+    const resumirProgramacionFormulario = (formulario) => {
+        const tipo = valorCampo(formulario, "[data-tipo-programacion]") || "MANUAL";
+        const modo = valorCampo(formulario, "[data-modo-programacion]") || "UNA_VEZ";
+        const hora = valorCampo(formulario, "[name='hora_ejecucion']");
+        const intervalo = valorCampo(formulario, "[name='intervalo_minutos']");
+        const inicio = valorCampo(formulario, "[name='hora_inicio_intervalo']");
+        const fin = valorCampo(formulario, "[name='hora_fin_intervalo']");
+        const diaMes = valorCampo(formulario, "[name='dia_mes']");
+        const fecha = valorCampo(formulario, "[name='fecha_especifica']");
+        const dias = unirLista(diasSeleccionados(formulario));
+
+        if (tipo === "MANUAL") {
+            return "Manual";
+        }
+
+        const prefijos = {
+            DIARIA: "Diaria",
+            SEMANAL: `Semanal ${dias}`,
+            MENSUAL: `Mensual dia ${diaMes}`,
+            FECHA_ESPECIFICA: `Fecha especifica ${fecha}`,
+        };
+        const prefijo = prefijos[tipo] || normalizarEtiqueta(tipo);
+
+        if (modo === "INTERVALO") {
+            return `${prefijo} cada ${intervalo} minutos entre ${inicio} y ${fin}`;
+        }
+        return `${prefijo} a las ${hora}`;
+    };
+
+    const obtenerEstadoTareaFormulario = (formulario) => {
+        const tipo = valorCampo(formulario, "[data-tipo-programacion]") || "MANUAL";
+        const modo = tipo === "MANUAL" ? "" : valorCampo(formulario, "[data-modo-programacion]");
+        return {
+            nombre_tarea: normalizarTexto(valorCampo(formulario, "[name='nombre_tarea']")),
+            descripcion: normalizarTexto(valorCampo(formulario, "[name='descripcion']")),
+            id_cliente: valorCampo(formulario, "[name='id_cliente']"),
+            id_categoria: valorCampo(formulario, "[name='id_categoria']"),
+            id_tipo: valorCampo(formulario, "[name='id_tipo']"),
+            observacion_tecnica: normalizarTexto(valorCampo(formulario, "[name='observacion_tecnica']")),
+            activo: Boolean(formulario.querySelector("[name='activo']")?.checked),
+            tipo_programacion: tipo,
+            modo_ejecucion_dia: modo,
+            hora_ejecucion: modo === "UNA_VEZ" ? valorCampo(formulario, "[name='hora_ejecucion']") : "",
+            dias_semana: tipo === "SEMANAL" ? codigosDiasSeleccionados(formulario) : [],
+            dia_mes: tipo === "MENSUAL" ? valorCampo(formulario, "[name='dia_mes']") : "",
+            fecha_especifica: tipo === "FECHA_ESPECIFICA" ? valorCampo(formulario, "[name='fecha_especifica']") : "",
+            intervalo_minutos: modo === "INTERVALO" ? valorCampo(formulario, "[name='intervalo_minutos']") : "",
+            hora_inicio_intervalo: modo === "INTERVALO" ? valorCampo(formulario, "[name='hora_inicio_intervalo']") : "",
+            hora_fin_intervalo: modo === "INTERVALO" ? valorCampo(formulario, "[name='hora_fin_intervalo']") : "",
+            ejecutar_en_feriados: tipo === "MANUAL" ? false : Boolean(formulario.querySelector("[name='ejecutar_en_feriados']")?.checked),
+        };
+    };
+
+    const formularioTareaTieneCambios = (formulario) => {
+        if (!formulario.dataset.estadoOriginal) {
+            return true;
+        }
+        return JSON.stringify(obtenerEstadoTareaFormulario(formulario)) !== formulario.dataset.estadoOriginal;
+    };
+
+    const mostrarToast = (mensaje, tipo = "info") => {
+        if (!toastStack) {
+            return;
+        }
+
+        const toast = document.createElement("div");
+        const icono = document.createElement("span");
+        const texto = document.createElement("p");
+        const cerrar = document.createElement("button");
+        toast.className = `toast-sistema ${tipo}`;
+        toast.setAttribute("role", "status");
+        icono.className = "toast-icono";
+        icono.textContent = { success: "OK", error: "!", warning: "!", info: "i" }[tipo] || "i";
+        texto.textContent = mensaje;
+        cerrar.type = "button";
+        cerrar.className = "toast-cerrar";
+        cerrar.setAttribute("aria-label", "Cerrar notificacion");
+        cerrar.textContent = "x";
+        toast.append(icono, texto, cerrar);
+        toastStack.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.add("visible"));
+
+        const cerrarToast = () => {
+            toast.classList.remove("visible");
+            toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+        };
+        cerrar.addEventListener("click", cerrarToast);
+        setTimeout(cerrarToast, 3200);
+    };
+
+    const limpiarValidezTarea = (formulario) => {
+        formulario.querySelectorAll("input, select, textarea").forEach((campo) => campo.setCustomValidity(""));
+    };
+
+    const marcarInvalido = (campo, mensaje) => {
+        if (!campo) {
+            return false;
+        }
+        campo.setCustomValidity(mensaje);
+        campo.reportValidity();
+        return false;
+    };
+
+    const validarFormularioTarea = (formulario) => {
+        limpiarValidezTarea(formulario);
+        const tipo = valorCampo(formulario, "[data-tipo-programacion]") || "MANUAL";
+        const modo = valorCampo(formulario, "[data-modo-programacion]") || "UNA_VEZ";
+        const tipoCampo = formulario.querySelector("[data-tipo-programacion]");
+        const modoCampo = formulario.querySelector("[data-modo-programacion]");
+
+        if (!formulario.checkValidity()) {
+            formulario.reportValidity();
+            return false;
+        }
+
+        if (tipo === "MANUAL") {
+            return true;
+        }
+
+        if (!["UNA_VEZ", "INTERVALO"].includes(modo)) {
+            return marcarInvalido(modoCampo, "Selecciona un modo de ejecucion valido.");
+        }
+
+        if (tipo === "SEMANAL" && diasSeleccionados(formulario).length === 0) {
+            return marcarInvalido(tipoCampo, "Selecciona al menos un dia para la programacion semanal.");
+        }
+
+        if (tipo === "MENSUAL") {
+            const diaMes = Number(valorCampo(formulario, "[name='dia_mes']"));
+            if (!diaMes || diaMes < 1 || diaMes > 31) {
+                return marcarInvalido(formulario.querySelector("[name='dia_mes']"), "Ingresa un dia del mes entre 1 y 31.");
+            }
+        }
+
+        if (tipo === "FECHA_ESPECIFICA" && !valorCampo(formulario, "[name='fecha_especifica']")) {
+            return marcarInvalido(formulario.querySelector("[name='fecha_especifica']"), "Ingresa una fecha especifica.");
+        }
+
+        if (modo === "UNA_VEZ" && !valorCampo(formulario, "[name='hora_ejecucion']")) {
+            return marcarInvalido(formulario.querySelector("[name='hora_ejecucion']"), "Ingresa la hora de ejecucion.");
+        }
+
+        if (modo === "INTERVALO") {
+            const intervalo = Number(valorCampo(formulario, "[name='intervalo_minutos']"));
+            const inicio = valorCampo(formulario, "[name='hora_inicio_intervalo']");
+            const fin = valorCampo(formulario, "[name='hora_fin_intervalo']");
+            if (!intervalo || intervalo <= 0) {
+                return marcarInvalido(formulario.querySelector("[name='intervalo_minutos']"), "Ingresa un intervalo mayor a 0.");
+            }
+            if (!inicio) {
+                return marcarInvalido(formulario.querySelector("[name='hora_inicio_intervalo']"), "Ingresa la hora inicio del intervalo.");
+            }
+            if (!fin) {
+                return marcarInvalido(formulario.querySelector("[name='hora_fin_intervalo']"), "Ingresa la hora fin del intervalo.");
+            }
+            if (inicio >= fin) {
+                return marcarInvalido(formulario.querySelector("[name='hora_inicio_intervalo']"), "La hora inicio debe ser menor que la hora fin.");
+            }
+        }
+
+        return true;
+    };
+
+    const agregarFilaResumen = (lista, etiqueta, valor) => {
+        if (!valor) {
+            return;
+        }
+        const fila = document.createElement("div");
+        const titulo = document.createElement("dt");
+        const contenido = document.createElement("dd");
+        titulo.textContent = etiqueta;
+        contenido.textContent = valor;
+        fila.append(titulo, contenido);
+        lista.appendChild(fila);
+    };
+
+    const crearSeccionResumen = (tituloSeccion, filas) => {
+        const seccion = document.createElement("section");
+        const titulo = document.createElement("h3");
+        const lista = document.createElement("dl");
+        titulo.textContent = tituloSeccion;
+        filas.forEach(([etiqueta, valor]) => agregarFilaResumen(lista, etiqueta, valor));
+        seccion.append(titulo, lista);
+        return seccion;
+    };
+
+    const crearResumenTarea = (formulario) => {
+        const resumen = document.createElement("div");
+        resumen.className = "resumen-tarea";
+        const tipo = valorCampo(formulario, "[data-tipo-programacion]") || "MANUAL";
+        const modo = tipo === "MANUAL" ? "No aplica" : normalizarEtiqueta(valorCampo(formulario, "[data-modo-programacion]"));
+        const descripcion = valorCampo(formulario, "[name='descripcion']");
+        const observacion = valorCampo(formulario, "[name='observacion_tecnica']");
+        const feriados = formulario.querySelector("[name='ejecutar_en_feriados']")?.checked ? "Si" : "No";
+        const estado = formulario.querySelector("[name='activo']")?.checked ? "Activa" : "Inactiva";
+
+        resumen.appendChild(crearSeccionResumen("Datos generales", [
+            ["Nombre", valorCampo(formulario, "[name='nombre_tarea']")],
+            ["Descripcion", descripcion],
+            ["Cliente", textoSeleccionado(formulario, "[name='id_cliente']")],
+            ["Categoria", textoSeleccionado(formulario, "[name='id_categoria']")],
+            ["Tipo", textoSeleccionado(formulario, "[name='id_tipo']")],
+            ["Estado", estado],
+            ["Observacion tecnica", observacion],
+        ]));
+        resumen.appendChild(crearSeccionResumen("Programacion", [
+            ["Tipo", normalizarEtiqueta(tipo)],
+            ["Modo del dia", modo],
+            ["Resumen", resumirProgramacionFormulario(formulario)],
+            ["Ejecuta en feriados", feriados],
+        ]));
+        return resumen;
+    };
+
+    const obtenerConfirmacionTarea = (formulario) => ({
+        confirmTitle: formulario.dataset.confirmTitle,
+        confirmMessage: formulario.dataset.confirmMessage,
+        confirmOk: formulario.dataset.confirmOk,
+        confirmCancel: formulario.dataset.confirmCancel,
+        confirmType: formulario.dataset.confirmType,
+        confirmSummaryNode: crearResumenTarea(formulario),
+    });
+
+    const actualizarProgramacion = (formulario) => {
+        const tipo = formulario.querySelector("[data-tipo-programacion]")?.value || "MANUAL";
+        const modo = formulario.querySelector("[data-modo-programacion]")?.value || "UNA_VEZ";
+        const esManual = tipo === "MANUAL";
+
+        alternarGrupo(formulario, "[data-campo-programacion]", !esManual);
+        alternarGrupo(formulario, "[data-campo-modo]", !esManual);
+        alternarGrupo(formulario, "[data-campo-hora]", !esManual && modo === "UNA_VEZ");
+        alternarGrupo(formulario, "[data-campo-intervalo]", !esManual && modo === "INTERVALO");
+        alternarGrupo(formulario, "[data-campo-semanal]", !esManual && tipo === "SEMANAL");
+        alternarGrupo(formulario, "[data-campo-mensual]", !esManual && tipo === "MENSUAL");
+        alternarGrupo(formulario, "[data-campo-fecha]", !esManual && tipo === "FECHA_ESPECIFICA");
+    };
+
+    formulariosProgramacion.forEach((formulario) => {
+        actualizarProgramacion(formulario);
+        if (formulario.dataset.formModo === "editar") {
+            formulario.dataset.estadoOriginal = JSON.stringify(obtenerEstadoTareaFormulario(formulario));
+        }
+        formulario.querySelectorAll("[data-tipo-programacion], [data-modo-programacion]").forEach((selector) => {
+            selector.addEventListener("change", () => actualizarProgramacion(formulario));
+        });
+    });
 });

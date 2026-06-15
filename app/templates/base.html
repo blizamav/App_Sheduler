@@ -35,14 +35,18 @@
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TIPOS_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint == 'mantenedores.tipos_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.tipos_listado') }}"><span>05</span>Tipos</a>
                 {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TAREAS_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tareas.') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}"><span>06</span>Tareas</a>
+                {% else %}
                 <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
+                {% endif %}
                 <a class="nav-link deshabilitado" href="#"><span>07</span>Scripts</a>
                 <a class="nav-link deshabilitado" href="#"><span>08</span>Logs</a>
                 <a class="nav-link deshabilitado" href="#"><span>09</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 5</span>
-                <p>Mantenedores base conectados a SQL Server.</p>
+                <span class="badge info">Fase 6</span>
+                <p>Tareas con programacion base, sin scheduler real.</p>
             </div>
         </aside>
         {% endif %}
@@ -103,6 +107,7 @@
                     <p class="eyebrow" data-modal-tipo>Confirmacion</p>
                     <h2 id="modalConfirmacionTitulo" data-modal-titulo>Confirmar accion</h2>
                     <p data-modal-mensaje>Confirma si deseas continuar.</p>
+                    <div class="modal-resumen oculto" data-modal-resumen></div>
                     <div class="modal-acciones">
                         <button class="btn secundario" type="button" data-modal-cancelar>Cancelar</button>
                         <button class="btn primario" type="button" data-modal-confirmar>Confirmar</button>
@@ -110,6 +115,7 @@
                 </div>
             </section>
         </div>
+        <div class="toast-stack" data-toast-stack aria-live="polite" aria-atomic="true"></div>
         {% endif %}
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

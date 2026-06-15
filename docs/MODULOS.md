@@ -17,10 +17,10 @@
 * Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
 * Fase 5: mantenedores funcionales de clientes, categorias y tipos.
 * Fase 5.1: eliminacion fisica controlada en mantenedores solo cuando no existen dependencias.
+* Fase 6: tareas con programacion base.
 
 ## Modulos pendientes
 
-* Gestion de tareas.
 * Gestion de scripts.
 * Scheduler.
 * Ejecucion manual.
@@ -46,7 +46,32 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 5: usuarios, roles, permisos y mantenedores base conectados a SQL Server. Aun no existen CRUD de tareas, carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+La aplicacion esta en Fase 6: usuarios, roles, permisos, mantenedores base y tareas con programacion declarativa conectadas a SQL Server. Aun no existen carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+
+## Modulo de tareas
+
+Implementado en Fase 6:
+
+* `/tareas`: listar y filtrar por estado, cliente, categoria, tipo, tipo de programacion y busqueda.
+* `/tareas/nueva`: crear tarea con datos base y programacion.
+* `/tareas/<id>/editar`: editar tarea y reemplazar la programacion activa por una nueva.
+* Activar y desactivar tareas.
+* Eliminar fisicamente solo si no existen dependencias en scripts, ejecuciones ni logs.
+* Registrar acciones principales en `logs_sistema`.
+* Programacion declarativa `MANUAL`, `DIARIA`, `SEMANAL`, `MENSUAL`, `FECHA_ESPECIFICA`.
+* Modos `UNA_VEZ` e `INTERVALO`.
+* Marca `ejecutar_en_feriados`, sin integracion aun con calendario real.
+* Fase 6.1: resumen de confirmacion antes de crear o editar, usando datos actuales del formulario.
+* Fase 6.1: validacion frontend previa para evitar confirmar programaciones incompletas.
+* Fase 6.2: deteccion de cambios reales antes de guardar ediciones.
+* Fase 6.2: si no hay cambios, no se envia formulario desde frontend y el backend evita `UPDATE` como respaldo.
+
+No implementado en Fase 6:
+
+* No se ejecutan scripts.
+* No existe scheduler real.
+* No existe carga/versionamiento funcional de scripts.
+* No existe API de feriados.
 
 ## Mantenedores base
 

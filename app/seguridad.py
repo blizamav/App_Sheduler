@@ -38,6 +38,11 @@ def usuario_tiene_permiso(codigo_permiso):
         if codigo_permiso.startswith(prefijo) and f"{prefijo}ADMIN" in permisos:
             return True
 
+    if codigo_permiso == "TAREAS_ESTADO" and (
+        "TAREAS_ACTIVAR" in permisos or "TAREAS_SUSPENDER" in permisos
+    ):
+        return True
+
     return False
 
 

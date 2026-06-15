@@ -79,6 +79,39 @@ Uso esperado:
 
 El componente queda preparado para acciones futuras como reemplazar script, cambiar version activa, ejecutar tarea manual, suspender tarea o cambios criticos de configuracion.
 
+## Resumen de confirmacion de tareas
+
+Desde Fase 6.1 el modal global puede mostrar un bloque de resumen para formularios de tareas.
+
+Reglas visuales:
+
+* Mostrar una ficha ordenada con datos generales y programacion.
+* Usar etiquetas claras y valores legibles.
+* Mostrar nombres visibles de cliente, categoria y tipo.
+* Mantener el resumen dentro del modal con scroll si el contenido crece.
+* No usar `alert()`, `confirm()` ni `prompt()`.
+
+El resumen se genera desde JavaScript con nodos DOM y `textContent`, no con HTML libre.
+
+## Toast del sistema
+
+Desde el ajuste visual de Fase 6.2 existe un componente `toast` flotante para avisos ligeros.
+
+Uso actual:
+
+* Mostrar `No hay cambios para guardar.` cuando el usuario intenta guardar una tarea sin cambios.
+* Evitar alertas incrustadas dentro del formulario.
+* Evitar `alert()` nativo del navegador.
+
+Caracteristicas:
+
+* Posicion flotante superior derecha en escritorio.
+* Adaptacion a ancho disponible en mobile.
+* Animacion suave de aparicion y salida.
+* Autocierre despues de unos segundos.
+* Boton de cierre manual.
+* Variantes preparadas para `info`, `success`, `warning` y `error`.
+
 ## Decisiones visuales tomadas en Fase 2
 
 * Se mantuvo una paleta clara con sidebar oscuro para dar jerarquia corporativa.

@@ -41,6 +41,7 @@ database/
     005_crear_tablas_ejecucion_logs.sql
     006_crear_indices.sql
     007_agregar_control_ejecucion_y_env_scripts.sql
+    008_ajustar_tareas_y_programaciones_base.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -58,6 +59,8 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 8. `database/seeds/002_roles_permisos_iniciales.sql`
 9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
 10. `database/seeds/003_permisos_mantenedores.sql`
+11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
+12. `database/seeds/004_permisos_tareas.sql`
 
 Resumen por script:
 
@@ -68,9 +71,11 @@ Resumen por script:
 * `005_crear_tablas_ejecucion_logs.sql`: crea ejecuciones, logs_tareas, logs_sistema y auditoria_cambios.
 * `006_crear_indices.sql`: crea indices recomendados, indice unico filtrado para version activa y FK diferida `scripts.id_version_activa`.
 * `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
+* `008_ajustar_tareas_y_programaciones_base.sql`: ajusta `tareas` y `programaciones` para Fase 6.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
+* `004_permisos_tareas.sql`: inserta permisos incrementales para tareas y los asigna a roles base.
 
 Restricciones implementadas en scripts:
 
@@ -105,6 +110,24 @@ Reglas principales:
 * Una version `REEMPLAZADA` no cuenta dentro del maximo de 3 versiones disponibles.
 * `scripts.id_version_activa` se mantiene como referencia directa a la version activa.
 * En la primera version del sistema no existe eliminacion fisica de scripts ni versiones desde la app; las versiones se gestionan por `estado_version`.
+
+## Fase 6 - Tareas y programacion base
+
+La Fase 6 usa las tablas existentes `tareas` y `programaciones`, agregando campos faltantes mediante migracion incremental.
+
+Campos nuevos propuestos:
+
+* `tareas.observacion_tecnica`: notas internas de operacion.
+* `programaciones.modo_ejecucion_dia`: `UNA_VEZ` o `INTERVALO`.
+* `programaciones.fecha_especifica`: fecha para programaciones puntuales.
+* `programaciones.ejecutar_en_feriados`: marca declarativa; la validacion contra calendario queda pendiente.
+
+Reglas de persistencia:
+
+* Cada tarea mantiene una programacion activa.
+* Al editar la programacion se inactiva la programacion activa anterior y se crea una nueva.
+* La eliminacion fisica de tareas solo se permite si no existen dependencias en `scripts`, `ejecuciones` ni `logs_tareas`.
+* Si hay dependencias, debe desactivarse la tarea para preservar trazabilidad.
 
 ## Convenciones propuestas
 

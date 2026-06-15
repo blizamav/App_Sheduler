@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 5.1 implementada con eliminacion controlada en mantenedores.
+* Estado actual: Fase 6.2 implementada con deteccion de cambios reales en tareas.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 5.1 - Eliminacion controlada en mantenedores.
-* Ultima actualizacion: 2026-06-13 14:20
+* Fase actual: Fase 6.2 - Detectar cambios reales antes de guardar tareas.
+* Ultima actualizacion: 2026-06-15 00:00
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5 y eliminacion controlada Fase 5.1.
-* Modulos pendientes: Tareas, scripts, scheduler, logs completos, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1 y deteccion de cambios reales Fase 6.2.
+* Modulos pendientes: Scripts, scheduler, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
 
@@ -49,6 +49,50 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-15 00:00 - Fase 6.2 / Ajuste visual de aviso sin cambios
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se cambio: El mensaje `No hay cambios para guardar.` ya no se muestra como bloque inline dentro del formulario.
+* Componente implementado: Toast corporativo flotante con icono, cierre manual, autocierre y animacion suave.
+* Comportamiento: Al editar una tarea sin cambios, no se envia formulario, no se abre modal y aparece el toast flotante.
+* Pruebas realizadas: `python -m compileall app`; GET `/tareas/` y `/tareas/nueva` con sesion admin simulada; busqueda sin `alert(`, `window.confirm`, `confirm(`, `prompt(`, `mensaje-formulario` ni `data-mensaje-formulario`; verificacion de referencias `toast`.
+* Riesgos detectados: Validar visualmente en navegador desktop/mobile con una tarea real.
+* Proximos pasos: Probar edicion sin cambios en navegador y mantener Fase 7 pendiente hasta aprobacion.
+
+### 2026-06-15 00:00 - Fase 6.2 / Detectar cambios reales antes de guardar tareas
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/static/js/app.js`, `app/static/css/estilos.css`, `app/servicios/servicio_tareas.py`, `app/rutas_tareas.py`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Que se corrigio: Editar una tarea sin modificar datos ya no muestra modal ni envia formulario desde frontend.
+* Como se detectan cambios: Se compara una fotografia normalizada del formulario original contra el estado actual; textos se normalizan, checkboxes se comparan como booleanos, selects por `value` y dias de semana como conjunto ordenado.
+* Respaldo backend: Si llega un POST sin cambios, el servicio compara contra la tarea actual, no ejecuta `UPDATE`, no recrea programacion, no registra logs y retorna `No hay cambios para guardar.`.
+* Pruebas realizadas: `python -m compileall app`; GET `/tareas/` y `/tareas/nueva` con sesion admin simulada; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`; prueba directa de comparacion backend con dias desordenados y cambio de nombre.
+* Riesgos detectados: La comparacion visual debe validarse en navegador con datos reales, especialmente fechas/horas devueltas por SQL Server.
+* Proximos pasos: Validar edicion sin cambios y con cambios reales en nombre, contexto, programacion y feriados; no avanzar a Fase 7 sin aprobacion.
+
+### 2026-06-15 00:00 - Fase 6.1 / Resumen de confirmacion de tareas
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/base.html`, `app/templates/tareas/formulario.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se hizo: Se amplio el modal corporativo para mostrar un resumen antes de crear o editar tareas.
+* Que muestra: Nombre, descripcion, cliente, categoria, tipo, estado, observacion tecnica, tipo de programacion, modo, resumen legible y ejecucion en feriados.
+* Decisiones tomadas: Generar el resumen desde datos actuales del formulario; leer nombres visibles de selects; usar nodos DOM y `textContent`; validar programacion antes de abrir el modal.
+* Pruebas realizadas: `python -m compileall app`; GET `/tareas/` y `/tareas/nueva` con sesion admin simulada; busqueda sin `window.confirm` ni `confirm(`.
+* Riesgos detectados: Las pruebas de confirmacion visual completas deben validarse en navegador con datos reales y migracion 008 ejecutada.
+* Proximos pasos: Validar en navegador las variantes manual, diaria, semanal, mensual y fecha especifica; no avanzar a Fase 7 sin aprobacion.
+
+### 2026-06-15 00:00 - Fase 6 / Tareas con programacion base
+
+* Archivos creados: `app/repositorios/repositorio_tareas.py`, `app/servicios/servicio_tareas.py`, `app/rutas_tareas.py`, `app/templates/tareas/listado.html`, `app/templates/tareas/formulario.html`, `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`, `database/seeds/004_permisos_tareas.sql`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `README.md`, `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Que se hizo: Se implemento modulo `/tareas` con listado, filtros, creacion, edicion, activacion/desactivacion, eliminacion controlada y programacion declarativa.
+* Por que se hizo: Permitir administrar tareas base antes de implementar carga de scripts, ejecucion y scheduler.
+* Decisiones tomadas: Programacion activa por tarea; al editar se inactiva la anterior y se crea una nueva; eliminacion fisica solo sin dependencias en scripts, ejecuciones ni logs.
+* Pruebas recomendadas: Ejecutar migracion 008 y seed 004 en SSMS; validar login; abrir `/tareas/`; crear una tarea manual y una programada; probar filtros, editar, desactivar y eliminar una tarea sin dependencias.
+* Riesgos detectados: El modulo requiere ejecutar migracion 008 para usar los nuevos campos; la validacion real de feriados queda pendiente; no existe scheduler ni ejecucion real.
+* Proximos pasos: Ejecutar y validar `008_ajustar_tareas_y_programaciones_base.sql` y `004_permisos_tareas.sql`; no avanzar a Fase 7 sin aprobacion.
 
 ### 2026-06-13 14:20 - Fase 5.1 / Eliminacion controlada en mantenedores
 

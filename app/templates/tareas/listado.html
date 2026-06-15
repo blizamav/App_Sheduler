@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block titulo %}Tareas - APP Scheduler{% endblock %}
+{% block encabezado %}Tareas{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 6</p>
+        <h2>Tareas con programacion base</h2>
+        <p>Administra tareas y su programacion declarativa. Esta fase no ejecuta scripts ni activa scheduler real.</p>
+    </div>
+    <a class="btn primario" href="{{ url_for('tareas.nueva') }}">Nueva tarea</a>
+</section>
+
+<section class="bloque filtros-usuarios">
+    <form method="get" action="{{ url_for('tareas.listado') }}" class="formulario-filtros tareas-filtros">
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                <option value="activo" {% if filtros.estado == "activo" %}selected{% endif %}>Activas</option>
+                <option value="inactivo" {% if filtros.estado == "inactivo" %}selected{% endif %}>Inactivas</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="id_cliente">Cliente</label>
+            <select id="id_cliente" name="id_cliente">
+                <option value="">Todos</option>
+                {% for item in catalogos.clientes %}
+                <option value="{{ item.id }}" {% if filtros.id_cliente|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label for="id_categoria">Categoria</label>
+            <select id="id_categoria" name="id_categoria">
+                <option value="">Todas</option>
+                {% for item in catalogos.categorias %}
+                <option value="{{ item.id }}" {% if filtros.id_categoria|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label for="id_tipo">Tipo</label>
+            <select id="id_tipo" name="id_tipo">
+                <option value="">Todos</option>
+                {% for item in catalogos.tipos %}
+                <option value="{{ item.id }}" {% if filtros.id_tipo|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label for="tipo_programacion">Programacion</label>
+            <select id="tipo_programacion" name="tipo_programacion">
+                <option value="">Todas</option>
+                {% for tipo in catalogos.tipos_programacion %}
+                <option value="{{ tipo }}" {% if filtros.tipo_programacion == tipo %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo campo-busqueda">
+            <label for="buscar">Buscar</label>
+            <input id="buscar" name="buscar" value="{{ filtros.buscar or '' }}" placeholder="Nombre o descripcion">
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Listado</p>
+            <h3>Tareas registradas</h3>
+        </div>
+        <div class="badges-linea">
+            <span class="badge info">Mostrando {{ total_tareas }} tareas</span>
+            <span class="badge advertencia">Sin ejecucion real</span>
+        </div>
+    </div>
+
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tarea</th>
+                    <th>Contexto</th>
+                    <th>Programacion</th>
+                    <th>Feriados</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tarea in tareas %}
+                <tr>
+                    <td>
+                        <strong>{{ tarea.nombre_tarea }}</strong>
+                        <small class="texto-tabla">{{ tarea.descripcion or "-" }}</small>
+                    </td>
+                    <td>
+                        <span>{{ tarea.nombre_cliente }}</span>
+                        <small class="texto-tabla">{{ tarea.nombre_categoria }} / {{ tarea.nombre_tipo }}</small>
+                    </td>
+                    <td>{{ tarea.resumen_programacion }}</td>
+                    <td>
+                        {% if tarea.ejecutar_en_feriados %}
+                        <span class="badge advertencia">Si</span>
+                        {% else %}
+                        <span class="badge inactivo">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tarea.activo %}
+                        <span class="badge activo">Activa</span>
+                        {% else %}
+                        <span class="badge inactivo">Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="acciones-tabla">
+                            <a class="btn secundario compacto" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea) }}">Editar</a>
+                            <form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}">
+                                <input type="hidden" name="activo" value="{{ 0 if tarea.activo else 1 }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="{{ 'Desactivar tarea' if tarea.activo else 'Activar tarea' }}"
+                                    data-confirm-message="{{ 'La tarea no se eliminara y no deberia ser considerada por futuras ejecuciones. Deseas continuar?' if tarea.activo else 'La tarea volvera a quedar disponible para fases posteriores. Deseas continuar?' }}"
+                                    data-confirm-ok="{{ 'Si, desactivar' if tarea.activo else 'Si, activar' }}"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="{{ 'warning' if tarea.activo else 'success' }}"
+                                >
+                                    {{ "Desactivar" if tarea.activo else "Activar" }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('tareas.eliminar', id_tarea=tarea.id_tarea) }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Eliminar tarea definitivamente"
+                                    data-confirm-message="Solo se eliminara si no tiene scripts, ejecuciones ni logs asociados. Si tiene informacion asociada, se bloqueara y podras desactivarla."
+                                    data-confirm-ok="Si, eliminar definitivamente"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="danger"
+                                >
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="estado-vacio">No hay tareas para mostrar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

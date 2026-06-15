@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 5:
+El proyecto avanzo hasta Fase 6:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -18,6 +18,8 @@ El proyecto avanzo hasta Fase 5:
 * Fase 4.2: modal corporativo reutilizable para confirmaciones.
 * Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
 * Fase 5: mantenedores de clientes, categorias y tipos.
+* Fase 5.1: eliminacion controlada en mantenedores.
+* Fase 6: tareas con programacion base, sin ejecucion real ni scheduler.
 
 ## Stack actual
 
@@ -47,6 +49,8 @@ El proyecto avanzo hasta Fase 5:
 * Mantenedores de categorias en `/categorias`.
 * Mantenedores de tipos en `/tipos`.
 * Eliminacion controlada en mantenedores solo si no existen dependencias.
+* Modulo de tareas en `/tareas`.
+* Programacion base declarativa: manual, diaria, semanal, mensual y fecha especifica.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -55,7 +59,6 @@ El proyecto avanzo hasta Fase 5:
 
 ## Funcionalidades pendientes
 
-* CRUD de tareas.
 * Carga y versionamiento real de scripts.
 * Carga funcional de `.env` por script.
 * Scheduler.
@@ -144,6 +147,8 @@ Orden documentado:
 8. `database/seeds/002_roles_permisos_iniciales.sql`
 9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
 10. `database/seeds/003_permisos_mantenedores.sql`
+11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
+12. `database/seeds/004_permisos_tareas.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 
@@ -154,6 +159,15 @@ database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql
 ```
 
 Esta migracion prepara rutas `.env` por version de script y campos para detencion manual de ejecuciones.
+
+Fase 6 agrega scripts incrementales, no ejecutados automaticamente:
+
+```text
+database/migrations/008_ajustar_tareas_y_programaciones_base.sql
+database/seeds/004_permisos_tareas.sql
+```
+
+Ejecutalos manualmente en SSMS antes de usar persistencia completa del modulo `/tareas`.
 
 ## Documentacion
 

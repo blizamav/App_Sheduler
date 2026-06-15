@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ "Nueva" if modo == "crear" else "Editar" }} tarea - APP Scheduler{% endblock %}
+{% block encabezado %}{{ "Nueva" if modo == "crear" else "Editar" }} tarea{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 6</p>
+        <h2>{{ "Crear tarea" if modo == "crear" else "Editar tarea" }}</h2>
+        <p>Define datos base y programacion declarativa. El scheduler y la ejecucion real quedan para fases posteriores.</p>
+    </div>
+    <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver</a>
+</section>
+
+<section class="bloque">
+    <form
+        method="post"
+        class="formulario-admin requiere-confirmacion-form"
+        data-programacion-form
+        data-confirm-summary="tarea"
+        data-form-modo="{{ modo }}"
+        data-confirm-title="{{ 'Confirmar creacion de tarea' if modo == 'crear' else 'Confirmar cambios de tarea' }}"
+        data-confirm-message="{{ 'Estas a punto de crear una tarea con la siguiente configuracion:' if modo == 'crear' else 'Estas a punto de guardar cambios en esta tarea:' }}"
+        data-confirm-ok="{{ 'Si, crear tarea' if modo == 'crear' else 'Si, guardar cambios' }}"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="{{ 'info' if modo == 'crear' else 'warning' }}"
+    >
+        <div class="seccion-formulario">
+            <div>
+                <p class="eyebrow">Datos generales</p>
+                <h3>Identificacion</h3>
+            </div>
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="nombre_tarea">Nombre tarea</label>
+                    <input id="nombre_tarea" name="nombre_tarea" value="{{ registro.nombre_tarea or '' }}" required>
+                </div>
+                <div class="campo">
+                    <label for="activo">Estado inicial</label>
+                    <label class="checkline">
+                        <input id="activo" name="activo" type="checkbox" value="1" {% if modo == "crear" or registro.activo %}checked{% endif %}>
+                        Activa
+                    </label>
+                </div>
+                <div class="campo">
+                    <label for="id_cliente">Cliente</label>
+                    <select id="id_cliente" name="id_cliente" required>
+                        <option value="">Seleccionar</option>
+                        {% for item in catalogos.clientes %}
+                        <option value="{{ item.id }}" {% if registro.id_cliente|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="id_categoria">Categoria</label>
+                    <select id="id_categoria" name="id_categoria" required>
+                        <option value="">Seleccionar</option>
+                        {% for item in catalogos.categorias %}
+                        <option value="{{ item.id }}" {% if registro.id_categoria|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="id_tipo">Tipo</label>
+                    <select id="id_tipo" name="id_tipo" required>
+                        <option value="">Seleccionar</option>
+                        {% for item in catalogos.tipos %}
+                        <option value="{{ item.id }}" {% if registro.id_tipo|string == item.id|string %}selected{% endif %}>{{ item.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="descripcion">Descripcion</label>
+                    <textarea id="descripcion" name="descripcion" rows="3">{{ registro.descripcion or '' }}</textarea>
+                </div>
+                <div class="campo campo-full">
+                    <label for="observacion_tecnica">Observacion tecnica</label>
+                    <textarea id="observacion_tecnica" name="observacion_tecnica" rows="3">{{ registro.observacion_tecnica or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion-formulario">
+            <div>
+                <p class="eyebrow">Programacion</p>
+                <h3>Reglas base</h3>
+            </div>
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="tipo_programacion_form">Tipo programacion</label>
+                    <select id="tipo_programacion_form" name="tipo_programacion" data-tipo-programacion>
+                        {% for tipo in catalogos.tipos_programacion %}
+                        <option value="{{ tipo }}" {% if (registro.tipo_programacion or 'MANUAL') == tipo %}selected{% endif %}>{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="campo" data-campo-modo>
+                    <label for="modo_ejecucion_dia">Modo del dia</label>
+                    <select id="modo_ejecucion_dia" name="modo_ejecucion_dia" data-modo-programacion>
+                        {% for modo_ejecucion in catalogos.modos_ejecucion %}
+                        <option value="{{ modo_ejecucion }}" {% if (registro.modo_ejecucion_dia or 'UNA_VEZ') == modo_ejecucion %}selected{% endif %}>{{ modo_ejecucion }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="campo" data-campo-hora>
+                    <label for="hora_ejecucion">Hora ejecucion</label>
+                    <input id="hora_ejecucion" name="hora_ejecucion" type="time" value="{{ registro.hora_ejecucion|string|truncate(5, True, '') if registro.hora_ejecucion else '' }}">
+                </div>
+                <div class="campo" data-campo-intervalo>
+                    <label for="intervalo_minutos">Intervalo minutos</label>
+                    <input id="intervalo_minutos" name="intervalo_minutos" type="number" min="1" value="{{ registro.intervalo_minutos or '' }}">
+                </div>
+                <div class="campo" data-campo-intervalo>
+                    <label for="hora_inicio_intervalo">Hora inicio intervalo</label>
+                    <input id="hora_inicio_intervalo" name="hora_inicio_intervalo" type="time" value="{{ registro.hora_inicio_intervalo|string|truncate(5, True, '') if registro.hora_inicio_intervalo else '' }}">
+                </div>
+                <div class="campo" data-campo-intervalo>
+                    <label for="hora_fin_intervalo">Hora fin intervalo</label>
+                    <input id="hora_fin_intervalo" name="hora_fin_intervalo" type="time" value="{{ registro.hora_fin_intervalo|string|truncate(5, True, '') if registro.hora_fin_intervalo else '' }}">
+                </div>
+                <div class="campo campo-full" data-campo-semanal>
+                    <label>Dias semana</label>
+                    <div class="dias-grid">
+                        {% for dia in catalogos.dias_semana %}
+                        <label class="checkline">
+                            <input name="dias_semana" type="checkbox" value="{{ dia }}" {% if dia in (registro.dias_semana_lista or []) %}checked{% endif %}>
+                            {{ dia }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="campo" data-campo-mensual>
+                    <label for="dia_mes">Dia del mes</label>
+                    <input id="dia_mes" name="dia_mes" type="number" min="1" max="31" value="{{ registro.dia_mes or '' }}">
+                </div>
+                <div class="campo" data-campo-fecha>
+                    <label for="fecha_especifica">Fecha especifica</label>
+                    <input id="fecha_especifica" name="fecha_especifica" type="date" value="{{ registro.fecha_especifica or '' }}">
+                </div>
+                <div class="campo campo-full" data-campo-programacion>
+                    <label class="checkline">
+                        <input name="ejecutar_en_feriados" type="checkbox" value="1" {% if registro.ejecutar_en_feriados %}checked{% endif %}>
+                        Ejecutar en feriados
+                    </label>
+                    <p class="texto-ayuda">La validacion contra calendario de feriados queda pendiente para fases posteriores.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="acciones-formulario">
+            <button class="btn primario" type="submit">{{ "Crear tarea" if modo == "crear" else "Guardar cambios" }}</button>
+            <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

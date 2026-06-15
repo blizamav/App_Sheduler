@@ -1,5 +1,81 @@
 # Changelog
 
+## 2026-06-15 - Fase 6.2 ajuste visual de aviso sin cambios
+
+### Cambiado
+
+* El aviso `No hay cambios para guardar.` deja de mostrarse incrustado dentro del formulario.
+* Se agrega componente `toast` corporativo flotante para avisos ligeros del sistema.
+* El toast aparece sin recargar la pagina, con animacion suave, cierre manual y autocierre.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 7.
+
+## 2026-06-15 - Fase 6.2 deteccion de cambios reales en tareas
+
+### Corregido
+
+* Al editar una tarea sin modificar datos ya no se muestra modal de confirmacion.
+* El formulario no se envia si no existen cambios reales.
+* Se muestra mensaje visual: `No hay cambios para guardar.`
+* El backend tambien detecta POST sin cambios y evita `UPDATE`, logs de edicion y cambio de `fecha_actualizacion`.
+
+### Tecnico
+
+* Comparacion normalizada de textos, selects, booleanos, programacion y dias de semana.
+* La deteccion aplica solo a edicion; la creacion sigue mostrando resumen siempre.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 7.
+
+## 2026-06-15 - Fase 6.1 resumen de confirmacion de tareas
+
+### Agregado
+
+* Modal de confirmacion enriquecido al crear y editar tareas.
+* Resumen previo con datos generales, programacion, feriados y estado.
+* Validacion frontend previa para no mostrar resumen con programacion incompleta.
+* Soporte reutilizable en el modal global para contenido de resumen generado por JS.
+
+### No implementado
+
+* No se modifico SQL.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+* No se avanzo a Fase 7.
+
+## 2026-06-15 - Fase 6 tareas con programacion base
+
+### Agregado
+
+* Modulo `/tareas` con listado, filtros, creacion, edicion, activacion, desactivacion y eliminacion controlada.
+* Programacion base declarativa: `MANUAL`, `DIARIA`, `SEMANAL`, `MENSUAL` y `FECHA_ESPECIFICA`.
+* Modos del dia `UNA_VEZ` e `INTERVALO`.
+* Campo `ejecutar_en_feriados` como dato declarativo.
+* Migracion propuesta `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`.
+* Seed incremental `database/seeds/004_permisos_tareas.sql`.
+
+### Seguridad
+
+* Permisos `TAREAS_VER`, `TAREAS_CREAR`, `TAREAS_EDITAR`, `TAREAS_ESTADO` y `TAREAS_ELIMINAR`.
+* Eliminacion fisica de tareas solo si no existen scripts, ejecuciones ni logs asociados.
+* Acciones criticas protegidas con modal corporativo reutilizable.
+
+### No implementado
+
+* No se implemento scheduler real.
+* No se ejecutan scripts.
+* No se implemento carga/versionamiento funcional de scripts.
+* No se avanzo a Fase 7.
+
 ## 2026-06-13 - Fase 5.1 eliminacion controlada en mantenedores
 
 ### Agregado

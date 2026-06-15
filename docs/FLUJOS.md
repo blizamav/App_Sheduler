@@ -62,7 +62,74 @@
 
 ## Flujo de creacion de tarea
 
-Pendiente para Fase 6.
+1. Usuario autorizado abre `/tareas/nueva`.
+2. Ingresa nombre, descripcion, cliente, categoria, tipo y observacion tecnica opcional.
+3. Define tipo de programacion: manual, diaria, semanal, mensual o fecha especifica.
+4. Si la programacion no es manual, selecciona modo `UNA_VEZ` o `INTERVALO`.
+5. El formulario muestra solo los campos necesarios para el tipo y modo seleccionados.
+6. Antes de guardar, el frontend valida los campos requeridos de la programacion.
+7. Si la informacion esta completa, se muestra modal corporativo con resumen de la tarea.
+8. El resumen muestra nombres visibles de cliente, categoria y tipo, no IDs.
+9. Si el usuario cancela, no se envia el formulario.
+10. Si confirma, el backend valida campos obligatorios, duplicados y reglas de programacion.
+11. Si es valido, crea la tarea y una programacion activa.
+12. Registra eventos en `logs_sistema`.
+
+## Flujo de edicion de tarea
+
+1. Usuario autorizado abre `/tareas/<id>/editar`.
+2. Modifica datos base o programacion.
+3. Al presionar guardar, el frontend compara el estado original contra el estado actual.
+4. Si no hay cambios reales, no muestra modal, no envia el formulario y muestra `No hay cambios para guardar.`.
+5. Si hay cambios, valida los campos requeridos de la programacion.
+6. Se muestra modal corporativo con el resumen final de como quedara la tarea.
+7. Si el usuario cancela, no se envia el formulario.
+8. Si confirma, el backend valida reglas y duplicados excluyendo la tarea actual.
+9. El backend vuelve a comparar datos actuales contra datos enviados.
+10. Si no hay cambios, no ejecuta `UPDATE`, no registra logs y muestra `No hay cambios para guardar.`.
+11. Si hay cambios, inactiva la programacion activa anterior.
+12. Crea una nueva programacion activa con los cambios.
+13. Registra eventos en `logs_sistema`.
+
+## Flujo de confirmacion con resumen de tarea
+
+1. El formulario de tarea usa el modal global reutilizable.
+2. El JS toma los valores actuales del formulario antes de enviarlo.
+3. Para cliente, categoria y tipo lee el texto visible de la opcion seleccionada.
+4. Genera un resumen legible de programacion: manual, diaria, semanal, mensual o fecha especifica.
+5. Muestra datos generales, programacion, feriados y estado.
+6. El contenido del resumen se genera con nodos DOM y texto, no con HTML libre.
+7. Cancelar cierra el modal sin guardar.
+8. Confirmar envia el formulario y mantiene las validaciones backend existentes.
+
+## Flujo de deteccion de cambios reales en tarea
+
+1. Al cargar formulario de edicion, el frontend guarda una fotografia normalizada del formulario.
+2. Antes de guardar compara textos normalizados, selects, checkboxes, tipo de programacion, modo, horarios, intervalo, fecha, dia de mes y dias de semana.
+3. Los dias de semana se comparan como conjunto ordenado.
+4. Si no hay diferencias, se muestra un mensaje inline y se detiene el envio.
+5. Si hay diferencias, continua el modal de resumen de Fase 6.1.
+6. El backend aplica una comparacion equivalente antes de actualizar para evitar cambios innecesarios si el JS fue omitido.
+
+## Flujo de estado y eliminacion de tarea
+
+1. Para activar o desactivar, el usuario confirma por modal.
+2. El backend actualiza `activo` y `estado_tarea`.
+3. Para eliminar definitivamente, el usuario confirma por modal `danger`.
+4. El backend valida dependencias en `scripts`, `ejecuciones` y `logs_tareas`.
+5. Si no existen dependencias, elimina programaciones y tarea.
+6. Si existen dependencias, bloquea la eliminacion y sugiere desactivar.
+7. Cada accion confirmada o intento bloqueado se registra en `logs_sistema`.
+
+## Flujo de reglas de programacion
+
+1. `MANUAL`: no exige hora ni calendario.
+2. `DIARIA`: exige hora si es `UNA_VEZ`, o intervalo con inicio/fin si es `INTERVALO`.
+3. `SEMANAL`: exige al menos un dia de semana.
+4. `MENSUAL`: exige dia del mes entre 1 y 31.
+5. `FECHA_ESPECIFICA`: exige fecha valida.
+6. `INTERVALO`: exige intervalo mayor a 0 y hora inicio menor a hora fin.
+7. `ejecutar_en_feriados` queda guardado como dato declarativo; la validacion real queda pendiente.
 
 ## Flujo de ejecucion automatica
 

@@ -3,6 +3,7 @@ from flask import Flask
 from app.config import Configuracion, validar_configuracion_critica
 from app.rutas_mantenedores import bp_mantenedores
 from app.rutas import bp_principal
+from app.rutas_tareas import bp_tareas
 from app.rutas_usuarios import bp_usuarios
 
 
@@ -19,4 +20,5 @@ def crear_app():
     app.register_blueprint(bp_principal)
     app.register_blueprint(bp_usuarios)
     app.register_blueprint(bp_mantenedores)
+    app.register_blueprint(bp_tareas)
     return app

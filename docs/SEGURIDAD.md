@@ -82,6 +82,25 @@ Reglas:
 * Se usan permisos existentes de estado: `CLIENTES_ESTADO`, `CATEGORIAS_ESTADO`, `TIPOS_ESTADO`.
 * No se modifican usuarios, tareas, scripts ni trazabilidad historica.
 
+## Tareas
+
+Fase 6 agrega permisos especificos:
+
+* `TAREAS_VER`
+* `TAREAS_CREAR`
+* `TAREAS_EDITAR`
+* `TAREAS_ESTADO`
+* `TAREAS_ELIMINAR`
+
+Reglas:
+
+* Solo usuarios autorizados pueden acceder al modulo `/tareas`.
+* Crear, editar, activar, desactivar y eliminar usan confirmacion por modal corporativo.
+* La eliminacion fisica solo se permite si la tarea no tiene scripts, ejecuciones ni logs asociados.
+* Si hay dependencias, se bloquea y se recomienda desactivar.
+* No se ejecutan scripts ni procesos desde Fase 6.
+* No se manipulan secretos ni `.env` de scripts desde Fase 6.
+
 ## Variables de entorno
 
 Credenciales, servidores, rutas y secret keys deben vivir en `.env`. El archivo real se excluye con `.gitignore`.

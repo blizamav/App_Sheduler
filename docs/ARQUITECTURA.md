@@ -28,6 +28,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/rutas.py`
 * `app/rutas_usuarios.py`
 * `app/rutas_mantenedores.py`
+* `app/rutas_tareas.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -37,7 +38,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 
 HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
 
-La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; las pantallas `/usuarios`, `/clientes`, `/categorias` y `/tipos` consumen datos reales de SQL Server.
+La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; las pantallas `/usuarios`, `/clientes`, `/categorias`, `/tipos` y `/tareas` consumen datos reales de SQL Server.
 
 ## Base de datos
 
@@ -50,6 +51,14 @@ En Fase 3D se agrego la capa inicial de conexion en `app/database/conexion.py`. 
 La ruta temporal `/diagnostico/bd` valida conectividad solo en ambientes `LOCAL` o `QA`, requiere sesion iniciada y no esta disponible en `PRODUCCION`.
 
 Entidades principales propuestas: usuarios, roles, permisos, clientes, categorias, tipos, tareas, programaciones, scripts, scripts_versiones, ejecuciones, logs_tareas, logs_sistema, auditoria_cambios y configuracion_sistema.
+
+Fase 6 agrega repositorio y servicio de tareas:
+
+* `app/repositorios/repositorio_tareas.py`: consultas SQL y persistencia de tareas/programaciones.
+* `app/servicios/servicio_tareas.py`: validaciones de negocio, resumen legible de programacion y logs de sistema.
+* `app/rutas_tareas.py`: endpoints protegidos por permisos para listado, formulario, estado y eliminacion.
+
+La programacion de Fase 6 es declarativa. No existe proceso scheduler ni ejecucion real de scripts en esta fase.
 
 Para versionamiento controlado, `scripts` representa el script logico de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registraran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuaran asociados a `id_ejecucion`.
 
