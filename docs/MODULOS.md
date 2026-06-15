@@ -15,14 +15,13 @@
 * Fase 4 inicial: logs de sistema para login y cambios de usuarios.
 * Fase 4.1: filtros, confirmaciones y mejoras UX del modulo usuarios.
 * Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
+* Fase 5: mantenedores funcionales de clientes, categorias y tipos.
+* Fase 5.1: eliminacion fisica controlada en mantenedores solo cuando no existen dependencias.
 
 ## Modulos pendientes
 
 * Gestion de tareas.
 * Gestion de scripts.
-* Gestion de clientes.
-* Gestion de categorias.
-* Gestion de tipos.
 * Scheduler.
 * Ejecucion manual.
 * Ejecucion automatica.
@@ -47,7 +46,22 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 4 inicial: usuarios, roles y permisos conectados a SQL Server para administracion basica. Aun no existen CRUD de tareas, carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+La aplicacion esta en Fase 5: usuarios, roles, permisos y mantenedores base conectados a SQL Server. Aun no existen CRUD de tareas, carga real de scripts, scheduler, ejecuciones ni paneles funcionales de logs/auditoria.
+
+## Mantenedores base
+
+Implementado en Fase 5:
+
+* `/clientes`: listar, filtrar, crear, editar, activar y desactivar clientes.
+* `/categorias`: listar, filtrar, crear, editar, activar y desactivar categorias.
+* `/tipos`: listar, filtrar, crear, editar, activar y desactivar tipos.
+* Filtros por estado y busqueda general.
+* Contador de resultados.
+* Modal corporativo para crear, editar y cambiar estado.
+* Validacion de nombre obligatorio y duplicados por nombre normalizado.
+* Eliminacion fisica controlada solo si el registro no tiene dependencias en `tareas`.
+* Logs en `logs_sistema` para creacion, edicion, activacion y desactivacion.
+* Logs en `logs_sistema` para eliminacion definitiva e intento bloqueado por dependencias.
 
 ## Modulo de usuarios
 

@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 4.3 documentada y migracion 007 ejecutada/validada localmente.
+* Estado actual: Fase 5.1 implementada con eliminacion controlada en mantenedores.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 4.3 - Definiciones de ejecucion segura, cancelacion de procesos y variables por script.
-* Ultima actualizacion: 2026-06-12 19:35
+* Fase actual: Fase 5.1 - Eliminacion controlada en mantenedores.
+* Ultima actualizacion: 2026-06-13 14:20
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2 y definicion tecnica Fase 4.3.
-* Modulos pendientes: Tareas, scripts, clientes, categorias, tipos, scheduler, logs completos, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5 y eliminacion controlada Fase 5.1.
+* Modulos pendientes: Tareas, scripts, scheduler, logs completos, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
 
@@ -49,6 +49,30 @@
 * Pendiente 3: Implementar conexion Flask-SQL Server y repositorios en fase posterior, sin avanzar a Fase 4.
 
 ## 6. Historial de cambios
+
+### 2026-06-13 14:20 - Fase 5.1 / Eliminacion controlada en mantenedores
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/repositorios/repositorio_mantenedores.py`, `app/servicios/servicio_mantenedores.py`, `app/rutas_mantenedores.py`, `app/templates/mantenedores/listado.html`, `README.md`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se agrego eliminacion fisica controlada para clientes, categorias y tipos cuando no tienen dependencias en `tareas`.
+* Por que se hizo: Permitir corregir registros creados por error sin romper trazabilidad historica cuando ya fueron usados.
+* Decisiones tomadas: No crear permisos nuevos ni modificar SQL; usar permisos existentes `CLIENTES_ESTADO`, `CATEGORIAS_ESTADO`, `TIPOS_ESTADO`; validar dependencias directas contra `tareas`, que cubren dependencias indirectas hacia scripts, programaciones y ejecuciones.
+* Reglas aplicadas: Si no hay dependencias, modal `danger` y eliminacion definitiva; si hay dependencias, bloqueo, mensaje amigable, sugerencia de desactivar y log de intento bloqueado.
+* Pruebas realizadas: `python -m compileall app`; rutas de eliminar registradas; login `.env`; GET `/clientes/`, `/categorias/`, `/tipos/` responden 200.
+* Riesgos detectados: La validacion funcional completa debe probarse con un registro sin dependencias y otro usado por una tarea real cuando Fase 6 exista.
+* Proximos pasos: Validar en navegador con datos reales; no avanzar a Fase 6 hasta aprobacion.
+
+### 2026-06-12 20:05 - Fase 5 / Mantenedores de clientes, categorias y tipos
+
+* Archivos creados: `app/repositorios/repositorio_mantenedores.py`, `app/servicios/servicio_mantenedores.py`, `app/rutas_mantenedores.py`, `app/templates/mantenedores/listado.html`, `app/templates/mantenedores/formulario.html`, `database/seeds/003_permisos_mantenedores.sql`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/templates/base.html`, `README.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implementaron mantenedores funcionales para clientes, categorias y tipos con listado, filtros, creacion, edicion, activacion/desactivacion logica, modales de confirmacion y logs de sistema.
+* Por que se hizo: Clientes, categorias y tipos son datos base requeridos antes de crear tareas y construir rutas fisicas de scripts.
+* Permisos: Se creo seed incremental `003_permisos_mantenedores.sql` con permisos `CLIENTES_*`, `CATEGORIAS_*` y `TIPOS_*`. Admin `.env` accede sin ejecutar seed; usuarios DB requieren ejecutar el seed para recibir permisos.
+* Decisiones tomadas: No eliminar fisicamente; normalizar nombres para evitar duplicados; usar un modulo generico para reducir duplicacion; no modificar tablas existentes.
+* Pruebas realizadas: `python -m compileall app`; listado de rutas Flask; login `.env`; GET `/clientes/`, `/clientes/nuevo`, `/categorias/`, `/categorias/nuevo`, `/tipos/`, `/tipos/nuevo` y filtros responden 200.
+* Riesgos detectados: El seed 003 debe ejecutarse manualmente en SQL Server para usuarios DB con roles ADMIN/TI; falta prueba manual de creacion/edicion contra datos reales.
+* Proximos pasos: Ejecutar seed 003 en SQL Server local, validar CRUD logico en navegador y no avanzar a Fase 6 hasta aprobacion.
 
 ### 2026-06-12 19:35 - Fase 4.3 / Migracion 007 ejecutada y validada localmente
 

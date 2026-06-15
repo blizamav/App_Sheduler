@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 4.1:
+El proyecto avanzo hasta Fase 5:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -17,6 +17,7 @@ El proyecto avanzo hasta Fase 4.1:
 * Fase 4.1: mejoras UX del modulo usuarios, filtros y confirmaciones.
 * Fase 4.2: modal corporativo reutilizable para confirmaciones.
 * Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
+* Fase 5: mantenedores de clientes, categorias y tipos.
 
 ## Stack actual
 
@@ -42,6 +43,10 @@ El proyecto avanzo hasta Fase 4.1:
 * Ruta de diagnostico de base de datos para `LOCAL` y `QA`: `/diagnostico/bd`.
 * Login hibrido: administrador inicial desde `.env` y usuarios desde SQL Server.
 * Administracion basica de usuarios en `/usuarios`.
+* Mantenedores de clientes en `/clientes`.
+* Mantenedores de categorias en `/categorias`.
+* Mantenedores de tipos en `/tipos`.
+* Eliminacion controlada en mantenedores solo si no existen dependencias.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -50,7 +55,6 @@ El proyecto avanzo hasta Fase 4.1:
 
 ## Funcionalidades pendientes
 
-* CRUD de clientes, categorias y tipos.
 * CRUD de tareas.
 * Carga y versionamiento real de scripts.
 * Carga funcional de `.env` por script.
@@ -138,6 +142,8 @@ Orden documentado:
 6. `database/migrations/006_crear_indices.sql`
 7. `database/seeds/001_datos_iniciales_catalogos.sql`
 8. `database/seeds/002_roles_permisos_iniciales.sql`
+9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
+10. `database/seeds/003_permisos_mantenedores.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 

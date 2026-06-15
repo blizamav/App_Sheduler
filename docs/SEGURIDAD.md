@@ -63,6 +63,25 @@ Cambios de usuario que requieren confirmacion explicita:
 
 El cambio de contrasena se registra como evento sin guardar ni mostrar el valor de la contrasena ni su hash.
 
+## Mantenedores base
+
+Clientes, categorias y tipos usan permisos especificos por modulo:
+
+* `CLIENTES_VER`, `CLIENTES_CREAR`, `CLIENTES_EDITAR`, `CLIENTES_ESTADO`
+* `CATEGORIAS_VER`, `CATEGORIAS_CREAR`, `CATEGORIAS_EDITAR`, `CATEGORIAS_ESTADO`
+* `TIPOS_VER`, `TIPOS_CREAR`, `TIPOS_EDITAR`, `TIPOS_ESTADO`
+
+Desde Fase 5.1 existe eliminacion fisica controlada solo para registros sin dependencias en `tareas`.
+
+Reglas:
+
+* Si el registro no tiene dependencias, puede eliminarse definitivamente con modal `danger`.
+* Si tiene dependencias, se bloquea la eliminacion y se sugiere desactivar.
+* La eliminacion confirmada se registra en `logs_sistema`.
+* El intento bloqueado tambien se registra en `logs_sistema` con nivel `WARNING`.
+* Se usan permisos existentes de estado: `CLIENTES_ESTADO`, `CATEGORIAS_ESTADO`, `TIPOS_ESTADO`.
+* No se modifican usuarios, tareas, scripts ni trazabilidad historica.
+
 ## Variables de entorno
 
 Credenciales, servidores, rutas y secret keys deben vivir en `.env`. El archivo real se excluye con `.gitignore`.

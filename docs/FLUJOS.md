@@ -24,6 +24,21 @@
 10. No existe eliminacion fisica desde la app.
 11. Cada creacion, edicion o cambio confirmado registra evento en `logs_sistema`.
 
+## Flujo de mantenedores base
+
+1. Usuario autorizado abre `/clientes`, `/categorias` o `/tipos`.
+2. El sistema lista registros con filtros por estado y busqueda por nombre o descripcion.
+3. Para crear, el usuario ingresa nombre y descripcion opcional.
+4. Antes de guardar, se muestra modal corporativo de confirmacion.
+5. El servicio normaliza el nombre y valida duplicados.
+6. Para editar, se repite confirmacion y validacion de duplicados excluyendo el registro actual.
+7. Para activar o desactivar, se solicita confirmacion por modal.
+8. Para eliminar definitivamente, se solicita confirmacion fuerte por modal.
+9. El backend valida dependencias contra `tareas`.
+10. Si no tiene dependencias, elimina fisicamente y registra `logs_sistema`.
+11. Si tiene dependencias, bloquea la eliminacion, muestra mensaje amigable, sugiere desactivar y registra intento bloqueado.
+12. Cada cambio confirmado registra evento en `logs_sistema`.
+
 ## Flujo de confirmacion critica
 
 1. Usuario presiona un boton marcado como accion critica.

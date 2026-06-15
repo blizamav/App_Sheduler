@@ -26,14 +26,23 @@
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span>02</span>Usuarios</a>
                 {% endif %}
-                <a class="nav-link deshabilitado" href="#"><span>03</span>Tareas</a>
-                <a class="nav-link deshabilitado" href="#"><span>04</span>Scripts</a>
-                <a class="nav-link deshabilitado" href="#"><span>05</span>Logs</a>
-                <a class="nav-link deshabilitado" href="#"><span>06</span>Auditoria</a>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CLIENTES_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.clientes_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.clientes_listado') }}"><span>03</span>Clientes</a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CATEGORIAS_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.categorias_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.categorias_listado') }}"><span>04</span>Categorias</a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TIPOS_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.tipos_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.tipos_listado') }}"><span>05</span>Tipos</a>
+                {% endif %}
+                <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
+                <a class="nav-link deshabilitado" href="#"><span>07</span>Scripts</a>
+                <a class="nav-link deshabilitado" href="#"><span>08</span>Logs</a>
+                <a class="nav-link deshabilitado" href="#"><span>09</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 4</span>
-                <p>Usuarios y permisos iniciales conectados a SQL Server.</p>
+                <span class="badge info">Fase 5</span>
+                <p>Mantenedores base conectados a SQL Server.</p>
             </div>
         </aside>
         {% endif %}

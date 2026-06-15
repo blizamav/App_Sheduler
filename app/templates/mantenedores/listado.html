@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ config.titulo }} - APP Scheduler{% endblock %}
+{% block encabezado %}{{ config.titulo }}{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Mantenedores</p>
+        <h2>{{ config.titulo }}</h2>
+        <p>Administracion base para construir tareas y rutas de scripts. La eliminacion definitiva solo esta permitida si el registro no tiene informacion asociada.</p>
+    </div>
+    <a class="btn primario" href="{{ url_for('mantenedores.' ~ entidad ~ '_nuevo') }}">Nuevo {{ config.singular }}</a>
+</section>
+
+<section class="bloque filtros-usuarios">
+    <form method="get" action="{{ url_for('mantenedores.' ~ entidad ~ '_listado') }}" class="formulario-filtros">
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                <option value="activo" {% if filtros.estado == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if filtros.estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="campo campo-busqueda">
+            <label for="buscar">Buscar</label>
+            <input id="buscar" name="buscar" value="{{ filtros.buscar or '' }}" placeholder="Nombre o descripcion">
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('mantenedores.' ~ entidad ~ '_listado') }}">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Listado</p>
+            <h3>Registros</h3>
+        </div>
+        <div class="badges-linea">
+            <span class="badge info">Mostrando {{ total_registros }} registros</span>
+            <span class="badge info">Eliminacion controlada</span>
+        </div>
+    </div>
+
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripcion</th>
+                    <th>Estado</th>
+                    <th>Creacion</th>
+                    <th>Actualizacion</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in registros %}
+                <tr>
+                    <td>{{ item.nombre }}</td>
+                    <td>{{ item.descripcion or "-" }}</td>
+                    <td>
+                        {% if item.activo %}
+                        <span class="badge activo">Activo</span>
+                        {% else %}
+                        <span class="badge inactivo">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.fecha_creacion }}</td>
+                    <td>{{ item.fecha_actualizacion or "-" }}</td>
+                    <td>
+                        <div class="acciones-tabla">
+                            <a class="btn secundario compacto" href="{{ url_for('mantenedores.' ~ entidad ~ '_editar', id_registro=item.id) }}">Editar</a>
+                            <form method="post" action="{{ url_for('mantenedores.' ~ entidad ~ '_estado', id_registro=item.id) }}">
+                                <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="{{ 'Desactivar ' ~ config.singular if item.activo else 'Activar ' ~ config.singular }}"
+                                    data-confirm-message="{{ 'Deseas desactivar este registro? No se eliminara fisicamente.' if item.activo else 'Deseas activar este registro nuevamente?' }}"
+                                    data-confirm-ok="{{ 'Si, desactivar' if item.activo else 'Si, activar' }}"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="{{ 'warning' if item.activo else 'success' }}"
+                                >
+                                    {{ "Desactivar" if item.activo else "Activar" }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('mantenedores.' ~ entidad ~ '_eliminar', id_registro=item.id) }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="{{ 'Eliminar registro definitivamente' if item.dependencias_tareas == 0 else 'No se puede eliminar' }}"
+                                    data-confirm-message="{{ 'Este registro no tiene informacion asociada. Si lo eliminas, desaparecera definitivamente del sistema. Deseas continuar?' if item.dependencias_tareas == 0 else 'No se puede eliminar este registro porque ya tiene informacion asociada. Puedes desactivarlo para que no vuelva a usarse.' }}"
+                                    data-confirm-ok="{{ 'Si, eliminar definitivamente' if item.dependencias_tareas == 0 else 'Entendido' }}"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="{{ 'danger' if item.dependencias_tareas == 0 else 'warning' }}"
+                                >
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="estado-vacio">No hay registros para mostrar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

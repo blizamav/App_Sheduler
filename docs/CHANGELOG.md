@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-06-13 - Fase 5.1 eliminacion controlada en mantenedores
+
+### Agregado
+
+* Eliminacion fisica controlada para clientes, categorias y tipos.
+* Validacion de dependencias contra `tareas` antes de eliminar.
+* Modal corporativo fuerte para eliminacion definitiva.
+* Bloqueo con mensaje amigable cuando existen dependencias.
+* Logs de sistema para eliminacion confirmada e intento bloqueado.
+
+### Seguridad
+
+* No se eliminan registros usados por tareas.
+* Si hay dependencias, se sugiere desactivar el registro.
+* Se usan permisos existentes `CLIENTES_ESTADO`, `CATEGORIAS_ESTADO` y `TIPOS_ESTADO`.
+
+### Validado
+
+* `python -m compileall app`.
+* Rutas `/clientes/<id>/eliminar`, `/categorias/<id>/eliminar` y `/tipos/<id>/eliminar` registradas.
+* Login `.env` redirige a `/panel`.
+* `/clientes/`, `/categorias/` y `/tipos/` responden 200.
+
+### No implementado
+
+* No se avanzo a Fase 6.
+* No se implementaron tareas.
+* No se implemento carga de scripts.
+* No se implemento scheduler.
+* No se modifico SQL.
+
+## 2026-06-12 - Fase 5 mantenedores clientes categorias tipos
+
+### Agregado
+
+* Mantenedor `/clientes`.
+* Mantenedor `/categorias`.
+* Mantenedor `/tipos`.
+* Repositorio y servicio generico para mantenedores base.
+* Templates reutilizables de listado y formulario.
+* Sidebar con accesos a Clientes, Categorias y Tipos.
+* Seed incremental `database/seeds/003_permisos_mantenedores.sql`.
+
+### Funcionalidad
+
+* Listar, filtrar, crear, editar, activar y desactivar.
+* Filtro por estado y busqueda por nombre/descripcion.
+* Validacion de nombre obligatorio.
+* Validacion de duplicados por nombre normalizado.
+* Sin eliminacion fisica en Fase 5 inicial; ajustado en Fase 5.1 para permitir eliminacion controlada solo sin dependencias.
+* Logs de sistema por creacion, edicion, activacion y desactivacion.
+* Confirmaciones con modal corporativo.
+
+### Validado
+
+* `python -m compileall app`.
+* Login `.env` redirige a `/panel`.
+* `/clientes/`, `/clientes/nuevo`, `/categorias/`, `/categorias/nuevo`, `/tipos/`, `/tipos/nuevo` responden 200.
+* Filtros de listados responden 200.
+
+### No implementado
+
+* No se avanzo a Fase 6.
+* No se implementaron tareas.
+* No se implemento carga de scripts.
+* No se implemento scheduler.
+
 ## 2026-06-12 - Migracion 007 validada localmente
 
 ### Validado Manualmente

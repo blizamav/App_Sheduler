@@ -27,6 +27,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/config.py`
 * `app/rutas.py`
 * `app/rutas_usuarios.py`
+* `app/rutas_mantenedores.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -36,7 +37,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 
 HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
 
-La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; la pantalla `/usuarios` consume datos reales de SQL Server para seguridad.
+La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; las pantallas `/usuarios`, `/clientes`, `/categorias` y `/tipos` consumen datos reales de SQL Server.
 
 ## Base de datos
 

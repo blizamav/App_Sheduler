@@ -34,6 +34,10 @@ def usuario_tiene_permiso(codigo_permiso):
     if codigo_permiso.startswith("USUARIOS_") and "USUARIOS_ADMIN" in permisos:
         return True
 
+    for prefijo in ("CLIENTES_", "CATEGORIAS_", "TIPOS_"):
+        if codigo_permiso.startswith(prefijo) and f"{prefijo}ADMIN" in permisos:
+            return True
+
     return False
 
 

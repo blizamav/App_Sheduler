@@ -57,6 +57,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 7. `database/seeds/001_datos_iniciales_catalogos.sql`
 8. `database/seeds/002_roles_permisos_iniciales.sql`
 9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
+10. `database/seeds/003_permisos_mantenedores.sql`
 
 Resumen por script:
 
@@ -69,6 +70,7 @@ Resumen por script:
 * `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
+* `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
 
 Restricciones implementadas en scripts:
 
