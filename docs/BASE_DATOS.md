@@ -75,7 +75,7 @@ Resumen por script:
 * `006_crear_indices.sql`: crea indices recomendados, indice unico filtrado para version activa y FK diferida `scripts.id_version_activa`.
 * `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
 * `008_ajustar_tareas_y_programaciones_base.sql`: ajusta `tareas` y `programaciones` para Fase 6.
-* `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos.
+* `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos. Ejecutada localmente sin errores; afecto 0 filas porque no existian registros antiguos que corregir.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -134,6 +134,7 @@ Reglas principales:
 * El archivo activo real siempre se obtiene desde `scripts_versiones.nombre_archivo` de la version activa.
 * El nombre del primer archivo cargado no define `scripts.nombre_script`.
 * La eliminacion fisica desde la app se permite solo de forma controlada cuando no existe historial operativo asociado.
+* La migracion 009 ya fue validada localmente. En este ambiente afecto 0 filas porque no existian contenedores antiguos con `nombre_script` terminado en `.py`; la nueva logica queda vigente para proximas cargas.
 
 ## Fase 6 - Tareas y programacion base
 

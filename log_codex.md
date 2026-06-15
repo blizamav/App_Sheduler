@@ -50,6 +50,18 @@
 
 ## 6. Historial de cambios
 
+### 2026-06-15 00:00 - Fase 7.5 / Migracion 009 ejecutada y validada localmente
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se registro que `009_corregir_nombre_script_contenedor.sql` fue ejecutada manualmente en SQL Server local sin errores.
+* Resultado: La migracion afecto 0 filas porque no existian scripts antiguos con `nombre_script` terminado en `.py`.
+* Decision: El resultado es correcto y esperado en este ambiente; no habia datos antiguos que corregir.
+* Alcance: La nueva logica de Fase 7.5 aplica para los proximos scripts cargados, usando `Script de {nombre_tarea}` como contenedor y `scripts_versiones.nombre_archivo` para el archivo real.
+* Pruebas realizadas: Validacion manual reportada por el usuario en SQL Server local.
+* Riesgos detectados: En otros ambientes con datos antiguos, la migracion puede afectar filas si existen nombres terminados en `.py`; revisar conteo antes/despues al ejecutar.
+* Proximos pasos: Continuar pruebas de carga de scripts sin avanzar a Fase 8 hasta aprobacion.
+
 ### 2026-06-15 00:00 - Fase 7.5 / Corregir concepto de script principal y archivo de version
 
 * Archivos creados: `database/migrations/009_corregir_nombre_script_contenedor.sql`.

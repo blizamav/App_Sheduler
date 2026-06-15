@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-15 - Migracion 009 validada localmente
+
+### Validado
+
+* Se ejecuto `009_corregir_nombre_script_contenedor.sql` en SQL Server local sin errores.
+* La migracion afecto 0 filas porque no existian scripts antiguos con `nombre_script` terminado en `.py`.
+* Este resultado es correcto para el ambiente local actual.
+* La nueva logica aplica para los proximos scripts cargados.
+
+### No implementado
+
+* No se avanzo a Fase 8.
+* No se ejecutan scripts.
+* No se implemento scheduler.
+
 ## 2026-06-15 - Fase 7.5 contenedor de script y archivo versionado
 
 ### Corregido
@@ -12,7 +27,7 @@
 
 ### No implementado
 
-* No se ejecuto la migracion 009 automaticamente.
+* La migracion 009 no se ejecuto automaticamente desde Codex; fue ejecutada manualmente y validada localmente.
 * No se modifico SQL ya ejecutado.
 * No se ejecutan scripts.
 * No se implemento scheduler.
