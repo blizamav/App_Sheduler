@@ -31,6 +31,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/rutas_tareas.py`
 * `app/rutas_scripts.py`
 * `app/rutas_ejecuciones.py`
+* `app/rutas_scheduler.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -83,11 +84,22 @@ Fase 8 agrega capa de ejecucion manual:
 
 La ejecucion manual usa `subprocess` sin `shell=True`, registra PID y captura stdout/stderr hacia archivo. La consola se actualiza por polling HTTP cada 3 segundos.
 
+Fase 9A agrega configuracion operativa del scheduler:
+
+* `app/rutas_scheduler.py`: pantalla `/scheduler/configuracion`.
+* `app/repositorios/repositorio_configuracion_scheduler.py`: lectura y actualizacion de configuracion activa.
+* `app/servicios/servicio_configuracion_scheduler.py`: validaciones y logs.
+* `app/templates/scheduler/configuracion.html`: UI administrativa.
+
+La configuracion operativa vive en SQL Server. `.env` queda reservado para configuracion tecnica del ambiente. El worker automatico sera un proceso separado en fase posterior y leera estos parametros desde base de datos.
+
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
 
 Pendiente para fase posterior. Debe ejecutarse como servicio separado dentro de la aplicacion.
+
+Fase 9A no implementa worker. Solo deja preparada la configuracion que usara Fase 9B.
 
 Cuando se implemente, la ejecucion automatica debera resolver siempre `scripts.id_version_activa`. La ejecucion manual podra recibir una version especifica disponible, previa confirmacion si no coincide con la activa.
 

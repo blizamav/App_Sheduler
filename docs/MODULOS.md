@@ -20,6 +20,7 @@
 * Fase 6: tareas con programacion base.
 * Fase 7: gestion de scripts, versiones y `.env` por version.
 * Fase 8: ejecucion manual con consola, logs y detencion controlada.
+* Fase 9A: configuracion operativa del scheduler en base de datos.
 
 ## Modulos pendientes
 
@@ -46,7 +47,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 8: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones y ejecucion manual conectadas a SQL Server. Aun no existe scheduler automatico ni panel avanzado de auditoria.
+La aplicacion esta en Fase 9A: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones, ejecucion manual y configuracion operativa del scheduler conectadas a SQL Server. Aun no existe worker automatico ni panel avanzado de auditoria.
 
 ## Modulo de ejecuciones
 
@@ -70,6 +71,26 @@ No implementado en Fase 8:
 * No existe ejecucion programada por calendario.
 * No existe API de feriados.
 * No existe cola avanzada de trabajos.
+
+## Modulo scheduler
+
+Implementado en Fase 9A:
+
+* `/scheduler/configuracion`: pantalla para ver y editar configuracion operativa.
+* Configuracion persistida en SQL Server, no en `.env`.
+* Defaults seguros: scheduler apagado y ejecucion automatica deshabilitada.
+* Validaciones de intervalo entre 10 y 3600 segundos.
+* Validaciones de maximo concurrentes entre 1 y 20.
+* Modo mantenimiento con advertencia visual.
+* Logs de sistema para cambios.
+* Seed incremental `database/seeds/007_permisos_scheduler.sql`.
+
+No implementado en Fase 9A:
+
+* No existe worker automatico.
+* No se evaluan tareas programadas.
+* No se ejecutan tareas automaticas.
+* No se conecta API de feriados.
 
 ## Modulo de scripts
 

@@ -127,6 +127,23 @@ Rutas usadas por Fase 8:
 
 Los procesos se ejecutan con el interprete Python actual del entorno donde corre Flask. En Windows, levantar la app desde el entorno virtual correcto antes de ejecutar tareas.
 
+## Configuracion Scheduler Fase 9A
+
+Ejecutar manualmente en SSMS:
+
+```text
+database/migrations/010_crear_configuracion_scheduler.sql
+database/seeds/007_permisos_scheduler.sql
+```
+
+Luego abrir:
+
+```text
+http://127.0.0.1:5000/scheduler/configuracion
+```
+
+La configuracion operativa vive en SQL Server. No se requiere agregar variables a `.env` para controlar el scheduler.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

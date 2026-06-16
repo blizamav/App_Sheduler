@@ -1,0 +1,31 @@
+/*
+Fase 9A - APP Scheduler
+Seed: 007_permisos_scheduler.sql
+Objetivo: agregar permisos incrementales para configuracion operativa del scheduler.
+Nota: ejecutar manualmente en SSMS. No modifica seeds anteriores.
+*/
+
+USE APP_SCHEDULER_QA;
+GO
+
+MERGE dbo.permisos AS destino
+USING (VALUES
+    ('SCHEDULER_CONFIG_VER', N'scheduler', N'config_ver', N'Ver configuracion operativa del scheduler.'),
+    ('SCHEDULER_CONFIG_EDITAR', N'scheduler', N'config_editar', N'Editar configuracion operativa del scheduler.')
+) AS origen(codigo_permiso, modulo, accion, descripcion)
+ON destino.codigo_permiso = origen.codigo_permiso
+WHEN NOT MATCHED THEN
+    INSERT (codigo_permiso, modulo, accion, descripcion, usuario_creacion)
+    VALUES (origen.codigo_permiso, origen.modulo, origen.accion, origen.descripcion, N'seed_007');
+GO
+
+INSERT INTO dbo.roles_permisos (id_rol, id_permiso, permitido, usuario_creacion)
+SELECT r.id_rol, p.id_permiso, 1, N'seed_007'
+FROM dbo.roles r
+JOIN dbo.permisos p ON p.codigo_permiso IN ('SCHEDULER_CONFIG_VER','SCHEDULER_CONFIG_EDITAR')
+WHERE r.codigo_rol IN ('SUPER_ADMIN','ADMIN','TI')
+  AND NOT EXISTS (
+      SELECT 1 FROM dbo.roles_permisos rp
+      WHERE rp.id_rol = r.id_rol AND rp.id_permiso = p.id_permiso
+  );
+GO

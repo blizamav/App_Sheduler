@@ -201,7 +201,42 @@
 
 ## Flujo de ejecucion automatica
 
-Pendiente para fase posterior. No se implementa scheduler automatico en Fase 8.
+Pendiente para Fase 9B. En Fase 9A solo existe configuracion operativa; no se implementa worker automatico.
+
+## Flujo de configuracion scheduler
+
+Validacion local Fase 9A:
+
+* La migracion `010_crear_configuracion_scheduler.sql` fue ejecutada correctamente en SQL Server local.
+* El seed `007_permisos_scheduler.sql` fue ejecutado correctamente en SQL Server local.
+* La pantalla `/scheduler/configuracion` carga correctamente.
+* La edicion muestra modal corporativo con resumen de cambios.
+* Guardar sin cambios muestra toast.
+* Las validaciones bloquean valores fuera de rango.
+* Los cambios quedan registrados en `logs_sistema`.
+* No se implemento worker automatico, no se ejecutan tareas automaticas y no se conecto API de feriados.
+
+1. Usuario autorizado abre `/scheduler/configuracion`.
+2. El sistema lee la configuracion activa desde `configuracion_scheduler`.
+3. Si no existe registro activo, crea un default seguro con scheduler apagado.
+4. Usuario edita parametros operativos.
+5. Frontend compara valores originales contra actuales.
+6. Si no hay cambios, muestra toast `No hay cambios para guardar.` y no envia formulario.
+7. Si hay cambios, abre modal corporativo con resumen de diferencias.
+8. Backend valida intervalo entre 10 y 3600 segundos.
+9. Backend valida maximo concurrentes entre 1 y 20.
+10. Backend guarda cambios y registra `logs_sistema`.
+11. Fase 9A no inicia worker ni ejecuta tareas automaticas.
+
+## Uso futuro de configuracion por worker
+
+1. Fase 9B leera la configuracion activa desde SQL Server.
+2. Si `scheduler_activo = 0`, el worker no evaluara tareas.
+3. Si `modo_mantenimiento = 1`, el worker no iniciara ejecuciones nuevas.
+4. Si `permitir_ejecucion_automatica = 0`, el worker podra revisar pero no ejecutar.
+5. `intervalo_revision_segundos` definira cada cuanto revisa.
+6. `max_ejecuciones_concurrentes` limitara ejecuciones automaticas simultaneas.
+7. `nombre_worker_principal` identificara el worker.
 
 ## Flujo de ejecucion manual
 

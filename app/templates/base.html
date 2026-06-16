@@ -42,11 +42,16 @@
                 {% endif %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>07</span>Scripts</a>
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>08</span>Ejecuciones</a>
-                <a class="nav-link deshabilitado" href="#"><span>09</span>Auditoria</a>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scheduler.') %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>09</span>Scheduler</a>
+                {% else %}
+                <a class="nav-link deshabilitado" href="#"><span>09</span>Scheduler</a>
+                {% endif %}
+                <a class="nav-link deshabilitado" href="#"><span>10</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 8</span>
-                <p>Ejecucion manual con consola. Scheduler pendiente.</p>
+                <span class="badge info">Fase 9A</span>
+                <p>Configuracion scheduler lista. Worker pendiente.</p>
             </div>
         </aside>
         {% endif %}
@@ -96,7 +101,7 @@
             </div>
             <div class="terminal-visual">
                 <p><span>Fase 8</span> Consola manual disponible por ejecucion.</p>
-                <p><span>Scheduler</span> Pendiente para fase posterior.</p>
+                <p><span>Fase 9A</span> Configuracion operativa disponible.</p>
             </div>
         </aside>
 

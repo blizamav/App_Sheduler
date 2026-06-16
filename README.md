@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 8:
+El proyecto avanzo hasta Fase 9A:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -22,6 +22,7 @@ El proyecto avanzo hasta Fase 8:
 * Fase 6: tareas con programacion base, sin ejecucion real ni scheduler.
 * Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version.
 * Fase 8: ejecucion manual con consola, logs y detencion controlada.
+* Fase 9A: configuracion operativa del scheduler en base de datos, sin worker automatico.
 
 ## Stack actual
 
@@ -59,6 +60,7 @@ El proyecto avanzo hasta Fase 8:
 * Ejecucion manual de version activa.
 * Consola visual de ejecucion con polling.
 * Detencion manual de ejecucion.
+* Configuracion operativa del scheduler en `/scheduler/configuracion`.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -159,6 +161,8 @@ Orden documentado:
 13. `database/seeds/005_permisos_scripts.sql`
 14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
 15. `database/seeds/006_permisos_ejecuciones.sql`
+16. `database/migrations/010_crear_configuracion_scheduler.sql`
+17. `database/seeds/007_permisos_scheduler.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 

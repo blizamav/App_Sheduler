@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-06-16 - Fase 9A validada localmente
+
+### Validado
+
+* Se ejecuto `database/migrations/010_crear_configuracion_scheduler.sql` en SQL Server local.
+* Se ejecuto `database/seeds/007_permisos_scheduler.sql` en SQL Server local.
+* La tabla `configuracion_scheduler` fue creada correctamente.
+* Existe un registro inicial activo con defaults seguros.
+* `scheduler_activo` quedo apagado por defecto.
+* `permitir_ejecucion_automatica` quedo deshabilitado por defecto.
+* `intervalo_revision_segundos` quedo en 60.
+* `max_ejecuciones_concurrentes` quedo en 3.
+* `modo_mantenimiento` quedo desactivado.
+* Los permisos `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` fueron insertados.
+* La ruta `/scheduler/configuracion` carga correctamente.
+* La pantalla permite editar configuracion.
+* Guardar cambios muestra modal corporativo con resumen.
+* Guardar sin cambios muestra toast.
+* Las validaciones bloquean valores fuera de rango.
+* Los cambios quedan registrados en `logs_sistema`.
+
+### No implementado
+
+* No se implemento worker automatico.
+* No se ejecutan tareas automaticas.
+* No se conecto API de feriados.
+* No se avanzo a Fase 9B.
+
+## 2026-06-15 - Fase 9A configuracion scheduler
+
+### Agregado
+
+* Modulo `/scheduler/configuracion`.
+* Migracion `010_crear_configuracion_scheduler.sql`.
+* Seed `007_permisos_scheduler.sql`.
+* Tabla `configuracion_scheduler` con defaults seguros.
+* Pantalla para ver y editar scheduler activo, ejecucion automatica, intervalo, maximo concurrentes, modo mantenimiento, worker y descripcion.
+* Modal corporativo con resumen de cambios.
+* Toast `No hay cambios para guardar.` cuando no hay diferencias.
+* Logs de sistema para cambios.
+
+### No implementado
+
+* No se implemento worker automatico.
+* No se ejecutan tareas automaticas.
+* No se conecto API de feriados.
+* No se avanzo a Fase 9B.
+
 ## 2026-06-15 - Fase 8 validada localmente
 
 ### Validado

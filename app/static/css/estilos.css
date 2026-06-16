@@ -300,6 +300,12 @@ textarea {
     text-transform: uppercase;
 }
 
+.grid-formulario {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
 .btn.primario {
     background: linear-gradient(135deg, var(--color-azul), #1174d8);
     color: #ffffff;

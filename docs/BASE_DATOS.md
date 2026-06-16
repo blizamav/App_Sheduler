@@ -43,10 +43,12 @@ database/
     007_agregar_control_ejecucion_y_env_scripts.sql
     008_ajustar_tareas_y_programaciones_base.sql
     009_corregir_nombre_script_contenedor.sql
+    010_crear_configuracion_scheduler.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
     006_permisos_ejecuciones.sql
+    007_permisos_scheduler.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -66,6 +68,8 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 13. `database/seeds/005_permisos_scripts.sql`
 14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
 15. `database/seeds/006_permisos_ejecuciones.sql`
+16. `database/migrations/010_crear_configuracion_scheduler.sql`
+17. `database/seeds/007_permisos_scheduler.sql`
 
 Resumen por script:
 
@@ -78,12 +82,14 @@ Resumen por script:
 * `007_agregar_control_ejecucion_y_env_scripts.sql`: agrega soporte propuesto para `.env` por version de script y trazabilidad de detencion manual de ejecuciones.
 * `008_ajustar_tareas_y_programaciones_base.sql`: ajusta `tareas` y `programaciones` para Fase 6.
 * `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos. Ejecutada localmente sin errores; afecto 0 filas porque no existian registros antiguos que corregir.
+* `010_crear_configuracion_scheduler.sql`: crea `configuracion_scheduler` con defaults seguros para Fase 9A; no inicia worker ni ejecuciones automaticas.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
 * `004_permisos_tareas.sql`: inserta permisos incrementales para tareas y los asigna a roles base.
 * `005_permisos_scripts.sql`: inserta permisos incrementales para gestion de scripts, versiones y env.
 * `006_permisos_ejecuciones.sql`: inserta permisos incrementales para ejecucion manual, consola, log y detencion.
+* `007_permisos_scheduler.sql`: inserta permisos incrementales para ver y editar configuracion operativa del scheduler.
 
 ## Fase 7 - Scripts y versiones
 
@@ -123,6 +129,53 @@ Permisos:
 * `EJECUCIONES_LOG_VER`.
 
 La ejecucion manual registra `id_tarea`, `id_script`, `id_version`, estado, fechas, usuario, PID y codigo de salida. El archivo de log se registra en `logs_tareas` con ruta fisica y relativa.
+
+## Fase 9A - Configuracion scheduler
+
+Se crea migracion incremental `010_crear_configuracion_scheduler.sql`.
+
+Tabla: `configuracion_scheduler`.
+
+Objetivo: almacenar configuracion operativa del scheduler en SQL Server para que el worker futuro no dependa de `.env`.
+
+Campos principales:
+
+* `scheduler_activo bit`.
+* `intervalo_revision_segundos int`.
+* `max_ejecuciones_concurrentes int`.
+* `permitir_ejecucion_automatica bit`.
+* `modo_mantenimiento bit`.
+* `nombre_worker_principal varchar(100)`.
+* `descripcion varchar(500)`.
+* `usuario_actualizacion nvarchar(100)`.
+* `activo bit`.
+
+Defaults seguros:
+
+* Scheduler apagado.
+* Ejecucion automatica no permitida.
+* Intervalo 60 segundos.
+* Maximo 3 ejecuciones concurrentes.
+* Modo mantenimiento inactivo.
+* Worker `worker_default`.
+
+Restricciones:
+
+* `intervalo_revision_segundos BETWEEN 10 AND 3600`.
+* `max_ejecuciones_concurrentes BETWEEN 1 AND 20`.
+* Indice unico filtrado para una sola configuracion activa.
+
+Seed: `007_permisos_scheduler.sql` con `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR`.
+
+Validacion local:
+
+* `010_crear_configuracion_scheduler.sql` fue ejecutado correctamente en SQL Server local.
+* `007_permisos_scheduler.sql` fue ejecutado correctamente en SQL Server local.
+* La tabla `configuracion_scheduler` existe y contiene un registro inicial activo.
+* Los defaults seguros quedaron validados: scheduler apagado, ejecucion automatica deshabilitada, intervalo 60, maximo concurrentes 3 y mantenimiento desactivado.
+* Los permisos `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` fueron insertados.
+* La configuracion se edita desde `/scheduler/configuracion` y los cambios se registran en `logs_sistema`.
+* Esta validacion no habilita worker automatico ni ejecuciones automaticas.
 
 Restricciones implementadas en scripts:
 

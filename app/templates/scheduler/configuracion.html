@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block titulo %}Configuracion Scheduler - APP Scheduler{% endblock %}
+{% block encabezado %}Configuracion Scheduler{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 9A</p>
+        <h2>Configuracion operativa del scheduler</h2>
+        <p>Administra parametros que usara el worker automatico en una fase posterior. Esta pantalla no ejecuta tareas automaticas.</p>
+    </div>
+    <span class="badge {{ 'activo' if configuracion.scheduler_activo else 'inactivo' }}">{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span>
+</section>
+
+{% if configuracion.advertencias %}
+<section class="mensajes">
+    {% for advertencia in configuracion.advertencias %}
+    <div class="alerta advertencia">{{ advertencia }}</div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Resumen</p>
+                <h3>Estado actual</h3>
+            </div>
+            <span class="badge info">BD</span>
+        </div>
+        <div class="detalle-grid">
+            <div><strong>Scheduler</strong><span>{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span></div>
+            <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
+            <div><strong>Intervalo</strong><span>{{ configuracion.intervalo_revision_segundos }} segundos</span></div>
+            <div><strong>Maximo concurrentes</strong><span>{{ configuracion.max_ejecuciones_concurrentes }}</span></div>
+            <div><strong>Mantenimiento</strong><span>{{ "Activo" if configuracion.modo_mantenimiento else "Inactivo" }}</span></div>
+            <div><strong>Worker</strong><span>{{ configuracion.nombre_worker_principal or "-" }}</span></div>
+            <div><strong>Ultima actualizacion</strong><span>{{ configuracion.fecha_actualizacion or "-" }}</span></div>
+            <div><strong>Usuario</strong><span>{{ configuracion.usuario_actualizacion or "-" }}</span></div>
+        </div>
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Uso futuro</p>
+                <h3>Worker separado</h3>
+            </div>
+        </div>
+        <p class="estado-vacio">Fase 9B leera esta configuracion desde SQL Server. Si el scheduler esta apagado o en mantenimiento, el worker no iniciara ejecuciones automaticas.</p>
+    </article>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Edicion</p>
+            <h3>Parametros operativos</h3>
+        </div>
+    </div>
+    <form
+        method="post"
+        class="formulario-admin requiere-confirmacion-form"
+        data-confirm-summary="scheduler"
+        data-confirm-title="Guardar configuracion del scheduler"
+        data-confirm-message="Estas a punto de modificar la configuracion operativa del scheduler."
+        data-confirm-ok="Si, guardar configuracion"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="warning"
+    >
+        <label class="checkline">
+            <input name="scheduler_activo" type="checkbox" value="1" data-label="Scheduler activo" data-original="{{ '1' if configuracion.scheduler_activo else '0' }}" {% if configuracion.scheduler_activo %}checked{% endif %}>
+            Scheduler activo
+        </label>
+        <label class="checkline">
+            <input name="permitir_ejecucion_automatica" type="checkbox" value="1" data-label="Ejecucion automatica" data-original="{{ '1' if configuracion.permitir_ejecucion_automatica else '0' }}" {% if configuracion.permitir_ejecucion_automatica %}checked{% endif %}>
+            Permitir ejecucion automatica
+        </label>
+        <label class="checkline">
+            <input name="modo_mantenimiento" type="checkbox" value="1" data-label="Modo mantenimiento" data-original="{{ '1' if configuracion.modo_mantenimiento else '0' }}" {% if configuracion.modo_mantenimiento %}checked{% endif %}>
+            Modo mantenimiento
+        </label>
+        <div class="grid-formulario">
+            <div class="campo">
+                <label for="intervalo_revision_segundos">Intervalo revision segundos</label>
+                <input id="intervalo_revision_segundos" name="intervalo_revision_segundos" type="number" min="10" max="3600" value="{{ configuracion.intervalo_revision_segundos }}" data-label="Intervalo revision" data-original="{{ configuracion.intervalo_revision_segundos }}" required>
+            </div>
+            <div class="campo">
+                <label for="max_ejecuciones_concurrentes">Maximo ejecuciones concurrentes</label>
+                <input id="max_ejecuciones_concurrentes" name="max_ejecuciones_concurrentes" type="number" min="1" max="20" value="{{ configuracion.max_ejecuciones_concurrentes }}" data-label="Maximo concurrentes" data-original="{{ configuracion.max_ejecuciones_concurrentes }}" required>
+            </div>
+        </div>
+        <div class="campo">
+            <label for="nombre_worker_principal">Worker principal</label>
+            <input id="nombre_worker_principal" name="nombre_worker_principal" maxlength="100" value="{{ configuracion.nombre_worker_principal or '' }}" data-label="Worker principal" data-original="{{ configuracion.nombre_worker_principal or '' }}">
+        </div>
+        <div class="campo">
+            <label for="descripcion">Descripcion</label>
+            <textarea id="descripcion" name="descripcion" maxlength="500" rows="3" data-label="Descripcion" data-original="{{ configuracion.descripcion or '' }}">{{ configuracion.descripcion or '' }}</textarea>
+        </div>
+        <button class="btn primario" type="submit">Guardar configuracion</button>
+    </form>
+</section>
+{% endblock %}

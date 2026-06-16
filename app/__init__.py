@@ -5,6 +5,7 @@ from app.rutas_mantenedores import bp_mantenedores
 from app.rutas import bp_principal
 from app.rutas_ejecuciones import bp_ejecuciones
 from app.rutas_scripts import bp_scripts
+from app.rutas_scheduler import bp_scheduler
 from app.rutas_tareas import bp_tareas
 from app.rutas_usuarios import bp_usuarios
 
@@ -25,4 +26,5 @@ def crear_app():
     app.register_blueprint(bp_tareas)
     app.register_blueprint(bp_scripts)
     app.register_blueprint(bp_ejecuciones)
+    app.register_blueprint(bp_scheduler)
     return app

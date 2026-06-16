@@ -113,6 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dataset.confirmSummary === "tarea") {
             return obtenerConfirmacionTarea(formulario);
         }
+        if (dataset.confirmSummary === "scheduler") {
+            return obtenerConfirmacionScheduler(formulario);
+        }
 
         if (dataset.formModo === "crear") {
             return dataset;
@@ -174,6 +177,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             evento.preventDefault();
             if (formulario.dataset.confirmSummary === "tarea" && !validarFormularioTarea(formulario)) {
+                return;
+            }
+            if (formulario.dataset.confirmSummary === "scheduler" && !formulario.checkValidity()) {
+                formulario.reportValidity();
+                return;
+            }
+            if (formulario.dataset.confirmSummary === "scheduler" && !formularioSchedulerTieneCambios(formulario)) {
+                mostrarToast("No hay cambios para guardar.", "info");
                 return;
             }
             if (
@@ -543,6 +554,51 @@ document.addEventListener("DOMContentLoaded", () => {
         confirmCancel: formulario.dataset.confirmCancel,
         confirmType: formulario.dataset.confirmType,
         confirmSummaryNode: crearResumenTarea(formulario),
+    });
+
+    const valorSchedulerCampo = (campo) => {
+        if (campo.type === "checkbox") {
+            return campo.checked ? "Si" : "No";
+        }
+        return normalizarTexto(campo.value);
+    };
+
+    const valorSchedulerOriginal = (campo) => {
+        if (campo.type === "checkbox") {
+            return campo.dataset.original === "1" ? "Si" : "No";
+        }
+        return normalizarTexto(campo.dataset.original || "");
+    };
+
+    const cambiosScheduler = (formulario) =>
+        Array.from(formulario.querySelectorAll("[data-original]"))
+            .map((campo) => ({
+                etiqueta: campo.dataset.label || campo.name,
+                anterior: valorSchedulerOriginal(campo),
+                nuevo: valorSchedulerCampo(campo),
+            }))
+            .filter((cambio) => cambio.anterior !== cambio.nuevo);
+
+    const formularioSchedulerTieneCambios = (formulario) => cambiosScheduler(formulario).length > 0;
+
+    const crearResumenScheduler = (formulario) => {
+        const resumen = document.createElement("div");
+        resumen.className = "resumen-tarea";
+        const filas = cambiosScheduler(formulario).map((cambio) => [
+            cambio.etiqueta,
+            `${cambio.anterior || "-"} -> ${cambio.nuevo || "-"}`,
+        ]);
+        resumen.appendChild(crearSeccionResumen("Cambios", filas));
+        return resumen;
+    };
+
+    const obtenerConfirmacionScheduler = (formulario) => ({
+        confirmTitle: formulario.dataset.confirmTitle,
+        confirmMessage: formulario.dataset.confirmMessage,
+        confirmOk: formulario.dataset.confirmOk,
+        confirmCancel: formulario.dataset.confirmCancel,
+        confirmType: formulario.dataset.confirmType,
+        confirmSummaryNode: crearResumenScheduler(formulario),
     });
 
     const actualizarProgramacion = (formulario) => {

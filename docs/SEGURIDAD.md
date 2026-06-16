@@ -176,6 +176,33 @@ Validacion local:
 * La detencion manual registro estado `DETENIDA_MANUALMENTE` y PID asociado.
 * No se implemento scheduler automatico ni API de feriados.
 
+## Configuracion scheduler
+
+Fase 9A agrega permisos:
+
+* `SCHEDULER_CONFIG_VER`.
+* `SCHEDULER_CONFIG_EDITAR`.
+
+Reglas:
+
+* La configuracion operativa vive en SQL Server.
+* `.env` queda para configuracion tecnica del ambiente y secretos minimos.
+* Scheduler queda apagado por defecto.
+* La ejecucion automatica queda deshabilitada por defecto.
+* Cambios requieren modal corporativo.
+* Cambios se registran en `logs_sistema`.
+* No se inicia worker automatico en Fase 9A.
+* No se ejecutan tareas automaticas en Fase 9A.
+* No se conecta API de feriados.
+
+Validacion local:
+
+* `010_crear_configuracion_scheduler.sql` y `007_permisos_scheduler.sql` fueron ejecutados correctamente en SQL Server local.
+* La configuracion inicia con defaults seguros: scheduler apagado y ejecucion automatica deshabilitada.
+* La pantalla `/scheduler/configuracion` exige permisos `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR`.
+* Los cambios se confirman con modal corporativo y se registran en `logs_sistema`.
+* Las validaciones bloquean intervalos y maximos concurrentes fuera de rango.
+
 ## Variables sensibles por script
 
 Fase 4.3 define que cada script/version podra tener un `.env` propio bajo `env_scripts/`.

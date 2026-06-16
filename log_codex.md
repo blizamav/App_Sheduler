@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-007 ejecutadas localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 8 implementada con ejecucion manual, consola y detencion controlada.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
+* Estado actual: Fase 9A implementada con configuracion operativa del scheduler en base de datos.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 8 - Ejecucion manual con consola y control de detencion.
-* Ultima actualizacion: 2026-06-15 00:00
+* Fase actual: Fase 9A - Configuracion operativa del scheduler.
+* Ultima actualizacion: 2026-06-16 00:00
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -17,7 +17,7 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Pendiente para fase posterior.
+* Scheduler: Configuracion operativa en BD implementada; worker automatico pendiente para fase posterior.
 * Logs: Logs de tarea para ejecucion manual implementados en Fase 8; logs avanzados pendientes.
 * Auditoria: Pendiente para Fase 10.
 * Docker: Pendiente para Fase 11.
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5 y ejecucion manual Fase 8.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8 y configuracion scheduler Fase 9A.
 * Modulos pendientes: Scheduler automatico, ejecucion programada, API feriados, logs avanzados, auditoria, Docker, calendario laboral.
 
 ## 4. Reglas del proyecto
@@ -45,10 +45,38 @@
 ## 5. Pendientes
 
 * Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
-* Pendiente 2: Ejecutar seed 006 en SQL Server local para usuarios de base de datos.
-* Pendiente 3: Validar ejecucion manual con script exitoso, script con error y detencion manual.
+* Pendiente 2: Definir alcance de Fase 9B antes de implementar worker automatico.
+* Pendiente 3: Mantener pruebas de regresion de ejecucion manual antes de activar cualquier automatizacion futura.
 
 ## 6. Historial de cambios
+
+### 2026-06-16 00:00 - Fase 9A / Migracion 010 y seed 007 validados localmente
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se registro que `database/migrations/010_crear_configuracion_scheduler.sql` y `database/seeds/007_permisos_scheduler.sql` fueron ejecutados correctamente en SQL Server local.
+* Validaciones reportadas: Tabla `configuracion_scheduler` creada; registro inicial activo con defaults seguros; `scheduler_activo = 0`; `permitir_ejecucion_automatica = 0`; `intervalo_revision_segundos = 60`; `max_ejecuciones_concurrentes = 3`; `modo_mantenimiento = 0`.
+* Permisos validados: `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` insertados correctamente.
+* Validacion funcional: `/scheduler/configuracion` carga, permite editar, muestra modal corporativo con resumen, muestra toast al guardar sin cambios, bloquea valores fuera de rango y registra cambios en `logs_sistema`.
+* No implementado: No se implemento worker automatico, no se ejecutan tareas automaticas, no se conecto API de feriados y no se avanzo a Fase 9B.
+* Riesgos detectados: Antes de Fase 9B se debe definir el comportamiento del worker ante errores, concurrencia, feriados y recuperacion despues de caidas.
+* Proximos pasos: Preparar propuesta tecnica de Fase 9B solo cuando sea aprobada.
+
+### 2026-06-15 00:00 - Fase 9A / Configuracion operativa del scheduler
+
+* Archivos creados: `database/migrations/010_crear_configuracion_scheduler.sql`, `database/seeds/007_permisos_scheduler.sql`, `app/repositorios/repositorio_configuracion_scheduler.py`, `app/servicios/servicio_configuracion_scheduler.py`, `app/rutas_scheduler.py`, `app/templates/scheduler/configuracion.html`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/CHANGELOG.md`, `docs/DESPLIEGUE.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se implemento modulo `/scheduler/configuracion` para administrar configuracion operativa del scheduler desde SQL Server.
+* Base de datos: Se creo migracion 010 con tabla `configuracion_scheduler`, defaults seguros y restriccion de una configuracion activa.
+* Permisos: Se creo seed 007 con `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR`.
+* Decisiones: La configuracion operativa vive en BD; `.env` queda para configuracion tecnica y secretos minimos.
+* Validaciones: Intervalo entre 10 y 3600 segundos, maximo concurrentes entre 1 y 20, worker maximo 100 caracteres y descripcion maximo 500.
+* UX: Pantalla con resumen, advertencias, formulario, modal con resumen de cambios y toast si no hay cambios.
+* Logs: Cambios registrados en `logs_sistema` con valores anteriores/nuevos no sensibles.
+* No implementado: No se creo worker automatico, no se ejecutan tareas automaticas, no se conecto API de feriados y no se avanzo a Fase 9B.
+* Pruebas realizadas: `python -m compileall app`; carga de `crear_app()` y verificacion de ruta `/scheduler/configuracion`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`; render de `scheduler/configuracion.html` con datos simulados.
+* Riesgos detectados: `/scheduler/configuracion` requiere ejecutar migracion 010 antes de probar contra BD real.
+* Proximos pasos: Ejecutar migracion 010 y seed 007 en SSMS, validar pantalla y mantener worker para Fase 9B.
 
 ### 2026-06-15 00:00 - Fase 8 / Seed 006 ejecutado y validacion local completada
 
