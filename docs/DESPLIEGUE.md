@@ -144,6 +144,44 @@ http://127.0.0.1:5000/scheduler/configuracion
 
 La configuracion operativa vive en SQL Server. No se requiere agregar variables a `.env` para controlar el scheduler.
 
+## Worker Scheduler Fase 9B
+
+Ejecutar manualmente en SSMS antes de levantar el worker:
+
+```text
+database/migrations/011_agregar_control_scheduler_ejecuciones.sql
+```
+
+La app web y el worker son procesos separados.
+
+Terminal 1:
+
+```powershell
+python run.py
+```
+
+Terminal 2:
+
+```powershell
+python scheduler_worker.py
+```
+
+Para probar un solo ciclo sin dejar el worker en ejecucion continua:
+
+```powershell
+python scheduler_worker.py --once
+```
+
+Antes de activar ejecucion automatica:
+
+1. Abrir `/scheduler/configuracion`.
+2. Activar `scheduler_activo`.
+3. Activar `permitir_ejecucion_automatica`.
+4. Verificar que `modo_mantenimiento` este desactivado.
+5. Configurar intervalo y maximo concurrentes.
+
+El worker usa `.env` solo para conexion a SQL Server y rutas tecnicas. La configuracion operativa vive en `configuracion_scheduler`.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 9A:
+El proyecto avanzo hasta Fase 9D:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -23,6 +23,9 @@ El proyecto avanzo hasta Fase 9A:
 * Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version.
 * Fase 8: ejecucion manual con consola, logs y detencion controlada.
 * Fase 9A: configuracion operativa del scheduler en base de datos, sin worker automatico.
+* Fase 9B: worker automatico separado, evaluacion de programaciones y ejecuciones automaticas.
+* Fase 9C: timestamps por linea en logs de ejecucion.
+* Fase 9D: historial de ejecuciones agrupado por ano, mes y dia con filtros y paginacion.
 
 ## Stack actual
 
@@ -61,6 +64,11 @@ El proyecto avanzo hasta Fase 9A:
 * Consola visual de ejecucion con polling.
 * Detencion manual de ejecucion.
 * Configuracion operativa del scheduler en `/scheduler/configuracion`.
+* Worker separado ejecutable con `python scheduler_worker.py`.
+* Ejecucion automatica con anti-duplicados por `clave_programacion`.
+* Listado basico de ejecuciones en `/ejecuciones`.
+* Logs de ejecucion con formato `YYYY-MM-DD HH:mm:ss | NIVEL | mensaje`.
+* Historial `/ejecuciones` agrupado por ano, mes y dia, con filtros y paginacion server-side.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -69,8 +77,7 @@ El proyecto avanzo hasta Fase 9A:
 
 ## Funcionalidades pendientes
 
-* Scheduler automatico.
-* Ejecuciones automaticas por calendario.
+* Dashboard avanzado del scheduler.
 * Panel avanzado de logs.
 * Auditoria funcional.
 * Docker QA/produccion.
@@ -163,6 +170,7 @@ Orden documentado:
 15. `database/seeds/006_permisos_ejecuciones.sql`
 16. `database/migrations/010_crear_configuracion_scheduler.sql`
 17. `database/seeds/007_permisos_scheduler.sql`
+18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 
@@ -190,6 +198,31 @@ database/seeds/005_permisos_scripts.sql
 ```
 
 Ejecutalo manualmente en SSMS para usuarios de base de datos. El administrador desde `.env` puede acceder sin seed.
+
+Fase 9B agrega control de ejecuciones automaticas:
+
+```text
+database/migrations/011_agregar_control_scheduler_ejecuciones.sql
+```
+
+Ejecutalo manualmente en SSMS antes de levantar el worker automatico.
+
+## Worker automatico
+
+La app web y el scheduler son procesos separados:
+
+```powershell
+python run.py
+python scheduler_worker.py
+```
+
+Para una prueba controlada de un solo ciclo:
+
+```powershell
+python scheduler_worker.py --once
+```
+
+El worker lee `configuracion_scheduler` desde SQL Server. Para ejecutar tareas automaticas, activa desde `/scheduler/configuracion`: `scheduler_activo`, `permitir_ejecucion_automatica` y deja `modo_mantenimiento` desactivado.
 
 ## Documentacion
 

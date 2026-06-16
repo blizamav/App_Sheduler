@@ -91,17 +91,38 @@ Fase 9A agrega configuracion operativa del scheduler:
 * `app/servicios/servicio_configuracion_scheduler.py`: validaciones y logs.
 * `app/templates/scheduler/configuracion.html`: UI administrativa.
 
-La configuracion operativa vive en SQL Server. `.env` queda reservado para configuracion tecnica del ambiente. El worker automatico sera un proceso separado en fase posterior y leera estos parametros desde base de datos.
+La configuracion operativa vive en SQL Server. `.env` queda reservado para configuracion tecnica del ambiente. Desde Fase 9B el worker automatico es un proceso separado y lee estos parametros desde base de datos.
+
+Fase 9B agrega worker automatico separado:
+
+* `scheduler_worker.py`: proceso independiente ejecutado con `python scheduler_worker.py`.
+* `app/servicios/servicio_scheduler_worker.py`: ciclo del worker, lectura de configuracion y control de concurrencia.
+* `app/servicios/servicio_programador.py`: evaluacion testeable de programaciones.
+* `app/repositorios/repositorio_scheduler.py`: consulta de tareas programadas activas y control de claves.
+* `app/servicios/servicio_calendario.py`: placeholder `es_feriado()` que retorna `False` hasta Fase 10.
+
+La app web no levanta el worker dentro del proceso Flask. La web administra configuracion, consola y detencion; el worker evalua programaciones y reutiliza `servicio_ejecuciones.py` para ejecutar scripts.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
 
-Pendiente para fase posterior. Debe ejecutarse como servicio separado dentro de la aplicacion.
+Desde Fase 9B el scheduler automatico corre como proceso separado. Se inicia con:
 
-Fase 9A no implementa worker. Solo deja preparada la configuracion que usara Fase 9B.
+```powershell
+python scheduler_worker.py
+```
 
-Cuando se implemente, la ejecucion automatica debera resolver siempre `scripts.id_version_activa`. La ejecucion manual podra recibir una version especifica disponible, previa confirmacion si no coincide con la activa.
+Reglas principales:
+
+* Lee `configuracion_scheduler` desde SQL Server.
+* Si `scheduler_activo = 0`, no evalua tareas.
+* Si `modo_mantenimiento = 1`, no inicia ejecuciones.
+* Si `permitir_ejecucion_automatica = 0`, no ejecuta tareas.
+* Respeta `intervalo_revision_segundos`.
+* Respeta `max_ejecuciones_concurrentes`.
+* Evita duplicados con `clave_programacion`.
+* Reutiliza el motor de Fase 8 para version activa, `.env`, PID, logs y consola.
 
 ## Ejecucion segura de scripts
 
@@ -129,6 +150,14 @@ Cuando una ejecucion esta `EN_EJECUCION`, la interfaz muestra accion `Detener ej
 Fase 8 implementa archivo de log por ejecucion manual bajo `logs_tareas/`. Rutas configurables por `.env`: `logs_tareas` y `logs_sistema`.
 
 Los logs de tarea no deben incluir secretos provenientes del `.env` de script. La salida capturada debe filtrarse cuando sea posible y el sistema debe documentar que los scripts cargados no deben imprimir credenciales.
+
+Fase 9C estandariza cada linea visible de log de ejecucion con:
+
+```text
+YYYY-MM-DD HH:mm:ss | NIVEL | mensaje
+```
+
+La logica vive en `app/servicios/servicio_logs_ejecucion.py` y aplica a ejecuciones manuales, automaticas, consola web, polling y archivo fisico. La salida `stderr` se combina con `stdout` desde `servicio_procesos.py`; por eso la salida normal del script queda como `INFO`, mientras errores de plataforma y estados finales fallidos quedan como `ERROR`.
 
 ## Seguridad
 

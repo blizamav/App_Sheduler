@@ -6,6 +6,19 @@ def _fila_a_dict(cursor, fila):
     return dict(zip(columnas, fila))
 
 
+def _columnas_ejecuciones():
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT name
+            FROM sys.columns
+            WHERE object_id = OBJECT_ID('dbo.ejecuciones')
+            """
+        )
+        return {fila[0] for fila in cursor.fetchall()}
+
+
 def obtener_contexto_tarea_ejecucion(id_tarea):
     consulta = """
         SELECT t.id_tarea, t.nombre_tarea, t.descripcion, t.estado_tarea, t.activo,
@@ -57,6 +70,33 @@ def crear_ejecucion_manual(contexto, usuario):
             contexto["id_script"],
             contexto["id_version"],
             usuario,
+        )
+        id_ejecucion = cursor.fetchone()[0]
+        conexion.commit()
+        return id_ejecucion
+
+
+def crear_ejecucion_automatica(contexto, nombre_worker, fecha_programada, clave_programacion):
+    columnas = _columnas_ejecuciones()
+    if not {"fecha_programada", "clave_programacion", "nombre_worker"}.issubset(columnas):
+        raise RuntimeError("La migracion 011 debe ejecutarse antes de iniciar ejecuciones automaticas.")
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            INSERT INTO dbo.ejecuciones
+                (id_tarea, id_script, id_version, origen_ejecucion, estado_ejecucion,
+                 fecha_hora_inicio, usuario_ejecucion, fecha_programada, clave_programacion, nombre_worker)
+            OUTPUT INSERTED.id_ejecucion
+            VALUES (?, ?, ?, 'AUTOMATICA', 'EN_EJECUCION', SYSDATETIME(), NULL, ?, ?, ?)
+            """,
+            contexto["id_tarea"],
+            contexto["id_script"],
+            contexto["id_version"],
+            fecha_programada,
+            clave_programacion,
+            nombre_worker,
         )
         id_ejecucion = cursor.fetchone()[0]
         conexion.commit()
@@ -158,11 +198,18 @@ def actualizar_log_tarea_final(id_ejecucion, estado, codigo_salida=None, mensaje
 
 
 def obtener_ejecucion(id_ejecucion):
-    consulta = """
+    columnas = _columnas_ejecuciones()
+    fecha_programada = "e.fecha_programada" if "fecha_programada" in columnas else "CAST(NULL AS datetime2(0))"
+    clave_programacion = "e.clave_programacion" if "clave_programacion" in columnas else "CAST(NULL AS varchar(200))"
+    nombre_worker = "e.nombre_worker" if "nombre_worker" in columnas else "CAST(NULL AS varchar(100))"
+    consulta = f"""
         SELECT e.id_ejecucion, e.id_tarea, e.id_script, e.id_version, e.origen_ejecucion,
                e.estado_ejecucion, e.fecha_hora_inicio, e.fecha_hora_termino, e.duracion_segundos,
                e.codigo_salida, e.mensaje_error, e.usuario_ejecucion, e.pid_proceso,
                e.usuario_detencion, e.fecha_hora_detencion, e.motivo_detencion, e.fue_detencion_forzada,
+               {fecha_programada} AS fecha_programada,
+               {clave_programacion} AS clave_programacion,
+               {nombre_worker} AS nombre_worker,
                t.nombre_tarea, c.nombre_cliente, ca.nombre_categoria, ti.nombre_tipo,
                v.numero_version, v.nombre_archivo, v.ruta_relativa,
                lt.ruta_fisica_log, lt.ruta_relativa_log, lt.nombre_archivo_log
@@ -180,3 +227,144 @@ def obtener_ejecucion(id_ejecucion):
         cursor.execute(consulta, id_ejecucion)
         fila = cursor.fetchone()
         return _fila_a_dict(cursor, fila) if fila else None
+
+
+def _expresiones_campos_ejecucion(columnas):
+    return {
+        "fecha_programada": "e.fecha_programada" if "fecha_programada" in columnas else "CAST(NULL AS datetime2(0))",
+        "clave_programacion": "e.clave_programacion" if "clave_programacion" in columnas else "CAST(NULL AS varchar(200))",
+        "nombre_worker": "e.nombre_worker" if "nombre_worker" in columnas else "CAST(NULL AS varchar(100))",
+    }
+
+
+def _where_ejecuciones(filtros, columnas):
+    filtros = filtros or {}
+    condiciones = []
+    parametros = []
+
+    if filtros.get("id_ejecucion"):
+        condiciones.append("e.id_ejecucion = ?")
+        parametros.append(filtros["id_ejecucion"])
+        return "WHERE " + " AND ".join(condiciones), parametros
+
+    if filtros.get("tarea"):
+        condiciones.append("t.nombre_tarea LIKE ?")
+        parametros.append(f"%{filtros['tarea']}%")
+    if filtros.get("origen"):
+        condiciones.append("e.origen_ejecucion = ?")
+        parametros.append(filtros["origen"])
+    if filtros.get("estado"):
+        condiciones.append("e.estado_ejecucion = ?")
+        parametros.append(filtros["estado"])
+    if filtros.get("anio"):
+        condiciones.append("YEAR(e.fecha_hora_inicio) = ?")
+        parametros.append(filtros["anio"])
+    if filtros.get("mes"):
+        condiciones.append("MONTH(e.fecha_hora_inicio) = ?")
+        parametros.append(filtros["mes"])
+    if filtros.get("dia"):
+        condiciones.append("DAY(e.fecha_hora_inicio) = ?")
+        parametros.append(filtros["dia"])
+    if filtros.get("fecha_desde"):
+        condiciones.append("e.fecha_hora_inicio >= ?")
+        parametros.append(filtros["fecha_desde"])
+    if filtros.get("fecha_hasta"):
+        condiciones.append("e.fecha_hora_inicio < DATEADD(DAY, 1, CAST(? AS date))")
+        parametros.append(filtros["fecha_hasta"])
+    if filtros.get("usuario"):
+        condiciones.append("e.usuario_ejecucion LIKE ?")
+        parametros.append(f"%{filtros['usuario']}%")
+    if filtros.get("worker") and "nombre_worker" in columnas:
+        condiciones.append("e.nombre_worker LIKE ?")
+        parametros.append(f"%{filtros['worker']}%")
+
+    where = "WHERE " + " AND ".join(condiciones) if condiciones else ""
+    return where, parametros
+
+
+def _from_ejecuciones():
+    return """
+        FROM dbo.ejecuciones e
+        INNER JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
+        INNER JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
+        INNER JOIN dbo.categorias ca ON ca.id_categoria = t.id_categoria
+        INNER JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
+        INNER JOIN dbo.scripts_versiones v ON v.id_version = e.id_version
+    """
+
+
+def listar_ejecuciones_paginadas(filtros, page=1, per_page=25):
+    columnas = _columnas_ejecuciones()
+    expresiones = _expresiones_campos_ejecucion(columnas)
+    where, parametros = _where_ejecuciones(filtros, columnas)
+    offset = (page - 1) * per_page
+    consulta = f"""
+        SELECT
+               e.id_ejecucion,
+               e.id_tarea,
+               e.origen_ejecucion,
+               e.estado_ejecucion,
+               e.fecha_hora_inicio,
+               e.fecha_hora_termino,
+               e.usuario_ejecucion,
+               e.pid_proceso,
+               {expresiones['fecha_programada']} AS fecha_programada,
+               {expresiones['clave_programacion']} AS clave_programacion,
+               {expresiones['nombre_worker']} AS nombre_worker,
+               t.nombre_tarea,
+               c.nombre_cliente,
+               ca.nombre_categoria,
+               ti.nombre_tipo,
+               v.numero_version,
+               v.nombre_archivo
+        {_from_ejecuciones()}
+        {where}
+        ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *(parametros + [offset, per_page]))
+        return [_fila_a_dict(cursor, fila) for fila in cursor.fetchall()]
+
+
+def contar_ejecuciones_filtradas(filtros):
+    columnas = _columnas_ejecuciones()
+    where, parametros = _where_ejecuciones(filtros, columnas)
+    consulta = f"""
+        SELECT COUNT(1)
+        {_from_ejecuciones()}
+        {where}
+    """
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        return cursor.fetchone()[0]
+
+
+def resumir_ejecuciones_filtradas(filtros):
+    columnas = _columnas_ejecuciones()
+    where, parametros = _where_ejecuciones(filtros, columnas)
+    consulta = f"""
+        SELECT e.estado_ejecucion, COUNT(1) AS total
+        {_from_ejecuciones()}
+        {where}
+        GROUP BY e.estado_ejecucion
+    """
+    resumen = {
+        "total": 0,
+        "EXITOSA": 0,
+        "ERROR": 0,
+        "EN_EJECUCION": 0,
+        "DETENIDA_MANUALMENTE": 0,
+        "CANCELADA": 0,
+    }
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        for fila in cursor.fetchall():
+            estado = fila[0]
+            total = fila[1]
+            resumen[estado] = total
+            resumen["total"] += total
+    return resumen

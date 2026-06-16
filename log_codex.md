@@ -5,10 +5,10 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; conexion Flask-SQL Server inicial agregada con diagnostico controlado.
-* Estado actual: Fase 9A implementada con configuracion operativa del scheduler en base de datos.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 011 creada para ejecuciones automaticas, pendiente de ejecucion manual.
+* Estado actual: Fase 9D implementada con historial de ejecuciones agrupado, filtros y paginacion.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 9A - Configuracion operativa del scheduler.
+* Fase actual: Fase 9D - Historial agrupado de ejecuciones.
 * Ultima actualizacion: 2026-06-16 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -17,8 +17,8 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Configuracion operativa en BD implementada; worker automatico pendiente para fase posterior.
-* Logs: Logs de tarea para ejecucion manual implementados en Fase 8; logs avanzados pendientes.
+* Scheduler: Worker automatico separado implementado; API de feriados pendiente para Fase 10.
+* Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Pendiente para Fase 10.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8 y configuracion scheduler Fase 9A.
-* Modulos pendientes: Scheduler automatico, ejecucion programada, API feriados, logs avanzados, auditoria, Docker, calendario laboral.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C e historial agrupado Fase 9D.
+* Modulos pendientes: API feriados, logs avanzados, auditoria, Docker, calendario laboral, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
 
@@ -45,10 +45,63 @@
 ## 5. Pendientes
 
 * Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
-* Pendiente 2: Definir alcance de Fase 9B antes de implementar worker automatico.
-* Pendiente 3: Mantener pruebas de regresion de ejecucion manual antes de activar cualquier automatizacion futura.
+* Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas.
+* Pendiente 3: Validar worker con tareas reales controladas y scheduler activo solo en ambiente local.
 
 ## 6. Historial de cambios
+
+### 2026-06-16 00:00 - Ajuste visual Fase 9D / Sin resumen de totales
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/ejecuciones/listado.html`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se elimino de `/ejecuciones` el bloque visual de resumen `Total`, `Exitosas`, `Errores`, `En ejecucion` y `Detenidas`.
+* Decisiones: Se mantiene el total de registros filtrados en header y paginacion; se conservan filtros, paginacion y agrupacion por ano/mes/dia.
+* Base de datos: No se creo migracion.
+* No implementado: No se avanzo a Fase 10.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; render de `ejecuciones/listado.html` confirmando agrupacion y boton `Ver consola`; busqueda sin `Total`, `Exitosas`, `Errores`, `En ejecucion`, `Detenidas` ni `card-metrica` en el template.
+
+### 2026-06-16 00:00 - Fase 9D / Historial agrupado de ejecuciones
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/repositorios/repositorio_ejecuciones.py`, `app/servicios/servicio_ejecuciones.py`, `app/rutas_ejecuciones.py`, `app/templates/ejecuciones/listado.html`, `app/static/css/estilos.css`, `README.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se transformo `/ejecuciones` desde tabla plana a vista historica agrupada por ano, mes y dia.
+* Filtros: ID ejecucion, tarea, origen, estado, ano, mes, dia, fecha desde, fecha hasta, usuario y worker.
+* Paginacion: Server-side con `OFFSET/FETCH`; solo se trae la pagina actual y luego se agrupa en Python.
+* Resumen: Totales por estado calculados con los mismos filtros, no solo con la pagina actual.
+* Orden: `fecha_hora_inicio DESC, id_ejecucion DESC`.
+* Base de datos: No se creo migracion porque se reutilizan columnas existentes.
+* No implementado: No se conecto API de feriados, no se implementaron notificaciones, no se creo dashboard avanzado y no se avanzo a Fase 10.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; render de `ejecuciones/listado.html` con datos agrupados simulados; prueba directa de agrupacion por `2026 / 06 - Junio / dia`; validacion de filtros invalidos; verificacion de rutas de ejecuciones; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`.
+* Riesgos detectados: Validar visualmente con alto volumen real de ejecuciones para ajustar densidad de tarjetas si corresponde.
+* Proximos pasos: Probar filtros y paginacion contra SQL Server local con ejecuciones reales.
+
+### 2026-06-16 00:00 - Fase 9C / Timestamps por linea en logs de ejecucion
+
+* Archivos creados: `app/servicios/servicio_logs_ejecucion.py`.
+* Archivos modificados: `app/servicios/servicio_ejecuciones.py`, `README.md`, `docs/ARQUITECTURA.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se centralizo el formato de logs de ejecucion para que cada linea visible tenga `YYYY-MM-DD HH:mm:ss | NIVEL | mensaje`.
+* Alcance: Aplica a archivo fisico de log, consola `/ejecuciones/<id_ejecucion>`, endpoint polling, ejecuciones manuales y automaticas, inicio, fin, errores y detencion manual.
+* Decision tecnica: `stderr` sigue combinado con `stdout`; la salida normal del script se registra como `INFO`, errores de plataforma y retornos fallidos como `ERROR`, detenciones como `WARN`.
+* Seguridad: No se muestra contenido de `.env`; los scripts no deben imprimir secretos porque stdout/stderr se conserva en consola.
+* Base de datos: No se creo migracion porque el cambio es solo de formato de archivo/log visible.
+* No implementado: No se conecto API de feriados, no se implementaron notificaciones, no se creo dashboard avanzado y no se avanzo a Fase 10.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; prueba directa de `formatear_linea_log()`; escritura de archivo temporal con lineas `INFO`, `WARN` y `ERROR`; verificacion de imports de `servicio_ejecuciones`; busqueda sin `alert(`, `window.confirm`, `confirm(` ni `prompt(`.
+* Riesgos detectados: Logs antiguos mantienen formato anterior; el nuevo formato aplica a ejecuciones nuevas.
+* Proximos pasos: Probar ejecucion manual y automatica con script simple que imprima varias lineas.
+
+### 2026-06-16 00:00 - Fase 9B / Worker automatico separado
+
+* Archivos creados: `scheduler_worker.py`, `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`, `app/repositorios/repositorio_scheduler.py`, `app/servicios/servicio_programador.py`, `app/servicios/servicio_scheduler_worker.py`, `app/servicios/servicio_calendario.py`, `app/templates/ejecuciones/listado.html`.
+* Archivos modificados: `app/repositorios/repositorio_ejecuciones.py`, `app/servicios/servicio_ejecuciones.py`, `app/rutas_ejecuciones.py`, `app/templates/base.html`, `app/templates/ejecuciones/consola.html`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implemento worker separado ejecutable con `python scheduler_worker.py`, lectura de `configuracion_scheduler`, evaluacion de programaciones y ejecucion automatica reutilizando motor Fase 8.
+* Base de datos: Se creo migracion 011 para `fecha_programada`, `clave_programacion`, `nombre_worker` e indice unico filtrado anti-duplicados.
+* Reglas: Respeta `scheduler_activo`, `permitir_ejecucion_automatica`, `modo_mantenimiento`, `intervalo_revision_segundos` y `max_ejecuciones_concurrentes`.
+* Programaciones: Soporta `DIARIA`, `SEMANAL`, `MENSUAL`, `FECHA_ESPECIFICA`, modos `UNA_VEZ` e `INTERVALO`; `MANUAL` no se ejecuta automaticamente.
+* UX: Se agrego listado basico `/ejecuciones` y consola con origen, worker y fecha programada.
+* No implementado: No se conecto API de feriados, no se implementaron notificaciones, no se creo dashboard avanzado y no se avanzo a Fase 10.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; carga de `crear_app()` y verificacion de rutas; prueba directa de `debe_ejecutarse_ahora()` para diaria una vez.
+* Riesgos detectados: No ejecutar worker continuo sin confirmar configuracion, tareas de prueba y migracion 011 aplicada.
+* Proximos pasos: Ejecutar migracion 011 en SSMS y validar `python scheduler_worker.py --once` con scheduler inicialmente apagado.
 
 ### 2026-06-16 00:00 - Fase 9A / Migracion 010 y seed 007 validados localmente
 

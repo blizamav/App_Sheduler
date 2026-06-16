@@ -21,12 +21,12 @@
 * Fase 7: gestion de scripts, versiones y `.env` por version.
 * Fase 8: ejecucion manual con consola, logs y detencion controlada.
 * Fase 9A: configuracion operativa del scheduler en base de datos.
+* Fase 9B: worker automatico separado y ejecuciones automaticas.
+* Fase 9D: historial agrupado de ejecuciones con filtros y paginacion.
 
 ## Modulos pendientes
 
-* Scheduler.
-* Ejecucion automatica.
-* Logs de tareas.
+* Dashboard avanzado del scheduler.
 * Logs de sistema completos.
 * Auditoria.
 * Configuracion.
@@ -47,7 +47,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 9A: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones, ejecucion manual y configuracion operativa del scheduler conectadas a SQL Server. Aun no existe worker automatico ni panel avanzado de auditoria.
+La aplicacion esta en Fase 9B: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones, ejecucion manual, configuracion scheduler y worker automatico separado conectados a SQL Server. Aun no existe API de feriados, dashboard avanzado del scheduler ni panel avanzado de auditoria.
 
 ## Modulo de ejecuciones
 
@@ -57,6 +57,7 @@ Implementado en Fase 8:
 * `/ejecuciones/<id_ejecucion>`: consola visual de ejecucion.
 * `/ejecuciones/<id_ejecucion>/log`: polling JSON del log.
 * `/ejecuciones/<id_ejecucion>/detener`: detencion manual con modal corporativo.
+* `/ejecuciones`: historial agrupado por ano, mes y dia con filtros y paginacion.
 * Validaciones previas de tarea, script, version activa, archivo fisico, `.env` requerido y ejecucion simultanea.
 * Registro de `pid_proceso` en `ejecuciones`.
 * Archivo de log por ejecucion bajo `logs_tareas/AAAA/MM/DD/`.
@@ -64,6 +65,7 @@ Implementado en Fase 8:
 * Carga de `.env` de la version activa sin mostrar contenido.
 * Estados `EN_EJECUCION`, `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`.
 * Seed incremental `database/seeds/006_permisos_ejecuciones.sql`.
+* Fase 9D: filtros por id, tarea, origen, estado, fecha, usuario y worker; resumen por estado calculado con los mismos filtros.
 
 No implementado en Fase 8:
 
@@ -91,6 +93,23 @@ No implementado en Fase 9A:
 * No se evaluan tareas programadas.
 * No se ejecutan tareas automaticas.
 * No se conecta API de feriados.
+
+Implementado en Fase 9B:
+
+* `scheduler_worker.py`: proceso separado.
+* `app/servicios/servicio_scheduler_worker.py`: ciclo del worker.
+* `app/servicios/servicio_programador.py`: evaluacion de programaciones diaria, semanal, mensual y fecha especifica.
+* `app/repositorios/repositorio_scheduler.py`: tareas candidatas, concurrencia y claves.
+* `app/servicios/servicio_calendario.py`: placeholder de feriados.
+* Ejecuciones automaticas con version activa y motor de Fase 8.
+* Anti-duplicados por `clave_programacion`.
+* Listado basico `/ejecuciones`.
+
+No implementado en Fase 9B:
+
+* No se conecta API de feriados.
+* No se implementa dashboard avanzado del scheduler.
+* No se implementan notificaciones.
 
 ## Modulo de scripts
 

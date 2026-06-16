@@ -1,15 +1,25 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from app.seguridad import permiso_requerido
 from app.servicios.servicio_ejecuciones import (
     detener_ejecucion_manual,
     iniciar_ejecucion_manual,
+    listar_ejecuciones_admin,
     obtener_detalle_ejecucion,
     obtener_estado_log,
 )
 
 
 bp_ejecuciones = Blueprint("ejecuciones", __name__)
+
+
+@bp_ejecuciones.route("/ejecuciones")
+@permiso_requerido("EJECUCIONES_VER")
+def listado():
+    contexto = listar_ejecuciones_admin(request.args)
+    for advertencia in contexto.get("advertencias", []):
+        flash(advertencia, "advertencia")
+    return render_template("ejecuciones/listado.html", **contexto)
 
 
 @bp_ejecuciones.route("/tareas/<int:id_tarea>/ejecutar", methods=["POST"])

@@ -1,0 +1,164 @@
+import time
+from datetime import datetime
+
+from app.repositorios.repositorio_configuracion_scheduler import obtener_configuracion_activa
+from app.repositorios.repositorio_ejecuciones import existe_ejecucion_en_curso_tarea
+from app.repositorios.repositorio_scheduler import (
+    contar_ejecuciones_automaticas_en_curso,
+    existe_clave_programacion,
+    listar_tareas_programadas_activas,
+)
+from app.servicios.servicio_calendario import es_feriado
+from app.servicios.servicio_ejecuciones import iniciar_ejecucion_automatica
+from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_programador import debe_ejecutarse_ahora
+
+
+USUARIO_WORKER = "scheduler_worker"
+
+
+def ejecutar_worker_continuo():
+    _log_consola("Inicio worker.")
+    registrar_log_sistema("WORKER_INICIADO", "SCHEDULER", "Worker automatico iniciado.", usuario=USUARIO_WORKER)
+    while True:
+        intervalo = ejecutar_ciclo_worker()
+        time.sleep(intervalo)
+
+
+def ejecutar_ciclo_worker(fecha_hora_actual=None):
+    ahora = fecha_hora_actual or datetime.now()
+    try:
+        configuracion = obtener_configuracion_activa()
+        if not configuracion:
+            _registrar_estado("WORKER_CONFIG_NO_EXISTE", "No existe configuracion activa. No se ejecutan tareas.", "WARNING")
+            return 60
+
+        intervalo = _intervalo_seguro(configuracion)
+        nombre_worker = configuracion.get("nombre_worker_principal") or "worker_default"
+        _log_consola(f"Configuracion cargada. Worker={nombre_worker}; intervalo={intervalo}s.")
+
+        if not configuracion.get("scheduler_activo"):
+            _registrar_estado("WORKER_SCHEDULER_APAGADO", "Scheduler apagado. No se evaluan tareas.")
+            return intervalo
+        if configuracion.get("modo_mantenimiento"):
+            _registrar_estado("WORKER_MANTENIMIENTO", "Modo mantenimiento activo. No se inician ejecuciones.")
+            return intervalo
+        if not configuracion.get("permitir_ejecucion_automatica"):
+            _registrar_estado("WORKER_AUTO_DESHABILITADA", "Ejecucion automatica deshabilitada. No se ejecutan tareas.")
+            return intervalo
+
+        _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker)
+        return intervalo
+    except KeyboardInterrupt:
+        raise
+    except Exception as error:
+        _log_consola(f"Error controlado del worker: {error}")
+        registrar_log_sistema(
+            "WORKER_ERROR_CONTROLADO",
+            "SCHEDULER",
+            "Error controlado durante ciclo del worker.",
+            usuario=USUARIO_WORKER,
+            valor_nuevo=str(error),
+            nivel="ERROR",
+        )
+        return 60
+
+
+def _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker):
+    max_concurrentes = _max_concurrentes_seguro(configuracion)
+    en_curso = contar_ejecuciones_automaticas_en_curso()
+    if en_curso >= max_concurrentes:
+        mensaje = f"Limite de concurrencia alcanzado: {en_curso}/{max_concurrentes}."
+        _registrar_estado("WORKER_LIMITE_CONCURRENCIA", mensaje)
+        return
+
+    tareas = listar_tareas_programadas_activas()
+    _log_consola(f"Tareas evaluadas: {len(tareas)}.")
+    registrar_log_sistema("WORKER_CICLO_INICIADO", "SCHEDULER", f"Ciclo iniciado. Tareas candidatas: {len(tareas)}.", usuario=USUARIO_WORKER)
+
+    ejecutadas = 0
+    omitidas = 0
+    for tarea in tareas:
+        if en_curso + ejecutadas >= max_concurrentes:
+            _registrar_estado("WORKER_LIMITE_CONCURRENCIA", "Limite alcanzado durante ciclo.")
+            break
+
+        resultado = debe_ejecutarse_ahora(tarea, ahora, intervalo)
+        if not resultado["debe_ejecutar"]:
+            omitidas += 1
+            _log_consola(f"Omitida tarea {tarea['id_tarea']}: {resultado['motivo']}")
+            continue
+
+        if tarea.get("ejecutar_en_feriados") is False and es_feriado(resultado["fecha_programada"].date()):
+            omitidas += 1
+            _log_consola(f"Omitida tarea {tarea['id_tarea']}: feriado placeholder.")
+            continue
+
+        if existe_clave_programacion(resultado["clave_programacion"]):
+            omitidas += 1
+            _log_consola(f"Omitida tarea {tarea['id_tarea']}: clave ya ejecutada.")
+            continue
+
+        if existe_ejecucion_en_curso_tarea(tarea["id_tarea"]):
+            omitidas += 1
+            _log_consola(f"Omitida tarea {tarea['id_tarea']}: ya tiene ejecucion en curso.")
+            continue
+
+        ok, mensaje, id_ejecucion = iniciar_ejecucion_automatica(
+            tarea["id_tarea"],
+            nombre_worker=nombre_worker,
+            fecha_programada=resultado["fecha_programada"],
+            clave_programacion=resultado["clave_programacion"],
+        )
+        if ok:
+            ejecutadas += 1
+            _log_consola(f"Ejecutada tarea {tarea['id_tarea']} como ejecucion {id_ejecucion}.")
+            registrar_log_sistema(
+                "WORKER_TAREA_ENVIADA",
+                "SCHEDULER",
+                f"Tarea {tarea['id_tarea']} enviada a ejecucion automatica {id_ejecucion}.",
+                usuario=USUARIO_WORKER,
+                valor_nuevo=resultado["clave_programacion"],
+            )
+        else:
+            omitidas += 1
+            _log_consola(f"No se pudo ejecutar tarea {tarea['id_tarea']}: {mensaje}")
+
+    registrar_log_sistema(
+        "WORKER_CICLO_FINALIZADO",
+        "SCHEDULER",
+        f"Ciclo finalizado. Ejecutadas: {ejecutadas}; omitidas: {omitidas}.",
+        usuario=USUARIO_WORKER,
+    )
+    _log_consola(f"Ciclo finalizado. Ejecutadas={ejecutadas}; omitidas={omitidas}.")
+
+
+def _intervalo_seguro(configuracion):
+    try:
+        intervalo = int(configuracion.get("intervalo_revision_segundos") or 60)
+        if 10 <= intervalo <= 3600:
+            return intervalo
+    except ValueError:
+        pass
+    _registrar_estado("WORKER_INTERVALO_INVALIDO", "Intervalo invalido. Se usa fallback 60 segundos.", "WARNING")
+    return 60
+
+
+def _max_concurrentes_seguro(configuracion):
+    try:
+        maximo = int(configuracion.get("max_ejecuciones_concurrentes") or 3)
+        if 1 <= maximo <= 20:
+            return maximo
+    except ValueError:
+        pass
+    _registrar_estado("WORKER_MAX_CONCURRENCIA_INVALIDO", "Maximo concurrentes invalido. Se usa fallback 3.", "WARNING")
+    return 3
+
+
+def _registrar_estado(accion, mensaje, nivel="INFO"):
+    _log_consola(mensaje)
+    registrar_log_sistema(accion, "SCHEDULER", mensaje, usuario=USUARIO_WORKER, nivel=nivel)
+
+
+def _log_consola(mensaje):
+    print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {mensaje}", flush=True)

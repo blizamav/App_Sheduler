@@ -203,6 +203,55 @@ Validacion local:
 * Los cambios se confirman con modal corporativo y se registran en `logs_sistema`.
 * Las validaciones bloquean intervalos y maximos concurrentes fuera de rango.
 
+## Worker automatico
+
+Fase 9B agrega ejecucion automatica con estas reglas de seguridad:
+
+* El worker corre separado de Flask con `python scheduler_worker.py`.
+* Usa `.env` solo para conexion BD y rutas tecnicas.
+* La configuracion operativa se lee desde `configuracion_scheduler`.
+* No muestra secretos de `.env` principal ni `.env` de scripts.
+* Reutiliza ejecucion segura de Fase 8 con `subprocess` sin `shell=True`.
+* Las ejecuciones automaticas guardan `clave_programacion` para evitar duplicados.
+* El worker respeta `max_ejecuciones_concurrentes`.
+* Si una tarea ya tiene ejecucion `EN_EJECUCION`, no inicia otra.
+* Las ejecuciones automaticas pueden detenerse desde la consola web con permisos existentes.
+* No se conecta API de feriados en Fase 9B.
+* No se implementan notificaciones en Fase 9B.
+
+## Logs de ejecucion con timestamp
+
+Fase 9C agrega formato unico por linea en logs de ejecucion:
+
+```text
+YYYY-MM-DD HH:mm:ss | NIVEL | mensaje
+```
+
+Reglas de seguridad:
+
+* No se muestra contenido de `.env`.
+* No se registran credenciales desde la plataforma.
+* La salida stdout/stderr del script se conserva, pero los scripts no deben imprimir secretos.
+* Errores de plataforma se registran como `ERROR`.
+* Detenciones manuales se registran como `WARN`.
+* Si el script imprime un timestamp propio, se antepone timestamp de plataforma para asegurar trazabilidad real de captura.
+
+## Historial de ejecuciones
+
+Fase 9D mantiene permisos existentes:
+
+* `EJECUCIONES_VER` para ver `/ejecuciones`.
+* `EJECUCIONES_LOG_VER` para polling de log.
+* `EJECUCIONES_DETENER` para detener ejecuciones.
+
+Reglas:
+
+* Filtros se aplican con parametros SQL, sin concatenar valores de usuario.
+* La paginacion se hace en SQL Server con `OFFSET/FETCH`.
+* La agrupacion se hace solo sobre la pagina actual.
+* No se muestran rutas fisicas internas en el historial.
+* No se muestra contenido de `.env`.
+
 ## Variables sensibles por script
 
 Fase 4.3 define que cada script/version podra tener un `.env` propio bajo `env_scripts/`.

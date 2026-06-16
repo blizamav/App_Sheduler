@@ -41,7 +41,11 @@
                 <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
                 {% endif %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>07</span>Scripts</a>
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>08</span>Ejecuciones</a>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% endif %}" href="{{ url_for('ejecuciones.listado') }}"><span>08</span>Ejecuciones</a>
+                {% else %}
+                <a class="nav-link deshabilitado" href="#"><span>08</span>Ejecuciones</a>
+                {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scheduler.') %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>09</span>Scheduler</a>
                 {% else %}

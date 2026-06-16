@@ -8,16 +8,25 @@ from app.config import BASE_DIR
 from app.repositorios.repositorio_ejecuciones import (
     actualizar_log_tarea_final,
     actualizar_pid_ejecucion,
+    contar_ejecuciones_filtradas,
+    crear_ejecucion_automatica,
     crear_ejecucion_manual,
     crear_log_tarea,
     existe_ejecucion_en_curso_tarea,
     finalizar_ejecucion,
+    listar_ejecuciones_paginadas,
     marcar_ejecucion_detenida,
     obtener_contexto_tarea_ejecucion,
     obtener_ejecucion,
+    resumir_ejecuciones_filtradas,
 )
 from app.servicios.servicio_archivos import normalizar_segmento, resolver_ruta_segura
 from app.servicios.servicio_env_scripts import cargar_env_version
+from app.servicios.servicio_logs_ejecucion import (
+    escribir_linea_log,
+    escribir_lineas_log,
+    normalizar_linea_script,
+)
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_procesos import (
     detener_proceso,
@@ -28,7 +37,24 @@ from app.servicios.servicio_procesos import (
 
 
 ESTADOS_FINALES = {"EXITOSA", "ERROR", "DETENIDA_MANUALMENTE", "CANCELADA"}
+ESTADOS_FILTRO = ("EN_EJECUCION", "EXITOSA", "ERROR", "DETENIDA_MANUALMENTE", "CANCELADA")
+ORIGENES_FILTRO = ("MANUAL", "AUTOMATICA")
+PER_PAGE_OPCIONES = (10, 25, 50, 100)
 MAX_LOG_BYTES = 120 * 1024
+MESES = {
+    1: "Enero",
+    2: "Febrero",
+    3: "Marzo",
+    4: "Abril",
+    5: "Mayo",
+    6: "Junio",
+    7: "Julio",
+    8: "Agosto",
+    9: "Septiembre",
+    10: "Octubre",
+    11: "Noviembre",
+    12: "Diciembre",
+}
 
 
 def iniciar_ejecucion_manual(id_tarea, usuario):
@@ -43,14 +69,15 @@ def iniciar_ejecucion_manual(id_tarea, usuario):
     _escribir_log(
         ruta_fisica_log,
         [
-            f"Inicio ejecucion manual: {datetime.now():%Y-%m-%d %H:%M:%S}",
+            "Inicio de ejecucion",
+            "Origen: MANUAL",
             f"Tarea: {contexto['nombre_tarea']}",
             f"Script activo: {contexto['nombre_archivo']}",
             f"Version: v{contexto['numero_version']}",
             f"Ruta script: {contexto['ruta_relativa']}",
-            f"Requiere .env: {'Si' if contexto.get('requiere_env') else 'No'}",
+            f".env requerido: {'Si' if contexto.get('requiere_env') else 'No'}",
             "Contenido .env: no mostrado por seguridad.",
-            "",
+            "Salida stdout/stderr combinada: INFO por defecto.",
         ],
     )
     crear_log_tarea(id_ejecucion, contexto, ruta_fisica_log, ruta_relativa_log, nombre_archivo_log, usuario)
@@ -59,11 +86,118 @@ def iniciar_ejecucion_manual(id_tarea, usuario):
     app = current_app._get_current_object()
     hilo = threading.Thread(
         target=_ejecutar_en_segundo_plano,
-        args=(app, id_ejecucion, contexto, ruta_fisica_log, usuario),
+        args=(app, id_ejecucion, contexto, ruta_fisica_log, usuario, "MANUAL"),
         daemon=True,
     )
     hilo.start()
     return True, "Ejecucion manual iniciada.", id_ejecucion
+
+
+def iniciar_ejecucion_automatica(id_tarea, nombre_worker, fecha_programada, clave_programacion):
+    ok, mensaje, contexto = _validar_contexto_ejecucion(id_tarea, "scheduler_worker")
+    if not ok:
+        registrar_log_sistema("EJECUCION_AUTOMATICA_BLOQUEADA", "EJECUCIONES", mensaje, usuario="scheduler_worker", nivel="WARNING")
+        return False, mensaje, None
+
+    id_ejecucion = crear_ejecucion_automatica(contexto, nombre_worker, fecha_programada, clave_programacion)
+    ruta_fisica_log, ruta_relativa_log, nombre_archivo_log = _crear_rutas_log(id_ejecucion, contexto)
+    ruta_fisica_log.parent.mkdir(parents=True, exist_ok=True)
+    _escribir_log(
+        ruta_fisica_log,
+        [
+            "Inicio de ejecucion",
+            "Origen: AUTOMATICA",
+            f"Tarea: {contexto['nombre_tarea']}",
+            f"Script activo: {contexto['nombre_archivo']}",
+            f"Version: v{contexto['numero_version']}",
+            f"Ruta script: {contexto['ruta_relativa']}",
+            f"Fecha programada: {fecha_programada}",
+            f"Clave programacion: {clave_programacion}",
+            f"Worker: {nombre_worker}",
+            f".env requerido: {'Si' if contexto.get('requiere_env') else 'No'}",
+            "Contenido .env: no mostrado por seguridad.",
+            "Salida stdout/stderr combinada: INFO por defecto.",
+        ],
+    )
+    crear_log_tarea(id_ejecucion, contexto, ruta_fisica_log, ruta_relativa_log, nombre_archivo_log, "scheduler_worker")
+    registrar_log_sistema(
+        "EJECUCION_AUTOMATICA_SOLICITADA",
+        "EJECUCIONES",
+        f"Ejecucion automatica {id_ejecucion} solicitada para tarea {contexto['nombre_tarea']}.",
+        usuario="scheduler_worker",
+        valor_nuevo=clave_programacion,
+    )
+
+    app = current_app._get_current_object()
+    hilo = threading.Thread(
+        target=_ejecutar_en_segundo_plano,
+        args=(app, id_ejecucion, contexto, ruta_fisica_log, "scheduler_worker", "AUTOMATICA"),
+        daemon=True,
+    )
+    hilo.start()
+    return True, "Ejecucion automatica iniciada.", id_ejecucion
+
+
+def listar_ejecuciones_admin(parametros):
+    filtros, page, per_page, advertencias = _normalizar_filtros_ejecuciones(parametros)
+    total = contar_ejecuciones_filtradas(filtros)
+    total_paginas = max(1, (total + per_page - 1) // per_page)
+    if page > total_paginas:
+        page = total_paginas
+    ejecuciones = listar_ejecuciones_paginadas(filtros, page, per_page)
+    resumen = resumir_ejecuciones_filtradas(filtros)
+    return {
+        "ejecuciones": ejecuciones,
+        "grupos": agrupar_ejecuciones_por_fecha(ejecuciones),
+        "filtros": filtros,
+        "page": page,
+        "per_page": per_page,
+        "per_page_opciones": PER_PAGE_OPCIONES,
+        "total": total,
+        "total_paginas": total_paginas,
+        "resumen": resumen,
+        "advertencias": advertencias,
+        "origenes": ORIGENES_FILTRO,
+        "estados": ESTADOS_FILTRO,
+    }
+
+
+def agrupar_ejecuciones_por_fecha(ejecuciones):
+    grupos = []
+    indice_anios = {}
+    for ejecucion in ejecuciones:
+        fecha = ejecucion.get("fecha_hora_inicio")
+        if not fecha:
+            continue
+        anio = fecha.year
+        mes = fecha.month
+        dia = fecha.day
+        etiqueta_mes = f"{mes:02d} - {MESES.get(mes, str(mes))}"
+
+        grupo_anio = indice_anios.get(anio)
+        if not grupo_anio:
+            grupo_anio = {"anio": anio, "meses": [], "_meses": {}}
+            indice_anios[anio] = grupo_anio
+            grupos.append(grupo_anio)
+
+        grupo_mes = grupo_anio["_meses"].get(mes)
+        if not grupo_mes:
+            grupo_mes = {"numero": mes, "etiqueta": etiqueta_mes, "dias": [], "_dias": {}}
+            grupo_anio["_meses"][mes] = grupo_mes
+            grupo_anio["meses"].append(grupo_mes)
+
+        grupo_dia = grupo_mes["_dias"].get(dia)
+        if not grupo_dia:
+            grupo_dia = {"dia": dia, "ejecuciones": []}
+            grupo_mes["_dias"][dia] = grupo_dia
+            grupo_mes["dias"].append(grupo_dia)
+        grupo_dia["ejecuciones"].append(ejecucion)
+
+    for grupo_anio in grupos:
+        grupo_anio.pop("_meses", None)
+        for grupo_mes in grupo_anio["meses"]:
+            grupo_mes.pop("_dias", None)
+    return grupos
 
 
 def obtener_detalle_ejecucion(id_ejecucion):
@@ -104,14 +238,16 @@ def detener_ejecucion_manual(id_ejecucion, usuario, motivo=None):
         fue_forzada,
     )
     actualizar_log_tarea_final(id_ejecucion, "DETENIDA_MANUALMENTE", None, "Ejecucion detenida manualmente.")
+    ruta_log = _ruta_log_desde_ejecucion(ejecucion)
     _escribir_log(
-        _ruta_log_desde_ejecucion(ejecucion),
+        ruta_log,
         [
-            "",
-            f"Detencion manual solicitada por: {usuario}",
-            f"Fue detencion forzada: {'Si' if fue_forzada else 'No'}",
-            f"Fin ejecucion: {datetime.now():%Y-%m-%d %H:%M:%S}",
+            (f"Detencion manual solicitada por usuario: {usuario}", "WARN"),
+            (f"Senal de detencion enviada al proceso PID {ejecucion.get('pid_proceso')}", "WARN"),
+            ("Cierre forzado aplicado" if fue_forzada else "Proceso detenido correctamente", "WARN"),
+            ("Fue detencion forzada: Si" if fue_forzada else "Fue detencion forzada: No", "WARN"),
             "Estado final: DETENIDA_MANUALMENTE",
+            f"Fecha/hora termino: {datetime.now():%Y-%m-%d %H:%M:%S}",
         ],
     )
     registrar_log_sistema("EJECUCION_DETENIDA_MANUALMENTE", "EJECUCIONES", f"Ejecucion {id_ejecucion} detenida manualmente.", usuario=usuario, nivel="WARNING")
@@ -160,24 +296,27 @@ def _validar_contexto_ejecucion(id_tarea, usuario):
     return True, "OK", contexto
 
 
-def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usuario):
+def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usuario, origen="MANUAL"):
     with app.app_context():
         try:
             entorno = cargar_env_version(contexto["ruta_env_relativa"]) if contexto.get("requiere_env") else None
+            if contexto.get("requiere_env"):
+                _escribir_log(ruta_fisica_log, [".env cargado correctamente"])
             if entorno is None:
                 import os
 
                 entorno = os.environ.copy()
+                if not contexto.get("requiere_env"):
+                    _escribir_log(ruta_fisica_log, [".env no requerido"])
             proceso = iniciar_proceso_python(contexto["ruta_script_fisica_resuelta"], entorno)
             registrar_proceso(id_ejecucion, proceso)
             actualizar_pid_ejecucion(id_ejecucion, proceso.pid)
-            registrar_log_sistema("EJECUCION_MANUAL_INICIADA", "EJECUCIONES", f"Ejecucion {id_ejecucion} iniciada con PID {proceso.pid}.", usuario=usuario)
-            _escribir_log(ruta_fisica_log, [f"PID: {proceso.pid}", "Salida del proceso:"])
+            accion_inicio = "EJECUCION_AUTOMATICA_INICIADA" if origen == "AUTOMATICA" else "EJECUCION_MANUAL_INICIADA"
+            registrar_log_sistema(accion_inicio, "EJECUCIONES", f"Ejecucion {id_ejecucion} iniciada con PID {proceso.pid}.", usuario=usuario)
+            _escribir_log(ruta_fisica_log, [f"PID proceso: {proceso.pid}", "Salida del proceso:"])
 
-            with open(ruta_fisica_log, "a", encoding="utf-8", errors="replace") as log:
-                for linea in proceso.stdout:
-                    log.write(linea)
-                    log.flush()
+            for linea in proceso.stdout:
+                escribir_linea_log(ruta_fisica_log, normalizar_linea_script(linea), "INFO")
             codigo = proceso.wait()
             ejecucion = obtener_ejecucion(id_ejecucion)
             if ejecucion and ejecucion.get("estado_ejecucion") != "EN_EJECUCION":
@@ -186,17 +325,18 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
             mensaje_error = None if codigo == 0 else f"Proceso finalizo con codigo {codigo}."
             finalizar_ejecucion(id_ejecucion, estado, codigo, mensaje_error)
             actualizar_log_tarea_final(id_ejecucion, estado, codigo, mensaje_error)
+            nivel_final = "INFO" if estado == "EXITOSA" else "ERROR"
             _escribir_log(
                 ruta_fisica_log,
                 [
-                    "",
-                    f"Fin ejecucion: {datetime.now():%Y-%m-%d %H:%M:%S}",
-                    f"Codigo salida: {codigo}",
-                    f"Estado final: {estado}",
+                    (f"Codigo salida proceso: {codigo}", nivel_final),
+                    (f"Estado final: {estado}", nivel_final),
+                    f"Fecha/hora termino: {datetime.now():%Y-%m-%d %H:%M:%S}",
                 ],
             )
+            prefijo = "EJECUCION_AUTOMATICA" if origen == "AUTOMATICA" else "EJECUCION"
             registrar_log_sistema(
-                "EJECUCION_FINALIZADA_EXITOSA" if estado == "EXITOSA" else "EJECUCION_FINALIZADA_ERROR",
+                f"{prefijo}_FINALIZADA_EXITOSA" if estado == "EXITOSA" else f"{prefijo}_FINALIZADA_ERROR",
                 "EJECUCIONES",
                 f"Ejecucion {id_ejecucion} finalizada con estado {estado}.",
                 usuario=usuario,
@@ -206,7 +346,7 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
             mensaje = "Error controlado al iniciar o ejecutar proceso."
             finalizar_ejecucion(id_ejecucion, "ERROR", None, mensaje)
             actualizar_log_tarea_final(id_ejecucion, "ERROR", None, mensaje)
-            _escribir_log(ruta_fisica_log, ["", mensaje, str(error), "Estado final: ERROR"])
+            _escribir_log(ruta_fisica_log, [(mensaje, "ERROR"), (str(error), "ERROR"), ("Estado final: ERROR", "ERROR")])
             registrar_log_sistema("EJECUCION_INICIO_ERROR", "EJECUCIONES", mensaje, usuario=usuario, nivel="ERROR")
         finally:
             olvidar_proceso(id_ejecucion)
@@ -234,10 +374,88 @@ def _ruta_log_desde_ejecucion(ejecucion):
     return (BASE_DIR / Path(ruta)).resolve()
 
 
+def _normalizar_filtros_ejecuciones(parametros):
+    advertencias = []
+    filtros = {}
+    page = _entero_get(parametros, "page", 1)
+    per_page = _entero_get(parametros, "per_page", 25)
+    if page < 1:
+        page = 1
+        advertencias.append("La pagina solicitada no era valida; se uso pagina 1.")
+    if per_page not in PER_PAGE_OPCIONES:
+        per_page = 25
+        advertencias.append("El tamano de pagina no era valido; se uso 25.")
+
+    id_ejecucion = _entero_get(parametros, "id_ejecucion", None)
+    if id_ejecucion:
+        if id_ejecucion > 0:
+            filtros["id_ejecucion"] = id_ejecucion
+        else:
+            advertencias.append("El ID de ejecucion no era valido y fue ignorado.")
+        return filtros, page, per_page, advertencias
+
+    for campo in ("tarea", "usuario", "worker"):
+        valor = (parametros.get(campo) or "").strip()
+        if valor:
+            filtros[campo] = valor[:100]
+
+    origen = (parametros.get("origen") or "").strip().upper()
+    if origen:
+        if origen in ORIGENES_FILTRO:
+            filtros["origen"] = origen
+        else:
+            advertencias.append("El origen informado no era valido y fue ignorado.")
+
+    estado = (parametros.get("estado") or "").strip().upper()
+    if estado:
+        if estado in ESTADOS_FILTRO:
+            filtros["estado"] = estado
+        else:
+            advertencias.append("El estado informado no era valido y fue ignorado.")
+
+    anio = _entero_get(parametros, "anio", None)
+    if anio:
+        if 2000 <= anio <= 2100:
+            filtros["anio"] = anio
+        else:
+            advertencias.append("El ano informado no era valido y fue ignorado.")
+
+    mes = _entero_get(parametros, "mes", None)
+    if mes:
+        if 1 <= mes <= 12:
+            filtros["mes"] = mes
+        else:
+            advertencias.append("El mes informado no era valido y fue ignorado.")
+
+    dia = _entero_get(parametros, "dia", None)
+    if dia:
+        if 1 <= dia <= 31:
+            filtros["dia"] = dia
+        else:
+            advertencias.append("El dia informado no era valido y fue ignorado.")
+
+    for campo in ("fecha_desde", "fecha_hasta"):
+        valor = (parametros.get(campo) or "").strip()
+        if not valor:
+            continue
+        try:
+            datetime.strptime(valor, "%Y-%m-%d")
+            filtros[campo] = valor
+        except ValueError:
+            advertencias.append(f"La fecha {campo.replace('_', ' ')} no era valida y fue ignorada.")
+
+    return filtros, page, per_page, advertencias
+
+
+def _entero_get(parametros, campo, default):
+    valor = parametros.get(campo)
+    if valor in (None, ""):
+        return default
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return default
+
+
 def _escribir_log(ruta, lineas):
-    if not ruta:
-        return
-    ruta.parent.mkdir(parents=True, exist_ok=True)
-    with open(ruta, "a", encoding="utf-8", errors="replace") as archivo:
-        for linea in lineas:
-            archivo.write(f"{linea}\n")
+    escribir_lineas_log(ruta, lineas)

@@ -201,7 +201,25 @@
 
 ## Flujo de ejecucion automatica
 
-Pendiente para Fase 9B. En Fase 9A solo existe configuracion operativa; no se implementa worker automatico.
+Implementado en Fase 9B mediante proceso separado `scheduler_worker.py`.
+
+1. Operador levanta la app web con `python run.py`.
+2. Operador levanta el worker con `python scheduler_worker.py`.
+3. Worker lee `configuracion_scheduler`.
+4. Si no existe configuracion activa, registra advertencia y duerme 60 segundos.
+5. Si `scheduler_activo = 0`, no evalua tareas.
+6. Si `modo_mantenimiento = 1`, no inicia ejecuciones.
+7. Si `permitir_ejecucion_automatica = 0`, no ejecuta tareas.
+8. Si la configuracion permite ejecutar, lista tareas activas con programacion activa.
+9. Evalua `DIARIA`, `SEMANAL`, `MENSUAL` y `FECHA_ESPECIFICA`.
+10. `MANUAL` nunca se ejecuta automaticamente.
+11. Crea `clave_programacion` por tarea, tipo, fecha y hora slot.
+12. Si la clave ya existe, omite el slot.
+13. Si la tarea ya tiene ejecucion `EN_EJECUCION`, la omite.
+14. Si se alcanza `max_ejecuciones_concurrentes`, no inicia mas ejecuciones.
+15. Si corresponde, llama al motor de Fase 8 para ejecutar version activa.
+16. La ejecucion queda con `origen_ejecucion = AUTOMATICA`, `fecha_programada`, `clave_programacion` y `nombre_worker`.
+17. La consola se ve en `/ejecuciones/<id_ejecucion>` y puede detenerse desde la web.
 
 ## Flujo de configuracion scheduler
 
@@ -228,15 +246,30 @@ Validacion local Fase 9A:
 10. Backend guarda cambios y registra `logs_sistema`.
 11. Fase 9A no inicia worker ni ejecuta tareas automaticas.
 
-## Uso futuro de configuracion por worker
+## Uso de configuracion por worker
 
-1. Fase 9B leera la configuracion activa desde SQL Server.
+1. Fase 9B lee la configuracion activa desde SQL Server.
 2. Si `scheduler_activo = 0`, el worker no evaluara tareas.
 3. Si `modo_mantenimiento = 1`, el worker no iniciara ejecuciones nuevas.
 4. Si `permitir_ejecucion_automatica = 0`, el worker podra revisar pero no ejecutar.
 5. `intervalo_revision_segundos` definira cada cuanto revisa.
 6. `max_ejecuciones_concurrentes` limitara ejecuciones automaticas simultaneas.
 7. `nombre_worker_principal` identificara el worker.
+
+## Ventana de tolerancia y anti-duplicados
+
+El worker evalua una ventana entre `ahora - intervalo_revision_segundos` y `ahora`. Si un slot programado cae dentro de esa ventana, se considera ejecutable.
+
+Ejemplos de clave:
+
+* `TAREA_15_DIARIA_2026-06-16_08:00`.
+* `TAREA_15_DIARIA_INTERVALO_2026-06-16_08:30`.
+
+La base evita duplicados con indice unico filtrado para ejecuciones automaticas.
+
+## Feriados
+
+Fase 9B incluye `servicio_calendario.es_feriado(fecha)`, que retorna `False`. No se conecta API de feriados; la validacion real queda para Fase 10.
 
 ## Flujo de ejecucion manual
 
@@ -262,6 +295,46 @@ Validacion local Fase 8:
 13. Si el proceso termina con codigo 0, marca `EXITOSA`.
 14. Si termina con codigo distinto de 0 o error controlado, marca `ERROR`.
 15. No se muestran secretos ni contenido del `.env`.
+
+## Formato de logs de ejecucion
+
+Desde Fase 9C cada linea del archivo de log y de la consola usa:
+
+```text
+YYYY-MM-DD HH:mm:ss | NIVEL | mensaje
+```
+
+Reglas:
+
+1. Inicio, origen, tarea, script, version, `.env`, PID, codigo de salida y estado final usan timestamp.
+2. Cada linea emitida por el script se escribe con timestamp.
+3. La salida stdout/stderr se captura combinada; se marca como `INFO` por defecto.
+4. Errores de plataforma y codigo de salida distinto de cero se registran como `ERROR`.
+5. La detencion manual registra lineas `WARN` e incluye usuario, PID y si fue forzada.
+6. La plataforma no muestra contenido de `.env`; si un script imprime secretos por su cuenta, debe corregirse el script.
+7. Si el script ya imprime timestamp propio, Fase 9C igualmente antepone timestamp de plataforma para estandarizar la trazabilidad.
+
+## Historial de ejecuciones agrupado
+
+Fase 9D cambia `/ejecuciones` a una vista historica agrupada:
+
+1. Usuario autorizado con `EJECUCIONES_VER` abre `/ejecuciones`.
+2. Backend valida filtros GET y corrige valores invalidos con defaults seguros.
+3. SQL Server ejecuta consulta paginada con `OFFSET/FETCH`.
+4. La consulta trae solo la pagina actual.
+5. SQL Server ejecuta `COUNT` con los mismos filtros.
+6. SQL Server calcula resumen por estado con los mismos filtros.
+7. Python agrupa solo los registros de la pagina actual por ano, mes y dia.
+8. La vista muestra ano, mes `MM - Nombre`, dia y ejecuciones compactas.
+9. La paginacion conserva filtros en la URL.
+
+Orden default:
+
+```text
+fecha_hora_inicio DESC, id_ejecucion DESC
+```
+
+Filtros disponibles: ID ejecucion, tarea, origen, estado, ano, mes, dia, fecha desde, fecha hasta, usuario y worker.
 
 ## Flujo de ejecucion con env por script
 

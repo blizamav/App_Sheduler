@@ -6,11 +6,11 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 8</p>
+        <p class="eyebrow">{{ "Fase 9B" if ejecucion.origen_ejecucion == "AUTOMATICA" else "Fase 8" }}</p>
         <h2>{{ ejecucion.nombre_tarea }}</h2>
         <p>{{ ejecucion.nombre_categoria }} / {{ ejecucion.nombre_tipo }} / {{ ejecucion.nombre_cliente }}</p>
     </div>
-    <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver a tareas</a>
+    <a class="btn secundario" href="{{ url_for('ejecuciones.listado') }}">Volver a ejecuciones</a>
 </section>
 
 <section class="panel-grid">
@@ -26,7 +26,10 @@
             <div><strong>Script activo</strong><span>{{ ejecucion.nombre_archivo }}</span></div>
             <div><strong>Version</strong><span>v{{ ejecucion.numero_version }}</span></div>
             <div><strong>PID</strong><span>{{ ejecucion.pid_proceso or "-" }}</span></div>
+            <div><strong>Origen</strong><span>{{ ejecucion.origen_ejecucion or "-" }}</span></div>
             <div><strong>Usuario</strong><span>{{ ejecucion.usuario_ejecucion or "-" }}</span></div>
+            <div><strong>Worker</strong><span>{{ ejecucion.nombre_worker or "-" }}</span></div>
+            <div><strong>Fecha programada</strong><span>{{ ejecucion.fecha_programada or "-" }}</span></div>
             <div><strong>Inicio</strong><span>{{ ejecucion.fecha_hora_inicio }}</span></div>
             <div><strong>Termino</strong><span data-ejecucion-termino>{{ ejecucion.fecha_hora_termino or "-" }}</span></div>
         </div>

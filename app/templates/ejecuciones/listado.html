@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ejecuciones - APP Scheduler{% endblock %}
+{% block encabezado %}Ejecuciones{% endblock %}
+
+{% macro query_pagina(numero) -%}
+{{ url_for('ejecuciones.listado',
+    page=numero,
+    per_page=per_page,
+    id_ejecucion=filtros.get('id_ejecucion'),
+    tarea=filtros.get('tarea'),
+    origen=filtros.get('origen'),
+    estado=filtros.get('estado'),
+    anio=filtros.get('anio'),
+    mes=filtros.get('mes'),
+    dia=filtros.get('dia'),
+    fecha_desde=filtros.get('fecha_desde'),
+    fecha_hasta=filtros.get('fecha_hasta'),
+    usuario=filtros.get('usuario'),
+    worker=filtros.get('worker')) }}
+{%- endmacro %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 9D</p>
+        <h2>Historial de ejecuciones</h2>
+        <p>Vista historica agrupada por ano, mes y dia con filtros y paginacion server-side.</p>
+    </div>
+    <span class="badge info">{{ total }} registros filtrados</span>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Filtros</p>
+            <h3>Buscar ejecuciones</h3>
+        </div>
+        <a class="btn secundario compacto" href="{{ url_for('ejecuciones.listado') }}">Limpiar filtros</a>
+    </div>
+    <form class="formulario-admin" method="get">
+        <input type="hidden" name="page" value="1">
+        <div class="grid-formulario compacto-grid">
+            <div class="campo">
+                <label for="id_ejecucion">ID ejecucion</label>
+                <input id="id_ejecucion" name="id_ejecucion" type="number" min="1" value="{{ filtros.get('id_ejecucion') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="tarea">Tarea</label>
+                <input id="tarea" name="tarea" value="{{ filtros.get('tarea') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="origen">Origen</label>
+                <select id="origen" name="origen">
+                    <option value="">Todos</option>
+                    {% for origen in origenes %}
+                    <option value="{{ origen }}" {% if filtros.get('origen') == origen %}selected{% endif %}>{{ origen }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado">
+                    <option value="">Todos</option>
+                    {% for estado in estados %}
+                    <option value="{{ estado }}" {% if filtros.get('estado') == estado %}selected{% endif %}>{{ estado }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="anio">Ano</label>
+                <input id="anio" name="anio" type="number" min="2000" max="2100" value="{{ filtros.get('anio') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="mes">Mes</label>
+                <input id="mes" name="mes" type="number" min="1" max="12" value="{{ filtros.get('mes') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="dia">Dia</label>
+                <input id="dia" name="dia" type="number" min="1" max="31" value="{{ filtros.get('dia') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="fecha_desde">Fecha desde</label>
+                <input id="fecha_desde" name="fecha_desde" type="date" value="{{ filtros.get('fecha_desde') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="fecha_hasta">Fecha hasta</label>
+                <input id="fecha_hasta" name="fecha_hasta" type="date" value="{{ filtros.get('fecha_hasta') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="usuario">Usuario</label>
+                <input id="usuario" name="usuario" value="{{ filtros.get('usuario') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="worker">Worker</label>
+                <input id="worker" name="worker" value="{{ filtros.get('worker') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="per_page">Por pagina</label>
+                <select id="per_page" name="per_page">
+                    {% for opcion in per_page_opciones %}
+                    <option value="{{ opcion }}" {% if per_page == opcion %}selected{% endif %}>{{ opcion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="acciones-formulario">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('ejecuciones.listado') }}">Limpiar filtros</a>
+        </div>
+    </form>
+</section>
+
+<section class="historial-ejecuciones">
+    {% for grupo_anio in grupos %}
+    <article class="historial-anio">
+        <h3>{{ grupo_anio.anio }}</h3>
+        {% for grupo_mes in grupo_anio.meses %}
+        <div class="historial-mes">
+            <h4>{{ grupo_mes.etiqueta }}</h4>
+            {% for grupo_dia in grupo_mes.dias %}
+            <div class="historial-dia">
+                <h5>Dia {{ "%02d"|format(grupo_dia.dia) }}</h5>
+                <div class="ejecuciones-dia">
+                    {% for ejecucion in grupo_dia.ejecuciones %}
+                    <article class="ejecucion-item">
+                        <div class="ejecucion-main">
+                            <strong>#{{ ejecucion.id_ejecucion }} | {{ ejecucion.nombre_tarea }}</strong>
+                            <span>{{ ejecucion.nombre_archivo }}{% if ejecucion.numero_version %} v{{ ejecucion.numero_version }}{% endif %}</span>
+                        </div>
+                        <div class="ejecucion-tags">
+                            <span class="badge info">{{ ejecucion.origen_ejecucion or "-" }}</span>
+                            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
+                        </div>
+                        <div class="ejecucion-meta">
+                            <span>Inicio {{ ejecucion.fecha_hora_inicio.strftime('%H:%M:%S') if ejecucion.fecha_hora_inicio else '-' }}</span>
+                            <span>Termino {{ ejecucion.fecha_hora_termino.strftime('%H:%M:%S') if ejecucion.fecha_hora_termino else '-' }}</span>
+                            <span>{{ 'Worker ' ~ ejecucion.nombre_worker if ejecucion.nombre_worker else 'Usuario ' ~ (ejecucion.usuario_ejecucion or '-') }}</span>
+                        </div>
+                        <a class="btn secundario compacto" href="{{ url_for('ejecuciones.consola', id_ejecucion=ejecucion.id_ejecucion) }}">Ver consola</a>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </article>
+    {% else %}
+    <section class="bloque">
+        <p class="estado-vacio">No existen ejecuciones para los filtros seleccionados.</p>
+    </section>
+    {% endfor %}
+</section>
+
+<section class="paginacion">
+    <span>Pagina {{ page }} de {{ total_paginas }} · {{ total }} registros</span>
+    <div class="paginacion-acciones">
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(1) }}">Primero</a>
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(page - 1 if page > 1 else 1) }}">Anterior</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(page + 1 if page < total_paginas else total_paginas) }}">Siguiente</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(total_paginas) }}">Ultimo</a>
+    </div>
+</section>
+{% endblock %}

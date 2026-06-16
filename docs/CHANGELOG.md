@@ -1,5 +1,90 @@
 # Changelog
 
+## 2026-06-16 - Ajuste visual Fase 9D
+
+### Cambiado
+
+* Se elimino de `/ejecuciones` el bloque visual de resumen `Total`, `Exitosas`, `Errores`, `En ejecucion` y `Detenidas`.
+* Se mantiene el total discreto en header/paginacion.
+* Se mantienen filtros, paginacion, agrupacion ano/mes/dia y accion `Ver consola`.
+
+### No implementado
+
+* No se creo migracion.
+* No se avanzo a Fase 10.
+
+## 2026-06-16 - Fase 9D historial agrupado de ejecuciones
+
+### Agregado
+
+* Vista `/ejecuciones` agrupada por ano, mes y dia.
+* Filtros por ID, tarea, origen, estado, ano, mes, dia, fecha desde/hasta, usuario y worker.
+* Paginacion server-side con `page` y `per_page`.
+* Resumen por filtro: total, exitosas, errores, en ejecucion y detenidas.
+* Meses en espanol.
+
+### Cambiado
+
+* `repositorio_ejecuciones.py` agrega consulta paginada, `COUNT` y resumen por estado con los mismos filtros.
+* `servicio_ejecuciones.py` valida filtros y agrupa solo la pagina actual.
+* `ejecuciones/listado.html` deja de ser tabla plana y pasa a vista historica agrupada.
+
+### No implementado
+
+* No se creo migracion.
+* No se conecto API de feriados.
+* No se implementaron notificaciones.
+* No se implemento dashboard avanzado.
+* No se avanzo a Fase 10.
+
+## 2026-06-16 - Fase 9C timestamps por linea en logs de ejecucion
+
+### Agregado
+
+* Servicio `app/servicios/servicio_logs_ejecucion.py`.
+* Formato estandar por linea: `YYYY-MM-DD HH:mm:ss | NIVEL | mensaje`.
+* Timestamps para inicio, origen, tarea, script, version, `.env`, PID, salida de script, codigo de salida, estado final y detencion manual.
+
+### Cambiado
+
+* `servicio_ejecuciones.py` escribe logs de ejecucion usando servicio centralizado.
+* Consola y polling muestran las lineas ya formateadas desde el archivo fisico.
+
+### No implementado
+
+* No se creo migracion.
+* No se conecto API de feriados.
+* No se implementaron notificaciones.
+* No se implemento dashboard avanzado.
+* No se avanzo a Fase 10.
+
+## 2026-06-16 - Fase 9B worker automatico separado
+
+### Agregado
+
+* `scheduler_worker.py` como proceso separado.
+* Servicio `servicio_scheduler_worker.py`.
+* Servicio `servicio_programador.py` para evaluar programaciones.
+* Repositorio `repositorio_scheduler.py`.
+* Placeholder `servicio_calendario.py`.
+* Migracion `011_agregar_control_scheduler_ejecuciones.sql`.
+* Ejecuciones automaticas con `fecha_programada`, `clave_programacion` y `nombre_worker`.
+* Listado basico `/ejecuciones`.
+* Sidebar con acceso a ejecuciones.
+
+### Cambiado
+
+* `servicio_ejecuciones.py` reutiliza el motor de Fase 8 para ejecuciones automaticas.
+* `repositorio_ejecuciones.py` soporta listado y campos opcionales de Fase 9B.
+* La consola muestra origen, worker y fecha programada.
+
+### No implementado
+
+* No se conecto API de feriados.
+* No se implementaron notificaciones.
+* No se implemento dashboard avanzado del scheduler.
+* No se avanzo a Fase 10.
+
 ## 2026-06-16 - Fase 9A validada localmente
 
 ### Validado

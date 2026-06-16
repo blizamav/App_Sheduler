@@ -2,7 +2,7 @@
 
 ## Estado
 
-Fase 3B - Scripts SQL Server versionados creados. No se ha creado conexion real desde Flask, no se han ejecutado scripts automaticamente y no se ha creado ninguna tabla desde Codex.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. Fase 9B crea migracion 011 para ejecuciones automaticas, pendiente de ejecucion manual en SSMS.
 
 ## Base objetivo
 
@@ -44,6 +44,7 @@ database/
     008_ajustar_tareas_y_programaciones_base.sql
     009_corregir_nombre_script_contenedor.sql
     010_crear_configuracion_scheduler.sql
+    011_agregar_control_scheduler_ejecuciones.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -70,6 +71,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 15. `database/seeds/006_permisos_ejecuciones.sql`
 16. `database/migrations/010_crear_configuracion_scheduler.sql`
 17. `database/seeds/007_permisos_scheduler.sql`
+18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
 
 Resumen por script:
 
@@ -83,6 +85,7 @@ Resumen por script:
 * `008_ajustar_tareas_y_programaciones_base.sql`: ajusta `tareas` y `programaciones` para Fase 6.
 * `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos. Ejecutada localmente sin errores; afecto 0 filas porque no existian registros antiguos que corregir.
 * `010_crear_configuracion_scheduler.sql`: crea `configuracion_scheduler` con defaults seguros para Fase 9A; no inicia worker ni ejecuciones automaticas.
+* `011_agregar_control_scheduler_ejecuciones.sql`: agrega trazabilidad de ejecuciones automaticas y clave anti-duplicados para Fase 9B.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -176,6 +179,32 @@ Validacion local:
 * Los permisos `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` fueron insertados.
 * La configuracion se edita desde `/scheduler/configuracion` y los cambios se registran en `logs_sistema`.
 * Esta validacion no habilita worker automatico ni ejecuciones automaticas.
+
+## Fase 9B - Worker automatico
+
+Se crea migracion incremental `011_agregar_control_scheduler_ejecuciones.sql`.
+
+Campos agregados a `ejecuciones` si no existen:
+
+* `fecha_programada datetime2(0) NULL`.
+* `clave_programacion varchar(200) NULL`.
+* `nombre_worker varchar(100) NULL`.
+
+Tambien valida `origen_ejecucion` si fuera necesario para mantener valores `MANUAL` y `AUTOMATICA`.
+
+Indices:
+
+* `UX_ejecuciones_clave_programacion_automatica`: indice unico filtrado sobre `clave_programacion` cuando `origen_ejecucion = 'AUTOMATICA'` y la clave no es nula.
+* `IX_ejecuciones_origen_estado`: apoyo para conteo de automaticas `EN_EJECUCION`.
+
+Reglas:
+
+* Cada ejecucion automatica debe guardar `fecha_programada`.
+* Cada ejecucion automatica debe guardar `clave_programacion`.
+* La clave evita duplicar un mismo slot.
+* El worker registra `nombre_worker`.
+* La consola y logs de Fase 8 siguen asociados por `id_ejecucion`.
+* La migracion debe ejecutarse manualmente en SSMS; no se ejecuta automaticamente desde Flask ni desde Codex.
 
 Restricciones implementadas en scripts:
 
