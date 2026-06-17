@@ -78,6 +78,26 @@ def obtener_feriado_por_fecha(fecha, pais="CL"):
         return _fila_a_dict(cursor, fila) if fila else None
 
 
+def obtener_feriado_por_fecha_pais(fecha, pais="CL"):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT TOP 1 id_feriado, fecha, nombre, tipo, pais, irrenunciable, activo,
+                   origen, observacion, fecha_creacion, fecha_actualizacion,
+                   usuario_creacion, usuario_actualizacion
+            FROM dbo.feriados
+            WHERE fecha = ?
+              AND pais = ?
+            ORDER BY activo DESC, id_feriado DESC
+            """,
+            fecha,
+            pais,
+        )
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
+
+
 def existe_feriado_activo(fecha, pais, excluir_id=None):
     consulta = """
         SELECT COUNT(1)
@@ -121,6 +141,30 @@ def crear_feriado(datos):
         return id_feriado
 
 
+def crear_feriado_api_nager(datos):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            INSERT INTO dbo.feriados
+                (fecha, nombre, tipo, pais, irrenunciable, activo, origen,
+                 observacion, usuario_creacion)
+            OUTPUT INSERTED.id_feriado
+            VALUES (?, ?, ?, ?, ?, 1, 'API_NAGER', ?, ?)
+            """,
+            datos["fecha"],
+            datos["nombre"],
+            datos.get("tipo"),
+            datos["pais"],
+            1 if datos.get("irrenunciable") else 0,
+            datos.get("observacion"),
+            datos.get("usuario"),
+        )
+        id_feriado = cursor.fetchone()[0]
+        conexion.commit()
+        return id_feriado
+
+
 def actualizar_feriado(id_feriado, datos):
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -144,6 +188,32 @@ def actualizar_feriado(id_feriado, datos):
             datos["pais"],
             1 if datos.get("irrenunciable") else 0,
             1 if datos.get("activo") else 0,
+            datos.get("observacion"),
+            datos.get("usuario"),
+            id_feriado,
+        )
+        conexion.commit()
+
+
+def actualizar_feriado_api_nager(id_feriado, datos):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            UPDATE dbo.feriados
+            SET nombre = ?,
+                tipo = ?,
+                irrenunciable = ?,
+                observacion = ?,
+                fecha_actualizacion = SYSDATETIME(),
+                usuario_actualizacion = ?
+            WHERE id_feriado = ?
+              AND origen = 'API_NAGER'
+              AND activo = 1
+            """,
+            datos["nombre"],
+            datos.get("tipo"),
+            1 if datos.get("irrenunciable") else 0,
             datos.get("observacion"),
             datos.get("usuario"),
             id_feriado,

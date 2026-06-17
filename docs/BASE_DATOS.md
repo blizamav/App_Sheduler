@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS.
 
 ## Base objetivo
 
@@ -46,12 +46,15 @@ database/
     010_crear_configuracion_scheduler.sql
     011_agregar_control_scheduler_ejecuciones.sql
     012_crear_calendario_feriados.sql
+    013_crear_reglas_feriados_irrenunciables.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
     006_permisos_ejecuciones.sql
     007_permisos_scheduler.sql
     008_permisos_feriados.sql
+    009_reglas_irrenunciables_chile.sql
+    010_permisos_sincronizacion_feriados.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -76,6 +79,9 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
 19. `database/migrations/012_crear_calendario_feriados.sql`
 20. `database/seeds/008_permisos_feriados.sql`
+21. `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`
+22. `database/seeds/009_reglas_irrenunciables_chile.sql`
+23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
 
 Resumen por script:
 
@@ -91,6 +97,7 @@ Resumen por script:
 * `010_crear_configuracion_scheduler.sql`: crea `configuracion_scheduler` con defaults seguros para Fase 9A; no inicia worker ni ejecuciones automaticas.
 * `011_agregar_control_scheduler_ejecuciones.sql`: agrega trazabilidad de ejecuciones automaticas y clave anti-duplicados para Fase 9B.
 * `012_crear_calendario_feriados.sql`: crea tabla local `feriados` para Fase 10A; ejecutada y validada localmente; no conecta API externa.
+* `013_crear_reglas_feriados_irrenunciables.sql`: crea reglas locales de irrenunciables y ajusta `CK_feriados_origen` para permitir `API_NAGER`.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -99,6 +106,8 @@ Resumen por script:
 * `006_permisos_ejecuciones.sql`: inserta permisos incrementales para ejecucion manual, consola, log y detencion.
 * `007_permisos_scheduler.sql`: inserta permisos incrementales para ver y editar configuracion operativa del scheduler.
 * `008_permisos_feriados.sql`: inserta permisos incrementales para ver, crear, editar, activar/desactivar y eliminar feriados; ejecutado y validado localmente.
+* `009_reglas_irrenunciables_chile.sql`: carga reglas iniciales Chile para 01/01, 01/05, 18/09, 19/09 y 25/12.
+* `010_permisos_sincronizacion_feriados.sql`: inserta permiso `FERIADOS_SINCRONIZAR`.
 
 ## Fase 7 - Scripts y versiones
 
@@ -261,6 +270,43 @@ Validacion local reportada:
 * `servicio_calendario.es_feriado` validado con resultado `True` y `False` segun existencia de feriado activo.
 * Scheduler validado respetando `ejecutar_en_feriados`.
 * No se conecto API externa ni sincronizacion automatica.
+
+## Fase 10B - Sincronizacion Nager.Date
+
+Se crea migracion incremental `013_crear_reglas_feriados_irrenunciables.sql`.
+
+Cambios:
+
+* Ajusta `CK_feriados_origen` para permitir `API_NAGER`.
+* Crea tabla `reglas_feriados_irrenunciables`.
+* Agrega indice unico filtrado por `pais, mes, dia` cuando la regla esta activa.
+
+Tabla: `reglas_feriados_irrenunciables`.
+
+Campos principales:
+
+* `id_regla int identity primary key`.
+* `pais varchar(10)`.
+* `mes int`.
+* `dia int`.
+* `nombre_referencia varchar(200)`.
+* `irrenunciable bit`.
+* `activo bit`.
+* `observacion varchar(500)`.
+* Campos de auditoria `fecha_creacion`, `fecha_actualizacion`, `usuario_creacion`, `usuario_actualizacion`.
+
+Seeds:
+
+* `009_reglas_irrenunciables_chile.sql`: reglas locales Chile.
+* `010_permisos_sincronizacion_feriados.sql`: permiso `FERIADOS_SINCRONIZAR`.
+
+Reglas:
+
+* `MANUAL` tiene prioridad y no se sobrescribe por `API_NAGER`.
+* `API_NAGER` puede insertarse o actualizarse desde vista previa confirmada.
+* Feriados inactivos no se reactivan automaticamente.
+* La tabla local `feriados` sigue siendo fuente final para el scheduler.
+* `scheduler_worker.py` no consulta Nager.Date.
 
 Restricciones implementadas en scripts:
 

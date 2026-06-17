@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-06-17 - Correccion preview Fase 10B
+
+### Corregido
+
+* Se corrigio error en `feriados/sincronizar.html` causado por `preview.items`.
+* La estructura `preview` ahora usa la clave `feriados_preview` para evitar conflicto con `dict.items` de Python/Jinja.
+* La aplicacion de sincronizacion tambien usa `preview["feriados_preview"]`.
+
+### Validado
+
+* `python -m compileall app scheduler_worker.py`.
+* Render de vista previa de sincronizacion con feriados simulados.
+* Aplicacion simulada de sincronizacion con insercion `API_NAGER`.
+* Validacion real en la app: `/feriados/sincronizar` carga correctamente.
+* Consulta real desde la app para `2026 / CL` sin `TypeError`.
+* Vista previa renderizada correctamente usando `preview.feriados_preview`.
+* Feriados retornados por Nager.Date visibles en pantalla.
+* Aplicar sincronizacion validado correctamente desde la app.
+* No se duplican fecha + pais.
+* Sin referencias a Nager.Date o `requests` desde `scheduler_worker.py`.
+* Sin `alert()`, `window.confirm()` ni `prompt()`.
+
+## 2026-06-17 - Fase 10B sincronizacion Nager.Date
+
+### Agregado
+
+* Migracion `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`.
+* Seed `database/seeds/009_reglas_irrenunciables_chile.sql`.
+* Seed `database/seeds/010_permisos_sincronizacion_feriados.sql`.
+* Dependencia `requests`.
+* Cliente `app/servicios/cliente_nager_date.py`.
+* Servicio `app/servicios/servicio_sincronizacion_feriados.py`.
+* Repositorio `app/repositorios/repositorio_reglas_feriados.py`.
+* Rutas `/feriados/sincronizar`, `/feriados/sincronizar/preview` y `/feriados/sincronizar/confirmar`.
+* Template `app/templates/feriados/sincronizar.html`.
+
+### Validado
+
+* `python -m compileall app scheduler_worker.py`.
+* Rutas `/feriados/sincronizar`, `/feriados/sincronizar/preview` y `/feriados/sincronizar/confirmar`.
+* Render de pantalla de sincronizacion.
+* Consulta real a Nager.Date para `2026/CL`, con 17 feriados retornados.
+* Calculo de irrenunciable por regla local simulado.
+* Clasificacion `NUEVO`, `MANUAL_NO_SOBRESCRIBE`, `ACTUALIZAR` y `SIN_CAMBIOS`.
+* Busqueda sin `alert()`, `window.confirm()` ni `prompt()`.
+* Verificacion de que `scheduler_worker.py` no importa ni consulta Nager.Date.
+
+### Cambiado
+
+* `/feriados` agrega boton `Sincronizar feriados`.
+* `repositorio_feriados.py` soporta buscar por fecha + pais, insertar `API_NAGER` y actualizar feriados `API_NAGER`.
+* Documentacion actualizada para Nager.Date, reglas locales, prioridad `MANUAL` y permiso `FERIADOS_SINCRONIZAR`.
+
+### No implementado
+
+* No se implemento sincronizacion automatica programada.
+* No se conecto Nager.Date al scheduler.
+* No se implementaron notificaciones.
+* No se avanzo a Fase 10C.
+
 ## 2026-06-16 - Fase 10A calendario local de feriados
 
 ### Validado localmente

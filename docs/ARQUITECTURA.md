@@ -113,6 +113,15 @@ Fase 10A agrega calendario local de feriados:
 
 La tabla local `feriados` es la fuente de verdad del scheduler. No se consulta API externa en tiempo real.
 
+Fase 10B agrega sincronizacion controlada desde Nager.Date:
+
+* `app/servicios/cliente_nager_date.py`: cliente HTTP con timeout y errores controlados.
+* `app/servicios/servicio_sincronizacion_feriados.py`: preview, clasificacion y aplicacion.
+* `app/repositorios/repositorio_reglas_feriados.py`: reglas locales de irrenunciables.
+* `/feriados/sincronizar`: pantalla manual con vista previa antes de guardar.
+
+La API externa solo se consulta desde el modulo de sincronizacion manual. El scheduler mantiene dependencia exclusiva de SQL Server mediante `servicio_calendario.es_feriado()`.
+
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler

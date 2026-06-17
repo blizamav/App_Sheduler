@@ -10,7 +10,12 @@
         <h2>Feriados</h2>
         <p>Calendario local usado por el scheduler para decidir ejecuciones en dias feriados.</p>
     </div>
-    <a class="btn primario" href="{{ url_for('feriados.nuevo') }}">Nuevo feriado</a>
+    <div class="acciones-filtros">
+        {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_SINCRONIZAR" in session.get("permisos", []) %}
+        <a class="btn secundario" href="{{ url_for('feriados.sincronizar') }}">Sincronizar feriados</a>
+        {% endif %}
+        <a class="btn primario" href="{{ url_for('feriados.nuevo') }}">Nuevo feriado</a>
+    </div>
 </section>
 
 <section class="bloque filtros-usuarios">

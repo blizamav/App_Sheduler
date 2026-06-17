@@ -199,6 +199,30 @@ http://127.0.0.1:5000/feriados
 
 La carga inicial de feriados es manual. No se conecta API externa ni se sincronizan feriados automaticamente en Fase 10A.
 
+## Sincronizacion feriados Fase 10B
+
+Ejecutar manualmente en SSMS:
+
+```text
+database/migrations/013_crear_reglas_feriados_irrenunciables.sql
+database/seeds/009_reglas_irrenunciables_chile.sql
+database/seeds/010_permisos_sincronizacion_feriados.sql
+```
+
+Instalar dependencias:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Luego abrir:
+
+```text
+http://127.0.0.1:5000/feriados/sincronizar
+```
+
+La sincronizacion es manual y controlada. El scheduler no consulta Nager.Date.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

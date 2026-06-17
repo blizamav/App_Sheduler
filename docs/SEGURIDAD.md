@@ -280,6 +280,24 @@ Validacion local:
 * Crear, editar, activar/desactivar y bloqueo de duplicado fecha + pais activa validados.
 * No se conecto API externa ni sincronizacion automatica.
 
+## Sincronizacion Nager.Date
+
+Fase 10B agrega permiso:
+
+* `FERIADOS_SINCRONIZAR`.
+
+Reglas:
+
+* Solo usuarios autorizados pueden abrir `/feriados/sincronizar`.
+* La consulta externa usa timeout y errores controlados.
+* El scheduler no consulta Nager.Date ni internet.
+* La API externa no sobrescribe feriados `MANUAL`.
+* Feriados inactivos no se reactivan automaticamente.
+* La aplicacion muestra vista previa antes de insertar o actualizar.
+* La confirmacion usa modal corporativo; no se usan `alert()`, `confirm()` ni `prompt()`.
+* Los cambios se registran en `logs_sistema`.
+* No se registran secretos.
+
 ## Variables sensibles por script
 
 Fase 4.3 define que cada script/version podra tener un `.env` propio bajo `env_scripts/`.

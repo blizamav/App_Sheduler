@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from app.seguridad import permiso_requerido
@@ -7,6 +9,11 @@ from app.servicios.servicio_calendario import (
     guardar_feriado,
     listar_feriados,
     obtener_feriado_admin,
+)
+from app.servicios.servicio_sincronizacion_feriados import (
+    aplicar_sincronizacion,
+    preparar_preview_sincronizacion,
+    validar_parametros_sincronizacion,
 )
 
 
@@ -55,6 +62,72 @@ def listado():
         registros = []
         flash("No fue posible consultar feriados. Verifica que la migracion 012 este ejecutada.", "error")
     return render_template("feriados/listado.html", registros=registros, filtros=filtros, total_registros=len(registros))
+
+
+@bp_feriados.route("/sincronizar")
+@permiso_requerido("FERIADOS_SINCRONIZAR")
+def sincronizar():
+    contexto = {
+        "anio": date.today().year,
+        "pais": "CL",
+        "preview": None,
+        "resultado": None,
+    }
+    return render_template("feriados/sincronizar.html", **contexto)
+
+
+@bp_feriados.route("/sincronizar/preview", methods=["POST"])
+@permiso_requerido("FERIADOS_SINCRONIZAR")
+def sincronizar_preview():
+    ok, errores, parametros = validar_parametros_sincronizacion(request.form)
+    if not ok:
+        for error in errores:
+            flash(error, "error")
+        return render_template(
+            "feriados/sincronizar.html",
+            anio=request.form.get("anio") or date.today().year,
+            pais=request.form.get("pais") or "CL",
+            preview=None,
+            resultado=None,
+        )
+
+    ok, mensajes, preview = preparar_preview_sincronizacion(
+        parametros["anio"],
+        parametros["pais"],
+        usuario=session.get("usuario"),
+    )
+    for mensaje in mensajes:
+        flash(mensaje, "success" if ok else "error")
+    if ok:
+        session["feriados_sync_preview"] = preview
+    else:
+        session.pop("feriados_sync_preview", None)
+
+    return render_template(
+        "feriados/sincronizar.html",
+        anio=parametros["anio"],
+        pais=parametros["pais"],
+        preview=preview,
+        resultado=None,
+    )
+
+
+@bp_feriados.route("/sincronizar/confirmar", methods=["POST"])
+@permiso_requerido("FERIADOS_SINCRONIZAR")
+def sincronizar_confirmar():
+    preview = session.get("feriados_sync_preview")
+    ok, mensajes, resultado = aplicar_sincronizacion(preview, usuario=session.get("usuario"))
+    for mensaje in mensajes:
+        flash(mensaje, "success" if ok else "error")
+    if ok:
+        session.pop("feriados_sync_preview", None)
+    return render_template(
+        "feriados/sincronizar.html",
+        anio=(preview or {}).get("anio", date.today().year),
+        pais=(preview or {}).get("pais", "CL"),
+        preview=preview,
+        resultado=resultado,
+    )
 
 
 @bp_feriados.route("/nuevo", methods=["GET", "POST"])

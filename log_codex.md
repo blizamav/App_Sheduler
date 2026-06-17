@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A.
-* Estado actual: Fase 10A implementada y validada localmente con calendario local de feriados en base de datos.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual.
+* Estado actual: Fase 10B implementada con sincronizacion controlada desde Nager.Date y reglas locales de irrenunciables.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 10A - Calendario laboral y feriados locales.
-* Ultima actualizacion: 2026-06-16 00:00
+* Fase actual: Fase 10B - Sincronizacion controlada de feriados.
+* Ultima actualizacion: 2026-06-17 00:00
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -17,7 +17,7 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; sincronizacion externa pendiente para fase posterior.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server, sin conectar internet al scheduler.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Pendiente para fase posterior.
 * Docker: Pendiente para Fase 11.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D y calendario local de feriados Fase 10A.
-* Modulos pendientes: Sincronizacion externa de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A y sincronizacion Nager.Date controlada Fase 10B.
+* Modulos pendientes: Sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
 
@@ -46,10 +46,35 @@
 
 * Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
 * Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
-* Pendiente 3: Preparar Fase 10B solo cuando se apruebe sincronizacion externa de feriados.
+* Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-17 00:00 - Correccion Fase 10B / Preview de sincronizacion
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_sincronizacion_feriados.py`, `app/templates/feriados/sincronizar.html`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Causa: El template usaba `preview.items`; al ser `preview` un diccionario, Jinja resolvia `items` como el metodo interno `dict.items` y no como lista iterable.
+* Que se hizo: Se reemplazo la clave `items` por `feriados_preview` en la estructura de preview, en el template y en `aplicar_sincronizacion()`.
+* Reglas preservadas: Prioridad `MANUAL` sobre `API_NAGER`, actualizacion solo de `API_NAGER`, irrenunciables por reglas locales y scheduler sin consulta a internet.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; render de preview con datos simulados; aplicacion simulada de sincronizacion; busqueda sin referencias Nager/requests en worker; busqueda sin `alert()`, `window.confirm()`, `confirm()` ni `prompt()`.
+* Validacion en app reportada: `/feriados/sincronizar` carga correctamente; consultar `2026 / CL` ya no genera `TypeError`; la vista previa renderiza usando `preview.feriados_preview`; se muestran feriados de Nager.Date; irrenunciables se calculan por reglas locales; `MANUAL` mantiene prioridad sobre `API_NAGER`; aplicar sincronizacion funciona; no se duplican fecha + pais.
+* No implementado: No se ejecuto SQL, no se modifico `.env`, no se agregaron funcionalidades y no se avanzo a Fase 10C.
+
+### 2026-06-17 00:00 - Fase 10B / Sincronizacion controlada de feriados
+
+* Archivos creados: `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`, `database/seeds/009_reglas_irrenunciables_chile.sql`, `database/seeds/010_permisos_sincronizacion_feriados.sql`, `app/repositorios/repositorio_reglas_feriados.py`, `app/servicios/cliente_nager_date.py`, `app/servicios/servicio_sincronizacion_feriados.py`, `app/templates/feriados/sincronizar.html`.
+* Archivos modificados: `requirements.txt`, `app/repositorios/repositorio_feriados.py`, `app/rutas_feriados.py`, `app/templates/base.html`, `app/templates/feriados/listado.html`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implemento sincronizacion manual desde Nager.Date con vista previa, reglas locales de irrenunciables, prioridad de feriados `MANUAL` y aplicacion confirmada hacia la tabla local `feriados`.
+* Base de datos: Se creo migracion 013 para tabla `reglas_feriados_irrenunciables` y ajuste de origen `API_NAGER`; se crearon seeds 009 y 010. Codex no ejecuto SQL.
+* Permisos: Se agrego permiso propuesto `FERIADOS_SINCRONIZAR` para SUPER_ADMIN, ADMIN y TI mediante seed 010.
+* Reglas: `MANUAL` no se sobrescribe; `API_NAGER` se inserta o actualiza; inactivos no se reactivan automaticamente; irrenunciables se calculan por reglas locales, no por Nager.Date.
+* Scheduler: No se modifico `scheduler_worker.py` para consultar internet; sigue usando `servicio_calendario.es_feriado()` contra SQL Server.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; render de `feriados/sincronizar.html`; verificacion de rutas de feriados; consulta real a Nager.Date `2026/CL` con 17 registros; prueba de irrenunciable por regla simulada; prueba de clasificacion `NUEVO`, `MANUAL_NO_SOBRESCRIBE`, `ACTUALIZAR` y `SIN_CAMBIOS`; busqueda sin `alert()`, `window.confirm()`, `confirm()` ni `prompt()`; verificacion de que el worker no referencia Nager.Date.
+* No implementado: No se implemento sincronizacion automatica programada, no se implementaron notificaciones y no se avanzo a Fase 10C.
+* Riesgos detectados: Requiere instalar `requests` con `pip install -r requirements.txt` y ejecutar migracion/semillas nuevas antes de probar con usuarios de base de datos.
+* Proximos pasos: Ejecutar scripts 013, 009 y 010 en SSMS; probar preview CL 2026 y confirmar sincronizacion controlada.
 
 ### 2026-06-16 00:00 - Fase 10A / Migracion 012 y seed 008 validados localmente
 

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block titulo %}Sincronizar feriados - APP Scheduler{% endblock %}
+{% block encabezado %}Sincronizar feriados{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 10B</p>
+        <h2>Sincronizar feriados</h2>
+        <p>Consulta feriados desde Nager.Date, aplica reglas locales de irrenunciables y guarda el resultado en la tabla local. El scheduler seguira usando solo SQL Server.</p>
+    </div>
+    <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Volver</a>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Consulta controlada</p>
+            <h3>Parametros</h3>
+        </div>
+        <span class="badge info">Nager.Date</span>
+    </div>
+    <form method="post" action="{{ url_for('feriados.sincronizar_preview') }}" class="formulario-filtros">
+        <div class="campo">
+            <label for="anio">Ano</label>
+            <input id="anio" name="anio" type="number" min="2000" max="2100" value="{{ anio }}" required>
+        </div>
+        <div class="campo">
+            <label for="pais">Pais</label>
+            <input id="pais" name="pais" maxlength="10" value="{{ pais or 'CL' }}" required>
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Consultar feriados</button>
+        </div>
+    </form>
+    <div class="alerta info">
+        No se sobrescriben feriados manuales. Los irrenunciables se calculan con reglas locales y la API no se consulta desde el scheduler.
+    </div>
+</section>
+
+{% if preview %}
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Vista previa</p>
+            <h3>{{ preview.pais }} {{ preview.anio }}</h3>
+        </div>
+        <div class="acciones-filtros">
+            <span class="badge activo">Nuevos {{ preview.resumen.nuevos }}</span>
+            <span class="badge advertencia">Actualizar {{ preview.resumen.actualizar }}</span>
+            <span class="badge info">Sin cambios {{ preview.resumen.sin_cambios }}</span>
+            <span class="badge inactivo">Manual {{ preview.resumen.omitidos_manual }}</span>
+            <span class="badge error">Errores {{ preview.resumen.errores }}</span>
+        </div>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre API</th>
+                    <th>Nombre local</th>
+                    <th>Pais</th>
+                    <th>Tipo</th>
+                    <th>Irrenunciable</th>
+                    <th>Origen local</th>
+                    <th>Accion propuesta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in preview.feriados_preview %}
+                <tr>
+                    <td>{{ item.fecha }}</td>
+                    <td>{{ item.nombre_api }}</td>
+                    <td>{{ item.nombre_local or "-" }}</td>
+                    <td>{{ item.pais }}</td>
+                    <td>{{ item.tipo or "-" }}</td>
+                    <td>{{ "Si" if item.irrenunciable else "No" }}</td>
+                    <td>{{ item.origen_local or "-" }}</td>
+                    <td>
+                        <span class="badge {% if item.accion == 'NUEVO' %}activo{% elif item.accion == 'ACTUALIZAR' %}advertencia{% elif item.accion == 'ERROR' %}error{% else %}info{% endif %}">
+                            {{ item.accion_texto }}
+                        </span>
+                        <small>{{ item.mensaje }}</small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <form
+        method="post"
+        action="{{ url_for('feriados.sincronizar_confirmar') }}"
+        class="acciones-formulario requiere-confirmacion-form"
+        data-confirm-title="Aplicar sincronizacion de feriados"
+        data-confirm-message="Se insertaran y actualizaran feriados en la tabla local segun la vista previa. Los feriados manuales no seran sobrescritos."
+        data-confirm-ok="Si, aplicar sincronizacion"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="warning"
+    >
+        <button class="btn primario" type="submit">Aplicar sincronizacion</button>
+    </form>
+</section>
+{% endif %}
+
+{% if resultado %}
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Resultado</p>
+            <h3>Sincronizacion aplicada</h3>
+        </div>
+    </div>
+    <div class="grid-metricas">
+        <article class="card-metrica"><span>Nuevos</span><strong>{{ resultado.resumen.nuevos }}</strong></article>
+        <article class="card-metrica"><span>Actualizados</span><strong>{{ resultado.resumen.actualizar }}</strong></article>
+        <article class="card-metrica"><span>Sin cambios</span><strong>{{ resultado.resumen.sin_cambios }}</strong></article>
+        <article class="card-metrica"><span>Omitidos manual</span><strong>{{ resultado.resumen.omitidos_manual }}</strong></article>
+        <article class="card-metrica"><span>Omitidos inactivo</span><strong>{{ resultado.resumen.omitidos_inactivo }}</strong></article>
+        <article class="card-metrica"><span>Errores</span><strong>{{ resultado.resumen.errores }}</strong></article>
+    </div>
+    {% if resultado.errores %}
+    <div class="alerta error">
+        {{ resultado.errores|join(" | ") }}
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

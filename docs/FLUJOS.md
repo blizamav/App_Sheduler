@@ -295,6 +295,27 @@ Validacion local Fase 10A:
 11. Si `ejecutar_en_feriados = 1`, permite la ejecucion aunque sea feriado.
 12. La ejecucion manual no se bloquea por feriados.
 
+## Flujo de sincronizacion Nager.Date
+
+Fase 10B agrega sincronizacion controlada y manual. El scheduler no consulta internet.
+
+1. Usuario con `FERIADOS_SINCRONIZAR` abre `/feriados/sincronizar`.
+2. Selecciona ano y pais, por defecto ano actual y `CL`.
+3. Presiona `Consultar feriados`.
+4. La app consulta `https://date.nager.at/api/v3/PublicHolidays/{anio}/{pais}` con timeout controlado.
+5. Cada feriado se normaliza hacia `fecha`, `nombre`, `pais`, `tipo`, `origen = API_NAGER`, `activo = 1` y observacion.
+6. El campo `irrenunciable` se calcula usando `reglas_feriados_irrenunciables`, no desde Nager.Date.
+7. Se compara contra feriados locales existentes por fecha + pais.
+8. Si no existe local, la accion propuesta es `Nuevo`.
+9. Si existe local `MANUAL`, se omite y no se sobrescribe.
+10. Si existe local `API_NAGER` activo y cambio nombre/tipo/irrenunciable/observacion, se propone actualizar.
+11. Si existe local `API_NAGER` sin cambios, queda `Sin cambios`.
+12. Si existe local inactivo, se marca como revision y no se reactiva automaticamente.
+13. Usuario confirma con modal corporativo `Aplicar sincronizacion de feriados`.
+14. Backend revalida contra estado local antes de insertar o actualizar.
+15. Se registra resultado en `logs_sistema`.
+16. La tabla `feriados` sigue siendo fuente final para `servicio_calendario.es_feriado()`.
+
 ## Flujo de ejecucion manual
 
 Validacion local Fase 8:

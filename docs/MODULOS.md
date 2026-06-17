@@ -24,6 +24,7 @@
 * Fase 9B: worker automatico separado y ejecuciones automaticas.
 * Fase 9D: historial agrupado de ejecuciones con filtros y paginacion.
 * Fase 10A: calendario local de feriados en base de datos.
+* Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales.
 
 ## Modulos pendientes
 
@@ -31,7 +32,7 @@
 * Logs de sistema completos.
 * Auditoria.
 * Configuracion.
-* Sincronizacion externa de feriados.
+* Sincronizacion automatica programada de feriados.
 * Dashboard ejecutivo.
 * Notificaciones.
 
@@ -48,7 +49,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 10A: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones y calendario local de feriados conectados a SQL Server. Aun no existe sincronizacion externa de feriados, dashboard avanzado del scheduler ni panel avanzado de auditoria.
+La aplicacion esta en Fase 10B: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados y sincronizacion controlada desde Nager.Date. Aun no existe sincronizacion automatica programada, dashboard avanzado del scheduler ni panel avanzado de auditoria.
 
 ## Modulo de ejecuciones
 
@@ -133,11 +134,20 @@ Implementado en Fase 10A:
 * Validado `es_feriado` con feriado activo y sin feriado activo.
 * Validado scheduler con `ejecutar_en_feriados = 0` y `ejecutar_en_feriados = 1`.
 * Validado que la ejecucion manual no se bloquea por feriados.
+* `/feriados/sincronizar`: consulta manual Nager.Date, genera vista previa y aplica cambios confirmados.
+* Reglas locales de irrenunciables para Chile.
+* Prioridad de feriados `MANUAL` sobre `API_NAGER`.
+* Permiso `FERIADOS_SINCRONIZAR`.
 
 No implementado en Fase 10A:
 
-* No se conecta API externa de feriados.
 * No se implementa sincronizacion automatica.
+* No se implementan notificaciones.
+
+No implementado en Fase 10B:
+
+* No se implementa sincronizacion automatica programada.
+* No se consulta Nager.Date desde el scheduler.
 * No se implementan notificaciones.
 
 ## Modulo de scripts
