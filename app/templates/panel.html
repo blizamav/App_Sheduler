@@ -3,42 +3,97 @@
 {% block encabezado %}Panel principal{% endblock %}
 
 {% block contenido %}
+{% set metricas = panel.metricas %}
+{% set scheduler = panel.scheduler %}
+{% set ultima = panel.ultima_ejecucion %}
+{% set permisos = session.get("permisos", []) %}
+{% set es_admin = session.get("es_admin_env") or "*" in permisos %}
+
 <section class="bienvenida contenedor">
     <div>
-        <p class="eyebrow">Centro de control TI</p>
-        <h2>Bienvenido, usuario {{ session.get("usuario") }}</h2>
-        <p>Interfaz base preparada para incorporar tareas, scripts, scheduler, logs y auditoria en fases posteriores.</p>
+        <p class="eyebrow">Resumen ejecutivo</p>
+        <h2>Bienvenido, {{ session.get("usuario_nombre") or session.get("usuario") }}</h2>
+        <p>Estado operativo general de tareas, ejecuciones, scheduler y calendario local.</p>
     </div>
     <div class="acciones-rapidas">
-        <button class="btn primario" type="button" disabled>Crear tarea</button>
-        <button class="btn secundario" type="button" disabled>Ejecutar manual</button>
+        {% if es_admin or "TAREAS_CREAR" in permisos %}
+            <a class="btn primario" href="{{ url_for('tareas.nueva') }}">Crear tarea</a>
+        {% endif %}
+        {% if es_admin or "TAREAS_VER" in permisos %}
+            <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Ver tareas</a>
+        {% endif %}
+        {% if es_admin or "EJECUCIONES_VER" in permisos %}
+            <a class="btn secundario" href="{{ url_for('ejecuciones.listado') }}">Ver ejecuciones</a>
+        {% endif %}
     </div>
 </section>
 
 <section class="metricas">
     <article class="card metrica">
-        <span class="badge info">Pendiente</span>
+        <span class="badge info">Tareas</span>
         <span>Total tareas</span>
-        <strong>{{ resumen.total_tareas }}</strong>
-        <small>Se conectara a SQL Server en Fase 3.</small>
+        <strong>{{ metricas.total_tareas }}</strong>
+        <small>{{ metricas.tareas_activas }} activas registradas.</small>
     </article>
     <article class="card metrica exito">
-        <span class="badge activo">Activo</span>
-        <span>Activas</span>
-        <strong>{{ resumen.tareas_activas }}</strong>
-        <small>Dato simulado hasta implementar tareas.</small>
-    </article>
-    <article class="card metrica error">
-        <span class="badge error">Error</span>
-        <span>Con error</span>
-        <strong>{{ resumen.tareas_inactivas }}</strong>
-        <small>Reservado para ejecuciones fallidas.</small>
+        <span class="badge activo">Scripts</span>
+        <span>Scripts activos</span>
+        <strong>{{ metricas.scripts_activos }}</strong>
+        <small>{{ metricas.tareas_con_script }} tareas con script asociado.</small>
     </article>
     <article class="card metrica info">
-        <span class="badge advertencia">Fase futura</span>
-        <span>Scheduler</span>
-        <strong>{{ resumen.estado_scheduler }}</strong>
-        <small>Motor de ejecucion pendiente.</small>
+        <span class="badge info">Hoy</span>
+        <span>Ejecuciones hoy</span>
+        <strong>{{ metricas.ejecuciones_hoy }}</strong>
+        <small>{{ metricas.exitosas_hoy }} exitosas / {{ metricas.errores_hoy }} con error.</small>
+    </article>
+    <article class="card metrica {% if metricas.en_curso %}advertencia{% else %}exito{% endif %}">
+        <span class="badge {% if metricas.en_curso %}advertencia{% else %}activo{% endif %}">En curso</span>
+        <span>Ejecuciones activas</span>
+        <strong>{{ metricas.en_curso }}</strong>
+        <small>Procesos actualmente registrados como en ejecucion.</small>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <h3>Scheduler</h3>
+            <span class="badge {% if scheduler.scheduler_activo %}activo{% else %}inactivo{% endif %}">
+                {% if scheduler.scheduler_activo %}Activo{% else %}Inactivo{% endif %}
+            </span>
+        </div>
+        <div class="estado-lista">
+            <div><span class="punto {% if scheduler.permitir_ejecucion_automatica %}activo{% else %}inactivo{% endif %}"></span>Ejecucion automatica: {% if scheduler.permitir_ejecucion_automatica %}Permitida{% else %}Deshabilitada{% endif %}</div>
+            <div><span class="punto {% if scheduler.modo_mantenimiento %}advertencia{% else %}activo{% endif %}"></span>Modo mantenimiento: {% if scheduler.modo_mantenimiento %}Activo{% else %}Inactivo{% endif %}</div>
+            <div><span class="punto info"></span>Revision cada {{ scheduler.intervalo_revision_segundos }} segundos</div>
+            <div><span class="punto info"></span>Maximo concurrentes: {{ scheduler.max_ejecuciones_concurrentes }}</div>
+            <div><span class="punto activo"></span>Feriados activos del anio: {{ metricas.feriados_anio_actual }}</div>
+        </div>
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <h3>Accesos rapidos</h3>
+            <span class="badge info">Operacion</span>
+        </div>
+        <div class="componentes-demo">
+            {% if es_admin or "SCHEDULER_CONFIG_VER" in permisos %}
+                <a class="btn secundario" href="{{ url_for('scheduler.panel') }}">Panel scheduler</a>
+                <a class="btn secundario" href="{{ url_for('scheduler.configuracion') }}">Configuracion scheduler</a>
+            {% endif %}
+            {% if es_admin or "FERIADOS_VER" in permisos %}
+                <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Ver feriados</a>
+            {% endif %}
+            {% if es_admin or "FERIADOS_SINCRONIZAR" in permisos %}
+                <a class="btn secundario" href="{{ url_for('feriados.sincronizar') }}">Sincronizar feriados</a>
+            {% endif %}
+        </div>
+        {% if ultima %}
+            <p class="texto-ayuda">Ultima ejecucion registrada: {{ ultima.nombre_tarea or "Tarea sin nombre" }} / {{ ultima.estado_ejecucion }} / {{ ultima.fecha_hora_inicio }}</p>
+        {% else %}
+            <p class="texto-ayuda">Aun no existen ejecuciones registradas.</p>
+        {% endif %}
     </article>
 </section>
 
@@ -46,60 +101,50 @@
     <article class="bloque">
         <div class="bloque-header">
             <h3>Ultimas ejecuciones</h3>
-            <span class="badge inactivo">Sin datos</span>
+            <span class="badge info">{{ panel.ultimas_ejecuciones|length }} registros</span>
         </div>
         <div class="tabla-base">
             <table>
                 <thead>
                     <tr>
                         <th>Tarea</th>
+                        <th>Origen</th>
                         <th>Estado</th>
-                        <th>Fecha</th>
+                        <th>Inicio</th>
+                        <th>Accion</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td colspan="3">Sin ejecuciones registradas. Se implementara en fases posteriores.</td>
-                    </tr>
+                    {% for ejecucion in panel.ultimas_ejecuciones %}
+                        <tr>
+                            <td>{{ ejecucion.nombre_tarea or "Tarea sin nombre" }}</td>
+                            <td>{{ ejecucion.origen_ejecucion }}</td>
+                            <td><span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span></td>
+                            <td>{{ ejecucion.fecha_hora_inicio }}</td>
+                            <td><a class="btn compacto secundario" href="{{ url_for('ejecuciones.consola', id_ejecucion=ejecucion.id_ejecucion) }}">Ver consola</a></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5">Sin ejecuciones registradas.</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </article>
+
     <article class="bloque">
         <div class="bloque-header">
             <h3>Estado general</h3>
-            <span class="badge info">Preparado</span>
+            <span class="badge {% if panel.datos_ok %}activo{% else %}advertencia{% endif %}">
+                {% if panel.datos_ok %}Operativo{% else %}Con advertencias{% endif %}
+            </span>
         </div>
         <div class="estado-lista">
-            <div><span class="punto activo"></span>Login desde .env operativo</div>
-            <div><span class="punto advertencia"></span>Base de datos pendiente</div>
-            <div><span class="punto inactivo"></span>Scheduler no implementado</div>
+            {% for item in panel.estado_general %}
+                <div><span class="punto {{ item.estado }}"></span><strong>{{ item.texto }}</strong><br><small>{{ item.detalle }}</small></div>
+            {% endfor %}
         </div>
-    </article>
-</section>
-
-<section class="panel-grid">
-    <article class="bloque">
-        <div class="bloque-header">
-            <h3>Componentes visuales</h3>
-            <span class="badge activo">Fase 2</span>
-        </div>
-        <div class="componentes-demo">
-            <button class="btn primario" type="button" disabled>Primario</button>
-            <button class="btn secundario" type="button" disabled>Secundario</button>
-            <span class="badge activo">Activo</span>
-            <span class="badge inactivo">Inactivo</span>
-            <span class="badge error">Error</span>
-            <span class="badge advertencia">Advertencia</span>
-            <span class="badge info">Informativo</span>
-        </div>
-    </article>
-    <article class="bloque panel-terminal">
-        <div class="bloque-header">
-            <h3>Panel lateral de logs</h3>
-            <span class="badge advertencia">Visual</span>
-        </div>
-        <p class="estado-vacio">El boton "Panel logs" abre una vista lateral preparada. La lectura real de logs queda para Fase 9.</p>
     </article>
 </section>
 {% endblock %}

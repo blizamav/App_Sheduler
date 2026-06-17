@@ -2,6 +2,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 
 from app.seguridad import login_requerido
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_panel import obtener_panel_principal
 
 bp_principal = Blueprint("principal", __name__)
 
@@ -79,13 +80,10 @@ def login():
 @bp_principal.route("/panel")
 @login_requerido
 def panel():
-    resumen = {
-        "total_tareas": 0,
-        "tareas_activas": 0,
-        "tareas_inactivas": 0,
-        "estado_scheduler": "Pendiente de implementar",
-    }
-    return render_template("panel.html", resumen=resumen)
+    panel_principal = obtener_panel_principal()
+    if not panel_principal.get("datos_ok"):
+        flash("El panel cargo con advertencias. Revisa la conexion o las tablas de base de datos.", "advertencia")
+    return render_template("panel.html", panel=panel_principal)
 
 
 @bp_principal.route("/diagnostico/bd")

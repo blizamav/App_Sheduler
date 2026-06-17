@@ -3,7 +3,7 @@
 ## Implementados
 
 * Login inicial desde `.env`.
-* Panel principal base.
+* Panel principal general con metricas reales.
 * Layout corporativo inicial.
 * Diseno UI/UX base responsive de Fase 2.
 * Propuesta de modelo SQL Server inicial en Fase 3, sin implementacion fisica.
@@ -26,6 +26,7 @@
 * Fase 10A: calendario local de feriados en base de datos.
 * Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales.
 * Fase 11A: panel operativo del scheduler.
+* Fase 11A.1: panel principal general con metricas reales y accesos operativos.
 
 ## Modulos pendientes
 
@@ -50,7 +51,24 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11A: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date y panel operativo del scheduler. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
+La aplicacion esta en Fase 11A.1: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler y panel principal general con metricas reales. Aun no existe sincronizacion automatica programada, control de worker desde la app, heartbeat del worker ni panel avanzado de auditoria.
+
+## Panel principal general
+
+Implementado en Fase 11A.1:
+
+* `/panel`: resumen ejecutivo de tareas, scripts, ejecuciones, scheduler y feriados.
+* Metricas leidas desde SQL Server mediante `repositorio_panel.py`.
+* Servicio `servicio_panel.py` para normalizar datos y entregar estado general.
+* Ultimas ejecuciones con enlace a consola.
+* Accesos rapidos visibles segun permisos de la sesion.
+* Estado `Heartbeat worker pendiente de Fase 11B` documentado como limite actual.
+
+No implementado en Fase 11A.1:
+
+* No comprueba si el proceso `scheduler_worker.py` esta vivo.
+* No inicia ni detiene el worker.
+* No crea migraciones ni cambia estructura de base de datos.
 
 ## Modulo de ejecuciones
 

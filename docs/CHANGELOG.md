@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-17 - Fase 11A.1 panel principal general
+
+### Cambiado
+
+* `/panel` deja de mostrar textos simulados o referencias a fases antiguas.
+* El panel principal ahora carga metricas reales desde SQL Server mediante `app/repositorios/repositorio_panel.py` y `app/servicios/servicio_panel.py`.
+* Se muestran total de tareas, tareas activas, scripts activos, tareas con script asociado, ejecuciones del dia, exitosas, errores, en curso, feriados del anio y ultima ejecucion.
+* Se agregan accesos rapidos a tareas, ejecuciones, panel scheduler, configuracion scheduler, feriados y sincronizacion de feriados segun permisos.
+* Se agregan ultimas ejecuciones con enlace a consola.
+* Se mantiene aviso explicito de que el heartbeat del worker queda pendiente para Fase 11B.
+
+### No implementado
+
+* No se ejecutaron migraciones.
+* No se modifico `.env`.
+* No se agrego heartbeat del worker.
+* No se avanzo a Fase 11B.
+
 ## 2026-06-17 - Fase 11A panel operativo scheduler
 
 ### Agregado

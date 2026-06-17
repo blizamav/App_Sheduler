@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual.
-* Estado actual: Fase 11A implementada con panel operativo del scheduler de solo lectura.
+* Estado actual: Fase 11A.1 implementada con panel principal general actualizado y panel operativo del scheduler de solo lectura.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11A - Panel operativo del scheduler.
+* Fase actual: Fase 11A.1 - Panel principal general.
 * Ultima actualizacion: 2026-06-17 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B y panel operativo scheduler Fase 11A.
-* Modulos pendientes: Control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B y panel operativo scheduler Fase 11A.
+* Modulos pendientes: Heartbeat del worker, control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,17 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-17 00:00 - Fase 11A.1 / Panel principal general
+
+* Archivos creados: `app/repositorios/repositorio_panel.py`, `app/servicios/servicio_panel.py`.
+* Archivos modificados: `app/rutas.py`, `app/templates/panel.html`, `app/static/css/estilos.css`, `README.md`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se actualizo `/panel` para eliminar textos simulados de fases antiguas y mostrar metricas reales de tareas, scripts, ejecuciones, scheduler y feriados desde SQL Server.
+* Metricas: Total de tareas, tareas activas, scripts activos, tareas con script asociado, ejecuciones del dia, exitosas, errores, en curso, feriados activos del anio y ultima ejecucion.
+* Interfaz: Se agregaron accesos rapidos segun permisos y tabla de ultimas ejecuciones con enlace a consola.
+* Decisiones: El panel carga con advertencia controlada si alguna consulta falla; no expone secretos ni detalles sensibles.
+* No implementado: No se agrego heartbeat del worker, no se modifico `.env`, no se ejecuto SQL y no se avanzo a Fase 11B.
+* Pruebas recomendadas: Abrir `/panel`, validar ausencia de textos obsoletos, revisar metricas contra SQL Server local, abrir consola desde una ejecucion y confirmar accesos a scheduler/feriados.
 
 ### 2026-06-17 00:00 - Fase 11A / Panel operativo del scheduler
 

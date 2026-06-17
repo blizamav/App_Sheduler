@@ -611,6 +611,10 @@ textarea {
     color: var(--color-rojo);
 }
 
+.metrica.advertencia strong {
+    color: var(--color-amarillo);
+}
+
 .metrica.info strong {
     color: var(--color-azul);
     font-size: 1rem;
@@ -840,6 +844,10 @@ tr:last-child td {
 
 .punto.advertencia {
     background: var(--color-amarillo);
+}
+
+.punto.info {
+    background: var(--color-cyan);
 }
 
 .punto.inactivo {

@@ -1,5 +1,16 @@
 # Flujos
 
+## Flujo de panel principal general
+
+1. Usuario autenticado abre `/panel`.
+2. El backend consulta metricas reales de tareas, scripts, ejecuciones, scheduler y feriados.
+3. Si la base responde correctamente, el panel muestra resumen ejecutivo operativo.
+4. Si una consulta falla, el panel carga con advertencia controlada y no expone credenciales ni detalle sensible.
+5. Los accesos rapidos se muestran segun permisos de la sesion.
+6. Las ultimas ejecuciones permiten abrir la consola de cada ejecucion.
+7. El estado general muestra modulos operativos y deja indicado que el heartbeat del worker queda pendiente para Fase 11B.
+8. El panel no inicia, detiene ni controla el proceso `scheduler_worker.py`.
+
 ## Flujo de gestion de scripts por tarea
 
 1. Usuario autorizado abre `/tareas`.

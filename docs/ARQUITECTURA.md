@@ -42,7 +42,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 
 HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
 
-La capa visual mantiene el diseno de Fase 2. El panel principal conserva placeholders; las pantallas `/usuarios`, `/clientes`, `/categorias`, `/tipos` y `/tareas` consumen datos reales de SQL Server.
+La capa visual mantiene el diseno de Fase 2. Desde Fase 11A.1 el panel principal consume metricas reales de SQL Server mediante repositorio y servicio dedicados; las pantallas `/usuarios`, `/clientes`, `/categorias`, `/tipos`, `/tareas`, `/ejecuciones`, `/feriados` y `/scheduler` consumen datos reales segun permisos.
 
 ## Base de datos
 
