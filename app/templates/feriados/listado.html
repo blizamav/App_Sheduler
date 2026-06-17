@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block titulo %}Feriados - APP Scheduler{% endblock %}
+{% block encabezado %}Feriados{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 10A</p>
+        <h2>Feriados</h2>
+        <p>Calendario local usado por el scheduler para decidir ejecuciones en dias feriados.</p>
+    </div>
+    <a class="btn primario" href="{{ url_for('feriados.nuevo') }}">Nuevo feriado</a>
+</section>
+
+<section class="bloque filtros-usuarios">
+    <form method="get" action="{{ url_for('feriados.listado') }}" class="formulario-filtros">
+        <div class="campo">
+            <label for="anio">Ano</label>
+            <input id="anio" name="anio" type="number" min="2000" max="2100" value="{{ filtros.anio or '' }}">
+        </div>
+        <div class="campo">
+            <label for="mes">Mes</label>
+            <input id="mes" name="mes" type="number" min="1" max="12" value="{{ filtros.mes or '' }}">
+        </div>
+        <div class="campo">
+            <label for="pais">Pais</label>
+            <input id="pais" name="pais" maxlength="10" value="{{ filtros.pais or '' }}" placeholder="CL">
+        </div>
+        <div class="campo">
+            <label for="activo">Estado</label>
+            <select id="activo" name="activo">
+                <option value="">Todos</option>
+                <option value="activo" {% if filtros.activo == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if filtros.activo == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Calendario local</p>
+            <h3>Feriados registrados</h3>
+        </div>
+        <span class="badge info">Mostrando {{ total_registros }} registros</span>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Pais</th>
+                    <th>Irrenunciable</th>
+                    <th>Origen</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in registros %}
+                <tr>
+                    <td>{{ item.fecha }}</td>
+                    <td>{{ item.nombre }}</td>
+                    <td>{{ item.tipo or "-" }}</td>
+                    <td>{{ item.pais }}</td>
+                    <td>{{ "Si" if item.irrenunciable else "No" }}</td>
+                    <td><span class="badge info">{{ item.origen }}</span></td>
+                    <td><span class="badge {{ 'activo' if item.activo else 'inactivo' }}">{{ "Activo" if item.activo else "Inactivo" }}</span></td>
+                    <td>
+                        <div class="acciones-tabla">
+                            <a class="btn secundario compacto" href="{{ url_for('feriados.editar', id_feriado=item.id_feriado) }}">Editar</a>
+                            <form method="post" action="{{ url_for('feriados.estado', id_feriado=item.id_feriado) }}">
+                                <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="{{ 'Desactivar feriado' if item.activo else 'Activar feriado' }}"
+                                    data-confirm-message="{{ 'Deseas desactivar este feriado? El scheduler dejara de considerarlo.' if item.activo else 'Deseas activar este feriado nuevamente?' }}"
+                                    data-confirm-ok="{{ 'Si, desactivar' if item.activo else 'Si, activar' }}"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="{{ 'warning' if item.activo else 'success' }}"
+                                >
+                                    {{ "Desactivar" if item.activo else "Activar" }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('feriados.eliminar', id_feriado=item.id_feriado) }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Eliminar feriado definitivamente"
+                                    data-confirm-message="Este feriado se eliminara definitivamente del calendario local. Deseas continuar?"
+                                    data-confirm-ok="Si, eliminar definitivamente"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="danger"
+                                >
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="estado-vacio">No hay feriados para mostrar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

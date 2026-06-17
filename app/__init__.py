@@ -1,6 +1,7 @@
 from flask import Flask
 
 from app.config import Configuracion, validar_configuracion_critica
+from app.rutas_feriados import bp_feriados
 from app.rutas_mantenedores import bp_mantenedores
 from app.rutas import bp_principal
 from app.rutas_ejecuciones import bp_ejecuciones
@@ -27,4 +28,5 @@ def crear_app():
     app.register_blueprint(bp_scripts)
     app.register_blueprint(bp_ejecuciones)
     app.register_blueprint(bp_scheduler)
+    app.register_blueprint(bp_feriados)
     return app

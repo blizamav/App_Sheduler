@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 9D:
+El proyecto avanzo hasta Fase 10A:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -26,6 +26,7 @@ El proyecto avanzo hasta Fase 9D:
 * Fase 9B: worker automatico separado, evaluacion de programaciones y ejecuciones automaticas.
 * Fase 9C: timestamps por linea en logs de ejecucion.
 * Fase 9D: historial de ejecuciones agrupado por ano, mes y dia con filtros y paginacion.
+* Fase 10A: calendario local de feriados en base de datos, sin API externa.
 
 ## Stack actual
 
@@ -69,6 +70,8 @@ El proyecto avanzo hasta Fase 9D:
 * Listado basico de ejecuciones en `/ejecuciones`.
 * Logs de ejecucion con formato `YYYY-MM-DD HH:mm:ss | NIVEL | mensaje`.
 * Historial `/ejecuciones` agrupado por ano, mes y dia, con filtros y paginacion server-side.
+* Calendario local de feriados en `/feriados`.
+* Scheduler consulta feriados locales para respetar `ejecutar_en_feriados`.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -81,7 +84,7 @@ El proyecto avanzo hasta Fase 9D:
 * Panel avanzado de logs.
 * Auditoria funcional.
 * Docker QA/produccion.
-* Calendario laboral y feriados.
+* Sincronizacion externa de feriados para fases posteriores.
 
 ## Ejecucion local en Windows
 
@@ -171,6 +174,8 @@ Orden documentado:
 16. `database/migrations/010_crear_configuracion_scheduler.sql`
 17. `database/seeds/007_permisos_scheduler.sql`
 18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
+19. `database/migrations/012_crear_calendario_feriados.sql`
+20. `database/seeds/008_permisos_feriados.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 

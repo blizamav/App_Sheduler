@@ -8,7 +8,7 @@ from app.repositorios.repositorio_scheduler import (
     existe_clave_programacion,
     listar_tareas_programadas_activas,
 )
-from app.servicios.servicio_calendario import es_feriado
+from app.servicios.servicio_calendario import obtener_feriado
 from app.servicios.servicio_ejecuciones import iniciar_ejecucion_automatica
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_programador import debe_ejecutarse_ahora
@@ -89,10 +89,22 @@ def _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker):
             _log_consola(f"Omitida tarea {tarea['id_tarea']}: {resultado['motivo']}")
             continue
 
-        if tarea.get("ejecutar_en_feriados") is False and es_feriado(resultado["fecha_programada"].date()):
+        feriado = obtener_feriado(resultado["fecha_programada"].date())
+        if not bool(tarea.get("ejecutar_en_feriados")) and feriado:
             omitidas += 1
-            _log_consola(f"Omitida tarea {tarea['id_tarea']}: feriado placeholder.")
+            mensaje_feriado = f"Tarea omitida por feriado: {resultado['fecha_programada']:%Y-%m-%d} - {feriado['nombre']}"
+            _log_consola(f"Omitida tarea {tarea['id_tarea']}: {mensaje_feriado}")
+            registrar_log_sistema(
+                "WORKER_TAREA_OMITIDA_FERIADO",
+                "SCHEDULER",
+                mensaje_feriado,
+                usuario=USUARIO_WORKER,
+                valor_nuevo=str({"id_tarea": tarea["id_tarea"], "feriado": feriado}),
+                nivel="INFO",
+            )
             continue
+        if bool(tarea.get("ejecutar_en_feriados")) and feriado:
+            _log_consola(f"Tarea {tarea['id_tarea']} permitida en feriado por configuracion.")
 
         if existe_clave_programacion(resultado["clave_programacion"]):
             omitidas += 1

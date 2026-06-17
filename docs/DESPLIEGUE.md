@@ -182,6 +182,23 @@ Antes de activar ejecucion automatica:
 
 El worker usa `.env` solo para conexion a SQL Server y rutas tecnicas. La configuracion operativa vive en `configuracion_scheduler`.
 
+## Feriados locales Fase 10A
+
+Ejecutar manualmente en SSMS:
+
+```text
+database/migrations/012_crear_calendario_feriados.sql
+database/seeds/008_permisos_feriados.sql
+```
+
+Luego abrir:
+
+```text
+http://127.0.0.1:5000/feriados
+```
+
+La carga inicial de feriados es manual. No se conecta API externa ni se sincronizan feriados automaticamente en Fase 10A.
+
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.

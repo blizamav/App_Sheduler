@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. Fase 9B crea migracion 011 para ejecuciones automaticas, pendiente de ejecucion manual en SSMS.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados.
 
 ## Base objetivo
 
@@ -45,11 +45,13 @@ database/
     009_corregir_nombre_script_contenedor.sql
     010_crear_configuracion_scheduler.sql
     011_agregar_control_scheduler_ejecuciones.sql
+    012_crear_calendario_feriados.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
     006_permisos_ejecuciones.sql
     007_permisos_scheduler.sql
+    008_permisos_feriados.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -72,6 +74,8 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 16. `database/migrations/010_crear_configuracion_scheduler.sql`
 17. `database/seeds/007_permisos_scheduler.sql`
 18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
+19. `database/migrations/012_crear_calendario_feriados.sql`
+20. `database/seeds/008_permisos_feriados.sql`
 
 Resumen por script:
 
@@ -86,6 +90,7 @@ Resumen por script:
 * `009_corregir_nombre_script_contenedor.sql`: corrige registros existentes donde `scripts.nombre_script` quedo como nombre de archivo `.py`; no toca versiones, rutas ni archivos. Ejecutada localmente sin errores; afecto 0 filas porque no existian registros antiguos que corregir.
 * `010_crear_configuracion_scheduler.sql`: crea `configuracion_scheduler` con defaults seguros para Fase 9A; no inicia worker ni ejecuciones automaticas.
 * `011_agregar_control_scheduler_ejecuciones.sql`: agrega trazabilidad de ejecuciones automaticas y clave anti-duplicados para Fase 9B.
+* `012_crear_calendario_feriados.sql`: crea tabla local `feriados` para Fase 10A; ejecutada y validada localmente; no conecta API externa.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -93,6 +98,7 @@ Resumen por script:
 * `005_permisos_scripts.sql`: inserta permisos incrementales para gestion de scripts, versiones y env.
 * `006_permisos_ejecuciones.sql`: inserta permisos incrementales para ejecucion manual, consola, log y detencion.
 * `007_permisos_scheduler.sql`: inserta permisos incrementales para ver y editar configuracion operativa del scheduler.
+* `008_permisos_feriados.sql`: inserta permisos incrementales para ver, crear, editar, activar/desactivar y eliminar feriados; ejecutado y validado localmente.
 
 ## Fase 7 - Scripts y versiones
 
@@ -205,6 +211,56 @@ Reglas:
 * El worker registra `nombre_worker`.
 * La consola y logs de Fase 8 siguen asociados por `id_ejecucion`.
 * La migracion debe ejecutarse manualmente en SSMS; no se ejecuta automaticamente desde Flask ni desde Codex.
+
+## Fase 10A - Feriados locales
+
+Se crea migracion incremental `012_crear_calendario_feriados.sql`.
+
+Tabla: `feriados`.
+
+Objetivo: mantener calendario local de feriados como fuente de verdad del scheduler. No depende de API externa en tiempo real.
+
+Campos principales:
+
+* `id_feriado int identity primary key`.
+* `fecha date`.
+* `nombre varchar(200)`.
+* `tipo varchar(50)`.
+* `pais varchar(10)` con default `CL`.
+* `irrenunciable bit`.
+* `activo bit`.
+* `origen varchar(50)` con default `MANUAL`.
+* `observacion varchar(500)`.
+* `fecha_creacion`, `fecha_actualizacion`.
+* `usuario_creacion`, `usuario_actualizacion` como texto de usuario de sesion.
+
+Restricciones e indices:
+
+* `UX_feriados_fecha_pais_activo`: no permite duplicar fecha + pais activa.
+* `IX_feriados_fecha`.
+* `IX_feriados_pais`.
+* `IX_feriados_activo`.
+
+Seed: `008_permisos_feriados.sql`.
+
+Permisos:
+
+* `FERIADOS_VER`.
+* `FERIADOS_CREAR`.
+* `FERIADOS_EDITAR`.
+* `FERIADOS_ESTADO`.
+* `FERIADOS_ELIMINAR`.
+
+Regla: la carga inicial es manual desde `/feriados`. La sincronizacion con API externa queda para Fase 10B.
+
+Validacion local reportada:
+
+* Tabla `feriados` creada correctamente.
+* Permisos `FERIADOS_*` insertados.
+* Restriccion de fecha + pais activa validada.
+* `servicio_calendario.es_feriado` validado con resultado `True` y `False` segun existencia de feriado activo.
+* Scheduler validado respetando `ejecutar_en_feriados`.
+* No se conecto API externa ni sincronizacion automatica.
 
 Restricciones implementadas en scripts:
 

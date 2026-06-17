@@ -32,6 +32,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 * `app/rutas_scripts.py`
 * `app/rutas_ejecuciones.py`
 * `app/rutas_scheduler.py`
+* `app/rutas_feriados.py`
 * `app/seguridad.py`
 * `app/database/conexion.py`
 * `app/repositorios/`
@@ -99,9 +100,18 @@ Fase 9B agrega worker automatico separado:
 * `app/servicios/servicio_scheduler_worker.py`: ciclo del worker, lectura de configuracion y control de concurrencia.
 * `app/servicios/servicio_programador.py`: evaluacion testeable de programaciones.
 * `app/repositorios/repositorio_scheduler.py`: consulta de tareas programadas activas y control de claves.
-* `app/servicios/servicio_calendario.py`: placeholder `es_feriado()` que retorna `False` hasta Fase 10.
+* `app/servicios/servicio_calendario.py`: consulta calendario local de feriados desde SQL Server.
 
 La app web no levanta el worker dentro del proceso Flask. La web administra configuracion, consola y detencion; el worker evalua programaciones y reutiliza `servicio_ejecuciones.py` para ejecutar scripts.
+
+Fase 10A agrega calendario local de feriados:
+
+* `app/rutas_feriados.py`: modulo `/feriados`.
+* `app/repositorios/repositorio_feriados.py`: persistencia de tabla `feriados`.
+* `app/servicios/servicio_calendario.py`: reglas `es_feriado`, `obtener_feriado`, `validar_fecha_laboral` y administracion.
+* `app/templates/feriados/`: listado y formulario.
+
+La tabla local `feriados` es la fuente de verdad del scheduler. No se consulta API externa en tiempo real.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
@@ -121,6 +131,7 @@ Reglas principales:
 * Si `permitir_ejecucion_automatica = 0`, no ejecuta tareas.
 * Respeta `intervalo_revision_segundos`.
 * Respeta `max_ejecuciones_concurrentes`.
+* Respeta `ejecutar_en_feriados` consultando la tabla local `feriados`.
 * Evita duplicados con `clave_programacion`.
 * Reutiliza el motor de Fase 8 para version activa, `.env`, PID, logs y consola.
 

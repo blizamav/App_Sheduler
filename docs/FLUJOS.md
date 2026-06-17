@@ -197,7 +197,7 @@
 4. `MENSUAL`: exige dia del mes entre 1 y 31.
 5. `FECHA_ESPECIFICA`: exige fecha valida.
 6. `INTERVALO`: exige intervalo mayor a 0 y hora inicio menor a hora fin.
-7. `ejecutar_en_feriados` queda guardado como dato declarativo; la validacion real queda pendiente.
+7. `ejecutar_en_feriados` queda guardado en la programacion y desde Fase 10A el worker lo valida contra la tabla local `feriados`.
 
 ## Flujo de ejecucion automatica
 
@@ -269,7 +269,31 @@ La base evita duplicados con indice unico filtrado para ejecuciones automaticas.
 
 ## Feriados
 
-Fase 9B incluye `servicio_calendario.es_feriado(fecha)`, que retorna `False`. No se conecta API de feriados; la validacion real queda para Fase 10.
+Fase 10A implementa calendario local de feriados en SQL Server. No se conecta API externa.
+
+Validacion local Fase 10A:
+
+* `012_crear_calendario_feriados.sql` fue ejecutada correctamente en SQL Server local.
+* `008_permisos_feriados.sql` fue ejecutado correctamente en SQL Server local.
+* `/feriados` carga correctamente.
+* Crear, editar, activar y desactivar feriados funciona.
+* No se permite duplicar fecha + pais activa.
+* `es_feriado` retorna `True` con feriado activo y `False` cuando no existe feriado activo.
+* El scheduler omite o permite ejecucion automatica segun `ejecutar_en_feriados`.
+* La ejecucion manual no se bloquea por feriados.
+
+1. Usuario autorizado abre `/feriados`.
+2. Puede filtrar por ano, mes, pais y estado.
+3. Para crear, ingresa fecha, nombre, tipo, pais, irrenunciable, activo y observacion.
+4. Para editar, el sistema valida cambios y evita duplicar fecha + pais activa.
+5. Si no hay cambios al editar, muestra `No hay cambios para guardar.`.
+6. Activar, desactivar y eliminar usan modal corporativo.
+7. Los cambios se registran en `logs_sistema`.
+8. El servicio `es_feriado(fecha, pais)` consulta solo la tabla local `feriados`.
+9. El scheduler consulta el feriado local antes de iniciar una ejecucion automatica.
+10. Si `ejecutar_en_feriados = 0` y la fecha es feriado activo, omite la tarea y registra `WORKER_TAREA_OMITIDA_FERIADO`.
+11. Si `ejecutar_en_feriados = 1`, permite la ejecucion aunque sea feriado.
+12. La ejecucion manual no se bloquea por feriados.
 
 ## Flujo de ejecucion manual
 

@@ -5,10 +5,10 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 011 creada para ejecuciones automaticas, pendiente de ejecucion manual.
-* Estado actual: Fase 9D implementada con historial de ejecuciones agrupado, filtros y paginacion.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A.
+* Estado actual: Fase 10A implementada y validada localmente con calendario local de feriados en base de datos.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 9D - Historial agrupado de ejecuciones.
+* Fase actual: Fase 10A - Calendario laboral y feriados locales.
 * Ultima actualizacion: 2026-06-16 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -17,9 +17,9 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; API de feriados pendiente para Fase 10.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; sincronizacion externa pendiente para fase posterior.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
-* Auditoria: Pendiente para Fase 10.
+* Auditoria: Pendiente para fase posterior.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C e historial agrupado Fase 9D.
-* Modulos pendientes: API feriados, logs avanzados, auditoria, Docker, calendario laboral, dashboard avanzado scheduler.
+* Modulos implementados: Login inicial, panel base visual, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D y calendario local de feriados Fase 10A.
+* Modulos pendientes: Sincronizacion externa de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
 
@@ -45,10 +45,34 @@
 ## 5. Pendientes
 
 * Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
-* Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas.
-* Pendiente 3: Validar worker con tareas reales controladas y scheduler activo solo en ambiente local.
+* Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
+* Pendiente 3: Preparar Fase 10B solo cuando se apruebe sincronizacion externa de feriados.
+* Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-16 00:00 - Fase 10A / Migracion 012 y seed 008 validados localmente
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se registro que `database/migrations/012_crear_calendario_feriados.sql` y `database/seeds/008_permisos_feriados.sql` fueron ejecutados correctamente en SQL Server local.
+* Validaciones reportadas: Tabla `feriados` creada; permisos `FERIADOS_*` insertados; `/feriados` carga; crear, editar, activar y desactivar feriados funciona; no se permite duplicar fecha + pais activa.
+* Validacion de servicio: `servicio_calendario.es_feriado` retorna `True` cuando existe feriado activo y `False` cuando no existe feriado activo.
+* Validacion scheduler: Omite ejecucion automatica si `ejecutar_en_feriados = 0` y la fecha es feriado; permite ejecutar si `ejecutar_en_feriados = 1`.
+* Validacion manual: La ejecucion manual no se bloquea por feriados.
+* No implementado: No se conecto API externa, no se implemento sincronizacion automatica y no se avanzo a Fase 10B.
+* Proximos pasos: Esperar aprobacion explicita antes de iniciar Fase 10B.
+
+### 2026-06-16 00:00 - Fase 10A / Calendario local de feriados
+
+* Archivos creados: `database/migrations/012_crear_calendario_feriados.sql`, `database/seeds/008_permisos_feriados.sql`, `app/repositorios/repositorio_feriados.py`, `app/rutas_feriados.py`, `app/templates/feriados/listado.html`, `app/templates/feriados/formulario.html`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/templates/base.html`, `app/servicios/servicio_calendario.py`, `app/servicios/servicio_scheduler_worker.py`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implemento calendario local de feriados con tabla propuesta, permisos, mantenedor `/feriados`, servicios de consulta y validacion, y uso desde el worker automatico.
+* Regla scheduler: Si `ejecutar_en_feriados = 0` y existe feriado activo local, la tarea automatica se omite y registra `WORKER_TAREA_OMITIDA_FERIADO`; si `ejecutar_en_feriados = 1`, se permite ejecutar.
+* Base de datos: Se crearon scripts 012 y seed 008 para ejecucion manual en SSMS; Codex no ejecuto SQL.
+* No implementado: No se conecto API externa, no se implemento sincronizacion automatica, no se implementaron notificaciones y no se avanzo a Fase 10B.
+* Riesgos detectados: `/feriados` requiere aplicar migracion 012 antes de usar contra BD real; usuarios de base de datos requieren seed 008 para permisos.
+* Proximos pasos: Ejecutar scripts 012 y 008 en SSMS, crear feriado local de prueba y validar `python scheduler_worker.py --once`.
 
 ### 2026-06-16 00:00 - Ajuste visual Fase 9D / Sin resumen de totales
 
@@ -281,7 +305,7 @@
 * Por que se hizo: Permitir administrar tareas base antes de implementar carga de scripts, ejecucion y scheduler.
 * Decisiones tomadas: Programacion activa por tarea; al editar se inactiva la anterior y se crea una nueva; eliminacion fisica solo sin dependencias en scripts, ejecuciones ni logs.
 * Pruebas recomendadas: Ejecutar migracion 008 y seed 004 en SSMS; validar login; abrir `/tareas/`; crear una tarea manual y una programada; probar filtros, editar, desactivar y eliminar una tarea sin dependencias.
-* Riesgos detectados: El modulo requiere ejecutar migracion 008 para usar los nuevos campos; la validacion real de feriados queda pendiente; no existe scheduler ni ejecucion real.
+* Riesgos detectados en ese momento: El modulo requeria ejecutar migracion 008 para usar los nuevos campos; la validacion local de feriados aun no existia; tampoco existia scheduler ni ejecucion real. Nota actual: feriados locales fueron implementados y validados en Fase 10A.
 * Proximos pasos: Ejecutar y validar `008_ajustar_tareas_y_programaciones_base.sql` y `004_permisos_tareas.sql`; no avanzar a Fase 7 sin aprobacion.
 
 ### 2026-06-13 14:20 - Fase 5.1 / Eliminacion controlada en mantenedores

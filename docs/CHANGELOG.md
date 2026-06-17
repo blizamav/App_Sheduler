@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-06-16 - Fase 10A calendario local de feriados
+
+### Validado localmente
+
+* Se ejecuto `database/migrations/012_crear_calendario_feriados.sql` en SQL Server local.
+* Se ejecuto `database/seeds/008_permisos_feriados.sql` en SQL Server local.
+* La tabla `feriados` fue creada correctamente.
+* Los permisos `FERIADOS_*` fueron insertados.
+* `/feriados` carga correctamente.
+* Se valido crear, editar, activar y desactivar feriados manuales.
+* Se valido bloqueo de duplicado para fecha + pais activa.
+* `servicio_calendario.es_feriado` retorna `True` con feriado activo y `False` sin feriado activo.
+* El scheduler omite tareas automaticas en feriado cuando `ejecutar_en_feriados = 0`.
+* El scheduler permite ejecutar en feriado cuando `ejecutar_en_feriados = 1`.
+* La ejecucion manual no se bloquea por feriados.
+
+### Agregado
+
+* Migracion `database/migrations/012_crear_calendario_feriados.sql`.
+* Seed `database/seeds/008_permisos_feriados.sql`.
+* Modulo web `/feriados` con listado, filtros, creacion, edicion, activacion/desactivacion y eliminacion controlada.
+* Repositorio `app/repositorios/repositorio_feriados.py`.
+* Rutas `app/rutas_feriados.py`.
+* Templates `app/templates/feriados/listado.html` y `app/templates/feriados/formulario.html`.
+* Servicio calendario con `es_feriado`, `obtener_feriado`, `listar_feriados` y `validar_fecha_laboral`.
+* Integracion del worker para omitir tareas automaticas en feriado cuando `ejecutar_en_feriados = 0`.
+
+### Cambiado
+
+* Sidebar agrega acceso a Feriados.
+* `servicio_scheduler_worker.py` consulta calendario local antes de iniciar ejecuciones automaticas.
+* Documentacion actualizada para separar Fase 10A local de Fase 10B externa.
+
+### No implementado
+
+* No se conecto API externa de feriados.
+* No se implemento sincronizacion automatica externa.
+* No se implementaron notificaciones.
+* No se avanzo a Fase 10B.
+
 ## 2026-06-16 - Ajuste visual Fase 9D
 
 ### Cambiado

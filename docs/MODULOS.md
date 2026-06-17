@@ -23,6 +23,7 @@
 * Fase 9A: configuracion operativa del scheduler en base de datos.
 * Fase 9B: worker automatico separado y ejecuciones automaticas.
 * Fase 9D: historial agrupado de ejecuciones con filtros y paginacion.
+* Fase 10A: calendario local de feriados en base de datos.
 
 ## Modulos pendientes
 
@@ -30,7 +31,7 @@
 * Logs de sistema completos.
 * Auditoria.
 * Configuracion.
-* Calendario laboral y feriados.
+* Sincronizacion externa de feriados.
 * Dashboard ejecutivo.
 * Notificaciones.
 
@@ -47,7 +48,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 9B: usuarios, roles, permisos, mantenedores base, tareas con programacion declarativa, gestion de scripts/versiones, ejecucion manual, configuracion scheduler y worker automatico separado conectados a SQL Server. Aun no existe API de feriados, dashboard avanzado del scheduler ni panel avanzado de auditoria.
+La aplicacion esta en Fase 10A: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones y calendario local de feriados conectados a SQL Server. Aun no existe sincronizacion externa de feriados, dashboard avanzado del scheduler ni panel avanzado de auditoria.
 
 ## Modulo de ejecuciones
 
@@ -100,7 +101,7 @@ Implementado en Fase 9B:
 * `app/servicios/servicio_scheduler_worker.py`: ciclo del worker.
 * `app/servicios/servicio_programador.py`: evaluacion de programaciones diaria, semanal, mensual y fecha especifica.
 * `app/repositorios/repositorio_scheduler.py`: tareas candidatas, concurrencia y claves.
-* `app/servicios/servicio_calendario.py`: placeholder de feriados.
+* `app/servicios/servicio_calendario.py`: consulta de feriados locales.
 * Ejecuciones automaticas con version activa y motor de Fase 8.
 * Anti-duplicados por `clave_programacion`.
 * Listado basico `/ejecuciones`.
@@ -109,6 +110,34 @@ No implementado en Fase 9B:
 
 * No se conecta API de feriados.
 * No se implementa dashboard avanzado del scheduler.
+* No se implementan notificaciones.
+
+## Modulo feriados
+
+Implementado en Fase 10A:
+
+* `/feriados`: listado con filtros por ano, mes, pais y estado.
+* `/feriados/nuevo`: creacion manual de feriados.
+* `/feriados/<id>/editar`: edicion de datos del feriado.
+* Activacion y desactivacion con modal corporativo.
+* Eliminacion fisica controlada desde el mantenedor.
+* Servicio `es_feriado(fecha, pais='CL')`.
+* Servicio `obtener_feriado(fecha, pais='CL')`.
+* Servicio `validar_fecha_laboral(fecha, pais='CL')`.
+* Scheduler omite tareas en feriado cuando `ejecutar_en_feriados = 0`.
+* Scheduler permite ejecucion en feriado cuando `ejecutar_en_feriados = 1`.
+* Registro en `logs_sistema` cuando una tarea automatica se omite por feriado.
+* Seed incremental `database/seeds/008_permisos_feriados.sql`.
+* Migracion 012 y seed 008 ejecutados y validados localmente.
+* Validado bloqueo de duplicado fecha + pais activa.
+* Validado `es_feriado` con feriado activo y sin feriado activo.
+* Validado scheduler con `ejecutar_en_feriados = 0` y `ejecutar_en_feriados = 1`.
+* Validado que la ejecucion manual no se bloquea por feriados.
+
+No implementado en Fase 10A:
+
+* No se conecta API externa de feriados.
+* No se implementa sincronizacion automatica.
 * No se implementan notificaciones.
 
 ## Modulo de scripts
@@ -152,7 +181,7 @@ Implementado en Fase 6:
 * Registrar acciones principales en `logs_sistema`.
 * Programacion declarativa `MANUAL`, `DIARIA`, `SEMANAL`, `MENSUAL`, `FECHA_ESPECIFICA`.
 * Modos `UNA_VEZ` e `INTERVALO`.
-* Marca `ejecutar_en_feriados`, sin integracion aun con calendario real.
+* Marca `ejecutar_en_feriados`, integrada al calendario local desde Fase 10A.
 * Fase 6.1: resumen de confirmacion antes de crear o editar, usando datos actuales del formulario.
 * Fase 6.1: validacion frontend previa para evitar confirmar programaciones incompletas.
 * Fase 6.2: deteccion de cambios reales antes de guardar ediciones.

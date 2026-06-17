@@ -252,6 +252,34 @@ Reglas:
 * No se muestran rutas fisicas internas en el historial.
 * No se muestra contenido de `.env`.
 
+## Feriados locales
+
+Fase 10A agrega permisos:
+
+* `FERIADOS_VER`.
+* `FERIADOS_CREAR`.
+* `FERIADOS_EDITAR`.
+* `FERIADOS_ESTADO`.
+* `FERIADOS_ELIMINAR`.
+
+Reglas:
+
+* La tabla local `feriados` es la fuente de verdad para el scheduler.
+* No se consume API externa ni se sincronizan datos externos en Fase 10A.
+* Los filtros y guardado usan parametros SQL desde repositorio.
+* Crear, editar, activar/desactivar y eliminar usan permisos especificos.
+* Los cambios e intentos relevantes se registran en `logs_sistema`.
+* La ejecucion manual no se bloquea por feriados.
+* El worker omite tareas automaticas en feriado solo cuando `ejecutar_en_feriados = 0`.
+
+Validacion local:
+
+* Migracion 012 y seed 008 ejecutados correctamente en SQL Server local.
+* Permisos `FERIADOS_*` insertados.
+* Acceso `/feriados` validado.
+* Crear, editar, activar/desactivar y bloqueo de duplicado fecha + pais activa validados.
+* No se conecto API externa ni sincronizacion automatica.
+
 ## Variables sensibles por script
 
 Fase 4.3 define que cada script/version podra tener un `.env` propio bajo `env_scripts/`.
