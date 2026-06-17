@@ -25,6 +25,7 @@
 * Fase 9D: historial agrupado de ejecuciones con filtros y paginacion.
 * Fase 10A: calendario local de feriados en base de datos.
 * Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales.
+* Fase 11A: panel operativo del scheduler.
 
 ## Modulos pendientes
 
@@ -49,7 +50,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 10B: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados y sincronizacion controlada desde Nager.Date. Aun no existe sincronizacion automatica programada, dashboard avanzado del scheduler ni panel avanzado de auditoria.
+La aplicacion esta en Fase 11A: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date y panel operativo del scheduler. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
 
 ## Modulo de ejecuciones
 
@@ -107,10 +108,26 @@ Implementado en Fase 9B:
 * Anti-duplicados por `clave_programacion`.
 * Listado basico `/ejecuciones`.
 
+Implementado en Fase 11A:
+
+* `/scheduler/panel`: panel operativo de solo lectura.
+* Resumen de configuracion activa.
+* Estado operativo del scheduler.
+* Ultimas ejecuciones automaticas.
+* Errores recientes del scheduler desde `logs_sistema`.
+* Tareas programadas candidatas.
+* Estado del calendario local de feriados.
+
 No implementado en Fase 9B:
 
 * No se conecta API de feriados.
 * No se implementa dashboard avanzado del scheduler.
+* No se implementan notificaciones.
+
+No implementado en Fase 11A:
+
+* No se inicia ni detiene el worker desde la app.
+* No se edita configuracion desde el panel.
 * No se implementan notificaciones.
 
 ## Modulo feriados

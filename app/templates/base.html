@@ -47,16 +47,18 @@
                 <a class="nav-link deshabilitado" href="#"><span>08</span>Ejecuciones</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scheduler.') %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>09</span>Scheduler</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>09</span>Scheduler panel</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>10</span>Scheduler config</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>09</span>Scheduler</a>
+                <a class="nav-link deshabilitado" href="#"><span>09</span>Scheduler panel</a>
+                <a class="nav-link deshabilitado" href="#"><span>10</span>Scheduler config</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>10</span>Feriados</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>11</span>Feriados</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>10</span>Feriados</a>
+                <a class="nav-link deshabilitado" href="#"><span>11</span>Feriados</a>
                 {% endif %}
-                <a class="nav-link deshabilitado" href="#"><span>11</span>Auditoria</a>
+                <a class="nav-link deshabilitado" href="#"><span>12</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
                 <span class="badge info">Fase 10B</span>
@@ -113,6 +115,7 @@
                 <p><span>Fase 9A</span> Configuracion operativa disponible.</p>
                 <p><span>Fase 10A</span> Feriados locales para scheduler.</p>
                 <p><span>Fase 10B</span> Sincronizacion Nager.Date controlada.</p>
+                <p><span>Fase 11A</span> Panel operativo del scheduler.</p>
             </div>
         </aside>
 

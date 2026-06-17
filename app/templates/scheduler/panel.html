@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block titulo %}Panel Scheduler - APP Scheduler{% endblock %}
+{% block encabezado %}Panel Scheduler{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Fase 11A</p>
+        <h2>Panel operativo del scheduler</h2>
+        <p>Monitoreo de configuracion, ejecuciones automaticas, errores recientes, tareas candidatas y feriados locales. Esta pantalla no inicia ni detiene el worker.</p>
+    </div>
+    {% if panel %}
+    <span class="badge {{ panel.estado_operativo.badge }}">{{ panel.estado_operativo.texto }}</span>
+    {% endif %}
+</section>
+
+{% if not panel %}
+<section class="bloque">
+    <p class="estado-vacio">No fue posible cargar informacion operativa del scheduler.</p>
+</section>
+{% else %}
+<section class="grid-metricas">
+    <article class="card-metrica">
+        <span>Automaticas</span>
+        <strong>{{ panel.resumen_ejecuciones.total }}</strong>
+    </article>
+    <article class="card-metrica">
+        <span>En ejecucion</span>
+        <strong>{{ panel.resumen_ejecuciones.en_ejecucion }}</strong>
+    </article>
+    <article class="card-metrica">
+        <span>Errores</span>
+        <strong>{{ panel.resumen_ejecuciones.errores }}</strong>
+    </article>
+    <article class="card-metrica">
+        <span>Candidatas</span>
+        <strong>{{ panel.tareas_candidatas|length }}</strong>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Configuracion</p>
+                <h3>Estado operativo</h3>
+            </div>
+            <span class="badge {{ panel.estado_operativo.badge }}">{{ panel.estado_operativo.texto }}</span>
+        </div>
+        {% if panel.configuracion %}
+        <div class="detalle-grid">
+            <div><strong>Scheduler</strong><span>{{ "Activo" if panel.configuracion.scheduler_activo else "Inactivo" }}</span></div>
+            <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if panel.configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
+            <div><strong>Mantenimiento</strong><span>{{ "Activo" if panel.configuracion.modo_mantenimiento else "Inactivo" }}</span></div>
+            <div><strong>Intervalo</strong><span>{{ panel.configuracion.intervalo_revision_segundos }} segundos</span></div>
+            <div><strong>Maximo concurrentes</strong><span>{{ panel.configuracion.max_ejecuciones_concurrentes }}</span></div>
+            <div><strong>Worker</strong><span>{{ panel.configuracion.nombre_worker_principal or "-" }}</span></div>
+        </div>
+        <p class="estado-vacio">{{ panel.estado_operativo.detalle }}</p>
+        {% else %}
+        <p class="estado-vacio">No existe configuracion activa del scheduler.</p>
+        {% endif %}
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Calendario local</p>
+                <h3>Feriados</h3>
+            </div>
+            <span class="badge info">{{ panel.feriados.activos }} activos</span>
+        </div>
+        <div class="detalle-grid">
+            <div><strong>Total</strong><span>{{ panel.feriados.total }}</span></div>
+            <div><strong>Manuales activos</strong><span>{{ panel.feriados.manuales_activos }}</span></div>
+            <div><strong>API_NAGER activos</strong><span>{{ panel.feriados.api_nager_activos }}</span></div>
+            <div><strong>Proximo</strong><span>{% if panel.feriados.proximo %}{{ panel.feriados.proximo.fecha }} - {{ panel.feriados.proximo.nombre }}{% else %}-{% endif %}</span></div>
+        </div>
+        <p class="estado-vacio">El scheduler consulta solo esta tabla local; no consulta internet.</p>
+    </article>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Automaticas</p>
+            <h3>Ultimas ejecuciones</h3>
+        </div>
+        <span class="badge info">{{ panel.ultimas_ejecuciones|length }} registros</span>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tarea</th>
+                    <th>Estado</th>
+                    <th>Inicio</th>
+                    <th>Worker</th>
+                    <th>Fecha programada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ejecucion in panel.ultimas_ejecuciones %}
+                <tr>
+                    <td>{{ ejecucion.id_ejecucion }}</td>
+                    <td>{{ ejecucion.nombre_tarea }}</td>
+                    <td><span class="badge {% if ejecucion.estado_ejecucion == 'EXITOSA' %}activo{% elif ejecucion.estado_ejecucion == 'ERROR' %}error{% elif ejecucion.estado_ejecucion == 'EN_EJECUCION' %}advertencia{% else %}info{% endif %}">{{ ejecucion.estado_ejecucion }}</span></td>
+                    <td>{{ ejecucion.fecha_hora_inicio }}</td>
+                    <td>{{ ejecucion.nombre_worker or "-" }}</td>
+                    <td>{{ ejecucion.fecha_programada or "-" }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="estado-vacio">No existen ejecuciones automaticas recientes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Candidatas</p>
+                <h3>Tareas programadas activas</h3>
+            </div>
+            <span class="badge info">{{ panel.tareas_candidatas|length }} tareas</span>
+        </div>
+        <div class="tabla-base">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tarea</th>
+                        <th>Programacion</th>
+                        <th>Feriados</th>
+                        <th>Script</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tarea in panel.tareas_candidatas %}
+                    <tr>
+                        <td>{{ tarea.nombre_tarea }}</td>
+                        <td>{{ tarea.resumen_programacion }}</td>
+                        <td>{{ "Ejecuta" if tarea.ejecutar_en_feriados else "Omite" }}</td>
+                        <td>{{ tarea.estado_script }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="estado-vacio">No hay tareas candidatas activas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Alertas</p>
+                <h3>Errores recientes</h3>
+            </div>
+            <span class="badge {{ 'error' if panel.errores_recientes else 'activo' }}">{{ panel.errores_recientes|length }}</span>
+        </div>
+        <div class="tabla-base">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Accion</th>
+                        <th>Nivel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for error in panel.errores_recientes %}
+                    <tr>
+                        <td>{{ error.fecha_hora }}</td>
+                        <td>{{ error.accion }}<br><small>{{ error.descripcion }}</small></td>
+                        <td><span class="badge {{ 'error' if error.nivel == 'ERROR' else 'advertencia' }}">{{ error.nivel }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="estado-vacio">No hay errores recientes del scheduler.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endif %}
+{% endblock %}

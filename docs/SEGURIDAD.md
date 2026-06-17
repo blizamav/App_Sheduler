@@ -203,6 +203,21 @@ Validacion local:
 * Los cambios se confirman con modal corporativo y se registran en `logs_sistema`.
 * Las validaciones bloquean intervalos y maximos concurrentes fuera de rango.
 
+## Panel operativo scheduler
+
+Fase 11A reutiliza permiso:
+
+* `SCHEDULER_CONFIG_VER`.
+
+Reglas:
+
+* `/scheduler/panel` es solo lectura.
+* No permite iniciar, detener ni reiniciar el worker.
+* No edita configuracion operativa.
+* No consulta APIs externas.
+* No muestra secretos ni rutas sensibles de scripts.
+* La configuracion sigue editandose en `/scheduler/configuracion` con `SCHEDULER_CONFIG_EDITAR`.
+
 ## Worker automatico
 
 Fase 9B agrega ejecucion automatica con estas reglas de seguridad:

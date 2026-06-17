@@ -6,9 +6,21 @@ from app.servicios.servicio_configuracion_scheduler import (
     obtener_configuracion_scheduler,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_panel_scheduler import obtener_panel_scheduler
 
 
 bp_scheduler = Blueprint("scheduler", __name__, url_prefix="/scheduler")
+
+
+@bp_scheduler.route("/panel")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def panel():
+    try:
+        panel_scheduler = obtener_panel_scheduler()
+    except Exception:
+        panel_scheduler = None
+        flash("No fue posible cargar el panel operativo del scheduler.", "error")
+    return render_template("scheduler/panel.html", panel=panel_scheduler)
 
 
 @bp_scheduler.route("/configuracion", methods=["GET", "POST"])

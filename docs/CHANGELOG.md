@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-06-17 - Fase 11A panel operativo scheduler
+
+### Agregado
+
+* Ruta `/scheduler/panel`.
+* Template `app/templates/scheduler/panel.html`.
+* Repositorio `app/repositorios/repositorio_panel_scheduler.py`.
+* Servicio `app/servicios/servicio_panel_scheduler.py`.
+* Accesos separados en sidebar para panel operativo y configuracion scheduler.
+
+### Incluye
+
+* Configuracion actual del scheduler.
+* Estado activo/inactivo, ejecucion automatica, mantenimiento, intervalo y concurrencia.
+* Ultimas ejecuciones automaticas.
+* Errores recientes del scheduler.
+* Tareas programadas candidatas.
+* Estado del calendario local de feriados.
+
+### No implementado
+
+* No inicia ni detiene el worker.
+* No edita configuracion desde el panel.
+* No conecta nuevas APIs externas.
+* No implementa notificaciones.
+* No avanza a Fase 11B.
+
 ## 2026-06-17 - Correccion preview Fase 10B
 
 ### Corregido

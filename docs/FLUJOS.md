@@ -256,6 +256,21 @@ Validacion local Fase 9A:
 6. `max_ejecuciones_concurrentes` limitara ejecuciones automaticas simultaneas.
 7. `nombre_worker_principal` identificara el worker.
 
+## Flujo de panel operativo scheduler
+
+Fase 11A agrega monitoreo de solo lectura en `/scheduler/panel`.
+
+1. Usuario autorizado con `SCHEDULER_CONFIG_VER` abre `/scheduler/panel`.
+2. El sistema lee configuracion activa desde `configuracion_scheduler`.
+3. Consulta resumen de ejecuciones automaticas desde `ejecuciones`.
+4. Lista ultimas ejecuciones automaticas.
+5. Lista errores y advertencias recientes del modulo `SCHEDULER` en `logs_sistema`.
+6. Lista tareas programadas activas candidatas.
+7. Muestra estado del calendario local de feriados.
+8. El panel no inicia, detiene ni reinicia el worker.
+9. El panel no consulta Nager.Date ni otras APIs externas.
+10. La configuracion se sigue editando solo desde `/scheduler/configuracion`.
+
 ## Ventana de tolerancia y anti-duplicados
 
 El worker evalua una ventana entre `ahora - intervalo_revision_segundos` y `ahora`. Si un slot programado cae dentro de esa ventana, se considera ejecutable.

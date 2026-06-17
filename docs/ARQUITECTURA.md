@@ -122,6 +122,14 @@ Fase 10B agrega sincronizacion controlada desde Nager.Date:
 
 La API externa solo se consulta desde el modulo de sincronizacion manual. El scheduler mantiene dependencia exclusiva de SQL Server mediante `servicio_calendario.es_feriado()`.
 
+Fase 11A agrega panel operativo del scheduler:
+
+* `app/repositorios/repositorio_panel_scheduler.py`: consultas de solo lectura para monitoreo.
+* `app/servicios/servicio_panel_scheduler.py`: consolida configuracion, ejecuciones, errores, candidatas y feriados.
+* `/scheduler/panel`: dashboard operativo.
+
+El panel no inicia, detiene ni reinicia el worker. Solo muestra datos existentes en SQL Server.
+
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
@@ -143,6 +151,7 @@ Reglas principales:
 * Respeta `ejecutar_en_feriados` consultando la tabla local `feriados`.
 * Evita duplicados con `clave_programacion`.
 * Reutiliza el motor de Fase 8 para version activa, `.env`, PID, logs y consola.
+* Desde Fase 11A puede monitorearse en `/scheduler/panel`, sin control operacional del proceso.
 
 ## Ejecucion segura de scripts
 

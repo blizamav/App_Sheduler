@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 10B:
+El proyecto avanzo hasta Fase 11A:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -28,6 +28,7 @@ El proyecto avanzo hasta Fase 10B:
 * Fase 9D: historial de ejecuciones agrupado por ano, mes y dia con filtros y paginacion.
 * Fase 10A: calendario local de feriados en base de datos, sin API externa.
 * Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales de irrenunciables.
+* Fase 11A: panel operativo del scheduler para monitoreo de solo lectura.
 
 ## Stack actual
 
@@ -75,6 +76,7 @@ El proyecto avanzo hasta Fase 10B:
 * Sincronizacion manual de feriados desde Nager.Date con vista previa.
 * Reglas locales para calcular feriados irrenunciables de Chile.
 * Scheduler consulta feriados locales para respetar `ejecutar_en_feriados`.
+* Panel operativo del scheduler en `/scheduler/panel`.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
