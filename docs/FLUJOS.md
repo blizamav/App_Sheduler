@@ -24,6 +24,51 @@
 9. `logs_sistema` no se usa para cada heartbeat; solo registra inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
 10. La app no inicia ni detiene el worker desde el panel.
 
+## Flujo de eventos del programador
+
+1. El proceso `scheduler_worker.py` inicia un ciclo automatico.
+2. El servicio del programador registra un evento de ciclo iniciado en `scheduler_eventos`.
+3. Por cada decision relevante registra si una tarea se envia a ejecucion o se omite.
+4. Si la tarea se ejecuta, se crea una ejecucion real mediante el flujo existente y se registra evento `TAREA_EJECUTADA`.
+5. Si la tarea se omite, no se crea registro en `ejecuciones` ni `logs_tareas`.
+6. Si se omite por feriado, el evento guarda `es_feriado`, `nombre_feriado` y el valor de `ejecutar_en_feriados`.
+7. Si se omite por ejecucion en curso, duplicado de slot o limite de concurrencia, el evento guarda motivo y detalle operativo.
+8. Si el scheduler esta inactivo, en mantenimiento o con ejecucion automatica deshabilitada, se registra omision de ciclo con motivo operativo.
+9. Al finalizar el ciclo se registra evento de ciclo finalizado con resumen de evaluadas, ejecutadas y omitidas.
+10. `/scheduler/panel` muestra los eventos recientes como monitoreo de solo lectura.
+
+Reglas:
+
+* `scheduler_worker_heartbeat` sigue registrando senal de vida en tabla separada.
+* `logs_sistema` no se usa para cada omision del programador.
+* Los eventos del programador no reemplazan la auditoria funcional futura.
+
+## Flujo de resumen inteligente de eventos del programador
+
+1. Usuario abre `/scheduler/panel`.
+2. El backend consulta `scheduler_eventos` con `activo = 1`.
+3. El panel calcula conteos del dia: eventos, ejecutadas, omitidas y errores.
+4. El panel agrupa omisiones del dia por motivo.
+5. El panel muestra solo ultimos eventos relevantes para evitar ruido operativo.
+6. Son relevantes `ERROR_SCHEDULER`, `TAREA_EJECUTADA` y omisiones por `FERIADO`, `EJECUCION_EN_CURSO`, `DUPLICADO_SLOT` y `LIMITE_CONCURRENCIA`.
+7. `CICLO_INICIADO`, `CICLO_FINALIZADO` y `FUERA_DE_VENTANA` repetitivo se reflejan en conteos, no como filas dominantes.
+8. Si no hay eventos relevantes se muestra `Sin eventos relevantes recientes`.
+9. No se crea una ruta completa `/scheduler/eventos` en esta fase.
+10. La retencion manual futura usa `limpiar_eventos_antiguos(dias_retencion=90)` y marca `activo = 0`, sin borrar fisicamente.
+
+## Flujo de historial filtrable de eventos del programador
+
+1. Usuario autorizado abre `/scheduler/eventos`.
+2. La ruta reutiliza permiso `SCHEDULER_CONFIG_VER`.
+3. El backend consulta `scheduler_eventos` con condicion obligatoria `activo = 1`.
+4. El usuario puede filtrar por fecha desde, fecha hasta, tarea, tipo evento, decision, motivo, proceso y texto libre.
+5. La consulta usa paginacion server-side con `OFFSET / FETCH`.
+6. Las opciones de pagina son 10, 25, 50 y 100 registros.
+7. La tabla muestra fecha, proceso, tarea, tipo evento, decision, motivo, fecha programada y detalle breve.
+8. Si no hay registros se muestra `Sin eventos del programador para los filtros seleccionados.`
+9. La vista no muestra eventos inactivos por defecto.
+10. Esta vista no crea ejecuciones, no modifica eventos y no reemplaza Auditoria.
+
 ## Flujo de gestion de scripts por tarea
 
 1. Usuario autorizado abre `/tareas`.

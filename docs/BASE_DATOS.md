@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual.
 
 ## Base objetivo
 
@@ -48,6 +48,7 @@ database/
     012_crear_calendario_feriados.sql
     013_crear_reglas_feriados_irrenunciables.sql
     014_crear_scheduler_worker_heartbeat.sql
+    015_crear_eventos_programador.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -84,6 +85,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 22. `database/seeds/009_reglas_irrenunciables_chile.sql`
 23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
 24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
+25. `database/migrations/015_crear_eventos_programador.sql`
 
 Resumen por script:
 
@@ -101,6 +103,7 @@ Resumen por script:
 * `012_crear_calendario_feriados.sql`: crea tabla local `feriados` para Fase 10A; ejecutada y validada localmente; no conecta API externa.
 * `013_crear_reglas_feriados_irrenunciables.sql`: crea reglas locales de irrenunciables y ajusta `CK_feriados_origen` para permitir `API_NAGER`.
 * `014_crear_scheduler_worker_heartbeat.sql`: crea tabla `scheduler_worker_heartbeat` para registrar senal de vida del worker; no inicia ni detiene procesos desde la app.
+* `015_crear_eventos_programador.sql`: crea tabla `scheduler_eventos` para registrar decisiones, omisiones y errores del programador; no crea ejecuciones ni logs de tarea.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -155,6 +158,78 @@ Restricciones e indices:
 * Indices por `nombre_worker`, `fecha_ultimo_heartbeat` y `estado`.
 
 Regla operativa: no se crea un registro por ciclo. El worker actualiza el mismo registro activo para evitar crecimiento innecesario.
+
+## Fase 11D - Eventos del programador
+
+Se crea migracion incremental `015_crear_eventos_programador.sql`.
+
+Tabla: `scheduler_eventos`.
+
+Objetivo: registrar decisiones operativas del programador que no deben confundirse con ejecuciones reales ni con auditoria funcional.
+
+Casos registrados:
+
+* Ciclo iniciado.
+* Ciclo finalizado.
+* Tarea enviada a ejecucion automatica.
+* Tarea omitida por feriado.
+* Tarea omitida por ejecucion ya en curso.
+* Tarea omitida por duplicado de `clave_programacion`.
+* Tarea omitida por limite de concurrencia.
+* Tarea omitida por scheduler inactivo, ejecucion automatica deshabilitada o modo mantenimiento.
+* Error controlado del programador.
+
+Campos principales:
+
+* `fecha_evento`.
+* `nombre_worker`.
+* `id_tarea`.
+* `nombre_tarea`.
+* `id_programacion`.
+* `fecha_programada`.
+* `clave_programacion`.
+* `tipo_evento`.
+* `decision`.
+* `motivo`.
+* `detalle`.
+* `estado_scheduler`.
+* `ejecutar_en_feriados`.
+* `es_feriado`.
+* `nombre_feriado`.
+* `origen`.
+
+Restricciones:
+
+* `tipo_evento`: `CICLO_INICIADO`, `CICLO_FINALIZADO`, `TAREA_EVALUADA`, `TAREA_EJECUTADA`, `TAREA_OMITIDA`, `ERROR_SCHEDULER`.
+* `decision`: `EJECUTAR`, `OMITIR`, `ERROR`, `INFO`.
+* `origen`: `SCHEDULER`.
+
+Decisiones:
+
+* No se crean registros en `ejecuciones` cuando una tarea se omite.
+* No se generan `logs_tareas` para omisiones, porque no existio ejecucion real.
+* No se usa `logs_sistema` para cada omision operativa del programador.
+* `scheduler_worker_heartbeat` sigue separado y no se registra como evento por cada senal.
+* La tabla guarda snapshot de nombre de tarea, worker, clave y motivo para conservar trazabilidad aun si datos descriptivos cambian despues.
+* No se agregan claves foraneas para no alterar reglas existentes de eliminacion controlada ni bloquear mantenedores por eventos operativos.
+
+Fase 11D.1 agrega consultas de resumen sobre esta misma tabla, sin crear migracion nueva:
+
+* Resumen de eventos del dia actual.
+* Omisiones del dia agrupadas por `motivo`.
+* Ultimos eventos relevantes activos, limitados a 10 registros.
+* Retencion logica mediante `limpiar_eventos_antiguos(dias_retencion=90)`, que actualiza `activo = 0`.
+
+La retencion no elimina fisicamente registros y no se ejecuta automaticamente en esta fase.
+
+Fase 11D.2 agrega consulta paginada sobre la misma tabla:
+
+* Condicion fija `activo = 1`.
+* Filtros opcionales por fecha, tarea, tipo evento, decision, motivo, worker y texto.
+* Orden `fecha_evento DESC, id_evento DESC`.
+* Paginacion SQL Server mediante `OFFSET / FETCH`.
+
+No se crea migracion nueva porque la tabla `scheduler_eventos` ya contiene los campos necesarios.
 
 ## Fase 7 - Scripts y versiones
 

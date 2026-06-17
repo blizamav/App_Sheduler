@@ -1,5 +1,96 @@
 # Changelog
 
+## 2026-06-17 - Fase 11D.2 historial filtrable eventos programador
+
+### Agregado
+
+* Ruta `/scheduler/eventos`.
+* Template `app/templates/scheduler/eventos.html`.
+* Listado paginado server-side de eventos activos del programador.
+* Filtros por fecha desde, fecha hasta, tarea, tipo evento, decision, motivo, proceso y texto en detalle.
+* Acceso desde sidebar y desde `/scheduler/panel`.
+
+### Reglas
+
+* La vista consulta solo `scheduler_eventos` con `activo = 1`.
+* La paginacion usa `OFFSET / FETCH` y no carga todos los registros en memoria.
+* No se crean ejecuciones para omisiones.
+* No se implementa Auditoria.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se avanzo a Fase 12A.
+
+## 2026-06-17 - Fase 11D.1 resumen inteligente eventos programador
+
+### Agregado
+
+* Resumen de eventos del programador en `/scheduler/panel`.
+* Conteos del dia: eventos hoy, tareas ejecutadas, tareas omitidas y errores del programador.
+* Desglose de omisiones por motivo del dia.
+* Tabla compacta de ultimos 10 eventos relevantes.
+* Funcion `limpiar_eventos_antiguos(dias_retencion=90)` para retencion logica.
+
+### Criterio de relevancia
+
+* Se priorizan `ERROR_SCHEDULER`, `TAREA_EJECUTADA` y omisiones por `FERIADO`, `EJECUCION_EN_CURSO`, `DUPLICADO_SLOT` y `LIMITE_CONCURRENCIA`.
+* `CICLO_INICIADO`, `CICLO_FINALIZADO` y `FUERA_DE_VENTANA` quedan como resumen para evitar ruido visual.
+
+### Reglas
+
+* No se crea `/scheduler/eventos`.
+* No se implementan filtros avanzados ni exportacion.
+* No se ejecuta limpieza automatica.
+* No se eliminan eventos fisicamente; la retencion marca `activo = 0`.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-17 - Correccion Fase 11D visualizacion eventos programador
+
+### Corregido
+
+* `/scheduler/panel` ahora renderiza explicitamente `eventos_programador`.
+* La seccion `Eventos recientes del programador` queda visible debajo del estado del proceso programador.
+* La tabla muestra fecha, tarea, tipo evento, decision, motivo, detalle y proceso.
+* El mensaje sin datos queda como `Sin eventos recientes del programador`.
+
+### Reglas
+
+* Los datos se leen desde `scheduler_eventos`.
+* No se crearon migraciones nuevas.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-17 - Fase 11D eventos y omisiones del programador
+
+### Agregado
+
+* Migracion `database/migrations/015_crear_eventos_programador.sql`.
+* Repositorio `app/repositorios/repositorio_scheduler_eventos.py`.
+* Servicio `app/servicios/servicio_scheduler_eventos.py`.
+* Registro de eventos de ciclo iniciado, ciclo finalizado, tarea ejecutada, tarea omitida y error controlado del programador.
+* Visualizacion de eventos recientes en `/scheduler/panel`.
+
+### Decisiones
+
+* Las tareas omitidas no crean registros en `ejecuciones`.
+* Las tareas omitidas no crean `logs_tareas`.
+* `logs_sistema` no se usa para cada omision operativa del programador.
+* El heartbeat se mantiene separado en `scheduler_worker_heartbeat`.
+* La migracion 015 queda pendiente de ejecucion manual en SQL Server.
+
+### Reglas
+
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento auditoria funcional.
+* No se avanzo a Fase 12A.
+
 ## 2026-06-17 - Fase 11C modernizacion visual UI/UX general
 
 ### Cambiado

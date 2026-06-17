@@ -29,6 +29,9 @@
 * Fase 11A.1: panel principal general con metricas reales y accesos operativos.
 * Fase 11B: heartbeat del worker scheduler.
 * Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
+* Fase 11D: eventos y omisiones del programador en tabla dedicada.
+* Fase 11D.1: resumen inteligente y retencion logica de eventos.
+* Fase 11D.2: historial filtrable de eventos del programador.
 
 ## Modulos pendientes
 
@@ -53,7 +56,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11C: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker y modernizacion visual general. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
+La aplicacion esta en Fase 11D.2: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador y vista filtrable de eventos. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
 
 ## UI/UX general
 
@@ -161,6 +164,57 @@ Implementado en Fase 11B:
 * Clasificacion visual del estado del worker segun ultimo heartbeat e intervalo configurado.
 * Seccion `Estado del worker` en `/scheduler/panel`.
 * `python scheduler_worker.py --once` actualiza heartbeat y registra salida controlada.
+
+Implementado en Fase 11D:
+
+* Tabla `scheduler_eventos`.
+* Registro de decisiones relevantes del programador.
+* Eventos de ciclo iniciado/finalizado, tarea ejecutada, tarea omitida y error controlado.
+* Omisiones por feriado, ejecucion en curso, duplicado de slot, limite de concurrencia, scheduler inactivo, ejecucion automatica deshabilitada y modo mantenimiento.
+* Visualizacion de eventos recientes en `/scheduler/panel` mediante la variable explicita `eventos_programador`.
+
+Correccion posterior Fase 11D:
+
+* La seccion `Eventos recientes del programador` queda visible debajo del estado del proceso programador.
+* Se muestran fecha, tarea, tipo evento, decision, motivo, detalle y proceso.
+* Si no existen registros activos se muestra `Sin eventos recientes del programador`.
+* Los datos se consultan desde `scheduler_eventos`, sin depender del historial de ejecuciones.
+
+Implementado en Fase 11D.1:
+
+* `/scheduler/panel` muestra resumen inteligente de eventos del programador.
+* Conteos del dia: eventos, ejecutadas, omitidas y errores.
+* Desglose de omisiones por motivo del dia.
+* Ultimos 10 eventos relevantes filtrados para evitar ruido operativo.
+* Funcion `limpiar_eventos_antiguos(dias_retencion=90)` para retencion logica manual.
+
+Criterio visual Fase 11D.1:
+
+* Relevantes: `ERROR_SCHEDULER`, `TAREA_EJECUTADA`, `FERIADO`, `EJECUCION_EN_CURSO`, `DUPLICADO_SLOT` y `LIMITE_CONCURRENCIA`.
+* Resumidos: `CICLO_INICIADO`, `CICLO_FINALIZADO` y `FUERA_DE_VENTANA` repetitivo.
+* La retencion no elimina fisicamente; marca eventos antiguos como inactivos.
+
+Implementado en Fase 11D.2:
+
+* Ruta `/scheduler/eventos`.
+* Historial filtrable de eventos activos del programador.
+* Filtros por fecha, tarea, tipo evento, decision, motivo, proceso y texto.
+* Paginacion server-side con opciones 10, 25, 50 y 100 registros.
+* Acceso desde sidebar como `Eventos programador`.
+* Acceso desde `/scheduler/panel` con boton `Ver historial de eventos`.
+
+La diferencia operativa es:
+
+* `/scheduler/panel` resume y prioriza eventos relevantes.
+* `/scheduler/eventos` permite investigar el historial activo con filtros.
+
+No implementado en Fase 11D:
+
+* No se implementa auditoria funcional.
+* No se crean ejecuciones para tareas omitidas.
+* No se crean logs de tarea para omisiones.
+* No se inicia ni detiene el worker desde la app.
+* No se ejecuta limpieza automatica de eventos.
 
 No implementado en Fase 9B:
 

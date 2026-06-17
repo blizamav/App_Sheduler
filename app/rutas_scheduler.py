@@ -7,6 +7,7 @@ from app.servicios.servicio_configuracion_scheduler import (
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_panel_scheduler import obtener_panel_scheduler
+from app.servicios.servicio_scheduler_eventos import listar_historial_eventos
 
 
 bp_scheduler = Blueprint("scheduler", __name__, url_prefix="/scheduler")
@@ -21,6 +22,27 @@ def panel():
         panel_scheduler = None
         flash("No fue posible cargar el panel operativo del scheduler.", "error")
     return render_template("scheduler/panel.html", panel=panel_scheduler)
+
+
+@bp_scheduler.route("/eventos")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def eventos():
+    filtros = {
+        "fecha_desde": request.args.get("fecha_desde", ""),
+        "fecha_hasta": request.args.get("fecha_hasta", ""),
+        "tarea": request.args.get("tarea", ""),
+        "tipo_evento": request.args.get("tipo_evento", ""),
+        "decision": request.args.get("decision", ""),
+        "motivo": request.args.get("motivo", ""),
+        "worker": request.args.get("worker", ""),
+        "texto": request.args.get("texto", ""),
+    }
+    historial = listar_historial_eventos(
+        filtros=filtros,
+        page=request.args.get("page", 1),
+        per_page=request.args.get("per_page", 25),
+    )
+    return render_template("scheduler/eventos.html", **historial)
 
 
 @bp_scheduler.route("/configuracion", methods=["GET", "POST"])

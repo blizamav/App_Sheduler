@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual.
-* Estado actual: Fase 11C implementada con modernizacion visual UI/UX general sin cambios funcionales.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual.
+* Estado actual: Fase 11D.2 implementada con historial filtrable de eventos del programador sin auditoria funcional.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11C - Modernizacion visual UI/UX general.
-* Ultima actualizacion: 2026-06-17 00:00
+* Fase actual: Fase 11D.2 - Historial filtrable de eventos del programador.
+* Ultima actualizacion: 2026-06-17 17:05
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -17,7 +17,7 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Pendiente para fase posterior.
 * Docker: Pendiente para Fase 11.
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B y modernizacion visual Fase 11C.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D y historial filtrable Fase 11D.2.
 * Modulos pendientes: Control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
@@ -50,6 +50,44 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-17 17:05 - Fase 11D.2 / Historial filtrable de eventos del programador
+
+* Archivos creados: `app/templates/scheduler/eventos.html`.
+* Archivos modificados: `app/rutas_scheduler.py`, `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`, `app/templates/base.html`, `app/templates/scheduler/panel.html`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/BASE_DATOS.md`, `log_codex.md`.
+* Que se hizo: Se creo `/scheduler/eventos` para consultar eventos activos con filtros y paginacion server-side.
+* Filtros: fecha desde, fecha hasta, tarea, tipo evento, decision, motivo, proceso y texto libre en detalle/clave/feriado.
+* Paginacion: opciones 10, 25, 50 y 100; orden `fecha_evento DESC, id_evento DESC`.
+* Accesos: Sidebar `Eventos programador` y boton `Ver historial de eventos` en `/scheduler/panel`.
+* No implementado: No se creo migracion, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria, no se crearon ejecuciones para omisiones y no se avanzo a Fase 12A.
+
+### 2026-06-17 16:40 - Fase 11D.1 / Resumen inteligente y retencion de eventos
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`, `app/servicios/servicio_panel_scheduler.py`, `app/templates/scheduler/panel.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/BASE_DATOS.md`, `log_codex.md`.
+* Que se hizo: `/scheduler/panel` muestra resumen de eventos del dia, omisiones por motivo y ultimos 10 eventos relevantes.
+* Criterio: Se priorizan errores, tareas ejecutadas y omisiones por feriado, ejecucion en curso, duplicado de slot y limite de concurrencia; ciclos y fuera de ventana quedan resumidos para evitar ruido.
+* Retencion: Se agrego `limpiar_eventos_antiguos(dias_retencion=90)`, que marca `activo = 0` y no borra fisicamente.
+* No implementado: No se creo `/scheduler/eventos`, no se implemento Auditoria, no se ejecuto SQL, no se modifico `.env`, no se crearon migraciones y no se avanzo a Fase 12A.
+
+### 2026-06-17 16:20 - Ajuste Fase 11D / Visualizacion de eventos del programador
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_panel_scheduler.py`, `app/templates/scheduler/panel.html`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Causa: La vista usaba un nombre generico para los eventos y no exponia todos los campos solicitados; se dejo un contrato claro `eventos_programador` para la seccion del panel.
+* Que se hizo: `/scheduler/panel` ahora muestra la seccion `Eventos recientes del programador` debajo del estado del proceso programador, con fecha, tarea, tipo evento, decision, motivo, detalle y proceso.
+* Datos: Los eventos se obtienen desde `scheduler_eventos`, ultimos 10 registros activos, ordenados por `fecha_evento DESC, id_evento DESC`.
+* No implementado: No se crearon migraciones nuevas, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
+
+### 2026-06-17 16:02 - Fase 11D / Eventos y omisiones del programador
+
+* Archivos creados: `database/migrations/015_crear_eventos_programador.sql`, `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`.
+* Archivos modificados: `app/servicios/servicio_scheduler_worker.py`, `app/servicios/servicio_panel_scheduler.py`, `app/templates/scheduler/panel.html`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se agrego trazabilidad operativa del programador en tabla dedicada `scheduler_eventos`, con eventos de ciclo, ejecucion, omision y error controlado.
+* Decisiones: Las omisiones no crean `ejecuciones` ni `logs_tareas`; `logs_sistema` no se usa para cada omision; el heartbeat queda separado.
+* Migracion: `015_crear_eventos_programador.sql` fue creada para ejecucion manual en SSMS; Codex no ejecuto SQL.
+* No implementado: No se implemento auditoria funcional, no se conectaron APIs nuevas, no se modifico `.env`, no se inicio/detuvo worker desde la app y no se avanzo a Fase 12A.
+* Pruebas recomendadas: Ejecutar migracion 015, correr `python scheduler_worker.py --once`, validar eventos `FERIADO`, `EJECUCION_EN_CURSO`, `DUPLICADO_SLOT`, `LIMITE_CONCURRENCIA`, `TAREA_EJECUTADA` y revisar `/scheduler/panel`.
 
 ### 2026-06-17 00:00 - Fase 11C / Modernizacion visual UI UX general
 

@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 11C:
+El proyecto avanzo hasta Fase 11D:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -32,6 +32,7 @@ El proyecto avanzo hasta Fase 11C:
 * Fase 11A.1: panel principal general con metricas reales y accesos operativos.
 * Fase 11B: heartbeat del worker scheduler y visualizacion en panel operativo.
 * Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
+* Fase 11D: registro de eventos y omisiones del programador en tabla dedicada.
 
 ## Stack actual
 
@@ -81,6 +82,7 @@ El proyecto avanzo hasta Fase 11C:
 * Scheduler consulta feriados locales para respetar `ejecutar_en_feriados`.
 * Panel operativo del scheduler en `/scheduler/panel`.
 * Heartbeat del worker en tabla `scheduler_worker_heartbeat`.
+* Eventos recientes del programador en tabla `scheduler_eventos`, visibles desde `/scheduler/panel`.
 * Interfaz modernizada con sidebar, botones, cards, tablas, formularios, modales, toasts, consola y paneles visualmente pulidos.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.

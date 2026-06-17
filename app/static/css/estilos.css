@@ -500,6 +500,16 @@ textarea {
     box-shadow: none;
 }
 
+.bloque-subseccion {
+    margin-top: 18px;
+}
+
+.bloque-subseccion h4 {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    color: var(--color-texto);
+}
+
 .oculto {
     display: none !important;
 }

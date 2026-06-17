@@ -6,6 +6,7 @@ from app.repositorios.repositorio_panel_scheduler import (
     obtener_estado_feriados_locales,
     obtener_resumen_ejecuciones_automaticas,
 )
+from app.servicios.servicio_scheduler_eventos import obtener_eventos_relevantes, obtener_resumen_inteligente_eventos
 from app.servicios.servicio_worker_heartbeat import clasificar_estado_worker, obtener_estado_worker
 
 
@@ -19,10 +20,15 @@ def obtener_panel_scheduler():
     nombre_worker = configuracion.get("nombre_worker_principal") if configuracion else None
     heartbeat = obtener_estado_worker(nombre_worker)
     estado_worker = clasificar_estado_worker(heartbeat, configuracion)
+    resumen_eventos = obtener_resumen_inteligente_eventos()
+    eventos_programador = obtener_eventos_relevantes(limite=10)
 
     return {
         "configuracion": configuracion,
         "worker": {"heartbeat": heartbeat, "estado": estado_worker},
+        "resumen_eventos_programador": resumen_eventos,
+        "eventos_programador": eventos_programador,
+        "eventos_recientes": eventos_programador,
         "resumen_ejecuciones": _normalizar_resumen(resumen_ejecuciones),
         "ultimas_ejecuciones": ultimas,
         "errores_recientes": errores,

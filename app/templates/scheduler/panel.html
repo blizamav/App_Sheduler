@@ -73,6 +73,105 @@
     {% endif %}
 </section>
 
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Trazabilidad</p>
+            <h3>Resumen de eventos del programador</h3>
+        </div>
+        <span class="badge info">Hoy</span>
+    </div>
+    <div class="grid-metricas">
+        <article class="card-metrica">
+            <span>Eventos hoy</span>
+            <strong>{{ panel.resumen_eventos_programador.eventos_hoy }}</strong>
+        </article>
+        <article class="card-metrica">
+            <span>Ejecutadas</span>
+            <strong>{{ panel.resumen_eventos_programador.tareas_ejecutadas }}</strong>
+        </article>
+        <article class="card-metrica">
+            <span>Omitidas</span>
+            <strong>{{ panel.resumen_eventos_programador.tareas_omitidas }}</strong>
+        </article>
+        <article class="card-metrica">
+            <span>Errores</span>
+            <strong>{{ panel.resumen_eventos_programador.errores_programador }}</strong>
+        </article>
+    </div>
+    {% if panel.resumen_eventos_programador.ultimo_evento %}
+    <div class="alerta info alerta-inline">
+        Ultimo evento: {{ panel.resumen_eventos_programador.ultimo_evento.fecha_evento }} |
+        {{ panel.resumen_eventos_programador.ultimo_evento.tipo_evento }} |
+        {{ panel.resumen_eventos_programador.ultimo_evento.decision }}
+        {% if panel.resumen_eventos_programador.ultimo_evento.motivo %}
+        | {{ panel.resumen_eventos_programador.ultimo_evento.motivo }}
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="estado-vacio">Sin eventos registrados hoy.</p>
+    {% endif %}
+    <div class="bloque-subseccion">
+        <h4>Omisiones por motivo</h4>
+        {% if panel.resumen_eventos_programador.omisiones_por_motivo %}
+        <div class="acciones-tabla">
+            {% for omision in panel.resumen_eventos_programador.omisiones_por_motivo %}
+            <span class="badge {% if omision.motivo == 'FERIADO' %}advertencia{% elif omision.motivo in ['EJECUCION_EN_CURSO','DUPLICADO_SLOT','LIMITE_CONCURRENCIA'] %}info{% else %}inactivo{% endif %}">
+                {{ omision.motivo }}: {{ omision.total }}
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="estado-vacio">Sin omisiones registradas hoy.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Trazabilidad</p>
+            <h3>Ultimos eventos relevantes</h3>
+        </div>
+        <a class="btn secundario compacto" href="{{ url_for('scheduler.eventos') }}">Ver historial de eventos</a>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tarea</th>
+                    <th>Tipo evento</th>
+                    <th>Decision</th>
+                    <th>Motivo</th>
+                    <th>Detalle</th>
+                    <th>Proceso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evento in panel.eventos_programador %}
+                <tr>
+                    <td>{{ evento.fecha_evento }}</td>
+                    <td>{{ evento.nombre_tarea or "-" }}</td>
+                    <td><span class="badge info">{{ evento.tipo_evento }}</span></td>
+                    <td><span class="badge {% if evento.decision == 'EJECUTAR' %}activo{% elif evento.decision == 'ERROR' %}error{% elif evento.decision == 'OMITIR' %}advertencia{% else %}info{% endif %}">{{ evento.decision }}</span></td>
+                    <td><span class="badge {% if evento.motivo == 'FERIADO' %}advertencia{% elif evento.decision == 'ERROR' %}error{% else %}info{% endif %}">{{ evento.motivo or "-" }}</span></td>
+                    <td>
+                        {{ evento.detalle or "-" }}
+                        {% if evento.nombre_feriado %}
+                        <br><small>Feriado: {{ evento.nombre_feriado }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ evento.nombre_worker or "-" }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="estado-vacio">Sin eventos relevantes recientes</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <section class="panel-grid">
     <article class="bloque">
         <div class="bloque-header">

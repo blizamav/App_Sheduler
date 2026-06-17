@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block titulo %}Eventos programador - APP Scheduler{% endblock %}
+{% block encabezado %}Eventos programador{% endblock %}
+
+{% macro query_pagina(numero) -%}
+{{ url_for('scheduler.eventos',
+    page=numero,
+    per_page=per_page,
+    fecha_desde=filtros.get('fecha_desde'),
+    fecha_hasta=filtros.get('fecha_hasta'),
+    tarea=filtros.get('tarea'),
+    tipo_evento=filtros.get('tipo_evento'),
+    decision=filtros.get('decision'),
+    motivo=filtros.get('motivo'),
+    worker=filtros.get('worker'),
+    texto=filtros.get('texto')) }}
+{%- endmacro %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Trazabilidad</p>
+        <h2>Eventos del programador</h2>
+        <p>Historial activo de decisiones automaticas del programador con filtros y paginacion server-side.</p>
+    </div>
+    <span class="badge info">{{ total }} registros filtrados</span>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Filtros</p>
+            <h3>Buscar eventos</h3>
+        </div>
+        <a class="btn secundario compacto" href="{{ url_for('scheduler.eventos') }}">Limpiar filtros</a>
+    </div>
+    <form class="formulario-admin" method="get">
+        <input type="hidden" name="page" value="1">
+        <div class="grid-formulario compacto-grid">
+            <div class="campo">
+                <label for="fecha_desde">Fecha desde</label>
+                <input id="fecha_desde" name="fecha_desde" type="date" value="{{ filtros.get('fecha_desde') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="fecha_hasta">Fecha hasta</label>
+                <input id="fecha_hasta" name="fecha_hasta" type="date" value="{{ filtros.get('fecha_hasta') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="tarea">Tarea</label>
+                <input id="tarea" name="tarea" value="{{ filtros.get('tarea') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="tipo_evento">Tipo evento</label>
+                <select id="tipo_evento" name="tipo_evento">
+                    <option value="">Todos</option>
+                    {% for tipo in tipos_evento %}
+                    <option value="{{ tipo }}" {% if filtros.get('tipo_evento') == tipo %}selected{% endif %}>{{ tipo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="decision">Decision</label>
+                <select id="decision" name="decision">
+                    <option value="">Todas</option>
+                    {% for item in decisiones %}
+                    <option value="{{ item }}" {% if filtros.get('decision') == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="motivo">Motivo</label>
+                <select id="motivo" name="motivo">
+                    <option value="">Todos</option>
+                    {% for item in motivos %}
+                    <option value="{{ item }}" {% if filtros.get('motivo') == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="worker">Proceso</label>
+                <input id="worker" name="worker" value="{{ filtros.get('worker') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="texto">Texto detalle</label>
+                <input id="texto" name="texto" value="{{ filtros.get('texto') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="per_page">Por pagina</label>
+                <select id="per_page" name="per_page">
+                    {% for opcion in per_page_opciones %}
+                    <option value="{{ opcion }}" {% if per_page == opcion %}selected{% endif %}>{{ opcion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="acciones-formulario">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('scheduler.eventos') }}">Limpiar filtros</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Historial activo</p>
+            <h3>Eventos registrados</h3>
+        </div>
+        <span class="badge info">Pagina {{ page }} de {{ total_paginas }}</span>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Proceso</th>
+                    <th>Tarea</th>
+                    <th>Tipo evento</th>
+                    <th>Decision</th>
+                    <th>Motivo</th>
+                    <th>Fecha programada</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evento in eventos %}
+                <tr>
+                    <td>{{ evento.fecha_evento }}</td>
+                    <td>{{ evento.nombre_worker or "-" }}</td>
+                    <td>
+                        {{ evento.nombre_tarea or "-" }}
+                        {% if evento.id_tarea %}<br><small>ID {{ evento.id_tarea }}</small>{% endif %}
+                    </td>
+                    <td><span class="badge {% if evento.tipo_evento == 'ERROR_SCHEDULER' %}error{% else %}info{% endif %}">{{ evento.tipo_evento }}</span></td>
+                    <td><span class="badge {% if evento.decision == 'EJECUTAR' %}activo{% elif evento.decision == 'ERROR' %}error{% elif evento.decision == 'OMITIR' %}advertencia{% else %}info{% endif %}">{{ evento.decision }}</span></td>
+                    <td><span class="badge {% if evento.motivo in ['FERIADO','EJECUCION_EN_CURSO','LIMITE_CONCURRENCIA'] %}advertencia{% elif evento.motivo == 'DUPLICADO_SLOT' %}info{% elif evento.decision == 'ERROR' %}error{% else %}inactivo{% endif %}">{{ evento.motivo or "-" }}</span></td>
+                    <td>{{ evento.fecha_programada or "-" }}</td>
+                    <td>
+                        {{ (evento.detalle or "-")|truncate(140, True) }}
+                        {% if evento.nombre_feriado %}<br><small>Feriado: {{ evento.nombre_feriado }}</small>{% endif %}
+                        {% if evento.clave_programacion %}<br><small>{{ evento.clave_programacion }}</small>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="estado-vacio">Sin eventos del programador para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="paginacion">
+    <span>Pagina {{ page }} de {{ total_paginas }} - {{ total }} registros</span>
+    <div class="paginacion-acciones">
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(1) }}">Primero</a>
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(page - 1 if page > 1 else 1) }}">Anterior</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(page + 1 if page < total_paginas else total_paginas) }}">Siguiente</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(total_paginas) }}">Ultimo</a>
+    </div>
+</section>
+{% endblock %}

@@ -48,17 +48,19 @@
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>09</span>Panel programador</a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>10</span>Config. programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.eventos' %}activo{% endif %}" href="{{ url_for('scheduler.eventos') }}"><span>10</span>Eventos programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>11</span>Config. programador</a>
                 {% else %}
                 <a class="nav-link deshabilitado" href="#"><span>09</span>Panel programador</a>
-                <a class="nav-link deshabilitado" href="#"><span>10</span>Config. programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>10</span>Eventos programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>11</span>Config. programador</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>11</span>Feriados</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>12</span>Feriados</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>11</span>Feriados</a>
+                <a class="nav-link deshabilitado" href="#"><span>12</span>Feriados</a>
                 {% endif %}
-                <a class="nav-link deshabilitado" href="#"><span>12</span>Auditoria</a>
+                <a class="nav-link deshabilitado" href="#"><span>13</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
                 <span class="badge info">Operacion</span>

@@ -116,6 +116,19 @@ Reglas obligatorias:
 * Usar comandos seguros, por ejemplo PowerShell: `if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }`.
 * Si faltan variables criticas, la app debe mostrar advertencia controlada sin exponer valores.
 
+## Eventos del programador
+
+Fase 11D registra decisiones operativas en `scheduler_eventos`.
+
+Reglas:
+
+* No se guardan credenciales, variables `.env`, stdout ni stderr de scripts.
+* No se registra contenido de archivos de script ni de `.env`.
+* Las omisiones no crean registros en `ejecuciones`.
+* Las omisiones no crean `logs_tareas`.
+* `logs_sistema` no debe usarse para cada omision del programador para evitar ruido operativo.
+* La tabla `scheduler_eventos` no reemplaza auditoria funcional; auditoria queda pendiente para una fase posterior.
+
 ## Scripts y versiones
 
 Fase 7 agrega permisos especificos:

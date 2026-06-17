@@ -138,6 +138,16 @@ Fase 11B agrega heartbeat del worker:
 * `app/servicios/servicio_scheduler_worker.py`: integra actualizacion de heartbeat sin cambiar el modelo de ejecucion automatica.
 * `/scheduler/panel`: muestra estado del worker, ultimo heartbeat, ultimo ciclo, PID, host y contadores del ultimo ciclo.
 
+Fase 11D agrega eventos del programador:
+
+* `database/migrations/015_crear_eventos_programador.sql`: tabla `scheduler_eventos`.
+* `app/repositorios/repositorio_scheduler_eventos.py`: insercion y consulta de eventos recientes.
+* `app/servicios/servicio_scheduler_eventos.py`: normaliza eventos de ciclo, ejecucion, omision y error sin exponer datos sensibles.
+* `app/servicios/servicio_scheduler_worker.py`: registra decisiones relevantes del ciclo automatico.
+* `/scheduler/panel`: muestra eventos recientes del programador.
+
+Esta capa es solo trazabilidad operativa. Una omision no crea `ejecuciones`, no crea `logs_tareas` y no reemplaza auditoria funcional futura.
+
 El heartbeat vive en una tabla dedicada porque cambia frecuentemente. `logs_sistema` solo registra eventos relevantes: inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
