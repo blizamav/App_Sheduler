@@ -6,9 +6,9 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 10B</p>
+        <p class="eyebrow">Sincronizacion</p>
         <h2>Sincronizar feriados</h2>
-        <p>Consulta feriados desde Nager.Date, aplica reglas locales de irrenunciables y guarda el resultado en la tabla local. El scheduler seguira usando solo SQL Server.</p>
+        <p>Consulta feriados desde Nager.Date, aplica reglas locales de irrenunciables y guarda el resultado en la tabla local. El programador seguira usando solo SQL Server.</p>
     </div>
     <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Volver</a>
 </section>
@@ -35,7 +35,7 @@
         </div>
     </form>
     <div class="alerta info">
-        No se sobrescriben feriados manuales. Los irrenunciables se calculan con reglas locales y la API no se consulta desde el scheduler.
+        No se sobrescriben feriados manuales. Los irrenunciables se calculan con reglas locales y la API no se consulta desde el programador.
     </div>
 </section>
 

@@ -6,7 +6,7 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 7</p>
+        <p class="eyebrow">Scripts</p>
         <h2>{{ tarea.nombre_tarea }}</h2>
         <p>{{ tarea.nombre_categoria }} / {{ tarea.nombre_tipo }} / {{ tarea.nombre_cliente }} - {{ tarea.resumen_programacion }}</p>
     </div>
@@ -54,7 +54,7 @@
             </form>
             {% if version_activa and (session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", [])) %}
             <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
-                <button class="btn primario compacto requiere-confirmacion" type="submit" data-confirm-title="Ejecutar tarea" data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando {{ nombre_archivo_activo }} v{{ numero_version_activa }}. Requiere .env: {{ 'Si' if requiere_env_activa else 'No' }}. No se usara scheduler en esta accion. Deseas continuar?" data-confirm-ok="Si, ejecutar ahora" data-confirm-cancel="Cancelar" data-confirm-type="warning">Ejecutar ahora</button>
+                <button class="btn primario compacto requiere-confirmacion" type="submit" data-confirm-title="Ejecutar tarea" data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando {{ nombre_archivo_activo }} v{{ numero_version_activa }}. Requiere .env: {{ 'Si' if requiere_env_activa else 'No' }}. No se usara el programador en esta accion. Deseas continuar?" data-confirm-ok="Si, ejecutar ahora" data-confirm-cancel="Cancelar" data-confirm-type="warning">Ejecutar ahora</button>
             </form>
             {% endif %}
         </div>

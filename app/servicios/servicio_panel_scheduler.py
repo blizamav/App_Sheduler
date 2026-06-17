@@ -6,6 +6,7 @@ from app.repositorios.repositorio_panel_scheduler import (
     obtener_estado_feriados_locales,
     obtener_resumen_ejecuciones_automaticas,
 )
+from app.servicios.servicio_worker_heartbeat import clasificar_estado_worker, obtener_estado_worker
 
 
 def obtener_panel_scheduler():
@@ -15,9 +16,13 @@ def obtener_panel_scheduler():
     errores = listar_errores_scheduler_recientes()
     candidatas = listar_tareas_candidatas()
     feriados = obtener_estado_feriados_locales()
+    nombre_worker = configuracion.get("nombre_worker_principal") if configuracion else None
+    heartbeat = obtener_estado_worker(nombre_worker)
+    estado_worker = clasificar_estado_worker(heartbeat, configuracion)
 
     return {
         "configuracion": configuracion,
+        "worker": {"heartbeat": heartbeat, "estado": estado_worker},
         "resumen_ejecuciones": _normalizar_resumen(resumen_ejecuciones),
         "ultimas_ejecuciones": ultimas,
         "errores_recientes": errores,
@@ -76,9 +81,9 @@ def _estado_operativo(configuracion, resumen, errores):
     if configuracion.get("modo_mantenimiento"):
         return {"texto": "Mantenimiento", "badge": "advertencia", "detalle": "Modo mantenimiento activo."}
     if not configuracion.get("scheduler_activo"):
-        return {"texto": "Scheduler inactivo", "badge": "inactivo", "detalle": "El worker no evaluara tareas."}
+        return {"texto": "Programador inactivo", "badge": "inactivo", "detalle": "El proceso programador no evaluara tareas."}
     if not configuracion.get("permitir_ejecucion_automatica"):
-        return {"texto": "Automaticas bloqueadas", "badge": "advertencia", "detalle": "Scheduler activo sin ejecucion automatica."}
+        return {"texto": "Automaticas bloqueadas", "badge": "advertencia", "detalle": "Programador activo sin ejecucion automatica."}
     if errores:
         return {"texto": "Activo con advertencias", "badge": "advertencia", "detalle": "Existen errores o advertencias recientes."}
     return {"texto": "Operativo", "badge": "activo", "detalle": "Configuracion habilitada para ejecuciones automaticas."}

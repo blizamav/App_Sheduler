@@ -152,6 +152,12 @@ Ejecutar manualmente en SSMS antes de levantar el worker:
 database/migrations/011_agregar_control_scheduler_ejecuciones.sql
 ```
 
+Para Fase 11B, ejecutar tambien:
+
+```text
+database/migrations/014_crear_scheduler_worker_heartbeat.sql
+```
+
 La app web y el worker son procesos separados.
 
 Terminal 1:
@@ -171,6 +177,15 @@ Para probar un solo ciclo sin dejar el worker en ejecucion continua:
 ```powershell
 python scheduler_worker.py --once
 ```
+
+Con Fase 11B, `--once` crea o actualiza `scheduler_worker_heartbeat`, registra el ultimo ciclo y deja estado `DETENIDO` por salida controlada.
+
+Para validar heartbeat en loop:
+
+1. Ejecutar `python scheduler_worker.py`.
+2. Abrir `http://127.0.0.1:5000/scheduler/panel`.
+3. Revisar la seccion `Estado del worker`.
+4. Confirmar que `Ultimo heartbeat` se actualiza segun `intervalo_revision_segundos`.
 
 Antes de activar ejecucion automatica:
 

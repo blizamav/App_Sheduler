@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual.
 
 ## Base objetivo
 
@@ -47,6 +47,7 @@ database/
     011_agregar_control_scheduler_ejecuciones.sql
     012_crear_calendario_feriados.sql
     013_crear_reglas_feriados_irrenunciables.sql
+    014_crear_scheduler_worker_heartbeat.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -82,6 +83,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 21. `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`
 22. `database/seeds/009_reglas_irrenunciables_chile.sql`
 23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
+24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
 
 Resumen por script:
 
@@ -98,6 +100,7 @@ Resumen por script:
 * `011_agregar_control_scheduler_ejecuciones.sql`: agrega trazabilidad de ejecuciones automaticas y clave anti-duplicados para Fase 9B.
 * `012_crear_calendario_feriados.sql`: crea tabla local `feriados` para Fase 10A; ejecutada y validada localmente; no conecta API externa.
 * `013_crear_reglas_feriados_irrenunciables.sql`: crea reglas locales de irrenunciables y ajusta `CK_feriados_origen` para permitir `API_NAGER`.
+* `014_crear_scheduler_worker_heartbeat.sql`: crea tabla `scheduler_worker_heartbeat` para registrar senal de vida del worker; no inicia ni detiene procesos desde la app.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -108,6 +111,50 @@ Resumen por script:
 * `008_permisos_feriados.sql`: inserta permisos incrementales para ver, crear, editar, activar/desactivar y eliminar feriados; ejecutado y validado localmente.
 * `009_reglas_irrenunciables_chile.sql`: carga reglas iniciales Chile para 01/01, 01/05, 18/09, 19/09 y 25/12.
 * `010_permisos_sincronizacion_feriados.sql`: inserta permiso `FERIADOS_SINCRONIZAR`.
+
+## Fase 11B - Heartbeat worker scheduler
+
+Se crea migracion incremental `014_crear_scheduler_worker_heartbeat.sql`.
+
+Tabla: `scheduler_worker_heartbeat`.
+
+Objetivo: mantener un registro por worker activo y actualizarlo en cada ciclo del proceso `scheduler_worker.py`.
+
+Campos principales:
+
+* `nombre_worker`.
+* `estado`.
+* `fecha_inicio`.
+* `fecha_ultimo_heartbeat`.
+* `fecha_ultimo_ciclo`.
+* `resultado_ultimo_ciclo`.
+* `ultimo_error`.
+* `ciclos_ejecutados`.
+* `tareas_evaluadas_ultimo_ciclo`.
+* `tareas_ejecutadas_ultimo_ciclo`.
+* `tareas_omitidas_ultimo_ciclo`.
+* `pid_proceso`.
+* `host`.
+* `version_app`.
+* `activo`.
+
+Estados permitidos:
+
+* `INICIADO`.
+* `ACTIVO`.
+* `EN_CICLO`.
+* `ESPERANDO`.
+* `ERROR`.
+* `DETENIDO`.
+
+Restricciones e indices:
+
+* `CHECK` para estados permitidos.
+* `CHECK` para contadores no negativos.
+* Indice unico filtrado por `nombre_worker` cuando `activo = 1`.
+* Indices por `nombre_worker`, `fecha_ultimo_heartbeat` y `estado`.
+
+Regla operativa: no se crea un registro por ciclo. El worker actualiza el mismo registro activo para evitar crecimiento innecesario.
 
 ## Fase 7 - Scripts y versiones
 

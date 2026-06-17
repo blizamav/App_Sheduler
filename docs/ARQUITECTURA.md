@@ -130,6 +130,16 @@ Fase 11A agrega panel operativo del scheduler:
 
 El panel no inicia, detiene ni reinicia el worker. Solo muestra datos existentes en SQL Server.
 
+Fase 11B agrega heartbeat del worker:
+
+* `database/migrations/014_crear_scheduler_worker_heartbeat.sql`: tabla `scheduler_worker_heartbeat`.
+* `app/repositorios/repositorio_worker_heartbeat.py`: persistencia de senal de vida.
+* `app/servicios/servicio_worker_heartbeat.py`: registro de inicio, ciclo, error, detencion y clasificacion visual.
+* `app/servicios/servicio_scheduler_worker.py`: integra actualizacion de heartbeat sin cambiar el modelo de ejecucion automatica.
+* `/scheduler/panel`: muestra estado del worker, ultimo heartbeat, ultimo ciclo, PID, host y contadores del ultimo ciclo.
+
+El heartbeat vive en una tabla dedicada porque cambia frecuentemente. `logs_sistema` solo registra eventos relevantes: inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
+
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
 ## Scheduler
@@ -152,6 +162,7 @@ Reglas principales:
 * Evita duplicados con `clave_programacion`.
 * Reutiliza el motor de Fase 8 para version activa, `.env`, PID, logs y consola.
 * Desde Fase 11A puede monitorearse en `/scheduler/panel`, sin control operacional del proceso.
+* Desde Fase 11B registra heartbeat en `scheduler_worker_heartbeat`.
 
 ## Ejecucion segura de scripts
 

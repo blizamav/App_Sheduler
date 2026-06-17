@@ -11,6 +11,14 @@ from app.repositorios.repositorio_scheduler import (
 from app.servicios.servicio_calendario import obtener_feriado
 from app.servicios.servicio_ejecuciones import iniciar_ejecucion_automatica
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_worker_heartbeat import (
+    actualizar_heartbeat,
+    registrar_detencion_worker,
+    registrar_error_worker,
+    registrar_fin_ciclo,
+    registrar_inicio_ciclo,
+    registrar_inicio_worker,
+)
 from app.servicios.servicio_programador import debe_ejecutarse_ahora
 
 
@@ -19,40 +27,71 @@ USUARIO_WORKER = "scheduler_worker"
 
 def ejecutar_worker_continuo():
     _log_consola("Inicio worker.")
-    registrar_log_sistema("WORKER_INICIADO", "SCHEDULER", "Worker automatico iniciado.", usuario=USUARIO_WORKER)
-    while True:
-        intervalo = ejecutar_ciclo_worker()
-        time.sleep(intervalo)
+    nombre_worker = _nombre_worker_desde_configuracion()
+    registrar_inicio_worker(nombre_worker)
+    try:
+        while True:
+            intervalo = ejecutar_ciclo_worker(nombre_worker=nombre_worker)
+            actualizar_heartbeat(nombre_worker, "ESPERANDO")
+            time.sleep(intervalo)
+    except KeyboardInterrupt:
+        _log_consola("Worker detenido por interrupcion.")
+        registrar_detencion_worker(nombre_worker)
+        raise
 
 
-def ejecutar_ciclo_worker(fecha_hora_actual=None):
+def ejecutar_worker_una_vez(fecha_hora_actual=None):
+    nombre_worker = _nombre_worker_desde_configuracion()
+    try:
+        registrar_inicio_worker(nombre_worker)
+        return ejecutar_ciclo_worker(fecha_hora_actual=fecha_hora_actual, nombre_worker=nombre_worker)
+    finally:
+        registrar_detencion_worker(nombre_worker)
+
+
+def ejecutar_ciclo_worker(fecha_hora_actual=None, nombre_worker=None):
     ahora = fecha_hora_actual or datetime.now()
+    nombre_worker_actual = nombre_worker or "worker_default"
     try:
         configuracion = obtener_configuracion_activa()
         if not configuracion:
+            registrar_inicio_ciclo(nombre_worker_actual)
             _registrar_estado("WORKER_CONFIG_NO_EXISTE", "No existe configuracion activa. No se ejecutan tareas.", "WARNING")
+            registrar_fin_ciclo(nombre_worker_actual, "OK", 0, 0, 0)
             return 60
 
         intervalo = _intervalo_seguro(configuracion)
-        nombre_worker = configuracion.get("nombre_worker_principal") or "worker_default"
-        _log_consola(f"Configuracion cargada. Worker={nombre_worker}; intervalo={intervalo}s.")
+        nombre_worker_actual = nombre_worker or configuracion.get("nombre_worker_principal") or "worker_default"
+        registrar_inicio_ciclo(nombre_worker_actual)
+        _log_consola(f"Configuracion cargada. Worker={nombre_worker_actual}; intervalo={intervalo}s.")
 
         if not configuracion.get("scheduler_activo"):
             _registrar_estado("WORKER_SCHEDULER_APAGADO", "Scheduler apagado. No se evaluan tareas.")
+            registrar_fin_ciclo(nombre_worker_actual, "OK", 0, 0, 0)
             return intervalo
         if configuracion.get("modo_mantenimiento"):
             _registrar_estado("WORKER_MANTENIMIENTO", "Modo mantenimiento activo. No se inician ejecuciones.")
+            registrar_fin_ciclo(nombre_worker_actual, "OK", 0, 0, 0)
             return intervalo
         if not configuracion.get("permitir_ejecucion_automatica"):
             _registrar_estado("WORKER_AUTO_DESHABILITADA", "Ejecucion automatica deshabilitada. No se ejecutan tareas.")
+            registrar_fin_ciclo(nombre_worker_actual, "OK", 0, 0, 0)
             return intervalo
 
-        _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker)
+        resultado = _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker_actual)
+        registrar_fin_ciclo(
+            nombre_worker_actual,
+            "OK",
+            resultado["evaluadas"],
+            resultado["ejecutadas"],
+            resultado["omitidas"],
+        )
         return intervalo
     except KeyboardInterrupt:
         raise
     except Exception as error:
         _log_consola(f"Error controlado del worker: {error}")
+        registrar_error_worker(nombre_worker_actual, error, incrementar_ciclo=True)
         registrar_log_sistema(
             "WORKER_ERROR_CONTROLADO",
             "SCHEDULER",
@@ -70,11 +109,10 @@ def _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker):
     if en_curso >= max_concurrentes:
         mensaje = f"Limite de concurrencia alcanzado: {en_curso}/{max_concurrentes}."
         _registrar_estado("WORKER_LIMITE_CONCURRENCIA", mensaje)
-        return
+        return {"evaluadas": 0, "ejecutadas": 0, "omitidas": 0}
 
     tareas = listar_tareas_programadas_activas()
     _log_consola(f"Tareas evaluadas: {len(tareas)}.")
-    registrar_log_sistema("WORKER_CICLO_INICIADO", "SCHEDULER", f"Ciclo iniciado. Tareas candidatas: {len(tareas)}.", usuario=USUARIO_WORKER)
 
     ejecutadas = 0
     omitidas = 0
@@ -136,13 +174,8 @@ def _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker):
             omitidas += 1
             _log_consola(f"No se pudo ejecutar tarea {tarea['id_tarea']}: {mensaje}")
 
-    registrar_log_sistema(
-        "WORKER_CICLO_FINALIZADO",
-        "SCHEDULER",
-        f"Ciclo finalizado. Ejecutadas: {ejecutadas}; omitidas: {omitidas}.",
-        usuario=USUARIO_WORKER,
-    )
     _log_consola(f"Ciclo finalizado. Ejecutadas={ejecutadas}; omitidas={omitidas}.")
+    return {"evaluadas": len(tareas), "ejecutadas": ejecutadas, "omitidas": omitidas}
 
 
 def _intervalo_seguro(configuracion):
@@ -167,9 +200,18 @@ def _max_concurrentes_seguro(configuracion):
     return 3
 
 
-def _registrar_estado(accion, mensaje, nivel="INFO"):
+def _nombre_worker_desde_configuracion():
+    try:
+        configuracion = obtener_configuracion_activa()
+        return configuracion.get("nombre_worker_principal") or "worker_default" if configuracion else "worker_default"
+    except Exception:
+        return "worker_default"
+
+
+def _registrar_estado(accion, mensaje, nivel="INFO", registrar_log=False):
     _log_consola(mensaje)
-    registrar_log_sistema(accion, "SCHEDULER", mensaje, usuario=USUARIO_WORKER, nivel=nivel)
+    if registrar_log:
+        registrar_log_sistema(accion, "SCHEDULER", mensaje, usuario=USUARIO_WORKER, nivel=nivel)
 
 
 def _log_consola(mensaje):

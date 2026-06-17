@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block titulo %}Panel Scheduler - APP Scheduler{% endblock %}
-{% block encabezado %}Panel Scheduler{% endblock %}
+{% block titulo %}Panel Programador - APP Scheduler{% endblock %}
+{% block encabezado %}Panel Programador{% endblock %}
 
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 11A</p>
-        <h2>Panel operativo del scheduler</h2>
-        <p>Monitoreo de configuracion, ejecuciones automaticas, errores recientes, tareas candidatas y feriados locales. Esta pantalla no inicia ni detiene el worker.</p>
+        <p class="eyebrow">Operacion</p>
+        <h2>Panel operativo del programador</h2>
+        <p>Monitoreo de configuracion, ejecuciones automaticas, errores recientes, tareas candidatas y feriados locales. Esta pantalla no inicia ni detiene el proceso programador.</p>
     </div>
     {% if panel %}
     <span class="badge {{ panel.estado_operativo.badge }}">{{ panel.estado_operativo.texto }}</span>
@@ -17,7 +17,7 @@
 
 {% if not panel %}
 <section class="bloque">
-    <p class="estado-vacio">No fue posible cargar informacion operativa del scheduler.</p>
+    <p class="estado-vacio">No fue posible cargar informacion operativa del programador.</p>
 </section>
 {% else %}
 <section class="grid-metricas">
@@ -39,6 +39,40 @@
     </article>
 </section>
 
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Senal de vida</p>
+            <h3>Estado del proceso programador</h3>
+        </div>
+        <span class="badge {{ panel.worker.estado.badge }}">{{ panel.worker.estado.texto }}</span>
+    </div>
+    {% if panel.worker.heartbeat %}
+    <div class="detalle-grid">
+        <div><strong>Proceso</strong><span>{{ panel.worker.heartbeat.nombre_worker }}</span></div>
+        <div><strong>Estado</strong><span>{{ panel.worker.heartbeat.estado }}</span></div>
+        <div><strong>Ultima senal</strong><span>{{ panel.worker.heartbeat.fecha_ultimo_heartbeat or "-" }}</span></div>
+        <div><strong>Tiempo sin senal</strong><span>{% if panel.worker.estado.segundos_desde_heartbeat is not none %}{{ panel.worker.estado.segundos_desde_heartbeat }} segundos{% else %}-{% endif %}</span></div>
+        <div><strong>Fecha inicio</strong><span>{{ panel.worker.heartbeat.fecha_inicio or "-" }}</span></div>
+        <div><strong>Ultimo ciclo</strong><span>{{ panel.worker.heartbeat.fecha_ultimo_ciclo or "-" }}</span></div>
+        <div><strong>Resultado ultimo ciclo</strong><span>{{ panel.worker.heartbeat.resultado_ultimo_ciclo or "-" }}</span></div>
+        <div><strong>Ciclos ejecutados</strong><span>{{ panel.worker.heartbeat.ciclos_ejecutados }}</span></div>
+        <div><strong>Tareas evaluadas</strong><span>{{ panel.worker.heartbeat.tareas_evaluadas_ultimo_ciclo }}</span></div>
+        <div><strong>Tareas ejecutadas</strong><span>{{ panel.worker.heartbeat.tareas_ejecutadas_ultimo_ciclo }}</span></div>
+        <div><strong>Tareas omitidas</strong><span>{{ panel.worker.heartbeat.tareas_omitidas_ultimo_ciclo }}</span></div>
+        <div><strong>PID</strong><span>{{ panel.worker.heartbeat.pid_proceso or "-" }}</span></div>
+        <div><strong>Host</strong><span>{{ panel.worker.heartbeat.host or "-" }}</span></div>
+    </div>
+    {% if panel.worker.heartbeat.ultimo_error %}
+        <div class="alerta error alerta-inline">Ultimo error: {{ panel.worker.heartbeat.ultimo_error }}</div>
+    {% else %}
+        <p class="estado-vacio">{{ panel.worker.estado.detalle }}</p>
+    {% endif %}
+    {% else %}
+        <p class="estado-vacio">{{ panel.worker.estado.detalle }}</p>
+    {% endif %}
+</section>
+
 <section class="panel-grid">
     <article class="bloque">
         <div class="bloque-header">
@@ -50,16 +84,16 @@
         </div>
         {% if panel.configuracion %}
         <div class="detalle-grid">
-            <div><strong>Scheduler</strong><span>{{ "Activo" if panel.configuracion.scheduler_activo else "Inactivo" }}</span></div>
+            <div><strong>Programador</strong><span>{{ "Activo" if panel.configuracion.scheduler_activo else "Inactivo" }}</span></div>
             <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if panel.configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
             <div><strong>Mantenimiento</strong><span>{{ "Activo" if panel.configuracion.modo_mantenimiento else "Inactivo" }}</span></div>
             <div><strong>Intervalo</strong><span>{{ panel.configuracion.intervalo_revision_segundos }} segundos</span></div>
             <div><strong>Maximo concurrentes</strong><span>{{ panel.configuracion.max_ejecuciones_concurrentes }}</span></div>
-            <div><strong>Worker</strong><span>{{ panel.configuracion.nombre_worker_principal or "-" }}</span></div>
+            <div><strong>Proceso principal</strong><span>{{ panel.configuracion.nombre_worker_principal or "-" }}</span></div>
         </div>
         <p class="estado-vacio">{{ panel.estado_operativo.detalle }}</p>
         {% else %}
-        <p class="estado-vacio">No existe configuracion activa del scheduler.</p>
+        <p class="estado-vacio">No existe configuracion activa del programador.</p>
         {% endif %}
     </article>
 
@@ -77,7 +111,7 @@
             <div><strong>API_NAGER activos</strong><span>{{ panel.feriados.api_nager_activos }}</span></div>
             <div><strong>Proximo</strong><span>{% if panel.feriados.proximo %}{{ panel.feriados.proximo.fecha }} - {{ panel.feriados.proximo.nombre }}{% else %}-{% endif %}</span></div>
         </div>
-        <p class="estado-vacio">El scheduler consulta solo esta tabla local; no consulta internet.</p>
+        <p class="estado-vacio">El programador consulta solo esta tabla local; no consulta internet.</p>
     </article>
 </section>
 
@@ -97,7 +131,7 @@
                     <th>Tarea</th>
                     <th>Estado</th>
                     <th>Inicio</th>
-                    <th>Worker</th>
+                    <th>Proceso</th>
                     <th>Fecha programada</th>
                 </tr>
             </thead>
@@ -179,7 +213,7 @@
                         <td><span class="badge {{ 'error' if error.nivel == 'ERROR' else 'advertencia' }}">{{ error.nivel }}</span></td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="3" class="estado-vacio">No hay errores recientes del scheduler.</td></tr>
+                    <tr><td colspan="3" class="estado-vacio">No hay errores recientes del programador.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

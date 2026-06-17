@@ -6,9 +6,9 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 6</p>
+        <p class="eyebrow">Tareas</p>
         <h2>{{ "Crear tarea" if modo == "crear" else "Editar tarea" }}</h2>
-        <p>Define datos base y programacion declarativa. El scheduler y la ejecucion real quedan para fases posteriores.</p>
+        <p>Define datos base y programacion declarativa para ejecucion manual o automatica.</p>
     </div>
     <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver</a>
 </section>
@@ -143,7 +143,7 @@
                         <input name="ejecutar_en_feriados" type="checkbox" value="1" {% if registro.ejecutar_en_feriados %}checked{% endif %}>
                         Ejecutar en feriados
                     </label>
-                    <p class="texto-ayuda">La validacion contra calendario de feriados queda pendiente para fases posteriores.</p>
+                    <p class="texto-ayuda">El programador usara el calendario local de feriados segun esta configuracion.</p>
                 </div>
             </div>
         </div>

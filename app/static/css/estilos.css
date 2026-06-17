@@ -1,19 +1,20 @@
 :root {
-    --color-fondo: #f4f7fb;
+    --color-fondo: #f3f6fb;
     --color-superficie: #ffffff;
-    --color-superficie-suave: #f8fbff;
+    --color-superficie-suave: #f7faff;
     --color-texto: #142033;
     --color-texto-suave: #64748b;
-    --color-borde: #d9e2ef;
-    --color-azul: #0f4cbd;
-    --color-azul-oscuro: #071b35;
+    --color-borde: #dbe5f2;
+    --color-azul: #155bc4;
+    --color-azul-oscuro: #081c35;
     --color-cyan: #18a8d8;
     --color-verde: #138a4b;
     --color-rojo: #c53a3a;
     --color-amarillo: #b87503;
     --color-gris: #7b8798;
-    --sombra-suave: 0 18px 44px rgba(15, 39, 78, 0.09);
-    --sombra-elevada: 0 24px 80px rgba(15, 76, 189, 0.16);
+    --sombra-suave: 0 10px 28px rgba(15, 39, 78, 0.08);
+    --sombra-card: 0 18px 48px rgba(15, 39, 78, 0.1);
+    --sombra-elevada: 0 28px 90px rgba(15, 39, 78, 0.18);
     --radio: 8px;
     --espacio: 24px;
     --transicion: 180ms ease;
@@ -31,9 +32,29 @@ body {
     margin: 0;
     min-height: 100vh;
     color: var(--color-texto);
-    background: var(--color-fondo);
+    background:
+        linear-gradient(180deg, rgba(21, 91, 196, 0.04), rgba(24, 168, 216, 0.02) 34%, transparent 72%),
+        var(--color-fondo);
     font-family: "Segoe UI", Arial, sans-serif;
     letter-spacing: 0;
+}
+
+a {
+    color: var(--color-azul);
+}
+
+a.btn,
+.btn a {
+    text-decoration: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid rgba(24, 168, 216, 0.28);
+    outline-offset: 2px;
 }
 
 button,
@@ -56,10 +77,11 @@ textarea {
     flex-direction: column;
     width: 280px;
     height: 100vh;
-    padding: 22px;
+    padding: 22px 18px;
     color: #eef6ff;
     background:
-        linear-gradient(180deg, rgba(24, 168, 216, 0.12), rgba(24, 168, 216, 0) 38%),
+        linear-gradient(180deg, rgba(24, 168, 216, 0.16), rgba(24, 168, 216, 0) 38%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 40%),
         var(--color-azul-oscuro);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -86,7 +108,8 @@ textarea {
 
 .brand {
     gap: 12px;
-    font-weight: 800;
+    font-weight: 900;
+    letter-spacing: 0;
 }
 
 .brand small {
@@ -112,21 +135,23 @@ textarea {
 
 .nav {
     display: grid;
-    gap: 8px;
-    margin-top: 34px;
+    gap: 7px;
+    margin-top: 28px;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 44px;
-    padding: 0 14px;
+    min-height: 42px;
+    padding: 0 12px;
     color: #dcecff;
     border: 1px solid transparent;
     border-radius: var(--radio);
     text-decoration: none;
-    transition: background var(--transicion), border-color var(--transicion), transform var(--transicion);
+    font-size: 0.94rem;
+    font-weight: 800;
+    transition: background var(--transicion), border-color var(--transicion), transform var(--transicion), color var(--transicion);
 }
 
 .nav-link span {
@@ -137,8 +162,10 @@ textarea {
 
 .nav-link.activo,
 .nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: inset 3px 0 0 var(--color-cyan);
 }
 
 .nav-link:hover {
@@ -171,7 +198,7 @@ textarea {
 .contenido {
     width: 100%;
     min-width: 0;
-    padding: 28px;
+    padding: 30px;
 }
 
 .topbar {
@@ -179,10 +206,10 @@ textarea {
     top: 0;
     z-index: 10;
     min-height: 76px;
-    margin: -28px -28px 24px;
-    padding: 18px 28px;
+    margin: -30px -30px 26px;
+    padding: 18px 30px;
     border-bottom: 1px solid var(--color-borde);
-    background: rgba(244, 247, 251, 0.88);
+    background: rgba(248, 251, 255, 0.92);
     backdrop-filter: blur(14px);
 }
 
@@ -202,7 +229,7 @@ textarea {
 
 .eyebrow {
     margin: 0 0 5px;
-    color: var(--color-azul);
+    color: #315d9c;
     font-size: 0.76rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -213,7 +240,7 @@ textarea {
     min-height: 40px;
     padding: 0 12px;
     border: 1px solid var(--color-borde);
-    border-radius: var(--radio);
+    border-radius: 999px;
     background: var(--color-superficie);
     color: var(--color-texto-suave);
     font-weight: 700;
@@ -226,22 +253,29 @@ textarea {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #e9f7fb;
+    background: linear-gradient(135deg, #e9f7fb, #dcecff);
     color: var(--color-azul);
 }
 
 .btn,
 .icon-btn {
-    border: 0;
+    border: 1px solid transparent;
     border-radius: var(--radio);
     font-weight: 800;
     cursor: pointer;
-    transition: transform var(--transicion), box-shadow var(--transicion), background var(--transicion);
+    letter-spacing: 0;
+    text-decoration: none;
+    transition: transform var(--transicion), box-shadow var(--transicion), background var(--transicion), border-color var(--transicion), color var(--transicion);
 }
 
 .btn {
+    display: inline-flex;
     min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 0 16px;
+    line-height: 1;
 }
 
 .btn:hover,
@@ -264,13 +298,15 @@ textarea {
     margin: 0;
     padding: 18px;
     overflow: auto;
-    border: 1px solid #1f334f;
+    border: 1px solid #213755;
     border-radius: var(--radio);
-    background: #07111f;
+    background:
+        linear-gradient(180deg, rgba(24, 168, 216, 0.08), transparent 30%),
+        #07111f;
     color: #d8f3ff;
     font-family: Consolas, "Courier New", monospace;
     font-size: 0.9rem;
-    line-height: 1.55;
+    line-height: 1.62;
     white-space: pre-wrap;
 }
 
@@ -325,7 +361,7 @@ textarea {
 
 .historial-anio {
     padding: 18px;
-    box-shadow: var(--sombra);
+    box-shadow: var(--sombra-suave);
 }
 
 .historial-anio h3,
@@ -389,15 +425,28 @@ textarea {
 }
 
 .btn.primario {
-    background: linear-gradient(135deg, var(--color-azul), #1174d8);
+    border-color: rgba(21, 91, 196, 0.35);
+    background: linear-gradient(135deg, var(--color-azul), #1a75d2);
     color: #ffffff;
     box-shadow: 0 12px 24px rgba(15, 76, 189, 0.22);
 }
 
 .btn.secundario {
     border: 1px solid var(--color-borde);
-    background: #eef4fb;
+    background: linear-gradient(180deg, #ffffff, #edf4fb);
     color: var(--color-azul-oscuro);
+}
+
+.btn.secundario:hover {
+    border-color: #b9c9dc;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 39, 78, 0.08);
+}
+
+.btn.deshabilitado,
+.btn[aria-disabled="true"] {
+    opacity: 0.56;
+    pointer-events: none;
 }
 
 .icon-btn {
@@ -420,7 +469,7 @@ textarea {
 .alerta {
     border: 1px solid #bde9d1;
     border-radius: var(--radio);
-    padding: 12px 14px;
+    padding: 13px 15px;
     background: #e8f8ef;
     color: var(--color-verde);
     box-shadow: var(--sombra-suave);
@@ -487,7 +536,7 @@ textarea {
     width: min(460px, 94vw);
     padding: 34px;
     border: 1px solid rgba(217, 226, 239, 0.9);
-    border-radius: var(--radio);
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.94);
     box-shadow: var(--sombra-elevada);
 }
@@ -524,20 +573,21 @@ input,
 select,
 textarea {
     width: 100%;
-    min-height: 46px;
+    min-height: 44px;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio);
     padding: 0 13px;
-    background: #fbfdff;
+    background: #ffffff;
     color: var(--color-texto);
     outline: none;
-    transition: border-color var(--transicion), box-shadow var(--transicion);
+    transition: border-color var(--transicion), box-shadow var(--transicion), background var(--transicion);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
     border-color: var(--color-cyan);
+    background: #ffffff;
     box-shadow: 0 0 0 4px rgba(24, 168, 216, 0.14);
 }
 
@@ -561,9 +611,19 @@ textarea {
     box-shadow: var(--sombra-suave);
 }
 
+.contenedor:hover,
+.card:hover,
+.bloque:hover,
+.historial-anio:hover {
+    box-shadow: var(--sombra-card);
+}
+
 .bienvenida {
     margin-bottom: 18px;
-    padding: 24px;
+    padding: 26px;
+    background:
+        linear-gradient(135deg, rgba(21, 91, 196, 0.04), rgba(24, 168, 216, 0.05)),
+        var(--color-superficie);
 }
 
 .bienvenida p {
@@ -580,13 +640,14 @@ textarea {
 
 .card,
 .bloque {
-    padding: 20px;
+    padding: 22px;
 }
 
 .metrica {
     display: grid;
     gap: 10px;
-    min-height: 178px;
+    min-height: 168px;
+    align-content: start;
 }
 
 .metrica > span:not(.badge) {
@@ -596,7 +657,8 @@ textarea {
 
 .metrica strong {
     overflow-wrap: anywhere;
-    font-size: clamp(1.4rem, 2vw, 2rem);
+    font-size: clamp(1.55rem, 2vw, 2.15rem);
+    line-height: 1;
 }
 
 .metrica small {
@@ -628,7 +690,9 @@ textarea {
 }
 
 .bloque-header {
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(217, 226, 239, 0.7);
 }
 
 .estado-vacio {
@@ -644,6 +708,8 @@ textarea {
     padding: 0 10px;
     font-size: 0.75rem;
     font-weight: 900;
+    letter-spacing: 0;
+    white-space: nowrap;
 }
 
 .badge.activo {
@@ -681,6 +747,8 @@ textarea {
     overflow-x: auto;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio);
+    background: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .formulario-admin {
@@ -795,20 +863,28 @@ table {
 
 th,
 td {
-    padding: 13px 14px;
+    padding: 14px 15px;
     text-align: left;
     border-bottom: 1px solid var(--color-borde);
 }
 
 th {
-    color: var(--color-texto-suave);
-    background: var(--color-superficie-suave);
+    color: #496179;
+    background: linear-gradient(180deg, #f8fbff, #eef4fb);
     font-size: 0.82rem;
     text-transform: uppercase;
 }
 
 td {
     color: var(--color-texto-suave);
+}
+
+tbody tr {
+    transition: background var(--transicion);
+}
+
+tbody tr:hover td {
+    background: #fbfdff;
 }
 
 tr:last-child td {
@@ -825,7 +901,7 @@ tr:last-child td {
 
 .estado-lista {
     display: grid;
-    gap: 13px;
+    gap: 14px;
     color: var(--color-texto-suave);
 }
 
@@ -858,6 +934,7 @@ tr:last-child td {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    align-items: center;
 }
 
 .panel-terminal {
@@ -875,7 +952,7 @@ tr:last-child td {
     height: 100vh;
     padding: 22px;
     border-left: 1px solid var(--color-borde);
-    background: var(--color-superficie);
+    background: #fbfdff;
     box-shadow: -18px 0 60px rgba(15, 39, 78, 0.16);
     transform: translateX(105%);
     transition: transform var(--transicion);
@@ -897,7 +974,9 @@ tr:last-child td {
     min-height: 260px;
     padding: 16px;
     border-radius: var(--radio);
-    background: #071b35;
+    background:
+        linear-gradient(180deg, rgba(24, 168, 216, 0.08), transparent),
+        #071b35;
     color: #cfe9ff;
     font-family: Consolas, "Courier New", monospace;
 }
@@ -921,7 +1000,8 @@ tr:last-child td {
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgba(7, 27, 53, 0.48);
+    background: rgba(7, 27, 53, 0.58);
+    backdrop-filter: blur(4px);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transicion);
@@ -937,7 +1017,7 @@ tr:last-child td {
     grid-template-columns: 54px minmax(0, 1fr);
     gap: 18px;
     width: min(520px, 94vw);
-    padding: 24px;
+    padding: 26px;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio);
     background: var(--color-superficie);
@@ -1076,7 +1156,7 @@ tr:last-child td {
     padding: 12px;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio);
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.98);
     box-shadow: var(--sombra-elevada);
     opacity: 0;
     pointer-events: auto;
@@ -1136,8 +1216,104 @@ tr:last-child td {
     color: var(--color-amarillo);
 }
 
+.grid-metricas {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.card-metrica {
+    min-height: 126px;
+    padding: 20px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    background:
+        linear-gradient(135deg, rgba(21, 91, 196, 0.04), rgba(24, 168, 216, 0.04)),
+        #ffffff;
+    box-shadow: var(--sombra-suave);
+}
+
+.card-metrica span,
+.card-metrica strong {
+    display: block;
+}
+
+.card-metrica span {
+    color: var(--color-texto-suave);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.card-metrica strong {
+    margin-top: 12px;
+    color: var(--color-azul-oscuro);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.formulario-admin,
+.formulario-filtros,
+.grid-formulario {
+    align-items: end;
+}
+
+.historial-anio {
+    background:
+        linear-gradient(180deg, rgba(21, 91, 196, 0.03), transparent 180px),
+        #ffffff;
+}
+
+.historial-anio h3 {
+    color: var(--color-azul-oscuro);
+    font-size: 1.25rem;
+}
+
+.historial-mes h4,
+.historial-dia h5 {
+    color: var(--color-texto);
+}
+
+.historial-dia {
+    background: #ffffff;
+}
+
+.ejecucion-item {
+    box-shadow: 0 8px 22px rgba(15, 39, 78, 0.05);
+    transition: border-color var(--transicion), box-shadow var(--transicion), transform var(--transicion);
+}
+
+.ejecucion-item:hover {
+    border-color: #bfd1e5;
+    box-shadow: 0 14px 32px rgba(15, 39, 78, 0.09);
+    transform: translateY(-1px);
+}
+
+.consola-ejecucion::-webkit-scrollbar,
+.tabla-base::-webkit-scrollbar,
+.modal-resumen::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.consola-ejecucion::-webkit-scrollbar-thumb,
+.tabla-base::-webkit-scrollbar-thumb,
+.modal-resumen::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: #9eb2c8;
+    background-clip: content-box;
+}
+
+.consola-ejecucion::-webkit-scrollbar-thumb {
+    background: #365a80;
+    background-clip: content-box;
+}
+
 @media (max-width: 1100px) {
-    .metricas {
+    .metricas,
+    .grid-metricas {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -1180,6 +1356,7 @@ tr:last-child td {
     }
 
     .metricas,
+    .grid-metricas,
     .panel-grid,
     .form-grid,
     .grid-formulario,

@@ -4,6 +4,7 @@ from app.repositorios.repositorio_panel import (
     obtener_metricas_panel,
     obtener_ultima_ejecucion,
 )
+from app.servicios.servicio_worker_heartbeat import clasificar_estado_worker, obtener_estado_worker
 
 
 def obtener_panel_principal():
@@ -34,12 +35,15 @@ def obtener_panel_principal():
         ultimas_ejecuciones = []
 
     scheduler = _normalizar_scheduler(configuracion)
+    heartbeat = obtener_estado_worker()
+    estado_worker = clasificar_estado_worker(heartbeat, scheduler)
     return {
         "metricas": metricas,
         "scheduler": scheduler,
+        "worker": {"heartbeat": heartbeat, "estado": estado_worker},
         "ultima_ejecucion": ultima_ejecucion,
         "ultimas_ejecuciones": ultimas_ejecuciones,
-        "estado_general": _estado_general(datos_ok, scheduler, metricas),
+        "estado_general": _estado_general(datos_ok, scheduler, metricas, estado_worker),
         "datos_ok": datos_ok,
         "errores": errores,
     }
@@ -88,7 +92,7 @@ def _normalizar_scheduler(configuracion):
     }
 
 
-def _estado_general(datos_ok, scheduler, metricas):
+def _estado_general(datos_ok, scheduler, metricas, estado_worker):
     return [
         {
             "texto": "Base de datos operativa",
@@ -111,7 +115,7 @@ def _estado_general(datos_ok, scheduler, metricas):
             "estado": "activo",
         },
         {
-            "texto": "Scheduler configurado",
+            "texto": "Programador configurado",
             "detalle": _detalle_scheduler(scheduler),
             "estado": "activo" if scheduler["existe"] else "advertencia",
         },
@@ -121,9 +125,9 @@ def _estado_general(datos_ok, scheduler, metricas):
             "estado": "activo",
         },
         {
-            "texto": "Heartbeat worker pendiente de Fase 11B",
-            "detalle": "El panel no comprueba aun si el proceso worker esta vivo.",
-            "estado": "advertencia",
+            "texto": "Senal de vida del programador",
+            "detalle": estado_worker["texto"],
+            "estado": "activo" if estado_worker["badge"] == "activo" else "error" if estado_worker["badge"] == "error" else "advertencia",
         },
     ]
 
@@ -134,7 +138,7 @@ def _detalle_scheduler(scheduler):
     if scheduler["modo_mantenimiento"]:
         return "Modo mantenimiento activo."
     if not scheduler["scheduler_activo"]:
-        return "Scheduler inactivo por configuracion."
+        return "Programador inactivo por configuracion."
     if not scheduler["permitir_ejecucion_automatica"]:
-        return "Scheduler activo con ejecucion automatica deshabilitada."
-    return "Scheduler activo con ejecucion automatica permitida."
+        return "Programador activo con ejecucion automatica deshabilitada."
+    return "Programador activo con ejecucion automatica permitida."

@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block titulo %}Configuracion Scheduler - APP Scheduler{% endblock %}
-{% block encabezado %}Configuracion Scheduler{% endblock %}
+{% block titulo %}Configuracion Programador - APP Scheduler{% endblock %}
+{% block encabezado %}Configuracion Programador{% endblock %}
 
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 9A</p>
-        <h2>Configuracion operativa del scheduler</h2>
-        <p>Administra parametros que usara el worker automatico en una fase posterior. Esta pantalla no ejecuta tareas automaticas.</p>
+        <p class="eyebrow">Programador</p>
+        <h2>Configuracion operativa del programador</h2>
+        <p>Administra parametros que usa el proceso programador automatico. Esta pantalla no inicia ni detiene procesos.</p>
     </div>
     <span class="badge {{ 'activo' if configuracion.scheduler_activo else 'inactivo' }}">{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span>
 </section>
@@ -31,12 +31,12 @@
             <span class="badge info">BD</span>
         </div>
         <div class="detalle-grid">
-            <div><strong>Scheduler</strong><span>{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span></div>
+            <div><strong>Programador</strong><span>{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span></div>
             <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
             <div><strong>Intervalo</strong><span>{{ configuracion.intervalo_revision_segundos }} segundos</span></div>
             <div><strong>Maximo concurrentes</strong><span>{{ configuracion.max_ejecuciones_concurrentes }}</span></div>
             <div><strong>Mantenimiento</strong><span>{{ "Activo" if configuracion.modo_mantenimiento else "Inactivo" }}</span></div>
-            <div><strong>Worker</strong><span>{{ configuracion.nombre_worker_principal or "-" }}</span></div>
+            <div><strong>Proceso principal</strong><span>{{ configuracion.nombre_worker_principal or "-" }}</span></div>
             <div><strong>Ultima actualizacion</strong><span>{{ configuracion.fecha_actualizacion or "-" }}</span></div>
             <div><strong>Usuario</strong><span>{{ configuracion.usuario_actualizacion or "-" }}</span></div>
         </div>
@@ -45,11 +45,11 @@
     <article class="bloque">
         <div class="bloque-header">
             <div>
-                <p class="eyebrow">Uso futuro</p>
-                <h3>Worker separado</h3>
+                <p class="eyebrow">Ejecucion</p>
+                <h3>Proceso separado</h3>
             </div>
         </div>
-        <p class="estado-vacio">Fase 9B leera esta configuracion desde SQL Server. Si el scheduler esta apagado o en mantenimiento, el worker no iniciara ejecuciones automaticas.</p>
+        <p class="estado-vacio">El proceso programador lee esta configuracion desde SQL Server. Si esta apagado o en mantenimiento, no iniciara ejecuciones automaticas.</p>
     </article>
 </section>
 
@@ -64,15 +64,15 @@
         method="post"
         class="formulario-admin requiere-confirmacion-form"
         data-confirm-summary="scheduler"
-        data-confirm-title="Guardar configuracion del scheduler"
-        data-confirm-message="Estas a punto de modificar la configuracion operativa del scheduler."
+        data-confirm-title="Guardar configuracion del programador"
+        data-confirm-message="Estas a punto de modificar la configuracion operativa del programador."
         data-confirm-ok="Si, guardar configuracion"
         data-confirm-cancel="Cancelar"
         data-confirm-type="warning"
     >
         <label class="checkline">
-            <input name="scheduler_activo" type="checkbox" value="1" data-label="Scheduler activo" data-original="{{ '1' if configuracion.scheduler_activo else '0' }}" {% if configuracion.scheduler_activo %}checked{% endif %}>
-            Scheduler activo
+            <input name="scheduler_activo" type="checkbox" value="1" data-label="Programador activo" data-original="{{ '1' if configuracion.scheduler_activo else '0' }}" {% if configuracion.scheduler_activo %}checked{% endif %}>
+            Programador activo
         </label>
         <label class="checkline">
             <input name="permitir_ejecucion_automatica" type="checkbox" value="1" data-label="Ejecucion automatica" data-original="{{ '1' if configuracion.permitir_ejecucion_automatica else '0' }}" {% if configuracion.permitir_ejecucion_automatica %}checked{% endif %}>
@@ -93,8 +93,8 @@
             </div>
         </div>
         <div class="campo">
-            <label for="nombre_worker_principal">Worker principal</label>
-            <input id="nombre_worker_principal" name="nombre_worker_principal" maxlength="100" value="{{ configuracion.nombre_worker_principal or '' }}" data-label="Worker principal" data-original="{{ configuracion.nombre_worker_principal or '' }}">
+            <label for="nombre_worker_principal">Proceso principal</label>
+            <input id="nombre_worker_principal" name="nombre_worker_principal" maxlength="100" value="{{ configuracion.nombre_worker_principal or '' }}" data-label="Proceso principal" data-original="{{ configuracion.nombre_worker_principal or '' }}">
         </div>
         <div class="campo">
             <label for="descripcion">Descripcion</label>

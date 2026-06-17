@@ -6,9 +6,9 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 6</p>
+        <p class="eyebrow">Operacion</p>
         <h2>Tareas con programacion base</h2>
-        <p>Administra tareas y su programacion declarativa. Esta fase no ejecuta scripts ni activa scheduler real.</p>
+        <p>Administra tareas y su programacion declarativa para ejecucion manual o automatica.</p>
     </div>
     <a class="btn primario" href="{{ url_for('tareas.nueva') }}">Nueva tarea</a>
 </section>
@@ -133,7 +133,7 @@
                                     class="btn primario compacto requiere-confirmacion"
                                     type="submit"
                                     data-confirm-title="Ejecutar tarea"
-                                    data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando el script activo {{ tarea.nombre_archivo_activo }}. No se usara scheduler en esta accion. Deseas continuar?"
+                                    data-confirm-message="Estas a punto de ejecutar manualmente la tarea {{ tarea.nombre_tarea }} usando el script activo {{ tarea.nombre_archivo_activo }}. No se usara el programador en esta accion. Deseas continuar?"
                                     data-confirm-ok="Si, ejecutar ahora"
                                     data-confirm-cancel="Cancelar"
                                     data-confirm-type="warning"
@@ -151,7 +151,7 @@
                                     class="btn secundario compacto requiere-confirmacion"
                                     type="submit"
                                     data-confirm-title="{{ 'Desactivar tarea' if tarea.activo else 'Activar tarea' }}"
-                                    data-confirm-message="{{ 'La tarea no se eliminara y no deberia ser considerada por futuras ejecuciones. Deseas continuar?' if tarea.activo else 'La tarea volvera a quedar disponible para fases posteriores. Deseas continuar?' }}"
+                                    data-confirm-message="{{ 'La tarea no se eliminara y no deberia ser considerada por futuras ejecuciones. Deseas continuar?' if tarea.activo else 'La tarea volvera a quedar disponible para nuevas ejecuciones. Deseas continuar?' }}"
                                     data-confirm-ok="{{ 'Si, desactivar' if tarea.activo else 'Si, activar' }}"
                                     data-confirm-cancel="Cancelar"
                                     data-confirm-type="{{ 'warning' if tarea.activo else 'success' }}"

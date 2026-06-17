@@ -218,6 +218,14 @@ Reglas:
 * No muestra secretos ni rutas sensibles de scripts.
 * La configuracion sigue editandose en `/scheduler/configuracion` con `SCHEDULER_CONFIG_EDITAR`.
 
+Fase 11B agrega heartbeat del worker:
+
+* El panel muestra estado de `scheduler_worker.py` desde `scheduler_worker_heartbeat`.
+* No permite iniciar, detener ni reiniciar el worker.
+* No expone credenciales, `.env`, rutas privadas ni contenido de scripts.
+* `logs_sistema` no recibe un registro por cada heartbeat para evitar crecimiento innecesario.
+* `logs_sistema` solo registra inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
+
 ## Worker automatico
 
 Fase 9B agrega ejecucion automatica con estas reglas de seguridad:
@@ -233,6 +241,7 @@ Fase 9B agrega ejecucion automatica con estas reglas de seguridad:
 * Las ejecuciones automaticas pueden detenerse desde la consola web con permisos existentes.
 * No se conecta API de feriados en Fase 9B.
 * No se implementan notificaciones en Fase 9B.
+* El heartbeat de Fase 11B no cambia permisos ni permite control operativo del proceso desde la app.
 
 ## Logs de ejecucion con timestamp
 

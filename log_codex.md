@@ -5,10 +5,10 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual.
-* Estado actual: Fase 11A.1 implementada con panel principal general actualizado y panel operativo del scheduler de solo lectura.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual.
+* Estado actual: Fase 11C implementada con modernizacion visual UI/UX general sin cambios funcionales.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11A.1 - Panel principal general.
+* Fase actual: Fase 11C - Modernizacion visual UI/UX general.
 * Ultima actualizacion: 2026-06-17 00:00
 
 ## 2. Decisiones tecnicas vigentes
@@ -17,21 +17,21 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Pendiente para fase posterior.
 * Docker: Pendiente para Fase 11.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
-* Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color.
+* Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 11C moderniza botones, tablas, cards, formularios, consola y textos visibles.
 
 ## 3. Estructura actual del proyecto
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B y panel operativo scheduler Fase 11A.
-* Modulos pendientes: Heartbeat del worker, control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B y modernizacion visual Fase 11C.
+* Modulos pendientes: Control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,28 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-17 00:00 - Fase 11C / Modernizacion visual UI UX general
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/static/css/estilos.css`, `app/templates/base.html`, `app/templates/panel.html`, `app/templates/scheduler/panel.html`, `app/templates/scheduler/configuracion.html`, `app/templates/ejecuciones/listado.html`, `app/templates/ejecuciones/consola.html`, `app/templates/feriados/listado.html`, `app/templates/feriados/formulario.html`, `app/templates/feriados/sincronizar.html`, `app/templates/tareas/listado.html`, `app/templates/tareas/formulario.html`, `app/templates/scripts/listado.html`, `app/templates/diagnostico_bd.html`, `app/servicios/servicio_worker_heartbeat.py`, `app/servicios/servicio_panel.py`, `app/servicios/servicio_panel_scheduler.py`, `README.md`, `docs/UI_UX.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se modernizo visualmente la interfaz general con mejoras en sidebar, topbar, botones, cards, tablas, formularios, filtros, modales, toasts, consola e historial agrupado.
+* Textos visibles: Se reemplazo `Scheduler` por `Programador`, `Worker` por `Proceso programador` y `Heartbeat` por `Senal de vida` donde corresponde en la UI; se retiraron etiquetas de fase visibles en pantallas operativas.
+* Decisiones: Mantener HTML/CSS/JS sin dependencias nuevas y no cambiar rutas, permisos, consultas ni reglas de negocio.
+* No implementado: No se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se agregaron funcionalidades del scheduler y no se implemento iniciar/detener worker desde la app.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; busqueda sin `alert()`, `window.confirm()`, `confirm()` ni `prompt()` en templates/JS; busqueda sin textos visibles obsoletos principales (`Scheduler panel`, `Scheduler config`, `Panel logs`, `Logs en vivo`, etiquetas `Fase` en templates); render Jinja de `panel.html`, `scheduler/panel.html`, `scheduler/configuracion.html`, `ejecuciones/listado.html` y `ejecuciones/consola.html`; verificacion de rutas registradas `/login`, `/panel`, `/scheduler/panel`, `/scheduler/configuracion`, `/usuarios/`, `/clientes/`, `/categorias/`, `/tipos/`, `/tareas/`, `/ejecuciones`, `/feriados/` y `/feriados/sincronizar`; `git diff --check`.
+* Pruebas recomendadas: Validar visualmente en navegador login, panel, programador, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, feriados, modales y responsive basico.
+
+### 2026-06-17 00:00 - Fase 11B / Heartbeat del worker scheduler
+
+* Archivos creados: `database/migrations/014_crear_scheduler_worker_heartbeat.sql`, `app/repositorios/repositorio_worker_heartbeat.py`, `app/servicios/servicio_worker_heartbeat.py`.
+* Archivos modificados: `scheduler_worker.py`, `app/servicios/servicio_scheduler_worker.py`, `app/servicios/servicio_panel_scheduler.py`, `app/templates/scheduler/panel.html`, `app/servicios/servicio_panel.py`, `README.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se implemento heartbeat del worker en tabla dedicada, con registro de inicio, ciclo, error, detencion y contadores del ultimo ciclo.
+* Panel: `/scheduler/panel` muestra estado del worker, ultimo heartbeat, tiempo sin senal, ultimo ciclo, resultado, contadores, PID, host y ultimo error.
+* Decisiones: No se registra `logs_sistema` por cada heartbeat; los logs quedan para inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
+* Migracion: `014_crear_scheduler_worker_heartbeat.sql` fue creada para ejecucion manual en SSMS; Codex no ejecuto SQL.
+* No implementado: No se agrego control para iniciar/detener worker desde la app, no se conectaron nuevas APIs, no se modifico `.env` y no se avanzo a Fase 11C.
+* Pruebas recomendadas: Ejecutar migracion 014, correr `python scheduler_worker.py --once`, verificar tabla `scheduler_worker_heartbeat`, levantar `python scheduler_worker.py` en loop y revisar `/scheduler/panel`.
 
 ### 2026-06-17 00:00 - Fase 11A.1 / Panel principal general
 

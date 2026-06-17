@@ -27,6 +27,8 @@
 * Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales.
 * Fase 11A: panel operativo del scheduler.
 * Fase 11A.1: panel principal general con metricas reales y accesos operativos.
+* Fase 11B: heartbeat del worker scheduler.
+* Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
 
 ## Modulos pendientes
 
@@ -51,7 +53,22 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11A.1: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler y panel principal general con metricas reales. Aun no existe sincronizacion automatica programada, control de worker desde la app, heartbeat del worker ni panel avanzado de auditoria.
+La aplicacion esta en Fase 11C: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker y modernizacion visual general. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
+
+## UI/UX general
+
+Implementado en Fase 11C:
+
+* Modernizacion visual de sidebar, topbar, botones, cards, tablas, formularios, filtros, modales, toasts, consola e historial.
+* Ajuste de textos visibles para usar `Programador`, `Proceso programador` y `Senal de vida` en vez de mezclar ingles en la interfaz.
+* Retiro de etiquetas visibles de fases en pantallas operativas.
+* Mejora de hover, focus, sombras, bordes, estados y responsive basico.
+
+No implementado en Fase 11C:
+
+* No se agregan funcionalidades nuevas.
+* No se modifica logica de permisos, consultas, ejecuciones, scheduler ni feriados.
+* No se crean migraciones.
 
 ## Panel principal general
 
@@ -62,13 +79,13 @@ Implementado en Fase 11A.1:
 * Servicio `servicio_panel.py` para normalizar datos y entregar estado general.
 * Ultimas ejecuciones con enlace a consola.
 * Accesos rapidos visibles segun permisos de la sesion.
-* Estado `Heartbeat worker pendiente de Fase 11B` documentado como limite actual.
+* Estado de heartbeat del worker integrado desde Fase 11B.
 
-No implementado en Fase 11A.1:
+Estado desde Fase 11B:
 
-* No comprueba si el proceso `scheduler_worker.py` esta vivo.
+* El panel principal puede mostrar estado de heartbeat mediante la capa de servicio.
 * No inicia ni detiene el worker.
-* No crea migraciones ni cambia estructura de base de datos.
+* No crea acciones operativas para controlar el proceso desde la app.
 
 ## Modulo de ejecuciones
 
@@ -135,6 +152,15 @@ Implementado en Fase 11A:
 * Errores recientes del scheduler desde `logs_sistema`.
 * Tareas programadas candidatas.
 * Estado del calendario local de feriados.
+
+Implementado en Fase 11B:
+
+* Tabla `scheduler_worker_heartbeat`.
+* Registro de inicio, ciclo, error y detencion del worker.
+* Contadores de ultimo ciclo: evaluadas, ejecutadas y omitidas.
+* Clasificacion visual del estado del worker segun ultimo heartbeat e intervalo configurado.
+* Seccion `Estado del worker` en `/scheduler/panel`.
+* `python scheduler_worker.py --once` actualiza heartbeat y registra salida controlada.
 
 No implementado en Fase 9B:
 

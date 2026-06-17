@@ -8,8 +8,21 @@
 4. Si una consulta falla, el panel carga con advertencia controlada y no expone credenciales ni detalle sensible.
 5. Los accesos rapidos se muestran segun permisos de la sesion.
 6. Las ultimas ejecuciones permiten abrir la consola de cada ejecucion.
-7. El estado general muestra modulos operativos y deja indicado que el heartbeat del worker queda pendiente para Fase 11B.
+7. El estado general muestra modulos operativos y estado de heartbeat del worker cuando existe registro.
 8. El panel no inicia, detiene ni controla el proceso `scheduler_worker.py`.
+
+## Flujo de heartbeat del worker
+
+1. Se ejecuta `python scheduler_worker.py` o `python scheduler_worker.py --once`.
+2. El worker obtiene `nombre_worker_principal` desde `configuracion_scheduler`; si no existe usa `worker_default`.
+3. Al iniciar, crea o actualiza un registro activo en `scheduler_worker_heartbeat`.
+4. Antes de cada ciclo marca estado `EN_CICLO` y actualiza `fecha_ultimo_heartbeat`.
+5. Al terminar un ciclo correcto marca `ESPERANDO`, registra resultado `OK`, incrementa `ciclos_ejecutados` y guarda contadores del ultimo ciclo.
+6. Si ocurre un error controlado, marca estado `ERROR`, registra `ultimo_error` resumido y actualiza heartbeat.
+7. Si el worker termina por `--once` o interrupcion controlada, marca estado `DETENIDO`.
+8. `/scheduler/panel` lee el heartbeat y clasifica el estado visual segun el tiempo desde la ultima senal y el intervalo configurado.
+9. `logs_sistema` no se usa para cada heartbeat; solo registra inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
+10. La app no inicia ni detiene el worker desde el panel.
 
 ## Flujo de gestion de scripts por tarea
 

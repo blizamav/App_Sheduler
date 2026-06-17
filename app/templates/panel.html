@@ -13,7 +13,7 @@
     <div>
         <p class="eyebrow">Resumen ejecutivo</p>
         <h2>Bienvenido, {{ session.get("usuario_nombre") or session.get("usuario") }}</h2>
-        <p>Estado operativo general de tareas, ejecuciones, scheduler y calendario local.</p>
+        <p>Estado operativo general de tareas, ejecuciones, programador y calendario local.</p>
     </div>
     <div class="acciones-rapidas">
         {% if es_admin or "TAREAS_CREAR" in permisos %}
@@ -58,7 +58,7 @@
 <section class="panel-grid">
     <article class="bloque">
         <div class="bloque-header">
-            <h3>Scheduler</h3>
+            <h3>Programador</h3>
             <span class="badge {% if scheduler.scheduler_activo %}activo{% else %}inactivo{% endif %}">
                 {% if scheduler.scheduler_activo %}Activo{% else %}Inactivo{% endif %}
             </span>
@@ -79,8 +79,8 @@
         </div>
         <div class="componentes-demo">
             {% if es_admin or "SCHEDULER_CONFIG_VER" in permisos %}
-                <a class="btn secundario" href="{{ url_for('scheduler.panel') }}">Panel scheduler</a>
-                <a class="btn secundario" href="{{ url_for('scheduler.configuracion') }}">Configuracion scheduler</a>
+                <a class="btn secundario" href="{{ url_for('scheduler.panel') }}">Panel programador</a>
+                <a class="btn secundario" href="{{ url_for('scheduler.configuracion') }}">Configuracion programador</a>
             {% endif %}
             {% if es_admin or "FERIADOS_VER" in permisos %}
                 <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Ver feriados</a>

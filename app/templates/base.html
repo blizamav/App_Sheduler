@@ -47,11 +47,11 @@
                 <a class="nav-link deshabilitado" href="#"><span>08</span>Ejecuciones</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>09</span>Scheduler panel</a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>10</span>Scheduler config</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>09</span>Panel programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>10</span>Config. programador</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>09</span>Scheduler panel</a>
-                <a class="nav-link deshabilitado" href="#"><span>10</span>Scheduler config</a>
+                <a class="nav-link deshabilitado" href="#"><span>09</span>Panel programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>10</span>Config. programador</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>11</span>Feriados</a>
@@ -61,8 +61,8 @@
                 <a class="nav-link deshabilitado" href="#"><span>12</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
-                <span class="badge info">Fase 10B</span>
-                <p>Sincronizacion controlada de feriados disponible.</p>
+                <span class="badge info">Operacion</span>
+                <p>Programador, ejecuciones y feriados disponibles.</p>
             </div>
         </aside>
         {% endif %}
@@ -76,7 +76,7 @@
                     <h1>{% block encabezado %}Panel principal{% endblock %}</h1>
                 </div>
                 <div class="topbar-actions">
-                    <button class="btn secundario" type="button" data-panel-logs-toggle>Panel logs</button>
+                    <button class="btn secundario" type="button" data-panel-logs-toggle>Logs</button>
                     <div class="usuario-chip">
                         <span class="avatar">{{ session.get("usuario")[0:1]|upper }}</span>
                         <span>{{ session.get("usuario_nombre") or session.get("usuario") }}</span>
@@ -106,16 +106,17 @@
             <div class="panel-logs-header">
                 <div>
                     <p class="eyebrow">Vista preparada</p>
-                    <h2>Logs en vivo</h2>
+                    <h2>Registro visual</h2>
                 </div>
                 <button class="icon-btn" type="button" data-panel-logs-toggle aria-label="Cerrar panel de logs">x</button>
             </div>
             <div class="terminal-visual">
-                <p><span>Fase 8</span> Consola manual disponible por ejecucion.</p>
-                <p><span>Fase 9A</span> Configuracion operativa disponible.</p>
-                <p><span>Fase 10A</span> Feriados locales para scheduler.</p>
-                <p><span>Fase 10B</span> Sincronizacion Nager.Date controlada.</p>
-                <p><span>Fase 11A</span> Panel operativo del scheduler.</p>
+                <p><span>OK</span> Consola manual disponible por ejecucion.</p>
+                <p><span>OK</span> Configuracion del programador disponible.</p>
+                <p><span>OK</span> Feriados locales para programador.</p>
+                <p><span>OK</span> Sincronizacion Nager.Date controlada.</p>
+                <p><span>OK</span> Panel operativo del programador.</p>
+                <p><span>OK</span> Senal de vida del programador.</p>
             </div>
         </aside>
 

@@ -1,7 +1,7 @@
 import argparse
 
 from app import crear_app
-from app.servicios.servicio_scheduler_worker import ejecutar_ciclo_worker, ejecutar_worker_continuo
+from app.servicios.servicio_scheduler_worker import ejecutar_worker_continuo, ejecutar_worker_una_vez
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     app = crear_app()
     with app.app_context():
         if argumentos.once:
-            ejecutar_ciclo_worker()
+            ejecutar_worker_una_vez()
         else:
             ejecutar_worker_continuo()
 

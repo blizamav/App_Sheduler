@@ -58,9 +58,25 @@ Los estados son visuales en Fase 2; su alimentacion real vendra desde tareas, ej
 * Acciones criticas deben confirmar con modal propio del sistema, no con `alert()`, `confirm()` ni `prompt()` nativos.
 * Errores deben ser claros y accionables.
 * Los paneles deben permitir escaneo rapido.
-* Los datos no implementados se muestran como placeholders explicitos para evitar confusion.
+* Las pantallas operativas deben evitar etiquetas internas de fase y usar lenguaje de operacion.
 * La interfaz debe ser responsive sin ocultar acciones principales.
 * Los efectos visuales deben ser suaves y no deben competir con la lectura.
+
+## Modernizacion Fase 11C
+
+Se aplico una modernizacion visual general sin cambiar logica funcional:
+
+* Sidebar con espaciado, hover y estado activo mas claro.
+* Topbar, tarjetas y contenedores con sombras sutiles y mejor separacion.
+* Botones primarios/secundarios con foco accesible, hover consistente y sin subrayado cuando son enlaces de accion.
+* Tablas con encabezados, hover de filas y scroll mas pulido.
+* Formularios y filtros con inputs mas limpios y foco visible.
+* Modal y toast con apariencia mas profesional.
+* Consola de ejecucion con estilo terminal mejorado, manteniendo formato y polling.
+* Historial de ejecuciones agrupado con tarjetas mas claras.
+* Textos visibles normalizados: `Scheduler` se presenta como `Programador`, `Worker` como `Proceso programador` y `Heartbeat` como `Senal de vida`.
+
+No se modificaron rutas, permisos, reglas de negocio, consultas SQL, scheduler, heartbeat, feriados ni sincronizacion.
 
 ## Modal de confirmacion
 

@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 11A.1:
+El proyecto avanzo hasta Fase 11C:
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -30,6 +30,8 @@ El proyecto avanzo hasta Fase 11A.1:
 * Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales de irrenunciables.
 * Fase 11A: panel operativo del scheduler para monitoreo de solo lectura.
 * Fase 11A.1: panel principal general con metricas reales y accesos operativos.
+* Fase 11B: heartbeat del worker scheduler y visualizacion en panel operativo.
+* Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
 
 ## Stack actual
 
@@ -78,6 +80,8 @@ El proyecto avanzo hasta Fase 11A.1:
 * Reglas locales para calcular feriados irrenunciables de Chile.
 * Scheduler consulta feriados locales para respetar `ejecutar_en_feriados`.
 * Panel operativo del scheduler en `/scheduler/panel`.
+* Heartbeat del worker en tabla `scheduler_worker_heartbeat`.
+* Interfaz modernizada con sidebar, botones, cards, tablas, formularios, modales, toasts, consola y paneles visualmente pulidos.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
 * Roles y permisos iniciales desde base de datos.
@@ -91,6 +95,7 @@ El proyecto avanzo hasta Fase 11A.1:
 * Auditoria funcional.
 * Docker QA/produccion.
 * Sincronizacion automatica programada de feriados.
+* Control para iniciar/detener worker desde la app.
 
 ## Ejecucion local en Windows
 
@@ -221,6 +226,14 @@ database/migrations/011_agregar_control_scheduler_ejecuciones.sql
 
 Ejecutalo manualmente en SSMS antes de levantar el worker automatico.
 
+Fase 11B agrega heartbeat del worker:
+
+```text
+database/migrations/014_crear_scheduler_worker_heartbeat.sql
+```
+
+Ejecutalo manualmente en SSMS antes de validar el estado del worker en `/scheduler/panel`.
+
 ## Worker automatico
 
 La app web y el scheduler son procesos separados:
@@ -235,6 +248,8 @@ Para una prueba controlada de un solo ciclo:
 ```powershell
 python scheduler_worker.py --once
 ```
+
+Con heartbeat, `--once` actualiza `scheduler_worker_heartbeat`, registra el ultimo ciclo y marca salida controlada como `DETENIDO`. En loop, `python scheduler_worker.py` actualiza `fecha_ultimo_heartbeat` periodicamente.
 
 El worker lee `configuracion_scheduler` desde SQL Server. Para ejecutar tareas automaticas, activa desde `/scheduler/configuracion`: `scheduler_activo`, `permitir_ejecucion_automatica` y deja `modo_mantenimiento` desactivado.
 

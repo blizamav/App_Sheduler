@@ -23,7 +23,7 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 9D</p>
+        <p class="eyebrow">Historial</p>
         <h2>Historial de ejecuciones</h2>
         <p>Vista historica agrupada por ano, mes y dia con filtros y paginacion server-side.</p>
     </div>
@@ -92,7 +92,7 @@
                 <input id="usuario" name="usuario" value="{{ filtros.get('usuario') or '' }}">
             </div>
             <div class="campo">
-                <label for="worker">Worker</label>
+                <label for="worker">Proceso</label>
                 <input id="worker" name="worker" value="{{ filtros.get('worker') or '' }}">
             </div>
             <div class="campo">
@@ -135,7 +135,7 @@
                         <div class="ejecucion-meta">
                             <span>Inicio {{ ejecucion.fecha_hora_inicio.strftime('%H:%M:%S') if ejecucion.fecha_hora_inicio else '-' }}</span>
                             <span>Termino {{ ejecucion.fecha_hora_termino.strftime('%H:%M:%S') if ejecucion.fecha_hora_termino else '-' }}</span>
-                            <span>{{ 'Worker ' ~ ejecucion.nombre_worker if ejecucion.nombre_worker else 'Usuario ' ~ (ejecucion.usuario_ejecucion or '-') }}</span>
+                            <span>{{ 'Proceso ' ~ ejecucion.nombre_worker if ejecucion.nombre_worker else 'Usuario ' ~ (ejecucion.usuario_ejecucion or '-') }}</span>
                         </div>
                         <a class="btn secundario compacto" href="{{ url_for('ejecuciones.consola', id_ejecucion=ejecucion.id_ejecucion) }}">Ver consola</a>
                     </article>

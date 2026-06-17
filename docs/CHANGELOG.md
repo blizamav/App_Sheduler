@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-06-17 - Fase 11C modernizacion visual UI/UX general
+
+### Cambiado
+
+* Modernizacion visual general de sidebar, topbar, botones, cards, tablas, formularios, filtros, modales, toasts, consola e historial agrupado.
+* Correccion de textos visibles: `Scheduler` pasa a `Programador`, `Worker` a `Proceso programador` y `Heartbeat` a `Senal de vida` donde corresponde en UI.
+* Retiro de etiquetas visibles de fase en pantallas operativas, reemplazadas por lenguaje de operacion.
+* Botones tipo enlace quedan sin subrayado y con estados hover/focus consistentes.
+* La consola de ejecucion mantiene polling y formato de logs, pero recibe estilo terminal mas profesional.
+
+### Reglas
+
+* No se modifico logica funcional.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se avanzo a otra fase funcional.
+
+## 2026-06-17 - Fase 11B heartbeat worker scheduler
+
+### Agregado
+
+* Migracion `database/migrations/014_crear_scheduler_worker_heartbeat.sql`.
+* Repositorio `app/repositorios/repositorio_worker_heartbeat.py`.
+* Servicio `app/servicios/servicio_worker_heartbeat.py`.
+* Registro de inicio, inicio de ciclo, fin de ciclo, error y detencion controlada del worker.
+* Seccion `Estado del worker` en `/scheduler/panel`.
+
+### Cambiado
+
+* `scheduler_worker.py --once` ejecuta un ciclo y marca salida controlada como `DETENIDO`.
+* `servicio_scheduler_worker.py` actualiza heartbeat y contadores del ultimo ciclo.
+* `/panel` deja de informar que el heartbeat esta pendiente y muestra estado del worker desde la nueva capa de servicio.
+
+### Reglas
+
+* No se registra un log de sistema por cada heartbeat.
+* `logs_sistema` queda reservado para inicio, detencion, error, recuperacion o fallos al actualizar heartbeat.
+* No se implementa iniciar/detener worker desde la app.
+* No se avanza a Fase 11C.
+
 ## 2026-06-17 - Fase 11A.1 panel principal general
 
 ### Cambiado
@@ -9,7 +50,7 @@
 * Se muestran total de tareas, tareas activas, scripts activos, tareas con script asociado, ejecuciones del dia, exitosas, errores, en curso, feriados del anio y ultima ejecucion.
 * Se agregan accesos rapidos a tareas, ejecuciones, panel scheduler, configuracion scheduler, feriados y sincronizacion de feriados segun permisos.
 * Se agregan ultimas ejecuciones con enlace a consola.
-* Se mantiene aviso explicito de que el heartbeat del worker queda pendiente para Fase 11B.
+* En ese momento se mantenia aviso explicito de que el heartbeat del worker quedaba pendiente; fue resuelto en Fase 11B.
 
 ### No implementado
 

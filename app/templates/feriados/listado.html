@@ -6,9 +6,9 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 10A</p>
+        <p class="eyebrow">Calendario</p>
         <h2>Feriados</h2>
-        <p>Calendario local usado por el scheduler para decidir ejecuciones en dias feriados.</p>
+        <p>Calendario local usado por el programador para decidir ejecuciones en dias feriados.</p>
     </div>
     <div class="acciones-filtros">
         {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_SINCRONIZAR" in session.get("permisos", []) %}
@@ -88,7 +88,7 @@
                                     class="btn secundario compacto requiere-confirmacion"
                                     type="submit"
                                     data-confirm-title="{{ 'Desactivar feriado' if item.activo else 'Activar feriado' }}"
-                                    data-confirm-message="{{ 'Deseas desactivar este feriado? El scheduler dejara de considerarlo.' if item.activo else 'Deseas activar este feriado nuevamente?' }}"
+                                    data-confirm-message="{{ 'Deseas desactivar este feriado? El programador dejara de considerarlo.' if item.activo else 'Deseas activar este feriado nuevamente?' }}"
                                     data-confirm-ok="{{ 'Si, desactivar' if item.activo else 'Si, activar' }}"
                                     data-confirm-cancel="Cancelar"
                                     data-confirm-type="{{ 'warning' if item.activo else 'success' }}"

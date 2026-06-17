@@ -6,9 +6,9 @@
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
-        <p class="eyebrow">Fase 10A</p>
+        <p class="eyebrow">Calendario</p>
         <h2>{{ "Crear" if modo == "crear" else "Editar" }} feriado</h2>
-        <p>El calendario local es la fuente usada por el scheduler. La sincronizacion externa queda para Fase 10B.</p>
+        <p>El calendario local es la fuente usada por el programador. La sincronizacion externa es manual y controlada.</p>
     </div>
     <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Volver</a>
 </section>
