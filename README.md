@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 11D:
+El proyecto avanzo hasta Fase 11F. La fuente formal del roadmap desde este punto es `docs/ROADMAP.md`.
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -33,6 +33,10 @@ El proyecto avanzo hasta Fase 11D:
 * Fase 11B: heartbeat del worker scheduler y visualizacion en panel operativo.
 * Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
 * Fase 11D: registro de eventos y omisiones del programador en tabla dedicada.
+* Fase 11D.1: resumen inteligente de eventos del programador.
+* Fase 11D.2: historial filtrable de eventos del programador.
+* Fase 11E: control de ejecuciones huerfanas por verificacion de PID.
+* Fase 11F: borrado operativo seguro con snapshots historicos.
 
 ## Stack actual
 
@@ -44,7 +48,7 @@ El proyecto avanzo hasta Fase 11D:
 * SQL Server
 * pyodbc
 * python-dotenv
-* Docker planificado para QA y produccion
+* Docker Compose o systemd pendiente para QA y produccion en Fase 13
 
 ## Funcionalidades actuales
 
@@ -83,6 +87,10 @@ El proyecto avanzo hasta Fase 11D:
 * Panel operativo del scheduler en `/scheduler/panel`.
 * Heartbeat del worker en tabla `scheduler_worker_heartbeat`.
 * Eventos recientes del programador en tabla `scheduler_eventos`, visibles desde `/scheduler/panel`.
+* Historial filtrable de eventos del programador en `/scheduler/eventos`.
+* Control de ejecuciones huerfanas desde consola.
+* Borrado operativo seguro con `eliminado_operativo` y snapshots historicos.
+* TOP 6 ultimas ejecuciones en panel principal.
 * Interfaz modernizada con sidebar, botones, cards, tablas, formularios, modales, toasts, consola y paneles visualmente pulidos.
 * Filtros de usuarios por estado, rol y busqueda general.
 * Confirmaciones para activar/deshabilitar usuarios.
@@ -90,14 +98,38 @@ El proyecto avanzo hasta Fase 11D:
 * Logs de sistema iniciales para login y cambios de usuarios.
 * Definicion tecnica de `.env` por script y detencion manual de ejecuciones.
 
-## Funcionalidades pendientes
+## Roadmap vigente
 
-* Dashboard avanzado del scheduler.
-* Panel avanzado de logs.
-* Auditoria funcional.
-* Docker QA/produccion.
-* Sincronizacion automatica programada de feriados.
-* Control para iniciar/detener worker desde la app.
+El roadmap queda reorganizado en bloques:
+
+* Fase 11: robustez operativa interna.
+* Fase 12: auditoria.
+* Fase 13: operacion y despliegue.
+* Fase 14: mantenimiento avanzado.
+
+Pendiente critico inmediato:
+
+* Fase 11G: papelera operativa y restauracion.
+* Fase 11H: purga controlada.
+* Fase 11I: revision integral post-borrado.
+* Fase 12A: modulo Auditoria base.
+
+Pendiente operativo:
+
+* Scripts para levantar web y worker.
+* Worker como servicio.
+* Preparacion QA/produccion.
+* Estrategia de backups.
+* Estrategia de retencion automatica.
+
+Pendiente mejora:
+
+* Exportacion de eventos.
+* Notificaciones.
+* Reportes.
+* Dashboard avanzado.
+
+Ver detalle en `docs/ROADMAP.md`.
 
 ## Ejecucion local en Windows
 
@@ -192,6 +224,9 @@ Orden documentado:
 21. `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`
 22. `database/seeds/009_reglas_irrenunciables_chile.sql`
 23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
+24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
+25. `database/migrations/015_crear_eventos_programador.sql`
+26. `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`
 
 La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
 
@@ -236,6 +271,22 @@ database/migrations/014_crear_scheduler_worker_heartbeat.sql
 
 Ejecutalo manualmente en SSMS antes de validar el estado del worker en `/scheduler/panel`.
 
+Fase 11D agrega eventos del programador:
+
+```text
+database/migrations/015_crear_eventos_programador.sql
+```
+
+Ejecutalo manualmente en SSMS antes de validar `/scheduler/panel` y `/scheduler/eventos`.
+
+Fase 11F agrega borrado operativo seguro con snapshots:
+
+```text
+database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql
+```
+
+Ejecutalo manualmente en SSMS antes de usar borrado operativo seguro en datos con historial.
+
 ## Worker automatico
 
 La app web y el scheduler son procesos separados:
@@ -264,6 +315,7 @@ El worker lee `configuracion_scheduler` desde SQL Server. Para ejecutar tareas a
 * `docs/FLUJOS.md`
 * `docs/SEGURIDAD.md`
 * `docs/DESPLIEGUE.md`
+* `docs/ROADMAP.md`
 * `docs/CHANGELOG.md`
 * `log_codex.md`
 

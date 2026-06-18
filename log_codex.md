@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual.
-* Estado actual: Fase 11D.2 implementada con historial filtrable de eventos del programador sin auditoria funcional.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual.
+* Estado actual: Fase 11F implementada con borrado operativo seguro mediante snapshots historicos; roadmap formal reorganizado en fases 11 a 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11D.2 - Historial filtrable de eventos del programador.
-* Ultima actualizacion: 2026-06-17 17:05
+* Fase actual: Fase 11F - Borrado operativo seguro con conservacion historica.
+* Ultima actualizacion: 2026-06-18 01:05
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -17,10 +17,10 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
-* Auditoria: Pendiente para fase posterior.
-* Docker: Pendiente para Fase 11.
+* Auditoria: Pendiente para Fase 12.
+* Docker/despliegue: Pendiente para Fase 13.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D y historial filtrable Fase 11D.2.
-* Modulos pendientes: Control de worker desde app, sincronizacion automatica programada de feriados, logs avanzados, auditoria, Docker, dashboard avanzado scheduler.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
+* Modulos pendientes: Fase 11G papelera operativa y restauracion, Fase 11H purga controlada, Fase 11I revision integral post-borrado, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,63 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-18 01:05 - Reorganizacion formal del roadmap
+
+* Archivos creados: `docs/ROADMAP.md`.
+* Archivos modificados: `README.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/UI_UX.md`, `docs/README_PROYECTO.md`, `log_codex.md`.
+* Que se hizo: Se reorganizo documentalmente el roadmap del proyecto en Fase 11 robustez operativa interna, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Estado documentado: Se deja como implementado hasta Fase 11F, incluyendo login hibrido, usuarios/roles/permisos, mantenedores, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion, historial, scheduler automatico, configuracion del programador, worker separado, heartbeat, feriados locales, sincronizacion Nager.Date, eventos del programador, resumen inteligente, historial filtrable, UI/UX modernizada, control de ejecuciones huerfanas, borrado operativo seguro y TOP 6 ultimas ejecuciones en panel.
+* Pendientes criticos: Fase 11G papelera/restauracion, Fase 11H purga controlada, Fase 11I revision integral post-borrado y Fase 12A Auditoria base.
+* Decisiones: `scheduler_eventos`, `ejecuciones`, `logs_tareas` y `logs_sistema` no reemplazan Auditoria; `auditoria_cambios` queda para acciones humanas criticas en Fase 12.
+* Reglas: No se modifico codigo funcional, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
+
+### 2026-06-18 00:40 - Diagnostico disponibilidad tareas post Fase 11F
+
+* Archivos creados: `database/diagnostics/001_diagnostico_tareas_scripts_post_11f.sql`.
+* Archivos modificados: `app/servicios/servicio_tareas.py`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `log_codex.md`.
+* Causa tecnica revisada: `/tareas` se alimenta de `repositorio_tareas.listar_tareas()`, con `LEFT JOIN` sin filtros a `scripts` y `scripts_versiones`; la disponibilidad se calcula en `servicio_tareas._enriquecer_disponibilidad_ejecucion()`.
+* Hallazgo: El modelo real de versiones usa `estado_version` y `es_activa`; no existen campos operativos `scripts_versiones.estado` ni `scripts_versiones.activo` en el esquema versionado.
+* Correccion: Cuando no existe fila de script asociada, el motivo visible queda como `Sin script asociado`; `Script inactivo` queda reservado para `scripts.activo = 0`.
+* Diagnostico: Se agrego SQL manual de solo lectura para revisar Prueba, Prueba2 y Prueba5 contra tarea, script, version activa y ejecuciones en curso.
+* Reglas: No se tocaron datos, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
+
+### 2026-06-18 00:20 - Correccion UX ejecutar ahora en listado de tareas
+
+* Archivos modificados: `app/repositorios/repositorio_tareas.py`, `app/servicios/servicio_tareas.py`, `app/templates/tareas/listado.html`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `log_codex.md`.
+* Causa encontrada: `/tareas` deshabilitaba `Ejecutar ahora` con una condicion parcial en el template y el repositorio no entregaba todos los campos necesarios para explicar la causa.
+* Que se corrigio: El repositorio entrega estado operativo de tarea, script, version y ejecuciones en curso; el servicio calcula `ejecutable`, `motivo_no_ejecutable` y `disponibilidad_ejecucion`.
+* UI: El listado muestra `Ejecutable` o `No ejecutable: motivo`; el boton deshabilitado usa el mismo motivo en el `title`.
+* Reglas: No se tocaron datos, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
+
+### 2026-06-18 00:00 - Correccion validacion ejecucion manual post Fase 11F
+
+* Archivos modificados: `app/repositorios/repositorio_ejecuciones.py`, `app/servicios/servicio_ejecuciones.py`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Causa encontrada: La consulta de contexto de ejecucion filtraba `eliminado_operativo` en el repositorio y la validacion mezclaba `activo` con `estado_tarea` bajo un mensaje generico de tarea inactiva.
+* Que se corrigio: El repositorio devuelve contexto completo de tarea/script/version, incluyendo campos de borrado operativo; el servicio valida cada condicion por separado.
+* Mensajes especificos: tarea inactiva, tarea borrada operativamente, script inactivo, script borrado operativamente, version faltante, version borrada, version no disponible y ejecucion en curso.
+* Reglas: No se tocaron datos, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
+
+### 2026-06-17 18:20 - Fase 11F / Borrado operativo seguro con snapshots
+
+* Archivos creados: `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`.
+* Archivos modificados: `app/repositorios/repositorio_tareas.py`, `app/servicios/servicio_tareas.py`, `app/repositorios/repositorio_scripts.py`, `app/servicios/servicio_scripts.py`, `app/repositorios/repositorio_usuarios.py`, `app/servicios/servicio_usuarios.py`, `app/rutas_usuarios.py`, `app/repositorios/repositorio_mantenedores.py`, `app/servicios/servicio_mantenedores.py`, `app/repositorios/repositorio_ejecuciones.py`, `app/repositorios/repositorio_scheduler.py`, `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`, `app/repositorios/repositorio_panel.py`, `app/repositorios/repositorio_panel_scheduler.py`, templates de usuarios/mantenedores/tareas/scripts y documentacion.
+* Que se hizo: Se implemento borrado operativo seguro para tareas, scripts, versiones, usuarios, clientes, categorias y tipos.
+* Historial: `ejecuciones` conserva snapshots de tarea, cliente, categoria, tipo, script, archivo, version y usuario; `scheduler_eventos` conserva snapshots de tarea y contexto.
+* Operacion normal: registros con `eliminado_operativo = 1` no aparecen en mantenedores, selects, candidatos del scheduler ni metricas principales.
+* Borrado fisico: se mantiene para registros sin historial cuando no rompe integridad.
+* Bloqueos: tarea con ejecucion `EN_EJECUCION`, usuario actualmente conectado y ultimo administrador activo.
+* Reglas: No se borran ejecuciones, logs historicos ni eventos del programador; no se ejecuto SQL; no se modifico `.env`; no se implemento Auditoria; no se avanzo a Fase 12A.
+
+### 2026-06-17 17:35 - Control de ejecuciones huerfanas
+
+* Archivos creados: `app/servicios/servicio_control_ejecuciones.py`.
+* Archivos modificados: `app/repositorios/repositorio_ejecuciones.py`, `app/rutas_ejecuciones.py`, `app/templates/ejecuciones/consola.html`, `app/servicios/servicio_panel.py`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Causa probable: La ejecucion se lanza con `subprocess.Popen` y se monitorea desde un hilo en memoria del proceso Flask; si Flask se reinicia/cierra o falla el update final, la fila puede quedar `EN_EJECUCION` aunque el PID ya no exista.
+* Que se hizo: Se agrego verificacion de PID y control para marcar como `ERROR` una ejecucion huerfana, completando termino, duracion y mensaje.
+* UI: La consola muestra boton `Verificar ejecucion` para ejecuciones en curso.
+* Panel: `/panel` solicita explicitamente `listar_ultimas_ejecuciones(limite=6)`.
+* Reglas: No se matan procesos automaticamente, no se crean ejecuciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
 
 ### 2026-06-17 17:05 - Fase 11D.2 / Historial filtrable de eventos del programador
 

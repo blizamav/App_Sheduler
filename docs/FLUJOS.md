@@ -1,5 +1,26 @@
 # Flujos
 
+## Roadmap de flujos pendiente
+
+Los flujos implementados llegan hasta Fase 11F. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+
+Pendiente critico inmediato:
+
+* Fase 11G: papelera operativa y restauracion.
+* Fase 11H: purga controlada.
+* Fase 11I: revision integral post-borrado.
+* Fase 12A: Auditoria base.
+
+## Flujo de disponibilidad de ejecucion manual en tareas
+
+1. Usuario autorizado abre `/tareas`.
+2. El backend lista tareas operativas no borradas.
+3. Para cada tarea consulta estado de tarea, script asociado, version activa y ejecuciones `EN_EJECUCION`.
+4. El servicio clasifica la tarea como `Ejecutable` solo si la tarea esta activa, no esta borrada operativamente, el script esta activo y no borrado, la version activa existe y esta disponible, y no hay ejecucion en curso.
+5. Si falta alguna condicion, el listado muestra `No ejecutable: motivo`; si no existe fila en `scripts`, el motivo es `Sin script asociado`.
+6. El boton `Ejecutar ahora` usa la misma clasificacion del servicio.
+7. Una tarea no ejecutable conserva visible `Editar`, `Scripts`, cambio de estado y borrado segun permisos.
+
 ## Flujo de panel principal general
 
 1. Usuario autenticado abre `/panel`.
@@ -68,6 +89,66 @@ Reglas:
 8. Si no hay registros se muestra `Sin eventos del programador para los filtros seleccionados.`
 9. La vista no muestra eventos inactivos por defecto.
 10. Esta vista no crea ejecuciones, no modifica eventos y no reemplaza Auditoria.
+
+## Flujo de control de ejecuciones huerfanas
+
+1. Una ejecucion se inicia desde la app o desde el programador.
+2. El backend crea la fila en `ejecuciones` con estado `EN_EJECUCION`.
+3. El proceso Python se lanza con `subprocess.Popen` y se guarda `pid_proceso`.
+4. Un hilo en memoria del proceso Flask espera el termino del proceso y actualiza estado final.
+5. Si Flask se cierra o reinicia durante la ejecucion, el hilo monitor desaparece.
+6. Si el proceso hijo termina y no existe un monitor activo, la base puede quedar en `EN_EJECUCION`.
+7. En consola, el usuario puede presionar `Verificar ejecucion`.
+8. Si el PID existe, se informa `La ejecucion sigue activa.` y no se modifica nada.
+9. Si el PID no existe, se marca `ERROR` y se completa termino/duracion/mensaje.
+10. Si la ejecucion ya estaba finalizada, no se modifica.
+11. El control no mata procesos automaticamente.
+
+## Flujo de borrado operativo seguro
+
+1. El usuario presiona `Borrar` en tareas, scripts, versiones, usuarios, clientes, categorias o tipos.
+2. La UI muestra modal corporativo indicando que el registro se retirara de la operacion normal y que el historial se conservara.
+3. El backend valida bloqueos estrictos: ejecucion `EN_EJECUCION`, usuario actual, ultimo administrador activo o integridad sin snapshot suficiente.
+4. Si no existe historial, se elimina fisicamente el registro y sus dependencias operativas directas cuando corresponde.
+5. Si existe historial, se rellenan snapshots historicos antes de retirar el registro.
+6. El registro maestro queda con `eliminado_operativo = 1`, `activo = 0` y metadatos de retiro.
+7. Los mantenedores, selects, candidatos del scheduler y metricas operativas excluyen registros retirados.
+8. `/ejecuciones`, `/ejecuciones/<id>`, logs y eventos del programador siguen mostrando nombres legibles mediante snapshots.
+9. No se borran ejecuciones, logs historicos, eventos del programador ni auditoria futura.
+10. Auditoria funcional queda pendiente para fase posterior.
+11. Papelera operativa y restauracion quedan pendientes para Fase 11G.
+12. Purga controlada queda pendiente para Fase 11H.
+
+## Flujo futuro de papelera operativa
+
+Pendiente para Fase 11G:
+
+1. Usuario autorizado abre una vista de registros retirados operativamente.
+2. El sistema lista entidades con `eliminado_operativo = 1`.
+3. El usuario revisa contexto, historial y motivo de retiro.
+4. Si corresponde restaurar, el backend valida integridad, duplicados y dependencias.
+5. Si la restauracion es segura, el registro vuelve a operacion normal.
+6. Si no es segura, se informa el bloqueo con motivo.
+
+## Flujo futuro de purga controlada
+
+Pendiente para Fase 11H:
+
+1. Usuario autorizado solicita purga de un registro retirado.
+2. El sistema exige confirmacion fuerte y validaciones de seguridad.
+3. Debe existir criterio explicito de retencion y respaldo.
+4. La purga elimina fisicamente solo registros permitidos por regla.
+5. La accion debe quedar trazada por Auditoria cuando Fase 12 exista.
+
+## Flujo futuro de Auditoria
+
+Pendiente para Fase 12:
+
+1. Una accion humana critica llega al backend.
+2. El servicio registra valor anterior y valor nuevo.
+3. Se guarda usuario, modulo, tabla afectada, id de registro, accion, fecha, IP y user-agent cuando aplique.
+4. Auditoria se consulta desde un modulo dedicado.
+5. `scheduler_eventos`, `ejecuciones`, `logs_tareas` y `logs_sistema` no reemplazan este flujo.
 
 ## Flujo de gestion de scripts por tarea
 
@@ -158,7 +239,7 @@ Reglas:
 7. Si ingresa nueva contrasena, el formulario advierte que sera actualizada.
 8. Para activar o desactivar usuario, se abre un modal corporativo de confirmacion antes de enviar el cambio.
 9. Si el administrador cancela la confirmacion, no se ejecuta accion ni se registra log.
-10. No existe eliminacion fisica desde la app.
+10. Desde Fase 11F existe borrado operativo seguro; si el usuario tiene historial, se retira de operacion y no puede iniciar sesion.
 11. Cada creacion, edicion o cambio confirmado registra evento en `logs_sistema`.
 
 ## Flujo de mantenedores base
@@ -170,10 +251,10 @@ Reglas:
 5. El servicio normaliza el nombre y valida duplicados.
 6. Para editar, se repite confirmacion y validacion de duplicados excluyendo el registro actual.
 7. Para activar o desactivar, se solicita confirmacion por modal.
-8. Para eliminar definitivamente, se solicita confirmacion fuerte por modal.
+8. Para borrar, se solicita confirmacion fuerte por modal.
 9. El backend valida dependencias contra `tareas`.
-10. Si no tiene dependencias, elimina fisicamente y registra `logs_sistema`.
-11. Si tiene dependencias, bloquea la eliminacion, muestra mensaje amigable, sugiere desactivar y registra intento bloqueado.
+10. Si no tiene dependencias ni historial, elimina fisicamente y registra `logs_sistema`.
+11. Si tiene dependencias o historial, asegura snapshots, marca `eliminado_operativo = 1` y registra el retiro.
 12. Cada cambio confirmado registra evento en `logs_sistema`.
 
 ## Flujo de confirmacion critica
@@ -252,10 +333,10 @@ Reglas:
 
 1. Para activar o desactivar, el usuario confirma por modal.
 2. El backend actualiza `activo` y `estado_tarea`.
-3. Para eliminar definitivamente, el usuario confirma por modal `danger`.
-4. El backend valida dependencias en `scripts`, `ejecuciones` y `logs_tareas`.
-5. Si no existen dependencias, elimina programaciones y tarea.
-6. Si existen dependencias, bloquea la eliminacion y sugiere desactivar.
+3. Para borrar, el usuario confirma por modal `danger`.
+4. El backend bloquea solo si existe ejecucion `EN_EJECUCION`.
+5. Si no existe historial, elimina programaciones, scripts/versiones operativas y tarea.
+6. Si existe historial, asegura snapshots, marca la tarea como `eliminado_operativo = 1` y la oculta de operacion normal.
 7. Cada accion confirmada o intento bloqueado se registra en `logs_sistema`.
 
 ## Flujo de reglas de programacion
@@ -588,4 +669,4 @@ Pendiente para Fase 9.
 
 ## Flujo de auditoria
 
-Pendiente para Fase 10.
+Pendiente para Fase 12. Ver `Flujo futuro de Auditoria`.

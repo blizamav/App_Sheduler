@@ -32,16 +32,35 @@
 * Fase 11D: eventos y omisiones del programador en tabla dedicada.
 * Fase 11D.1: resumen inteligente y retencion logica de eventos.
 * Fase 11D.2: historial filtrable de eventos del programador.
+* Fase 11E: control de ejecuciones huerfanas.
+* Fase 11F: borrado operativo seguro con snapshots historicos.
+* Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
 
-* Dashboard avanzado del scheduler.
-* Logs de sistema completos.
-* Auditoria.
-* Configuracion.
-* Sincronizacion automatica programada de feriados.
-* Dashboard ejecutivo.
+Ver detalle formal en `docs/ROADMAP.md`.
+
+Pendiente critico inmediato:
+
+* Fase 11G: papelera operativa y restauracion.
+* Fase 11H: purga controlada.
+* Fase 11I: revision integral post-borrado.
+* Fase 12A: Auditoria base.
+
+Pendiente operativo:
+
+* Scripts para levantar web y worker.
+* Worker como servicio.
+* Preparacion QA/produccion.
+* Estrategia de backups.
+* Estrategia de retencion automatica.
+
+Pendiente mejora:
+
+* Exportacion de eventos.
 * Notificaciones.
+* Reportes.
+* Dashboard avanzado.
 
 ## Definicion Fase 4.3
 
@@ -56,7 +75,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11D.2: usuarios, roles, permisos, mantenedores base, tareas, scripts, ejecucion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador y vista filtrable de eventos. Aun no existe sincronizacion automatica programada, control de worker desde la app ni panel avanzado de auditoria.
+La aplicacion esta en Fase 11F: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots y disponibilidad visible de ejecucion manual en `/tareas`. Aun no existe papelera operativa, restauracion, purga controlada, Auditoria funcional, despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -208,6 +227,26 @@ La diferencia operativa es:
 * `/scheduler/panel` resume y prioriza eventos relevantes.
 * `/scheduler/eventos` permite investigar el historial activo con filtros.
 
+## Control de ejecuciones huerfanas
+
+Una ejecucion huerfana es una fila en `ejecuciones` con `estado_ejecucion = EN_EJECUCION` cuyo `pid_proceso` ya no existe en el sistema operativo.
+
+Implementado:
+
+* `app/servicios/servicio_control_ejecuciones.py`.
+* `proceso_existe(pid)`: valida existencia de PID en Windows o POSIX si es posible.
+* `verificar_ejecucion(id_ejecucion)`: valida una ejecucion especifica.
+* `detectar_ejecuciones_huerfanas()`: revisa ejecuciones en curso y marca huerfanas.
+* Boton `Verificar ejecucion` en la consola de ejecucion para casos `EN_EJECUCION`.
+
+Comportamiento:
+
+* Si el PID existe, la ejecucion sigue `EN_EJECUCION`.
+* Si el PID no existe, se marca `ERROR`, se completa termino/duracion y se registra mensaje claro.
+* Si el estado ya es final, no se modifica.
+* Si no se puede validar el PID, no se cambia el estado.
+* No se matan procesos automaticamente.
+
 No implementado en Fase 11D:
 
 * No se implementa auditoria funcional.
@@ -215,6 +254,46 @@ No implementado en Fase 11D:
 * No se crean logs de tarea para omisiones.
 * No se inicia ni detiene el worker desde la app.
 * No se ejecuta limpieza automatica de eventos.
+
+## Borrado operativo seguro
+
+Fase 11F permite usar acciones `Borrar` en entidades operativas sin perder historial asociado.
+
+Entidades cubiertas: tareas, scripts, versiones de scripts, usuarios, clientes, categorias y tipos.
+
+Comportamiento:
+
+* Sin historial: se elimina fisicamente cuando las FK lo permiten.
+* Con historial: se aseguran snapshots y se marca `eliminado_operativo = 1`.
+* Los registros retirados no aparecen en mantenedores, selects, candidatos del programador ni metricas operativas.
+* Las ejecuciones, consola, logs y eventos historicos siguen visibles con nombres legibles.
+
+Bloqueos vigentes:
+
+* Tarea con ejecucion `EN_EJECUCION`.
+* Usuario actualmente logueado.
+* Ultimo administrador activo.
+* Caso donde la integridad pueda romperse sin snapshot suficiente.
+
+Auditoria funcional sigue pendiente para una fase posterior.
+
+Pendientes derivados:
+
+* Papelera operativa para consultar registros retirados.
+* Restauracion controlada cuando sea seguro.
+* Purga controlada con reglas explicitas y aprobacion.
+* Revision integral post-borrado antes de iniciar Auditoria.
+
+## Roadmap vigente
+
+El roadmap formal se mantiene en `docs/ROADMAP.md`.
+
+Bloques aprobados:
+
+* Fase 11: robustez operativa interna.
+* Fase 12: Auditoria.
+* Fase 13: operacion y despliegue.
+* Fase 14: mantenimiento avanzado.
 
 No implementado en Fase 9B:
 
@@ -330,9 +409,9 @@ Implementado en Fase 5:
 * Contador de resultados.
 * Modal corporativo para crear, editar y cambiar estado.
 * Validacion de nombre obligatorio y duplicados por nombre normalizado.
-* Eliminacion fisica controlada solo si el registro no tiene dependencias en `tareas`.
+* Borrado operativo seguro desde Fase 11F si el registro tiene dependencias en `tareas`.
 * Logs en `logs_sistema` para creacion, edicion, activacion y desactivacion.
-* Logs en `logs_sistema` para eliminacion definitiva e intento bloqueado por dependencias.
+* Logs en `logs_sistema` para eliminacion fisica o retiro operativo.
 
 ## Modulo de usuarios
 
@@ -341,13 +420,13 @@ Implementado en Fase 4:
 * Login hibrido: primero `.env`, luego tabla `usuarios`.
 * Usuario `.env` con rol de sesion `SUPER_ADMIN_ENV`.
 * Usuarios de base de datos con roles y permisos desde tablas de seguridad.
-* Pantalla `/usuarios` para listar, filtrar, crear, editar, activar y desactivar usuarios.
+* Pantalla `/usuarios` para listar, filtrar, crear, editar, activar, desactivar y borrar usuarios de la operacion normal.
 * Filtros por estado, rol y busqueda general.
 * Confirmacion antes de activar o desactivar usuarios.
 * Advertencias visuales al cambiar rol o contrasena.
 * Asignacion de un rol activo por usuario desde el formulario inicial.
 * Contrasenas con hash seguro.
-* Sin eliminacion fisica de usuarios.
+* Borrado operativo de usuarios con historial, sin permitir borrar el usuario actual ni el ultimo administrador activo.
 * Eventos principales registrados en `logs_sistema`.
 
 ## Impacto del versionamiento de scripts
@@ -356,7 +435,7 @@ Implementado en Fase 4:
 * Gestion de scripts debe impedir una cuarta version directa.
 * Gestion de scripts debe permitir reemplazar una version existente con auditoria.
 * Gestion de scripts debe manejar versiones por estado: `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
-* Gestion de scripts no debe permitir eliminacion fisica desde la app en la primera version.
+* Gestion de scripts usa borrado operativo con snapshots cuando existe historial.
 * Ejecucion manual debe permitir elegir version disponible.
 * Ejecucion automatica debe usar la version activa.
 * Logs y auditoria deben permitir reconstruir que version se ejecuto.

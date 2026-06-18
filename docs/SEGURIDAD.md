@@ -38,12 +38,14 @@ Permitido:
 * Crear usuarios.
 * Editar nombre, email, rol, estado y contrasena opcional.
 * Activar o desactivar usuarios.
+* Borrar usuarios de la operacion normal conservando historial desde Fase 11F.
 
 No permitido:
 
-* Eliminacion fisica de usuarios desde la app.
 * Crear automaticamente el usuario `blizama` en base de datos.
 * Exponer credenciales o hashes en pantalla.
+* Borrar el usuario actualmente logueado.
+* Borrar el ultimo administrador activo.
 
 Fase 4.2 usa modal corporativo propio antes de activar o desactivar usuarios. Si el administrador cancela, no se envia el formulario y no se registra evento como cambio realizado.
 
@@ -72,11 +74,12 @@ Clientes, categorias y tipos usan permisos especificos por modulo:
 * `TIPOS_VER`, `TIPOS_CREAR`, `TIPOS_EDITAR`, `TIPOS_ESTADO`
 
 Desde Fase 5.1 existe eliminacion fisica controlada solo para registros sin dependencias en `tareas`.
+Desde Fase 11F, si existen dependencias o historial, el registro se retira de la operacion normal con `eliminado_operativo = 1` y snapshots historicos.
 
 Reglas:
 
 * Si el registro no tiene dependencias, puede eliminarse definitivamente con modal `danger`.
-* Si tiene dependencias, se bloquea la eliminacion y se sugiere desactivar.
+* Si tiene dependencias, se borra operativamente y se conserva historial.
 * La eliminacion confirmada se registra en `logs_sistema`.
 * El intento bloqueado tambien se registra en `logs_sistema` con nivel `WARNING`.
 * Se usan permisos existentes de estado: `CLIENTES_ESTADO`, `CATEGORIAS_ESTADO`, `TIPOS_ESTADO`.
@@ -96,8 +99,9 @@ Reglas:
 
 * Solo usuarios autorizados pueden acceder al modulo `/tareas`.
 * Crear, editar, activar, desactivar y eliminar usan confirmacion por modal corporativo.
-* La eliminacion fisica solo se permite si la tarea no tiene scripts, ejecuciones ni logs asociados.
-* Si hay dependencias, se bloquea y se recomienda desactivar.
+* La eliminacion fisica solo se permite si la tarea no tiene historial asociado.
+* Si hay historial, se usa borrado operativo con snapshots.
+* Si hay una ejecucion `EN_EJECUCION`, el borrado se bloquea hasta verificar o detener la ejecucion.
 * No se ejecutan scripts ni procesos desde Fase 6.
 * No se manipulan secretos ni `.env` de scripts desde Fase 6.
 
@@ -129,6 +133,42 @@ Reglas:
 * `logs_sistema` no debe usarse para cada omision del programador para evitar ruido operativo.
 * La tabla `scheduler_eventos` no reemplaza auditoria funcional; auditoria queda pendiente para una fase posterior.
 
+## Borrado operativo seguro
+
+Fase 11F diferencia eliminacion fisica y retiro operativo:
+
+* Eliminacion fisica: solo cuando no existe historial asociado y no se rompe integridad.
+* Retiro operativo: cuando existe historial; marca `eliminado_operativo = 1`, desactiva el registro y conserva snapshots.
+
+El retiro operativo evita perdida de evidencia:
+
+* No borra ejecuciones.
+* No borra logs historicos.
+* No borra eventos del programador.
+* No borra auditoria futura.
+* No elimina archivos fisicos asociados a ejecuciones historicas.
+
+Auditoria funcional queda pendiente; por ahora se mantiene `logs_sistema` para trazabilidad operativa basica.
+
+Pendientes de seguridad asociados:
+
+* Papelera operativa para revisar registros retirados sin devolverlos automaticamente a operacion.
+* Restauracion controlada con validaciones de integridad y permisos.
+* Purga controlada con autorizacion explicita, respaldo previo y trazabilidad.
+
+## Auditoria funcional pendiente
+
+Auditoria no esta implementada funcionalmente.
+
+No son Auditoria:
+
+* `scheduler_eventos`, porque registra decisiones automaticas del programador.
+* `ejecuciones`, porque registra intentos reales de ejecutar scripts.
+* `logs_tareas`, porque conserva salida y metadatos de ejecucion.
+* `logs_sistema`, porque registra eventos operativos basicos.
+
+La fase 12 debe implementar `auditoria_cambios` como registro de acciones humanas relevantes, con usuario, modulo, tabla, registro, accion, valor anterior, valor nuevo, fecha, IP y user-agent cuando aplique.
+
 ## Scripts y versiones
 
 Fase 7 agrega permisos especificos:
@@ -154,10 +194,10 @@ Reglas:
 * No se guardan secretos en base de datos.
 * `scripts.nombre_script` es solo un nombre descriptivo de contenedor; no debe contener secretos ni rutas.
 * Los nombres reales de archivos `.py` se guardan en `scripts_versiones.nombre_archivo`.
-* La eliminacion fisica de versiones se bloquea si la version esta activa o tiene historial.
+* La eliminacion fisica de versiones se usa solo sin historial; con historial se retira de operacion conservando snapshots.
 * La eliminacion de una version unica se bloquea para evitar dejar el contenedor de script sin versiones.
-* El boton `Eliminar script completo` es la unica accion visual que puede afectar todo el conjunto de versiones.
-* El boton `Eliminar version` solo puede afectar la version de su fila; no elimina otras versiones ni el script completo.
+* El boton `Borrar script` es la accion visual que puede retirar todo el conjunto de versiones.
+* El boton `Borrar version` solo afecta la version de su fila; no elimina otras versiones ni el script completo.
 * Todo bloqueo por version activa, version unica o historial se registra en `logs_sistema` con nivel `WARNING`.
 
 ## Ejecucion manual

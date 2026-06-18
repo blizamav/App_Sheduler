@@ -2,7 +2,9 @@
 
 ## Arquitectura general
 
-La Fase 1 define una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada y rutas separadas en Blueprint.
+APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
+
+Estado actual: Fase 11F implementada. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -10,7 +12,10 @@ La Fase 1 define una aplicacion Flask modular con fabrica `crear_app()`, configu
 * Aplicacion: rutas Flask y control de sesion.
 * Configuracion: lectura de `.env`.
 * Datos: SQL Server mediante `pyodbc` y repositorios dedicados.
-* Servicios: reglas de negocio iniciales para usuarios, roles, permisos y logs de sistema.
+* Servicios: reglas de negocio para usuarios, mantenedores, tareas, scripts, ejecuciones, programador, feriados, paneles, eventos y borrado operativo.
+* Worker: `scheduler_worker.py` como proceso separado para evaluacion automatica.
+* Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
+* Auditoria: tabla `auditoria_cambios` existe en el modelo, pero el modulo funcional de Auditoria sigue pendiente para Fase 12.
 
 ## Flujo de datos inicial
 
@@ -48,7 +53,7 @@ La capa visual mantiene el diseno de Fase 2. Desde Fase 11A.1 el panel principal
 
 SQL Server sera incorporado desde Fase 3. Base objetivo: `APP_SCHEDULER_QA`, configurable por `.env`.
 
-En Fase 3B se crearon scripts SQL versionados bajo `database/migrations/` y `database/seeds/`. Estos scripts no se ejecutan automaticamente y Flask aun no se conecta a SQL Server. La capa de datos futura debe aislarse en repositorios/servicios para evitar consultas SQL directas desde rutas Flask.
+En Fase 3B se crearon scripts SQL versionados bajo `database/migrations/` y `database/seeds/`. Estos scripts no se ejecutan automaticamente. Desde Fase 3D Flask se conecta a SQL Server mediante `pyodbc` y desde fases posteriores la persistencia queda aislada en repositorios/servicios para evitar consultas SQL directas desde rutas Flask.
 
 En Fase 3D se agrego la capa inicial de conexion en `app/database/conexion.py`. Esta capa lee `DB_SERVER`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` y `DB_DRIVER` desde `.env`, construye la cadena ODBC sin quemar credenciales, permite probar `SELECT 1` y retorna errores amigables sin exponer password.
 
@@ -75,6 +80,15 @@ Los archivos cargados viven fuera del codigo fuente operativo bajo `scripts/` y 
 
 Para versionamiento controlado, `scripts` representa el contenedor de script de una tarea y `scripts_versiones` representa los archivos Python disponibles. Las ejecuciones registran `id_script` e `id_version` para saber exactamente que archivo fue ejecutado. Los logs de tarea continuan asociados a `id_ejecucion`.
 
+Fase 11F agrega borrado operativo seguro con snapshots:
+
+* `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`: agrega snapshots y campos `eliminado_operativo`.
+* Repositorios de tareas, scripts, usuarios y mantenedores: deciden entre eliminacion fisica y retiro operativo.
+* Repositorios de ejecuciones y eventos del programador: leen `COALESCE(snapshot, maestro)` para historial legible.
+* Panel y scheduler: excluyen registros retirados de operacion normal.
+
+Regla arquitectonica: las tablas historicas no deben depender solo del registro maestro para mostrar nombres. No se usan cascadas destructivas sobre `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos` ni auditoria futura.
+
 Fase 8 agrega capa de ejecucion manual:
 
 * `app/rutas_ejecuciones.py`: endpoints para iniciar, ver consola, consultar log y detener.
@@ -84,6 +98,14 @@ Fase 8 agrega capa de ejecucion manual:
 * `app/servicios/servicio_procesos.py`: inicio y detencion de procesos.
 
 La ejecucion manual usa `subprocess` sin `shell=True`, registra PID y captura stdout/stderr hacia archivo. La consola se actualiza por polling HTTP cada 3 segundos.
+
+Control de ejecuciones huerfanas:
+
+* El lanzamiento de scripts ocurre en `app/servicios/servicio_procesos.py` mediante `subprocess.Popen`.
+* El PID se guarda en `ejecuciones.pid_proceso`.
+* El monitoreo del termino depende de un hilo en memoria iniciado desde `servicio_ejecuciones.py`.
+* Si el proceso Flask se reinicia, el hilo monitor se pierde y una ejecucion puede quedar `EN_EJECUCION` aunque el proceso hijo ya no exista.
+* `app/servicios/servicio_control_ejecuciones.py` permite verificar el PID y marcar como `ERROR` una ejecucion huerfana sin matar procesos.
 
 Fase 9A agrega configuracion operativa del scheduler:
 
@@ -149,6 +171,14 @@ Fase 11D agrega eventos del programador:
 Esta capa es solo trazabilidad operativa. Una omision no crea `ejecuciones`, no crea `logs_tareas` y no reemplaza auditoria funcional futura.
 
 El heartbeat vive en una tabla dedicada porque cambia frecuentemente. `logs_sistema` solo registra eventos relevantes: inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
+
+Distincion con Auditoria:
+
+* `scheduler_eventos` registra decisiones automaticas del programador.
+* `ejecuciones` registra intentos reales de ejecucion.
+* `logs_sistema` registra eventos operativos basicos.
+* Ninguno de esos componentes reemplaza `auditoria_cambios`.
+* Auditoria funcional queda pendiente para Fase 12 y debe registrar acciones humanas criticas con trazabilidad antes/despues.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
@@ -222,6 +252,14 @@ Fase 4 usa login hibrido:
 
 El usuario `blizama` no se crea automaticamente en base de datos.
 
-## Docker
+## Roadmap arquitectonico
 
-Pendiente para Fase 11. La arquitectura ya evita rutas absolutas para facilitar portabilidad.
+Siguiente bloque recomendado: completar Fase 11 con papelera operativa, restauracion, purga controlada y revision integral post-borrado.
+
+Bloques posteriores:
+
+* Fase 12: Auditoria.
+* Fase 13: operacion y despliegue.
+* Fase 14: mantenimiento avanzado.
+
+La arquitectura ya evita rutas absolutas para facilitar portabilidad, pero Docker Compose, systemd y worker como servicio quedan pendientes para Fase 13.

@@ -2,7 +2,9 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual.
+
+Roadmap vigente: `docs/ROADMAP.md`.
 
 ## Base objetivo
 
@@ -49,6 +51,7 @@ database/
     013_crear_reglas_feriados_irrenunciables.sql
     014_crear_scheduler_worker_heartbeat.sql
     015_crear_eventos_programador.sql
+    016_agregar_snapshots_historial_borrado_operativo.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -86,6 +89,7 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
 24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
 25. `database/migrations/015_crear_eventos_programador.sql`
+26. `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`
 
 Resumen por script:
 
@@ -104,6 +108,7 @@ Resumen por script:
 * `013_crear_reglas_feriados_irrenunciables.sql`: crea reglas locales de irrenunciables y ajusta `CK_feriados_origen` para permitir `API_NAGER`.
 * `014_crear_scheduler_worker_heartbeat.sql`: crea tabla `scheduler_worker_heartbeat` para registrar senal de vida del worker; no inicia ni detiene procesos desde la app.
 * `015_crear_eventos_programador.sql`: crea tabla `scheduler_eventos` para registrar decisiones, omisiones y errores del programador; no crea ejecuciones ni logs de tarea.
+* `016_agregar_snapshots_historial_borrado_operativo.sql`: agrega snapshots historicos y campos de borrado operativo seguro para retirar registros sin perder historial.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -230,6 +235,60 @@ Fase 11D.2 agrega consulta paginada sobre la misma tabla:
 * Paginacion SQL Server mediante `OFFSET / FETCH`.
 
 No se crea migracion nueva porque la tabla `scheduler_eventos` ya contiene los campos necesarios.
+
+## Fase 11F - Borrado operativo seguro
+
+La migracion `016_agregar_snapshots_historial_borrado_operativo.sql` permite borrar registros desde la operacion normal sin destruir historia. Si el registro no tiene historial, la app puede eliminar fisicamente. Si tiene historial, se usa retiro operativo mediante `eliminado_operativo = 1`.
+
+Campos de control agregados a `tareas`, `scripts`, `scripts_versiones`, `usuarios`, `clientes`, `categorias` y `tipos`:
+
+* `eliminado_operativo bit not null default 0`
+* `fecha_eliminado_operativo datetime2(0) null`
+* `usuario_eliminado_operativo nvarchar(100) null`
+* `motivo_eliminado_operativo nvarchar(500) null`
+
+Snapshots agregados a `ejecuciones`:
+
+* `id_tarea_original`
+* `nombre_tarea_snapshot`
+* `cliente_snapshot`
+* `categoria_snapshot`
+* `tipo_snapshot`
+* `nombre_script_snapshot`
+* `nombre_archivo_snapshot`
+* `version_script_snapshot`
+* `usuario_ejecucion_snapshot`
+
+Snapshots agregados a `scheduler_eventos`:
+
+* `id_tarea_original`
+* `nombre_tarea_snapshot`
+* `cliente_snapshot`
+* `categoria_snapshot`
+* `tipo_snapshot`
+
+La migracion rellena snapshots existentes con JOIN hacia `tareas`, `clientes`, `categorias`, `tipos`, `scripts` y `scripts_versiones`. No elimina filas historicas, no modifica `.env` y debe ejecutarse manualmente en SQL Server.
+
+Las vistas historicas deben consultar `COALESCE(snapshot, tabla_maestra)` para soportar registros maestros retirados de la operacion normal.
+
+Reglas:
+
+* `eliminado_operativo = 1` no elimina fisicamente la fila.
+* El registro retirado desaparece de la operacion normal.
+* Los snapshots conservan historia legible.
+* Falta papelera operativa para consultar y restaurar registros retirados.
+* Falta purga controlada para eliminacion fisica posterior bajo reglas estrictas.
+
+## Auditoria pendiente
+
+La tabla `auditoria_cambios` existe en el modelo inicial, pero el modulo funcional de Auditoria sigue pendiente para Fase 12.
+
+Distincion:
+
+* `scheduler_eventos` registra decisiones automaticas del programador.
+* `ejecuciones` registra intentos reales de ejecutar scripts.
+* `logs_sistema` registra eventos operativos basicos.
+* `auditoria_cambios` debe registrar acciones humanas criticas en una fase posterior.
 
 ## Fase 7 - Scripts y versiones
 
@@ -476,14 +535,14 @@ Campos nuevos propuestos:
 * `tareas.observacion_tecnica`: notas internas de operacion.
 * `programaciones.modo_ejecucion_dia`: `UNA_VEZ` o `INTERVALO`.
 * `programaciones.fecha_especifica`: fecha para programaciones puntuales.
-* `programaciones.ejecutar_en_feriados`: marca declarativa; la validacion contra calendario queda pendiente.
+* `programaciones.ejecutar_en_feriados`: marca declarativa; desde Fase 10A el worker la valida contra calendario local de feriados.
 
 Reglas de persistencia:
 
 * Cada tarea mantiene una programacion activa.
 * Al editar la programacion se inactiva la programacion activa anterior y se crea una nueva.
-* La eliminacion fisica de tareas solo se permite si no existen dependencias en `scripts`, `ejecuciones` ni `logs_tareas`.
-* Si hay dependencias, debe desactivarse la tarea para preservar trazabilidad.
+* La eliminacion fisica de tareas solo se permite si no existe historial y no se rompe integridad.
+* Si hay historial, desde Fase 11F se usa borrado operativo seguro con snapshots.
 
 ## Convenciones propuestas
 
@@ -540,9 +599,18 @@ Reglas de persistencia:
 * `auditoria_cambios`
 * `configuracion_sistema`
 
-## Tablas futuras no implementables aun
+## Tablas posteriores y futuras
+
+Implementadas despues del modelo inicial:
 
 * `feriados`
+* `reglas_feriados_irrenunciables`
+* `configuracion_scheduler`
+* `scheduler_worker_heartbeat`
+* `scheduler_eventos`
+
+Pendientes para fases posteriores:
+
 * `calendarios_laborales`
 * `notificaciones`
 * `parametros_tarea`

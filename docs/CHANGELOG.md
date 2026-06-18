@@ -1,5 +1,137 @@
 # Changelog
 
+## 2026-06-18 - Reorganizacion formal del roadmap
+
+### Documentado
+
+* Se crea `docs/ROADMAP.md` como fuente formal para fases 11 a 14.
+* Se actualiza el estado actual a Fase 11F con robustez operativa interna parcialmente completada.
+* Se separan pendientes criticos, operativos y de mejora.
+* Se documenta que eventos del programador, ejecuciones y logs no reemplazan Auditoria.
+* Se explicita que `eliminado_operativo` retira de operacion normal sin eliminar fisicamente de base de datos.
+
+### Roadmap
+
+* Fase 11: robustez operativa interna.
+* Fase 12: Auditoria.
+* Fase 13: operacion y despliegue.
+* Fase 14: mantenimiento avanzado.
+
+### Reglas
+
+* No se modifico codigo funcional.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-18 - Diagnostico disponibilidad tareas post Fase 11F
+
+### Corregido
+
+* El motivo de disponibilidad en `/tareas` distingue `Sin script asociado` cuando no existe fila en `scripts`.
+* Se mantiene `Script inactivo` solo cuando existe script asociado y `scripts.activo = 0`.
+
+### Agregado
+
+* Consulta manual de diagnostico en `database/diagnostics/001_diagnostico_tareas_scripts_post_11f.sql`.
+* La consulta usa los campos reales del modelo: `estado_version` y `es_activa`.
+
+### Reglas
+
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-18 - Correccion UX ejecutar ahora en listado de tareas
+
+### Corregido
+
+* `/tareas` calcula la disponibilidad de ejecucion manual en el servicio y no con una condicion parcial en el template.
+* El listado distingue tarea inactiva, ejecucion en curso, script faltante/inactivo/borrado y version faltante/no disponible/borrada.
+* El boton `Ejecutar ahora` deshabilitado ahora muestra el motivo exacto con `No ejecutable: ...`.
+
+### Reglas
+
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-18 - Correccion validacion ejecucion manual post Fase 11F
+
+### Corregido
+
+* `obtener_contexto_tarea_ejecucion()` ya no oculta registros por `eliminado_operativo` antes de validar; ahora devuelve el contexto y deja que el servicio genere el mensaje correcto.
+* `_validar_contexto_ejecucion()` separa las validaciones de tarea activa, tarea borrada operativamente, estado de tarea, script activo, script borrado, version activa, version borrada y ejecucion en curso.
+* Una tarea con `activo = 1` y `eliminado_operativo = 0` ya no se clasifica como inactiva por problemas de script, version o estado.
+
+### Reglas
+
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-17 - Fase 11F borrado operativo seguro con snapshots
+
+### Agregado
+
+* Migracion `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`.
+* Campos snapshot en `ejecuciones` para tarea, cliente, categoria, tipo, script, archivo, version y usuario.
+* Campos snapshot en `scheduler_eventos` para tarea, cliente, categoria y tipo.
+* Campo `eliminado_operativo` y metadatos de retiro en tareas, scripts, versiones, usuarios, clientes, categorias y tipos.
+* Ruta `POST /usuarios/<id>/eliminar`.
+* Borrado operativo para tareas, scripts, versiones, usuarios, clientes, categorias y tipos.
+
+### Cambiado
+
+* Tareas con historial se retiran de la operacion normal, pero sus ejecuciones siguen visibles usando snapshots.
+* Scripts/versiones con historial se retiran de operacion sin borrar ejecuciones ni logs.
+* Usuarios con historial se bloquean, se ocultan del mantenedor y conservan nombre/login historico.
+* Clientes/categorias/tipos usados por tareas se ocultan de listados/selects conservando nombres historicos.
+* `/panel`, scheduler, panel del programador y selects operativos excluyen registros con `eliminado_operativo = 1`.
+* `/ejecuciones` y consola usan `COALESCE(snapshot, maestro)` para seguir mostrando datos legibles.
+
+### Reglas
+
+* No se borra historial de ejecuciones.
+* No se borran logs historicos.
+* No se borran eventos del programador.
+* No se ejecuta SQL automaticamente.
+* No se modifica `.env`.
+* No se implementa Auditoria.
+* No se avanza a Fase 12A.
+
+## 2026-06-17 - Control de ejecuciones huerfanas
+
+### Agregado
+
+* Servicio `app/servicios/servicio_control_ejecuciones.py`.
+* Funcion `proceso_existe(pid)` compatible con Windows y POSIX cuando es posible.
+* Funcion `verificar_ejecucion(id_ejecucion)` para validar una ejecucion puntual.
+* Funcion `detectar_ejecuciones_huerfanas()` para revision controlada de ejecuciones en curso.
+* Accion `Verificar ejecucion` en la consola de ejecucion.
+
+### Corregido
+
+* Si una ejecucion queda `EN_EJECUCION` pero su `pid_proceso` ya no existe, puede marcarse como `ERROR` con mensaje controlado.
+* `/panel` solicita explicitamente solo las ultimas 6 ejecuciones.
+
+### Reglas
+
+* No se matan procesos automaticamente.
+* No se crean ejecuciones nuevas.
+* No se ejecuta SQL automaticamente.
+* No se modifica `.env`.
+* No se implementa Auditoria.
+* No se avanza a Fase 12A.
+
 ## 2026-06-17 - Fase 11D.2 historial filtrable eventos programador
 
 ### Agregado

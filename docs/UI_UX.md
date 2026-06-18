@@ -78,6 +78,17 @@ Se aplico una modernizacion visual general sin cambiar logica funcional:
 
 No se modificaron rutas, permisos, reglas de negocio, consultas SQL, scheduler, heartbeat, feriados ni sincronizacion.
 
+## Estado visual actual
+
+La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, historial, feriados, sincronizacion, configuracion del programador, panel operativo y eventos del programador.
+
+Pendientes visuales asociados al roadmap:
+
+* Fase 11G: vista de papelera operativa y restauracion.
+* Fase 11H: flujo de confirmacion fuerte para purga controlada.
+* Fase 12: modulo Auditoria con filtros, detalle y trazabilidad.
+* Fase 14: exportaciones, notificaciones, reportes y dashboard avanzado.
+
 ## Modal de confirmacion
 
 Desde Fase 4.2 existe un modal global reutilizable definido en `base.html`, controlado desde `app.js` y estilizado en `estilos.css`.

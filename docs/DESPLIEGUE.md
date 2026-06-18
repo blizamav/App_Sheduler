@@ -21,11 +21,11 @@ No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque pued
 
 ## QA Ubuntu
 
-Pendiente para Fase 11. Debe ejecutarse idealmente con Docker, `.env` propio y volumenes para scripts y logs.
+Pendiente para Fase 13. Debe ejecutarse con `.env` propio, SQL Server accesible, volumenes para scripts/env/logs y estrategia de arranque separada para web y worker.
 
 ## Produccion Ubuntu
 
-Pendiente para Fase 11. Debe usar Docker, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
+Pendiente para Fase 13. Debe usar Docker Compose o systemd, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
 
 ## Variables por ambiente
 
@@ -85,11 +85,29 @@ Consideraciones:
 * No ejecutar contra produccion sin respaldo y aprobacion.
 * No modificar scripts para incluir claves, usuarios o servidores reales.
 * El usuario inicial de aplicacion sigue validandose desde `.env`; los seeds no crean usuario `blizama`.
-* La conexion Flask-SQL Server queda pendiente para una fase posterior.
+* La conexion Flask-SQL Server existe desde Fase 3D mediante `.env` y `pyodbc`.
 
 ## Docker
 
-Pendiente para Fase 11.
+Pendiente para Fase 13E. Alternativas previstas: Docker Compose o systemd, segun decision de despliegue.
+
+## Roadmap operativo
+
+Pendientes de Fase 13:
+
+* 13A Scripts operativos Windows/Linux.
+* 13B Preparacion QA Linux.
+* 13C Preparacion produccion.
+* 13D Worker como servicio.
+* 13E Docker Compose o systemd.
+
+Pendientes de Fase 14:
+
+* Retencion automatica.
+* Backups.
+* Exportaciones.
+* Notificaciones.
+* Reportes de operacion.
 
 ## Volumenes
 
