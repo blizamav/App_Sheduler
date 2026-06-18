@@ -23,6 +23,7 @@
             </div>
             <nav class="nav">
                 <a class="nav-link {% if request.endpoint == 'principal.panel' %}activo{% endif %}" href="{{ url_for('principal.panel') }}"><span>01</span>Panel</a>
+                <p class="nav-seccion">Administracion</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span>02</span>Usuarios</a>
                 {% endif %}
@@ -35,32 +36,38 @@
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TIPOS_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint == 'mantenedores.tipos_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.tipos_listado') }}"><span>05</span>Tipos</a>
                 {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "PAPELERA_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('papelera.') %}activo{% endif %}" href="{{ url_for('papelera.listado') }}"><span>06</span>Papelera operativa</a>
+                {% endif %}
+                <p class="nav-seccion">Operacion</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TAREAS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tareas.') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}"><span>06</span>Tareas</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tareas.') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}"><span>07</span>Tareas</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>06</span>Tareas</a>
+                <a class="nav-link deshabilitado" href="#"><span>07</span>Tareas</a>
                 {% endif %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>07</span>Scripts</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span>08</span>Scripts</a>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% endif %}" href="{{ url_for('ejecuciones.listado') }}"><span>08</span>Ejecuciones</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% endif %}" href="{{ url_for('ejecuciones.listado') }}"><span>09</span>Ejecuciones</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>08</span>Ejecuciones</a>
+                <a class="nav-link deshabilitado" href="#"><span>09</span>Ejecuciones</a>
                 {% endif %}
+                <p class="nav-seccion">Programador</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>09</span>Panel programador</a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.eventos' %}activo{% endif %}" href="{{ url_for('scheduler.eventos') }}"><span>10</span>Eventos programador</a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>11</span>Config. programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span>10</span>Panel programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.eventos' %}activo{% endif %}" href="{{ url_for('scheduler.eventos') }}"><span>11</span>Eventos programador</a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span>12</span>Config. programador</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>09</span>Panel programador</a>
-                <a class="nav-link deshabilitado" href="#"><span>10</span>Eventos programador</a>
-                <a class="nav-link deshabilitado" href="#"><span>11</span>Config. programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>10</span>Panel programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>11</span>Eventos programador</a>
+                <a class="nav-link deshabilitado" href="#"><span>12</span>Config. programador</a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>12</span>Feriados</a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span>13</span>Feriados</a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span>12</span>Feriados</a>
+                <a class="nav-link deshabilitado" href="#"><span>13</span>Feriados</a>
                 {% endif %}
-                <a class="nav-link deshabilitado" href="#"><span>13</span>Auditoria</a>
+                <p class="nav-seccion">Control y trazabilidad</p>
+                <a class="nav-link deshabilitado" href="#"><span>14</span>Auditoria</a>
             </nav>
             <div class="sidebar-footer">
                 <span class="badge info">Operacion</span>

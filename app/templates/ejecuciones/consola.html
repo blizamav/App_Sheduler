@@ -36,6 +36,9 @@
         <div class="acciones-formulario">
             <a class="btn secundario compacto" href="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">Actualizar log</a>
             {% if ejecucion.en_ejecucion %}
+            <form method="post" action="{{ url_for('ejecuciones.verificar', id_ejecucion=ejecucion.id_ejecucion) }}">
+                <button class="btn secundario compacto" type="submit">Verificar ejecucion</button>
+            </form>
             <form method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}">
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Detener ejecucion" data-confirm-message="Estas a punto de detener esta ejecucion en curso. El proceso sera finalizado y quedara registrado en el sistema. Deseas continuar?" data-confirm-ok="Si, detener ejecucion" data-confirm-cancel="Cancelar" data-confirm-type="danger">Detener ejecucion</button>
             </form>

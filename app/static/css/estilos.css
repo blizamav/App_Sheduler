@@ -154,6 +154,15 @@ textarea {
     transition: background var(--transicion), border-color var(--transicion), transform var(--transicion), color var(--transicion);
 }
 
+.nav-seccion {
+    margin: 12px 4px 2px;
+    color: rgba(238, 246, 255, 0.56);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
 .nav-link span {
     color: var(--color-cyan);
     font-size: 0.72rem;

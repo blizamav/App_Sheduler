@@ -6,7 +6,24 @@ def _fila_a_dict(cursor, fila):
     return dict(zip(columnas, fila))
 
 
+def _columnas_eventos():
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT name
+            FROM sys.columns
+            WHERE object_id = OBJECT_ID('dbo.scheduler_eventos')
+            """
+        )
+        return {fila[0] for fila in cursor.fetchall()}
+
+
 def insertar_evento_programador(evento):
+    columnas = _columnas_eventos()
+    if {"id_tarea_original", "nombre_tarea_snapshot", "cliente_snapshot", "categoria_snapshot", "tipo_snapshot"}.issubset(columnas):
+        return _insertar_evento_programador_con_snapshots(evento)
+
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(
@@ -36,7 +53,47 @@ def insertar_evento_programador(evento):
         conexion.commit()
 
 
+def _insertar_evento_programador_con_snapshots(evento):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            INSERT INTO dbo.scheduler_eventos
+                (nombre_worker, id_tarea, nombre_tarea, id_tarea_original,
+                 nombre_tarea_snapshot, cliente_snapshot, categoria_snapshot,
+                 tipo_snapshot, id_programacion, fecha_programada,
+                 clave_programacion, tipo_evento, decision, motivo, detalle,
+                 estado_scheduler, ejecutar_en_feriados, es_feriado,
+                 nombre_feriado, origen, activo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SCHEDULER', 1)
+            """,
+            evento.get("nombre_worker"),
+            evento.get("id_tarea"),
+            evento.get("nombre_tarea"),
+            evento.get("id_tarea"),
+            evento.get("nombre_tarea"),
+            evento.get("cliente_snapshot"),
+            evento.get("categoria_snapshot"),
+            evento.get("tipo_snapshot"),
+            evento.get("id_programacion"),
+            evento.get("fecha_programada"),
+            evento.get("clave_programacion"),
+            evento["tipo_evento"],
+            evento["decision"],
+            evento.get("motivo"),
+            evento.get("detalle"),
+            evento.get("estado_scheduler"),
+            evento.get("ejecutar_en_feriados"),
+            evento.get("es_feriado"),
+            evento.get("nombre_feriado"),
+        )
+        conexion.commit()
+
+
 def listar_eventos_programador(filtros=None, limite=10):
+    columnas = _columnas_eventos()
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    nombre_tarea_filtro = "COALESCE(nombre_tarea_snapshot, nombre_tarea)" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
     filtros = filtros or {}
     condiciones = ["activo = 1"]
     parametros = []
@@ -48,7 +105,7 @@ def listar_eventos_programador(filtros=None, limite=10):
         condiciones.append("fecha_evento < DATEADD(day, 1, ?)")
         parametros.append(filtros["fecha_hasta"])
     if filtros.get("tarea"):
-        condiciones.append("(nombre_tarea LIKE ? OR CONVERT(varchar(20), id_tarea) = ?)")
+        condiciones.append(f"({nombre_tarea_filtro} LIKE ? OR CONVERT(varchar(20), id_tarea) = ?)")
         parametros.extend([f"%{filtros['tarea']}%", filtros["tarea"]])
     if filtros.get("decision"):
         condiciones.append("decision = ?")
@@ -62,7 +119,7 @@ def listar_eventos_programador(filtros=None, limite=10):
 
     consulta = f"""
         SELECT TOP ({int(limite)})
-               id_evento, fecha_evento, nombre_worker, id_tarea, nombre_tarea,
+               id_evento, fecha_evento, nombre_worker, id_tarea, {nombre_tarea_select},
                id_programacion, fecha_programada, clave_programacion,
                tipo_evento, decision, motivo, detalle, estado_scheduler,
                ejecutar_en_feriados, es_feriado, nombre_feriado, origen
@@ -82,6 +139,8 @@ def resumir_eventos_recientes(limite=10):
 
 
 def obtener_resumen_eventos_hoy():
+    columnas = _columnas_eventos()
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(
@@ -101,9 +160,9 @@ def obtener_resumen_eventos_hoy():
         resumen = _fila_a_dict(cursor, fila) if fila else {}
 
         cursor.execute(
-            """
+            f"""
             SELECT TOP (1)
-                   id_evento, fecha_evento, nombre_worker, id_tarea, nombre_tarea,
+                   id_evento, fecha_evento, nombre_worker, id_tarea, {nombre_tarea_select},
                    id_programacion, fecha_programada, clave_programacion,
                    tipo_evento, decision, motivo, detalle, estado_scheduler,
                    ejecutar_en_feriados, es_feriado, nombre_feriado, origen
@@ -136,12 +195,14 @@ def obtener_omisiones_por_motivo_hoy():
 
 
 def obtener_eventos_relevantes_recientes(limite=10):
+    columnas = _columnas_eventos()
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(
             f"""
             SELECT TOP ({int(limite)})
-                   id_evento, fecha_evento, nombre_worker, id_tarea, nombre_tarea,
+                   id_evento, fecha_evento, nombre_worker, id_tarea, {nombre_tarea_select},
                    id_programacion, fecha_programada, clave_programacion,
                    tipo_evento, decision, motivo, detalle, estado_scheduler,
                    ejecutar_en_feriados, es_feriado, nombre_feriado, origen
@@ -187,7 +248,9 @@ def listar_eventos_programador_paginado(filtros=None, page=1, per_page=25):
     if per_page not in {10, 25, 50, 100}:
         per_page = 25
 
-    condiciones, parametros = _condiciones_eventos(filtros)
+    columnas = _columnas_eventos()
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    condiciones, parametros = _condiciones_eventos(filtros, columnas)
     where_sql = " AND ".join(condiciones)
     offset = (page - 1) * per_page
 
@@ -210,7 +273,7 @@ def listar_eventos_programador_paginado(filtros=None, page=1, per_page=25):
 
         cursor.execute(
             f"""
-            SELECT id_evento, fecha_evento, nombre_worker, id_tarea, nombre_tarea,
+            SELECT id_evento, fecha_evento, nombre_worker, id_tarea, {nombre_tarea_select},
                    id_programacion, fecha_programada, clave_programacion,
                    tipo_evento, decision, motivo, detalle, estado_scheduler,
                    ejecutar_en_feriados, es_feriado, nombre_feriado, origen
@@ -228,7 +291,9 @@ def listar_eventos_programador_paginado(filtros=None, page=1, per_page=25):
     return {"eventos": eventos, "total": total, "page": page, "per_page": per_page}
 
 
-def _condiciones_eventos(filtros):
+def _condiciones_eventos(filtros, columnas=None):
+    columnas = columnas or set()
+    nombre_tarea_filtro = "COALESCE(nombre_tarea_snapshot, nombre_tarea)" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
     condiciones = ["activo = 1"]
     parametros = []
 
@@ -239,7 +304,7 @@ def _condiciones_eventos(filtros):
         condiciones.append("fecha_evento < DATEADD(day, 1, ?)")
         parametros.append(filtros["fecha_hasta"])
     if filtros.get("tarea"):
-        condiciones.append("(nombre_tarea LIKE ? OR CONVERT(varchar(20), id_tarea) = ?)")
+        condiciones.append(f"({nombre_tarea_filtro} LIKE ? OR CONVERT(varchar(20), id_tarea) = ?)")
         parametros.extend([f"%{filtros['tarea']}%", filtros["tarea"]])
     if filtros.get("tipo_evento"):
         condiciones.append("tipo_evento = ?")

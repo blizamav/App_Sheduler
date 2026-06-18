@@ -4,7 +4,7 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 11F. La fuente formal del roadmap desde este punto es `docs/ROADMAP.md`.
+El proyecto avanzo hasta Fase 11G. La fuente formal del roadmap desde este punto es `docs/ROADMAP.md`.
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.
@@ -37,6 +37,7 @@ El proyecto avanzo hasta Fase 11F. La fuente formal del roadmap desde este punto
 * Fase 11D.2: historial filtrable de eventos del programador.
 * Fase 11E: control de ejecuciones huerfanas por verificacion de PID.
 * Fase 11F: borrado operativo seguro con snapshots historicos.
+* Fase 11G: papelera operativa, restauracion y eliminacion permanente segura.
 
 ## Stack actual
 
@@ -90,6 +91,7 @@ El proyecto avanzo hasta Fase 11F. La fuente formal del roadmap desde este punto
 * Historial filtrable de eventos del programador en `/scheduler/eventos`.
 * Control de ejecuciones huerfanas desde consola.
 * Borrado operativo seguro con `eliminado_operativo` y snapshots historicos.
+* Papelera operativa en `/papelera` para restaurar registros como inactivos o eliminarlos permanentemente de tablas operativas cuando sea seguro.
 * TOP 6 ultimas ejecuciones en panel principal.
 * Interfaz modernizada con sidebar, botones, cards, tablas, formularios, modales, toasts, consola y paneles visualmente pulidos.
 * Filtros de usuarios por estado, rol y busqueda general.
@@ -109,7 +111,6 @@ El roadmap queda reorganizado en bloques:
 
 Pendiente critico inmediato:
 
-* Fase 11G: papelera operativa y restauracion.
 * Fase 11H: purga controlada.
 * Fase 11I: revision integral post-borrado.
 * Fase 12A: modulo Auditoria base.

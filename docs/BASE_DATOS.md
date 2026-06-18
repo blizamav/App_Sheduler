@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual. Fase 11G agrega seed 011 para permisos de papelera, pendiente de ejecucion manual. Fase 11H agrega migracion 017 para desacople historico, pendiente de ejecucion manual.
 
 Roadmap vigente: `docs/ROADMAP.md`.
 
@@ -52,6 +52,7 @@ database/
     014_crear_scheduler_worker_heartbeat.sql
     015_crear_eventos_programador.sql
     016_agregar_snapshots_historial_borrado_operativo.sql
+    017_desacople_historico_papelera.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -60,6 +61,7 @@ database/
     008_permisos_feriados.sql
     009_reglas_irrenunciables_chile.sql
     010_permisos_sincronizacion_feriados.sql
+    011_permisos_papelera.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -90,6 +92,8 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
 25. `database/migrations/015_crear_eventos_programador.sql`
 26. `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`
+27. `database/seeds/011_permisos_papelera.sql`
+28. `database/migrations/017_desacople_historico_papelera.sql`
 
 Resumen por script:
 
@@ -109,6 +113,7 @@ Resumen por script:
 * `014_crear_scheduler_worker_heartbeat.sql`: crea tabla `scheduler_worker_heartbeat` para registrar senal de vida del worker; no inicia ni detiene procesos desde la app.
 * `015_crear_eventos_programador.sql`: crea tabla `scheduler_eventos` para registrar decisiones, omisiones y errores del programador; no crea ejecuciones ni logs de tarea.
 * `016_agregar_snapshots_historial_borrado_operativo.sql`: agrega snapshots historicos y campos de borrado operativo seguro para retirar registros sin perder historial.
+* `017_desacople_historico_papelera.sql`: elimina FKs historicas desde `ejecuciones` y `logs_tareas`, vuelve anulables sus IDs historicos y conserva snapshots para permitir eliminacion permanente real desde papelera sin borrar historia.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -119,6 +124,7 @@ Resumen por script:
 * `008_permisos_feriados.sql`: inserta permisos incrementales para ver, crear, editar, activar/desactivar y eliminar feriados; ejecutado y validado localmente.
 * `009_reglas_irrenunciables_chile.sql`: carga reglas iniciales Chile para 01/01, 01/05, 18/09, 19/09 y 25/12.
 * `010_permisos_sincronizacion_feriados.sql`: inserta permiso `FERIADOS_SINCRONIZAR`.
+* `011_permisos_papelera.sql`: inserta permisos `PAPELERA_VER`, `PAPELERA_RESTAURAR` y `PAPELERA_ELIMINAR_PERMANENTE`. Debe ejecutarse manualmente en SSMS.
 
 ## Fase 11B - Heartbeat worker scheduler
 
@@ -276,8 +282,46 @@ Reglas:
 * `eliminado_operativo = 1` no elimina fisicamente la fila.
 * El registro retirado desaparece de la operacion normal.
 * Los snapshots conservan historia legible.
-* Falta papelera operativa para consultar y restaurar registros retirados.
+* Papelera operativa implementada en Fase 11G para consultar, restaurar y eliminar permanentemente registros retirados bajo reglas seguras.
 * Falta purga controlada para eliminacion fisica posterior bajo reglas estrictas.
+
+## Fase 11G - Papelera y eliminacion permanente segura
+
+Implementado funcionalmente en Fase 11G.
+
+La papelera operativa debe trabajar sobre registros con `eliminado_operativo = 1`.
+
+Acciones permitidas:
+
+* `Restaurar`: revierte `eliminado_operativo` si pasa validaciones de integridad y permisos.
+* `Eliminar permanentemente`: ejecuta `DELETE` fisico solo sobre la tabla operativa o maestra del registro, cuando no existen dependencias operativas no historicas y las claves foraneas lo permiten.
+
+Al eliminar permanentemente:
+
+* El registro deja de aparecer en `/papelera`, mantenedores, selects, candidatos del scheduler y paneles operativos.
+* No se debe ejecutar `DELETE CASCADE` destructivo.
+* No se deben borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+* La historia debe seguir legible mediante snapshots o texto historico.
+
+Si no es seguro eliminar fisicamente:
+
+* No se fuerza el `DELETE`.
+* El registro mantiene `eliminado_operativo = 1`.
+* El registro sigue visible en `/papelera` y oculto de la operacion normal.
+
+## Fase 11H - Desacople historico de papelera
+
+La migracion `017_desacople_historico_papelera.sql` separa las referencias historicas de las relaciones operativas vivas.
+
+Cambios:
+
+* Rellena snapshots faltantes en `ejecuciones` y `scheduler_eventos` antes del cambio estructural.
+* Elimina las FKs historicas `FK_ejecuciones_tareas`, `FK_ejecuciones_scripts`, `FK_ejecuciones_scripts_versiones` y `FK_logs_tareas_tareas`.
+* Cambia `ejecuciones.id_tarea`, `ejecuciones.id_script`, `ejecuciones.id_version` y `logs_tareas.id_tarea` a `NULL`.
+* Mantiene `logs_tareas.id_ejecucion` apuntando a `ejecuciones`.
+* No borra filas historicas ni archivos historicos.
+
+La app valida que esta migracion exista antes de permitir eliminacion permanente real de `tareas`, `scripts` o `scripts_versiones` desde `/papelera`.
 
 ## Auditoria pendiente
 

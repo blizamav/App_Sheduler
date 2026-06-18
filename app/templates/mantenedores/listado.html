@@ -8,7 +8,7 @@
     <div>
         <p class="eyebrow">Mantenedores</p>
         <h2>{{ config.titulo }}</h2>
-        <p>Administracion base para construir tareas y rutas de scripts. La eliminacion definitiva solo esta permitida si el registro no tiene informacion asociada.</p>
+        <p>Administracion base para construir tareas y rutas de scripts. Los registros usados pueden borrarse de la operacion conservando historial.</p>
     </div>
     <a class="btn primario" href="{{ url_for('mantenedores.' ~ entidad ~ '_nuevo') }}">Nuevo {{ config.singular }}</a>
 </section>
@@ -42,7 +42,7 @@
         </div>
         <div class="badges-linea">
             <span class="badge info">Mostrando {{ total_registros }} registros</span>
-            <span class="badge info">Eliminacion controlada</span>
+            <span class="badge info">Historial conservado</span>
         </div>
     </div>
 
@@ -93,13 +93,13 @@
                                 <button
                                     class="btn secundario compacto requiere-confirmacion"
                                     type="submit"
-                                    data-confirm-title="{{ 'Eliminar registro definitivamente' if item.dependencias_tareas == 0 else 'No se puede eliminar' }}"
-                                    data-confirm-message="{{ 'Este registro no tiene informacion asociada. Si lo eliminas, desaparecera definitivamente del sistema. Deseas continuar?' if item.dependencias_tareas == 0 else 'No se puede eliminar este registro porque ya tiene informacion asociada. Puedes desactivarlo para que no vuelva a usarse.' }}"
-                                    data-confirm-ok="{{ 'Si, eliminar definitivamente' if item.dependencias_tareas == 0 else 'Entendido' }}"
+                                    data-confirm-title="Borrar registro"
+                                    data-confirm-message="Este registro se retirara de la operacion normal. Si tiene historial asociado, se conservara para consultas historicas."
+                                    data-confirm-ok="Borrar conservando historial"
                                     data-confirm-cancel="Cancelar"
-                                    data-confirm-type="{{ 'danger' if item.dependencias_tareas == 0 else 'warning' }}"
+                                    data-confirm-type="danger"
                                 >
-                                    Eliminar
+                                    Borrar
                                 </button>
                             </form>
                         </div>

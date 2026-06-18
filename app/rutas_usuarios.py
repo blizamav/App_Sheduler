@@ -6,6 +6,7 @@ from app.servicios.servicio_usuarios import (
     actualizar_usuario_admin,
     cambiar_estado_usuario_admin,
     crear_usuario_admin,
+    eliminar_usuario_admin,
     listar_usuarios_admin,
     obtener_usuario_admin,
 )
@@ -90,6 +91,14 @@ def editar(id_usuario):
 def estado(id_usuario):
     activo = request.form.get("activo") == "1"
     ok, mensaje = cambiar_estado_usuario_admin(id_usuario, activo, session.get("usuario"))
+    flash(mensaje, "success" if ok else "error")
+    return redirect(url_for("usuarios.listado"))
+
+
+@bp_usuarios.route("/<int:id_usuario>/eliminar", methods=["POST"])
+@permiso_requerido("USUARIOS_ADMIN")
+def eliminar(id_usuario):
+    ok, mensaje = eliminar_usuario_admin(id_usuario, session.get("usuario"), session.get("id_usuario"))
     flash(mensaje, "success" if ok else "error")
     return redirect(url_for("usuarios.listado"))
 

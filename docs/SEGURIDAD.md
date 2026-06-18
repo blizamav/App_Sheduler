@@ -152,9 +152,36 @@ Auditoria funcional queda pendiente; por ahora se mantiene `logs_sistema` para t
 
 Pendientes de seguridad asociados:
 
-* Papelera operativa para revisar registros retirados sin devolverlos automaticamente a operacion.
-* Restauracion controlada con validaciones de integridad y permisos.
+* Papelera operativa para revisar registros retirados sin devolverlos automaticamente a operacion. Implementado.
+* Restauracion controlada con validaciones de integridad y permisos. Implementado.
+* Eliminacion permanente segura desde papelera, limitada a tablas operativas o maestras y solo si no destruye trazabilidad. Implementado.
 * Purga controlada con autorizacion explicita, respaldo previo y trazabilidad.
+
+## Eliminacion permanente desde papelera
+
+Implementado en Fase 11G.
+
+La accion `Eliminar permanentemente` debe usar modal corporativo fuerte. No se permite `alert()`, `window.confirm()` ni `prompt()`.
+
+Texto obligatorio del modal:
+
+```text
+Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Ya no aparecerá en mantenedores, papelera, selects ni paneles operativos. El historial de ejecuciones, logs, eventos del programador y snapshots históricos se conservará. Esta acción no se puede deshacer desde la aplicación.
+```
+
+Botones:
+
+* `Cancelar`.
+* `Eliminar permanentemente`.
+
+Reglas de seguridad:
+
+* No usar `DELETE CASCADE` destructivo.
+* No borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+* Para `tareas`, `scripts` y `scripts_versiones`, exigir migracion 017 aplicada antes de borrar fisicamente.
+* Antes de borrar, asegurar snapshots y nulificar referencias historicas anulables en `ejecuciones`, `logs_tareas` y `scheduler_eventos`.
+* Si el borrado fisico no es seguro, no forzar el `DELETE`.
+* Si existen dependencias operativas no historicas, mantener `eliminado_operativo = 1` y mostrar: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
 
 ## Auditoria funcional pendiente
 

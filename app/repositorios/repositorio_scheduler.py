@@ -10,6 +10,9 @@ def listar_tareas_programadas_activas():
     consulta = """
         SELECT t.id_tarea,
                t.nombre_tarea,
+               c.nombre_cliente,
+               ca.nombre_categoria,
+               ti.nombre_tipo,
                t.estado_tarea,
                t.activo,
                p.id_programacion,
@@ -29,11 +32,15 @@ def listar_tareas_programadas_activas():
                v.id_version,
                v.nombre_archivo
         FROM dbo.tareas t
+        INNER JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
+        INNER JOIN dbo.categorias ca ON ca.id_categoria = t.id_categoria
+        INNER JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
         INNER JOIN dbo.programaciones p ON p.id_tarea = t.id_tarea AND p.activo = 1
-        LEFT JOIN dbo.scripts s ON s.id_tarea = t.id_tarea
-        LEFT JOIN dbo.scripts_versiones v ON v.id_version = s.id_version_activa
+        LEFT JOIN dbo.scripts s ON s.id_tarea = t.id_tarea AND ISNULL(s.eliminado_operativo, 0) = 0
+        LEFT JOIN dbo.scripts_versiones v ON v.id_version = s.id_version_activa AND ISNULL(v.eliminado_operativo, 0) = 0
         WHERE t.activo = 1
           AND t.estado_tarea = 'ACTIVA'
+          AND ISNULL(t.eliminado_operativo, 0) = 0
           AND p.tipo_programacion <> 'MANUAL'
         ORDER BY t.id_tarea
     """

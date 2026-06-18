@@ -3,13 +3,14 @@ from datetime import datetime
 
 from app.repositorios.repositorio_tareas import (
     actualizar_tarea,
+    asegurar_snapshots_tarea,
     cambiar_estado_tarea,
-    contar_dependencias_tarea,
     crear_tarea,
-    eliminar_tarea,
+    existe_ejecucion_en_curso_tarea,
     existe_tarea_duplicada,
     listar_catalogo,
     listar_tareas,
+    marcar_tarea_eliminada_operativa,
     obtener_tarea,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
@@ -35,6 +36,7 @@ def listar_tareas_admin(filtros=None):
     tareas = listar_tareas(filtros)
     for tarea in tareas:
         tarea["resumen_programacion"] = resumir_programacion(tarea)
+        _enriquecer_disponibilidad_ejecucion(tarea)
     return tareas
 
 
@@ -131,22 +133,32 @@ def eliminar_tarea_admin(id_tarea, usuario_accion):
     if not tarea:
         return False, "Tarea no encontrada."
 
-    dependencias = contar_dependencias_tarea(id_tarea)
-    if dependencias > 0:
-        mensaje = "No se puede eliminar esta tarea porque ya tiene informacion asociada. Puedes desactivarla para que no vuelva a usarse."
+    if existe_ejecucion_en_curso_tarea(id_tarea):
+        mensaje = "No se puede borrar porque existe una ejecucion en curso. Verifique o detenga la ejecucion antes de borrar."
         registrar_log_sistema(
-            "TAREA_ELIMINACION_BLOQUEADA",
+            "TAREA_BORRADO_BLOQUEADO_EN_EJECUCION",
             "TAREAS",
-            f"Intento de eliminar tarea con dependencias: {tarea['nombre_tarea']}.",
+            f"Intento de borrar tarea con ejecucion en curso: {tarea['nombre_tarea']}.",
             usuario=usuario_accion,
-            valor_anterior=str({"id_tarea": id_tarea, "dependencias": dependencias}),
+            valor_anterior=str({"id_tarea": id_tarea}),
             nivel="WARNING",
         )
         return False, mensaje
 
-    eliminar_tarea(id_tarea)
-    registrar_log_sistema("TAREA_ELIMINADA", "TAREAS", f"Tarea eliminada fisicamente: {tarea['nombre_tarea']}.", usuario=usuario_accion, valor_anterior=str(tarea))
-    return True, "Tarea eliminada definitivamente."
+    asegurar_snapshots_tarea(id_tarea)
+    marcar_tarea_eliminada_operativa(
+        id_tarea,
+        usuario_accion,
+        "Borrado operativo seguro. Eliminacion permanente disponible solo desde Papelera operativa.",
+    )
+    registrar_log_sistema(
+        "TAREA_BORRADA_OPERATIVA",
+        "TAREAS",
+        f"Tarea retirada de operacion conservando historial: {tarea['nombre_tarea']}.",
+        usuario=usuario_accion,
+        valor_anterior=str({"id_tarea": id_tarea}),
+    )
+    return True, "Tarea borrada de la operacion y enviada a Papelera operativa. El historial de ejecuciones se conserva."
 
 
 def _validar_programacion(datos):
@@ -244,6 +256,33 @@ def _preparar_datos(datos, usuario_accion):
 
 def _hay_cambios_tarea(actual, datos_tarea, datos_programacion):
     return _normalizar_actual(actual) != _normalizar_nuevo(datos_tarea, datos_programacion)
+
+
+def _enriquecer_disponibilidad_ejecucion(tarea):
+    motivo = None
+
+    if not bool(tarea.get("tarea_activo", tarea.get("activo"))):
+        motivo = "Tarea inactiva"
+    elif bool(tarea.get("tarea_eliminada_operativo")):
+        motivo = "Tarea borrada operativamente"
+    elif int(tarea.get("ejecuciones_en_curso") or 0) > 0:
+        motivo = "Ejecucion en curso"
+    elif not tarea.get("id_script"):
+        motivo = "Sin script asociado"
+    elif bool(tarea.get("script_eliminado_operativo")):
+        motivo = "Script borrado operativamente"
+    elif not bool(tarea.get("script_activo")):
+        motivo = "Script inactivo"
+    elif not tarea.get("id_version_activa_script") or not tarea.get("id_version_activa"):
+        motivo = "Sin version activa"
+    elif bool(tarea.get("version_eliminada_operativo")):
+        motivo = "Version borrada operativamente"
+    elif not bool(tarea.get("version_es_activa")) or tarea.get("estado_version_activa") != "ACTIVA":
+        motivo = "Version no disponible"
+
+    tarea["ejecutable"] = motivo is None
+    tarea["motivo_no_ejecutable"] = motivo
+    tarea["disponibilidad_ejecucion"] = "Ejecutable" if motivo is None else f"No ejecutable: {motivo}"
 
 
 def _normalizar_actual(actual):

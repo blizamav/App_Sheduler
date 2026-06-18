@@ -51,7 +51,7 @@
         </div>
         <div class="badges-linea">
             <span class="badge info">Mostrando {{ total_usuarios }} usuarios</span>
-            <span class="badge info">Sin eliminacion fisica</span>
+            <span class="badge info">Historial conservado</span>
         </div>
     </div>
 
@@ -104,6 +104,19 @@
                                     data-confirm-type="{{ 'danger' if item.activo else 'success' }}"
                                 >
                                     {{ "Desactivar" if item.activo else "Activar" }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('usuarios.eliminar', id_usuario=item.id_usuario) }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Borrar usuario"
+                                    data-confirm-message="Este usuario sera retirado de la operacion normal. Si tiene historial asociado, se conservara para ejecuciones y logs."
+                                    data-confirm-ok="Borrar conservando historial"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="danger"
+                                >
+                                    Borrar
                                 </button>
                             </form>
                         </div>

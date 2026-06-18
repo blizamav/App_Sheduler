@@ -1,5 +1,94 @@
 # Changelog
 
+## 2026-06-18 - Fase 11H desacople historico para eliminacion permanente real
+
+### Agregado
+
+* Migracion manual `database/migrations/017_desacople_historico_papelera.sql`.
+* Diagnostico manual `database/diagnostics/003_diagnostico_desacople_historico.sql`.
+* Validacion en `/papelera` para bloquear eliminacion permanente de tareas, scripts y versiones si falta la migracion 017.
+
+### Cambiado
+
+* La eliminacion permanente desde papelera ahora asegura snapshots, nulifica IDs historicos anulables en `ejecuciones`, `logs_tareas` y `scheduler_eventos`, y luego borra solo filas operativas.
+* `ejecuciones.id_tarea`, `ejecuciones.id_script`, `ejecuciones.id_version` y `logs_tareas.id_tarea` quedan definidos por migracion como referencias historicas anulables.
+* Se documenta el desacople entre historial y tablas operativas en roadmap, base de datos, flujos, modulos y seguridad.
+
+### Reglas
+
+* No se borra `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots, auditoria futura ni archivos historicos.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
+## 2026-06-18 - Correccion post Fase 11G suma BIT en papelera
+
+### Corregido
+
+* `/papelera` ya no falla al calcular dependencias de tareas cuando cliente, categoria o tipo tienen `eliminado_operativo`.
+* En `repositorio_papelera._dependencias_tarea()` se reemplazo la suma directa de columnas `bit` por conversion explicita a `INT`.
+
+### Causa
+
+* SQL Server no permite sumar columnas `bit` directamente con el operador `+`.
+
+### Reglas
+
+* No se cambio la logica funcional de papelera.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se borro historial.
+* No se implemento Auditoria.
+* No se avanzo a Fase 11H ni Fase 12A.
+
+## 2026-06-18 - Fase 11G papelera operativa funcional
+
+### Agregado
+
+* Ruta `GET /papelera`.
+* Rutas `POST /papelera/<entidad>/<id>/restaurar` y `POST /papelera/<entidad>/<id>/eliminar-permanente`.
+* Repositorio `app/repositorios/repositorio_papelera.py`.
+* Servicio `app/servicios/servicio_papelera.py`.
+* Template `app/templates/papelera/listado.html`.
+* Seed manual `database/seeds/011_permisos_papelera.sql`.
+* Acceso `Papelera operativa` en sidebar dentro de Administracion.
+
+### Cambiado
+
+* Sidebar reorganizado por grupos: Administracion, Operacion, Programador y Control y trazabilidad.
+* Borrado normal de usuarios, clientes, categorias, tipos, tareas, scripts y versiones queda como borrado operativo.
+* La eliminacion permanente queda centralizada en Papelera operativa.
+
+### Reglas
+
+* Restaurar deja registros como inactivos.
+* Eliminar permanentemente borra solo tablas operativas o maestras si es seguro.
+* No se borran `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, auditoria futura ni archivos historicos.
+* No se ejecuto SQL automaticamente.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 11H ni Fase 12A.
+
+## 2026-06-18 - Ajuste diseno Fase 11G eliminacion permanente segura
+
+### Documentado
+
+* Se aclara que Fase 11G debe incluir `Restaurar` y `Eliminar permanentemente` desde `/papelera`.
+* Se define que la eliminacion permanente borra fisicamente solo de tablas operativas o maestras cuando sea seguro.
+* Se explicita que no debe borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+* Se documenta el modal corporativo obligatorio y el mensaje de bloqueo por dependencias operativas no historicas.
+
+### Reglas
+
+* No se modifico codigo funcional.
+* No se crearon migraciones.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
 ## 2026-06-18 - Reorganizacion formal del roadmap
 
 ### Documentado

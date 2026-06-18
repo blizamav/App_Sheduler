@@ -2,12 +2,14 @@ import unicodedata
 
 from app.repositorios.repositorio_mantenedores import (
     actualizar,
+    asegurar_snapshots_mantenedor,
     cambiar_estado,
     contar_dependencias,
+    contar_tareas_activas,
     crear,
-    eliminar,
     existe_nombre_normalizado,
     listar,
+    marcar_eliminado_operativo,
     obtener_por_id,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
@@ -146,44 +148,31 @@ def eliminar_mantenedor(entidad, id_registro, usuario_accion):
     if not actual:
         return False, "Registro no encontrado."
 
+    tareas_activas = contar_tareas_activas(entidad, id_registro)
+    if tareas_activas > 0:
+        registrar_log_sistema(
+            f"{config['permiso']}_BORRADO_BLOQUEADO_TAREAS_ACTIVAS",
+            config["modulo_log"],
+            f"Intento bloqueado de borrar {config['singular']} con tareas activas asociadas: {actual['nombre']}.",
+            usuario=usuario_accion,
+            valor_anterior=str({"id": id_registro, "tareas_activas": tareas_activas}),
+            nivel="WARNING",
+        )
+        return False, "No puedes eliminar este registro porque tiene tareas activas asociadas. Primero desactiva o elimina esas tareas."
+
     dependencias = contar_dependencias(entidad, id_registro)
-    if dependencias > 0:
-        mensaje = (
-            "No se puede eliminar este registro porque ya tiene informacion asociada. "
-            "Puedes desactivarlo para que no vuelva a usarse."
-        )
-        registrar_log_sistema(
-            f"{config['permiso']}_ELIMINACION_BLOQUEADA",
-            config["modulo_log"],
-            f"Intento de eliminar {config['singular']} con dependencias: {actual['nombre']}.",
-            usuario=usuario_accion,
-            valor_anterior=str({"id": id_registro, "dependencias_tareas": dependencias}),
-            nivel="WARNING",
-        )
-        return False, mensaje
-
-    try:
-        eliminar(entidad, id_registro)
-    except Exception:
-        mensaje = (
-            "No se puede eliminar este registro porque ya tiene informacion asociada. "
-            "Puedes desactivarlo para que no vuelva a usarse."
-        )
-        registrar_log_sistema(
-            f"{config['permiso']}_ELIMINACION_BLOQUEADA",
-            config["modulo_log"],
-            f"Eliminacion bloqueada por restriccion de base de datos: {actual['nombre']}.",
-            usuario=usuario_accion,
-            valor_anterior=str({"id": id_registro}),
-            nivel="WARNING",
-        )
-        return False, mensaje
-
-    registrar_log_sistema(
-        f"{config['permiso']}_ELIMINADO",
-        config["modulo_log"],
-        f"{config['singular'].capitalize()} eliminado definitivamente: {actual['nombre']}.",
-        usuario=usuario_accion,
-        valor_anterior=str(actual),
+    asegurar_snapshots_mantenedor(entidad, id_registro)
+    marcar_eliminado_operativo(
+        entidad,
+        id_registro,
+        usuario_accion,
+        "Borrado operativo seguro. Eliminacion permanente disponible solo desde Papelera operativa.",
     )
-    return True, f"{config['singular'].capitalize()} eliminado definitivamente."
+    registrar_log_sistema(
+        f"{config['permiso']}_BORRADO_OPERATIVO",
+        config["modulo_log"],
+        f"{config['singular'].capitalize()} retirado de operacion conservando historial: {actual['nombre']}.",
+        usuario=usuario_accion,
+        valor_anterior=str({"id": id_registro, "dependencias_tareas": dependencias}),
+    )
+    return True, f"{config['singular'].capitalize()} borrado de la operacion y enviado a Papelera operativa. El historial se conserva."

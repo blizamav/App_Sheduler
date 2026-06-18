@@ -50,7 +50,7 @@
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Desactivar script" data-confirm-message="El script asociado a esta tarea quedara inactivo. Deseas continuar?" data-confirm-ok="Si, desactivar" data-confirm-cancel="Cancelar" data-confirm-type="warning">Desactivar script</button>
             </form>
             <form method="post" action="{{ url_for('scripts.eliminar_script', id_script=script.id_script) }}">
-                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar script completo" data-confirm-message="Estas a punto de eliminar el script asociado a esta tarea. Esta accion afectara todas las versiones cargadas del script. Si alguna version tiene historial de ejecucion, no se eliminara fisicamente y solo podra desactivarse. Deseas continuar?" data-confirm-ok="Si, eliminar script completo" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar script completo</button>
+                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Borrar script completo" data-confirm-message="El script sera retirado de la operacion. El historial de ejecuciones se conservara." data-confirm-ok="Borrar conservando historial" data-confirm-cancel="Cancelar" data-confirm-type="danger">Borrar script</button>
             </form>
             {% if version_activa and (session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", [])) %}
             <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
@@ -168,7 +168,7 @@
                             </form>
                             <form method="post" action="{{ url_for('scripts.eliminar_version', id_version=version.id_version) }}">
                                 <input type="hidden" name="volver" value="{{ request.path }}">
-                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Eliminar version" data-confirm-message="Estas a punto de eliminar la version v{{ version.numero_version }} del script. Esta accion solo afectara esta version. Las demas versiones no seran eliminadas. Deseas continuar?" data-confirm-ok="Si, eliminar version" data-confirm-cancel="Cancelar" data-confirm-type="danger">Eliminar version</button>
+                                <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Borrar version" data-confirm-message="La version se retirara de la operacion. Si tiene historial asociado, se conservara para ejecuciones antiguas." data-confirm-ok="Borrar conservando historial" data-confirm-cancel="Cancelar" data-confirm-type="danger">Borrar version</button>
                             </form>
                         </div>
                     </td>

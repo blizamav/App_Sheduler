@@ -12,10 +12,10 @@ def obtener_metricas_panel():
         cursor.execute(
             """
             SELECT
-                (SELECT COUNT(1) FROM dbo.tareas) AS total_tareas,
-                (SELECT COUNT(1) FROM dbo.tareas WHERE activo = 1 AND estado_tarea = 'ACTIVA') AS tareas_activas,
-                (SELECT COUNT(1) FROM dbo.scripts WHERE activo = 1) AS scripts_activos,
-                (SELECT COUNT(DISTINCT id_tarea) FROM dbo.scripts WHERE activo = 1) AS tareas_con_script,
+                (SELECT COUNT(1) FROM dbo.tareas WHERE ISNULL(eliminado_operativo, 0) = 0) AS total_tareas,
+                (SELECT COUNT(1) FROM dbo.tareas WHERE activo = 1 AND estado_tarea = 'ACTIVA' AND ISNULL(eliminado_operativo, 0) = 0) AS tareas_activas,
+                (SELECT COUNT(1) FROM dbo.scripts WHERE activo = 1 AND ISNULL(eliminado_operativo, 0) = 0) AS scripts_activos,
+                (SELECT COUNT(DISTINCT id_tarea) FROM dbo.scripts WHERE activo = 1 AND ISNULL(eliminado_operativo, 0) = 0) AS tareas_con_script,
                 (SELECT COUNT(1) FROM dbo.ejecuciones WHERE fecha_hora_inicio >= CAST(GETDATE() AS date)) AS ejecuciones_hoy,
                 (SELECT COUNT(1) FROM dbo.ejecuciones WHERE fecha_hora_inicio >= CAST(GETDATE() AS date) AND estado_ejecucion = 'EXITOSA') AS exitosas_hoy,
                 (SELECT COUNT(1) FROM dbo.ejecuciones WHERE fecha_hora_inicio >= CAST(GETDATE() AS date) AND estado_ejecucion = 'ERROR') AS errores_hoy,
@@ -57,7 +57,7 @@ def obtener_ultima_ejecucion():
                    e.estado_ejecucion,
                    e.origen_ejecucion,
                    e.fecha_hora_inicio,
-                   t.nombre_tarea
+                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
             FROM dbo.ejecuciones e
             LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
             ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC
@@ -77,7 +77,7 @@ def listar_ultimas_ejecuciones(limite=6):
                    e.estado_ejecucion,
                    e.origen_ejecucion,
                    e.fecha_hora_inicio,
-                   t.nombre_tarea
+                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
             FROM dbo.ejecuciones e
             LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
             ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC

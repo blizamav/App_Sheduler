@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 11F con robustez operativa interna avanzada. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas y borrado operativo seguro con snapshots.
+El proyecto se encuentra en Fase 11H con robustez operativa interna avanzada. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa y desacople historico para eliminacion permanente real.
 
 ## Implementado
 
@@ -27,6 +27,10 @@ El proyecto se encuentra en Fase 11F con robustez operativa interna avanzada. AP
 * UI/UX modernizada.
 * Control de ejecuciones huerfanas por verificacion de PID.
 * Borrado operativo seguro con snapshots.
+* Papelera operativa en `/papelera`.
+* Restauracion de registros retirados como inactivos.
+* Eliminacion permanente segura desde papelera.
+* Desacople historico para que la eliminacion permanente pueda borrar filas operativas sin borrar historia.
 * TOP 6 ultimas ejecuciones en panel principal.
 
 ## Fase 11 - Robustez Operativa Interna
@@ -42,8 +46,8 @@ Estado: parcialmente implementada. La fase concentra estabilidad, trazabilidad o
 * 11D.2 Historial filtrable eventos. Implementado.
 * 11E Control ejecuciones huerfanas. Implementado.
 * 11F Borrado operativo seguro con snapshots. Implementado.
-* 11G Papelera operativa y restauracion. Pendiente.
-* 11H Purga controlada. Pendiente.
+* 11G Papelera operativa, restauracion y eliminacion permanente segura. Implementado.
+* 11H Desacople historico para eliminacion permanente real. Implementado.
 * 11I Revision integral post-borrado. Pendiente.
 
 ## Fase 12 - Auditoria
@@ -85,9 +89,99 @@ Reglas:
 * Las ejecuciones, logs y eventos historicos deben seguir visibles.
 * Los snapshots conservan nombres y contexto historico aunque el maestro sea retirado.
 * Si no hay historial y no se rompe integridad, algunas entidades pueden eliminarse fisicamente.
-* Falta implementar papelera operativa.
-* Falta implementar restauracion.
+* Papelera operativa implementada en Fase 11G.
+* Restauracion controlada implementada en Fase 11G.
 * Falta implementar purga controlada.
+
+## Fase 11G - Papelera Operativa
+
+La papelera operativa implementada en `/papelera` muestra registros con `eliminado_operativo = 1` y permite dos acciones:
+
+* Restaurar.
+* Eliminar permanentemente.
+
+Restaurar devuelve el registro a la operacion normal cuando sea seguro. Debe dejar `activo = 0` salvo que una regla especifica futura indique lo contrario, para que el usuario reactive manualmente si corresponde.
+
+Eliminar permanentemente no significa borrar historial. Significa eliminar fisicamente el registro de tablas operativas o maestras cuando sea seguro y cuando no se rompan claves foraneas.
+
+Debe desaparecer de:
+
+* `/papelera`.
+* `/tareas`.
+* `/scripts`.
+* `/usuarios`.
+* `/clientes`.
+* `/categorias`.
+* `/tipos`.
+* Selects operativos.
+* Candidatos del scheduler.
+* Paneles operativos.
+* Tablas maestras si las FK lo permiten.
+
+Nunca debe eliminar:
+
+* `ejecuciones`.
+* `logs_tareas`.
+* `logs_sistema`.
+* `scheduler_eventos`.
+* Snapshots historicos.
+* `auditoria_cambios` futura.
+* Archivos de log historicos necesarios para trazabilidad.
+
+Antes de eliminar permanentemente debe mostrarse modal corporativo fuerte con este texto base:
+
+```text
+Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Ya no aparecerá en mantenedores, papelera, selects ni paneles operativos. El historial de ejecuciones, logs, eventos del programador y snapshots históricos se conservará. Esta acción no se puede deshacer desde la aplicación.
+```
+
+Botones:
+
+* Cancelar.
+* Eliminar permanentemente.
+
+No se deben usar `alert()`, `window.confirm()` ni `prompt()`.
+
+Si la eliminacion fisica es segura:
+
+* Ejecutar `DELETE` solo sobre tablas operativas o maestras correspondientes.
+* No usar `DELETE CASCADE` destructivo.
+* No borrar registros historicos.
+* No borrar logs.
+* No borrar ejecuciones.
+* No borrar `scheduler_eventos`.
+* No borrar snapshots.
+* El registro debe dejar de aparecer en `/papelera`.
+
+Si la eliminacion fisica no es segura:
+
+* No forzar `DELETE`.
+* No romper FK.
+* Mantener `eliminado_operativo = 1`.
+* Mostrar mensaje claro:
+
+```text
+No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.
+```
+
+## Fase 11H - Desacople Historico Para Eliminacion Permanente
+
+Implementado. La causa tecnica que impedia la eliminacion permanente real era que `ejecuciones` y `logs_tareas` mantenian claves foraneas historicas contra `tareas`, `scripts` y `scripts_versiones`. Esas relaciones bloqueaban el borrado fisico de registros ya retirados aunque existieran snapshots.
+
+Decision aplicada:
+
+* `ejecuciones.id_tarea`, `ejecuciones.id_script`, `ejecuciones.id_version` y `logs_tareas.id_tarea` pasan a ser referencias historicas anulables.
+* Se eliminan las FKs historicas desde `ejecuciones` hacia `tareas`, `scripts` y `scripts_versiones`.
+* Se elimina la FK historica desde `logs_tareas` hacia `tareas`.
+* Se mantiene la FK `logs_tareas.id_ejecucion -> ejecuciones.id_ejecucion`.
+* Se mantienen las FKs operativas entre `programaciones`, `scripts`, `scripts_versiones` y sus maestros mientras las filas existan.
+* La app nulifica referencias historicas antes de borrar fisicamente filas operativas desde `/papelera`.
+
+Archivos agregados:
+
+* `database/migrations/017_desacople_historico_papelera.sql`.
+* `database/diagnostics/003_diagnostico_desacople_historico.sql`.
+
+La migracion debe ejecutarse manualmente en SSMS despues de la migracion 016 y del seed 011. Codex no ejecuto SQL.
 
 ## Auditoria Pendiente
 
@@ -105,8 +199,6 @@ Distinciones obligatorias:
 
 Pendiente critico inmediato:
 
-* Fase 11G Papelera operativa y restauracion.
-* Fase 11H Purga controlada.
 * Fase 11I Revision integral post-borrado.
 * Fase 12A Auditoria.
 
@@ -127,4 +219,4 @@ Pendiente mejora:
 
 ## Proxima Fase Recomendada
 
-La proxima fase recomendada es Fase 11G: Papelera operativa y restauracion. Debe permitir consultar registros retirados operativamente, revisar su contexto y restaurarlos de forma controlada cuando sea seguro. No debe implementar Auditoria ni purga fisica.
+La proxima fase recomendada es Fase 11I: revision integral post-borrado. No debe implementar Auditoria ni Fase 12A.

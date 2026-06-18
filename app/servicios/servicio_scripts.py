@@ -9,9 +9,9 @@ from app.repositorios.repositorio_scripts import (
     crear_version,
     desactivar_script,
     desactivar_version,
-    eliminar_script,
-    eliminar_version,
     listar_versiones,
+    marcar_script_eliminado_operativo,
+    marcar_version_eliminada_operativa,
     obtener_script_por_tarea,
     obtener_script,
     obtener_tarea_contexto,
@@ -181,14 +181,13 @@ def eliminar_version_script(id_version, usuario):
     if version.get("es_activa"):
         registrar_log_sistema("SCRIPT_VERSION_ELIMINACION_BLOQUEADA_ACTIVA", "SCRIPTS", f"Intento bloqueado de eliminar version activa v{version['numero_version']}.", usuario=usuario, nivel="WARNING")
         return False, "No puedes eliminar directamente la version activa. Activa otra version antes de eliminar esta."
-    if contar_uso_version(id_version) > 0:
-        registrar_log_sistema("SCRIPT_VERSION_ELIMINACION_BLOQUEADA_HISTORIAL", "SCRIPTS", f"Intento bloqueado de eliminar version v{version['numero_version']} con historial asociado.", usuario=usuario, nivel="WARNING")
-        return False, "No se puede eliminar esta version porque ya tiene historial asociado."
-    eliminar_archivo_seguro(version.get("ruta_relativa"))
-    eliminar_archivo_seguro(version.get("ruta_env_relativa"))
-    eliminar_version(id_version)
-    registrar_log_sistema("SCRIPT_VERSION_ELIMINADA", "SCRIPTS", f"Version v{version['numero_version']} eliminada fisicamente.", usuario=usuario)
-    return True, "Version eliminada definitivamente."
+    marcar_version_eliminada_operativa(
+        id_version,
+        usuario,
+        "Borrado operativo seguro. Eliminacion permanente disponible solo desde Papelera operativa.",
+    )
+    registrar_log_sistema("SCRIPT_VERSION_BORRADA_OPERATIVA", "SCRIPTS", f"Version v{version['numero_version']} retirada de operacion conservando historial.", usuario=usuario)
+    return True, "Version retirada de la operacion y enviada a Papelera operativa. El historial de ejecuciones se conserva."
 
 
 def guardar_env_version(id_version, archivo, requiere_env, usuario):
@@ -237,16 +236,13 @@ def eliminar_script_logico(id_script, usuario):
     script = obtener_script(id_script)
     if not script:
         return False, "Script no encontrado.", None
-    if contar_uso_script(id_script) > 0:
-        registrar_log_sistema("SCRIPT_COMPLETO_ELIMINACION_BLOQUEADA_HISTORIAL", "SCRIPTS", f"Intento bloqueado de eliminar script completo con historial: {script['nombre_script']}.", usuario=usuario, nivel="WARNING")
-        return False, "No se puede eliminar fisicamente este script porque ya tiene historial asociado. Puedes desactivarlo para que no vuelva a usarse.", script["id_tarea"]
-    versiones = listar_versiones(id_script)
-    for version in versiones:
-        eliminar_archivo_seguro(version.get("ruta_relativa"))
-        eliminar_archivo_seguro(version.get("ruta_env_relativa"))
-    eliminar_script(id_script)
-    registrar_log_sistema("SCRIPT_COMPLETO_ELIMINADO", "SCRIPTS", f"Script completo eliminado fisicamente: {script['nombre_script']}.", usuario=usuario)
-    return True, "Script completo eliminado definitivamente.", script["id_tarea"]
+    marcar_script_eliminado_operativo(
+        id_script,
+        usuario,
+        "Borrado operativo seguro. Eliminacion permanente disponible solo desde Papelera operativa.",
+    )
+    registrar_log_sistema("SCRIPT_COMPLETO_BORRADO_OPERATIVO", "SCRIPTS", f"Script retirado de operacion conservando historial: {script['nombre_script']}.", usuario=usuario)
+    return True, "Script retirado de la operacion y enviado a Papelera operativa. El historial de ejecuciones se conserva.", script["id_tarea"]
 
 
 def _siguiente_version(versiones):

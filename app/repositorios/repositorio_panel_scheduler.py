@@ -51,9 +51,9 @@ def listar_ultimas_ejecuciones_automaticas(limite=8):
                {fecha_programada} AS fecha_programada,
                {clave_programacion} AS clave_programacion,
                {nombre_worker} AS nombre_worker,
-               t.nombre_tarea
+               COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
         FROM dbo.ejecuciones e
-        INNER JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
+        LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
         WHERE e.origen_ejecucion = 'AUTOMATICA'
         ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC
     """
@@ -93,10 +93,11 @@ def listar_tareas_candidatas(limite=10):
                    v.nombre_archivo
             FROM dbo.tareas t
             INNER JOIN dbo.programaciones p ON p.id_tarea = t.id_tarea AND p.activo = 1
-            LEFT JOIN dbo.scripts s ON s.id_tarea = t.id_tarea AND s.activo = 1
-            LEFT JOIN dbo.scripts_versiones v ON v.id_version = s.id_version_activa
+            LEFT JOIN dbo.scripts s ON s.id_tarea = t.id_tarea AND s.activo = 1 AND ISNULL(s.eliminado_operativo, 0) = 0
+            LEFT JOIN dbo.scripts_versiones v ON v.id_version = s.id_version_activa AND ISNULL(v.eliminado_operativo, 0) = 0
             WHERE t.activo = 1
               AND t.estado_tarea = 'ACTIVA'
+              AND ISNULL(t.eliminado_operativo, 0) = 0
               AND p.tipo_programacion <> 'MANUAL'
             ORDER BY t.nombre_tarea
             """

@@ -34,6 +34,8 @@
 * Fase 11D.2: historial filtrable de eventos del programador.
 * Fase 11E: control de ejecuciones huerfanas.
 * Fase 11F: borrado operativo seguro con snapshots historicos.
+* Fase 11G: papelera operativa, restauracion y eliminacion permanente segura.
+* Fase 11H: desacople historico para eliminacion permanente real desde papelera.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -42,8 +44,6 @@ Ver detalle formal en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
-* Fase 11G: papelera operativa y restauracion.
-* Fase 11H: purga controlada.
 * Fase 11I: revision integral post-borrado.
 * Fase 12A: Auditoria base.
 
@@ -75,7 +75,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11F: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots y disponibilidad visible de ejecucion manual en `/tareas`. Aun no existe papelera operativa, restauracion, purga controlada, Auditoria funcional, despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 11H: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real y disponibilidad visible de ejecucion manual en `/tareas`. Aun no existe Auditoria funcional, despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -279,10 +279,28 @@ Auditoria funcional sigue pendiente para una fase posterior.
 
 Pendientes derivados:
 
-* Papelera operativa para consultar registros retirados.
-* Restauracion controlada cuando sea seguro.
-* Purga controlada con reglas explicitas y aprobacion.
+* Papelera operativa para consultar registros retirados. Implementado en Fase 11G.
+* Restauracion controlada cuando sea seguro. Implementado en Fase 11G.
+* Eliminacion permanente segura desde papelera, solo sobre tablas operativas o maestras cuando no destruya trazabilidad. Implementado en Fase 11G.
+* Desacople historico para eliminacion permanente real. Implementado en Fase 11H.
 * Revision integral post-borrado antes de iniciar Auditoria.
+
+## Papelera operativa y eliminacion permanente segura
+
+Implementado en Fase 11G.
+
+La papelera operativa debe listar registros con `eliminado_operativo = 1` y ofrecer dos acciones:
+
+* `Restaurar`: devuelve el registro a operacion normal si pasa validaciones, sin asumir que queda activo.
+* `Eliminar permanentemente`: elimina fisicamente solo desde tablas operativas o maestras cuando no rompe integridad ni borra historia.
+
+La eliminacion permanente debe hacer desaparecer el registro de `/papelera`, `/tareas`, `/scripts`, `/usuarios`, `/clientes`, `/categorias`, `/tipos`, selects operativos, candidatos del scheduler, paneles operativos y tablas maestras cuando las claves foraneas lo permitan.
+
+La eliminacion permanente nunca debe borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+
+Si existen dependencias operativas no historicas, el registro debe seguir con `eliminado_operativo = 1`, permanecer en papelera y mostrarse el mensaje: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
+
+Fase 11H agrega la migracion 017 y validaciones en `/papelera` para desacoplar IDs historicos anulables de `ejecuciones` y `logs_tareas` antes de borrar fisicamente tareas, scripts o versiones. El historial se conserva con snapshots y texto historico.
 
 ## Roadmap vigente
 

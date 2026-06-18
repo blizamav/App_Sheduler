@@ -8,6 +8,7 @@ from app.servicios.servicio_ejecuciones import (
     obtener_detalle_ejecucion,
     obtener_estado_log,
 )
+from app.servicios.servicio_control_ejecuciones import verificar_ejecucion
 
 
 bp_ejecuciones = Blueprint("ejecuciones", __name__)
@@ -62,4 +63,15 @@ def detener(id_ejecucion):
     except Exception:
         ok, mensaje = False, "No fue posible detener la ejecucion."
     flash(mensaje, "success" if ok else "error")
+    return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))
+
+
+@bp_ejecuciones.route("/ejecuciones/<int:id_ejecucion>/verificar", methods=["POST"])
+@permiso_requerido("EJECUCIONES_VER")
+def verificar(id_ejecucion):
+    try:
+        resultado = verificar_ejecucion(id_ejecucion, usuario=session.get("usuario"))
+    except Exception:
+        resultado = {"ok": False, "mensaje": "No fue posible verificar la ejecucion."}
+    flash(resultado.get("mensaje"), "success" if resultado.get("ok") else "error")
     return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))

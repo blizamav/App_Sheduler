@@ -272,14 +272,26 @@ def _validar_contexto_ejecucion(id_tarea, usuario):
     contexto = obtener_contexto_tarea_ejecucion(id_tarea)
     if not contexto:
         return False, "Tarea no encontrada.", None
-    if not contexto.get("activo") or contexto.get("estado_tarea") != "ACTIVA":
-        return False, "No se puede ejecutar una tarea inactiva.", None
+    if not bool(contexto.get("tarea_activo")):
+        return False, "La tarea esta inactiva.", None
+    if bool(contexto.get("tarea_eliminada_operativo")):
+        return False, "La tarea fue borrada operativamente y no puede ejecutarse.", None
+    if contexto.get("estado_tarea") != "ACTIVA":
+        return False, "El estado de la tarea no permite ejecucion.", None
     if not contexto.get("id_script"):
         return False, "No se puede ejecutar la tarea porque no tiene script asociado.", None
-    if not contexto.get("script_activo"):
+    if bool(contexto.get("script_eliminado_operativo")):
+        return False, "No se puede ejecutar la tarea porque el script asociado fue borrado operativamente.", None
+    if not bool(contexto.get("script_activo")):
         return False, "No se puede ejecutar la tarea porque el script asociado esta inactivo.", None
-    if not contexto.get("id_version"):
+    if not contexto.get("id_version_activa") or not contexto.get("id_version"):
         return False, "No se puede ejecutar la tarea porque no tiene una version activa.", None
+    if bool(contexto.get("version_eliminada_operativo")):
+        return False, "No se puede ejecutar la tarea porque la version activa fue borrada operativamente.", None
+    if not bool(contexto.get("es_activa")) or contexto.get("estado_version") != "ACTIVA":
+        return False, "No se puede ejecutar la tarea porque la version activa no esta disponible.", None
+    if existe_ejecucion_en_curso_tarea(id_tarea):
+        return False, "Esta tarea ya tiene una ejecucion en curso. Deten o espera que finalice antes de iniciar otra.", None
     ruta_script = resolver_ruta_segura(Path(contexto.get("ruta_relativa") or ""))
     if not ruta_script.exists() or not ruta_script.is_file():
         return False, "No se encontro el archivo fisico del script activo.", None
@@ -291,8 +303,6 @@ def _validar_contexto_ejecucion(id_tarea, usuario):
         ruta_env_fisica = resolver_ruta_segura(Path(ruta_env))
         if not ruta_env_fisica.exists() or not ruta_env_fisica.is_file():
             return False, "Esta version requiere un archivo .env, pero no tiene uno asociado o no existe fisicamente.", None
-    if existe_ejecucion_en_curso_tarea(id_tarea):
-        return False, "Esta tarea ya tiene una ejecucion en curso. Deten o espera que finalice antes de iniciar otra.", None
     return True, "OK", contexto
 
 

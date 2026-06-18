@@ -13,6 +13,7 @@ def obtener_usuario_por_usuario(usuario):
                bloqueado, activo, fecha_creacion, fecha_actualizacion
         FROM dbo.usuarios
         WHERE usuario = ?
+          AND ISNULL(eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -37,6 +38,7 @@ def obtener_usuario_por_id(id_usuario):
             ORDER BY ur.fecha_creacion DESC
         ) rol
         WHERE u.id_usuario = ?
+          AND ISNULL(u.eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -55,6 +57,7 @@ def listar_usuarios(filtros=None):
         condiciones.append("u.activo = 1")
     elif estado == "inactivo":
         condiciones.append("u.activo = 0")
+    condiciones.append("ISNULL(u.eliminado_operativo, 0) = 0")
 
     rol = filtros.get("rol")
     if rol:
@@ -94,7 +97,7 @@ def listar_usuarios(filtros=None):
 
 
 def existe_usuario(usuario, excluir_id=None):
-    consulta = "SELECT COUNT(1) FROM dbo.usuarios WHERE usuario = ?"
+    consulta = "SELECT COUNT(1) FROM dbo.usuarios WHERE usuario = ? AND ISNULL(eliminado_operativo, 0) = 0"
     parametros = [usuario]
     if excluir_id:
         consulta += " AND id_usuario <> ?"
@@ -204,6 +207,97 @@ def cambiar_estado_usuario(id_usuario, activo, usuario_accion):
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(consulta, activo, usuario_accion, id_usuario)
+        conexion.commit()
+
+
+def contar_historial_usuario(usuario):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT
+                (SELECT COUNT(1) FROM dbo.ejecuciones WHERE usuario_ejecucion = ?) +
+                (SELECT COUNT(1) FROM dbo.logs_tareas WHERE usuario_ejecucion = ?) +
+                (SELECT COUNT(1) FROM dbo.logs_sistema WHERE usuario = ?)
+            """,
+            usuario,
+            usuario,
+            usuario,
+        )
+        return cursor.fetchone()[0]
+
+
+def contar_administradores_activos(excluir_id=None):
+    consulta = """
+        SELECT COUNT(DISTINCT u.id_usuario)
+        FROM dbo.usuarios u
+        INNER JOIN dbo.usuarios_roles ur ON ur.id_usuario = u.id_usuario AND ur.activo = 1
+        INNER JOIN dbo.roles r ON r.id_rol = ur.id_rol AND r.activo = 1
+        WHERE u.activo = 1
+          AND ISNULL(u.eliminado_operativo, 0) = 0
+          AND r.codigo_rol = 'ADMIN'
+    """
+    parametros = []
+    if excluir_id:
+        consulta += " AND u.id_usuario <> ?"
+        parametros.append(excluir_id)
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        return cursor.fetchone()[0]
+
+
+def asegurar_snapshots_usuario(usuario):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            UPDATE dbo.ejecuciones
+            SET usuario_ejecucion_snapshot = COALESCE(usuario_ejecucion_snapshot, usuario_ejecucion)
+            WHERE usuario_ejecucion = ?
+            """,
+            usuario,
+        )
+        conexion.commit()
+
+
+def marcar_usuario_eliminado_operativo(id_usuario, usuario_accion, motivo=None):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            UPDATE dbo.usuarios_roles
+            SET activo = 0
+            WHERE id_usuario = ? AND activo = 1
+            """,
+            id_usuario,
+        )
+        cursor.execute(
+            """
+            UPDATE dbo.usuarios
+            SET activo = 0,
+                bloqueado = 1,
+                eliminado_operativo = 1,
+                fecha_eliminado_operativo = COALESCE(fecha_eliminado_operativo, SYSDATETIME()),
+                usuario_eliminado_operativo = ?,
+                motivo_eliminado_operativo = COALESCE(?, motivo_eliminado_operativo),
+                usuario_actualizacion = ?,
+                fecha_actualizacion = SYSDATETIME()
+            WHERE id_usuario = ?
+            """,
+            usuario_accion,
+            motivo,
+            usuario_accion,
+            id_usuario,
+        )
+        conexion.commit()
+
+
+def eliminar_usuario_fisico(id_usuario):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute("DELETE FROM dbo.usuarios_roles WHERE id_usuario = ?", id_usuario)
+        cursor.execute("DELETE FROM dbo.usuarios WHERE id_usuario = ?", id_usuario)
         conexion.commit()
 
 

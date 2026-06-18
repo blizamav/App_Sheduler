@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block titulo %}Papelera operativa - APP Scheduler{% endblock %}
+{% block encabezado %}Papelera operativa{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Administracion</p>
+        <h2>Papelera operativa</h2>
+        <p>La papelera contiene registros retirados de la operacion normal. Puedes restaurarlos como inactivos o eliminarlos permanentemente de las tablas operativas. El historial de ejecuciones, logs, eventos y snapshots no se elimina.</p>
+    </div>
+    <span class="badge advertencia">Historial protegido</span>
+</section>
+
+<section class="bloque filtros-usuarios">
+    <form method="get" action="{{ url_for('papelera.listado') }}" class="formulario-filtros tareas-filtros">
+        <div class="campo">
+            <label for="entidad">Entidad</label>
+            <select id="entidad" name="entidad">
+                <option value="">Todas</option>
+                {% for valor, etiqueta in entidades %}
+                <option value="{{ valor }}" {% if filtros.entidad == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo campo-busqueda">
+            <label for="buscar">Buscar</label>
+            <input id="buscar" name="buscar" value="{{ filtros.buscar or '' }}" placeholder="Nombre, ID o motivo">
+        </div>
+        <div class="campo">
+            <label for="usuario">Usuario eliminacion</label>
+            <input id="usuario" name="usuario" value="{{ filtros.usuario or '' }}" placeholder="Usuario">
+        </div>
+        <div class="campo">
+            <label for="fecha_desde">Fecha desde</label>
+            <input id="fecha_desde" name="fecha_desde" type="date" value="{{ filtros.fecha_desde or '' }}">
+        </div>
+        <div class="campo">
+            <label for="fecha_hasta">Fecha hasta</label>
+            <input id="fecha_hasta" name="fecha_hasta" type="date" value="{{ filtros.fecha_hasta or '' }}">
+        </div>
+        <div class="campo">
+            <label for="per_page">Por pagina</label>
+            <select id="per_page" name="per_page">
+                {% for opcion in [10, 25, 50, 100] %}
+                <option value="{{ opcion }}" {% if per_page == opcion %}selected{% endif %}>{{ opcion }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="acciones-filtros">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('papelera.listado') }}">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Registros retirados</p>
+            <h3>Elementos en papelera</h3>
+        </div>
+        <div class="badges-linea">
+            <span class="badge info">Total {{ total }}</span>
+            <span class="badge info">Pagina {{ page }} de {{ total_pages }}</span>
+        </div>
+    </div>
+
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Entidad</th>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Fecha eliminacion</th>
+                    <th>Usuario eliminacion</th>
+                    <th>Motivo</th>
+                    <th>Dependencias / bloqueo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in registros %}
+                <tr>
+                    <td>{{ item.entidad_label }}</td>
+                    <td>{{ item.id_registro }}</td>
+                    <td>
+                        <strong>{{ item.nombre }}</strong>
+                        <small class="texto-tabla">{{ item.descripcion or "-" }}</small>
+                    </td>
+                    <td>
+                        <span class="badge advertencia">Eliminado operativo</span>
+                        {% if item.puede_restaurar %}
+                        <span class="badge activo">Restaurable</span>
+                        {% endif %}
+                        {% if item.puede_eliminar_permanente %}
+                        <span class="badge info">Eliminable permanentemente</span>
+                        {% else %}
+                        <span class="badge error">Bloqueado</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.fecha_eliminado_operativo or "-" }}</td>
+                    <td>{{ item.usuario_eliminado_operativo or "-" }}</td>
+                    <td>{{ item.motivo_eliminado_operativo or "-" }}</td>
+                    <td>{{ item.dependencias_resumen }}</td>
+                    <td>
+                        <div class="acciones-tabla">
+                            <form method="post" action="{{ url_for('papelera.restaurar', entidad=item.entidad, id_registro=item.id_registro) }}">
+                                <input type="hidden" name="volver" value="{{ request.full_path }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Restaurar registro"
+                                    data-confirm-message="¿Deseas restaurar este registro? Se restaurará como inactivo para evitar uso automático."
+                                    data-confirm-ok="Restaurar como inactivo"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="warning"
+                                >
+                                    Restaurar
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('papelera.eliminar_permanente', entidad=item.entidad, id_registro=item.id_registro) }}">
+                                <input type="hidden" name="volver" value="{{ request.full_path }}">
+                                <button
+                                    class="btn secundario compacto requiere-confirmacion"
+                                    type="submit"
+                                    data-confirm-title="Eliminar permanentemente"
+                                    data-confirm-message="Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Ya no aparecerá en mantenedores, papelera, selects ni paneles operativos. El historial de ejecuciones, logs, eventos del programador y snapshots históricos se conservará. Esta acción no se puede deshacer desde la aplicación."
+                                    data-confirm-ok="Eliminar permanentemente"
+                                    data-confirm-cancel="Cancelar"
+                                    data-confirm-type="danger"
+                                >
+                                    Eliminar permanentemente
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="estado-vacio">No hay registros en papelera para los filtros seleccionados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="paginacion">
+        <span>Mostrando {{ registros|length }} de {{ total }} registros</span>
+        <div class="paginacion-acciones">
+            {% if page > 1 %}
+            <a class="btn secundario compacto" href="{{ url_for('papelera.listado', entidad=filtros.entidad, buscar=filtros.buscar, usuario=filtros.usuario, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta, per_page=per_page, page=page-1) }}">Anterior</a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a class="btn secundario compacto" href="{{ url_for('papelera.listado', entidad=filtros.entidad, buscar=filtros.buscar, usuario=filtros.usuario, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta, per_page=per_page, page=page+1) }}">Siguiente</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

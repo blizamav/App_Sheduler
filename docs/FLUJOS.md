@@ -2,12 +2,11 @@
 
 ## Roadmap de flujos pendiente
 
-Los flujos implementados llegan hasta Fase 11F. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+Los flujos implementados llegan hasta Fase 11G. El roadmap formal se mantiene en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
-* Fase 11G: papelera operativa y restauracion.
-* Fase 11H: purga controlada.
+* Fase 11H: desacople historico para eliminacion permanente real.
 * Fase 11I: revision integral post-borrado.
 * Fase 12A: Auditoria base.
 
@@ -116,25 +115,72 @@ Reglas:
 8. `/ejecuciones`, `/ejecuciones/<id>`, logs y eventos del programador siguen mostrando nombres legibles mediante snapshots.
 9. No se borran ejecuciones, logs historicos, eventos del programador ni auditoria futura.
 10. Auditoria funcional queda pendiente para fase posterior.
-11. Papelera operativa y restauracion quedan pendientes para Fase 11G.
-12. Purga controlada queda pendiente para Fase 11H.
+11. Papelera operativa, restauracion y eliminacion permanente segura fueron implementadas en Fase 11G.
+12. Desacople historico para eliminacion permanente real implementado en Fase 11H.
 
-## Flujo futuro de papelera operativa
+## Flujo de papelera operativa
 
-Pendiente para Fase 11G:
+Implementado en Fase 11G:
 
 1. Usuario autorizado abre una vista de registros retirados operativamente.
 2. El sistema lista entidades con `eliminado_operativo = 1`.
 3. El usuario revisa contexto, historial y motivo de retiro.
-4. Si corresponde restaurar, el backend valida integridad, duplicados y dependencias.
-5. Si la restauracion es segura, el registro vuelve a operacion normal.
-6. Si no es segura, se informa el bloqueo con motivo.
+4. El usuario puede elegir `Restaurar` o `Eliminar permanentemente`.
+5. Si corresponde restaurar, el backend valida integridad, duplicados y dependencias.
+6. Si la restauracion es segura, el registro vuelve a operacion normal con `activo = 0`.
+7. Si la restauracion no es segura, se informa el bloqueo con motivo.
+
+## Flujo de eliminacion permanente desde papelera
+
+Implementado en Fase 11G:
+
+1. Usuario autorizado presiona `Eliminar permanentemente` desde `/papelera`.
+2. La UI muestra modal corporativo fuerte.
+3. El texto debe advertir que el registro desaparecera de tablas operativas, mantenedores, papelera, selects y paneles, pero que historial de ejecuciones, logs, eventos del programador y snapshots se conservaran.
+4. Si el usuario cancela, no se ejecuta ninguna accion.
+5. Si confirma, el backend valida que la eliminacion fisica sea segura.
+6. Si es segura, ejecuta `DELETE` solo sobre tablas operativas o maestras correspondientes.
+7. No usa `DELETE CASCADE` destructivo.
+8. No borra `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots, `auditoria_cambios` futura ni archivos de log historicos necesarios.
+9. El registro desaparece de `/papelera` y de la operacion normal.
+10. Si no es segura, no fuerza `DELETE`, mantiene `eliminado_operativo = 1` y muestra: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
+
+### Caso tarea
+
+Una tarea retirada puede eliminarse permanentemente solo si no tiene ejecucion `EN_EJECUCION`, las ejecuciones y eventos ya tienen snapshots suficientes, no se rompen claves foraneas y no se requiere borrar historial.
+
+Nunca se eliminan ejecuciones, logs, eventos del programador ni snapshots de esa tarea. Las ejecuciones historicas deben seguir visibles usando snapshots.
+
+### Caso script
+
+Un script o version retirada puede eliminarse permanentemente solo si no queda como version activa de un script vigente, no rompe FK, las ejecuciones ya tienen snapshot de script/version y no se borran logs historicos.
+
+Las ejecuciones antiguas deben seguir mostrando nombre de script, archivo y version desde snapshot.
+
+### Caso usuario
+
+Un usuario retirado no puede eliminarse permanentemente si es el usuario actual o el ultimo administrador. Si se elimina permanentemente de la tabla operativa, no puede iniciar sesion y el historial conserva usuario como texto o snapshot.
+
+## Flujo de desacople historico para eliminacion permanente
+
+Implementado en Fase 11H:
+
+1. La migracion 017 rellena snapshots existentes en `ejecuciones` y `scheduler_eventos`.
+2. La migracion 017 elimina FKs historicas desde `ejecuciones` hacia `tareas`, `scripts` y `scripts_versiones`.
+3. La migracion 017 elimina la FK historica desde `logs_tareas` hacia `tareas`.
+4. `ejecuciones.id_tarea`, `ejecuciones.id_script`, `ejecuciones.id_version` y `logs_tareas.id_tarea` quedan anulables.
+5. `/papelera` valida que el desacople exista antes de permitir eliminacion permanente de tareas, scripts o versiones.
+6. Antes de borrar, la app vuelve a asegurar snapshots del registro afectado.
+7. La app nulifica IDs historicos que apuntan al registro operativo que se borrara.
+8. Luego borra solo `programaciones`, `scripts_versiones`, `scripts` o `tareas` operativas segun corresponda.
+9. `logs_tareas.id_ejecucion` se mantiene como vinculo hacia la ejecucion historica.
+10. `/ejecuciones`, consola, logs y eventos siguen leyendo snapshots o texto historico.
 
 ## Flujo futuro de purga controlada
 
-Pendiente para Fase 11H:
+Pendiente para fase posterior:
 
-1. Usuario autorizado solicita purga de un registro retirado.
+1. Usuario autorizado solicita una purga controlada fuera del flujo normal de papelera.
 2. El sistema exige confirmacion fuerte y validaciones de seguridad.
 3. Debe existir criterio explicito de retencion y respaldo.
 4. La purga elimina fisicamente solo registros permitidos por regla.

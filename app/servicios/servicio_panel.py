@@ -27,7 +27,7 @@ def obtener_panel_principal():
 
     try:
         ultima_ejecucion = obtener_ultima_ejecucion()
-        ultimas_ejecuciones = listar_ultimas_ejecuciones()
+        ultimas_ejecuciones = listar_ultimas_ejecuciones(limite=6)
     except Exception as error:
         datos_ok = False
         errores.append(error.__class__.__name__)

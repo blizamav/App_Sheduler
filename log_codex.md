@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual.
-* Estado actual: Fase 11F implementada con borrado operativo seguro mediante snapshots historicos; roadmap formal reorganizado en fases 11 a 14.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 creada para Fase 11H, pendiente de ejecucion manual.
+* Estado actual: Fase 11H implementada con desacople historico para eliminacion permanente real desde papelera; roadmap formal reorganizado en fases 11 a 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11F - Borrado operativo seguro con conservacion historica.
-* Ultima actualizacion: 2026-06-18 01:05
+* Fase actual: Fase 11H - Desacople historico para eliminacion permanente real.
+* Ultima actualizacion: 2026-06-18
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
-* Modulos pendientes: Fase 11G papelera operativa y restauracion, Fase 11H purga controlada, Fase 11I revision integral post-borrado, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
+* Modulos pendientes: Fase 11I revision integral post-borrado, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -48,8 +48,51 @@
 * Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
 * Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
+* Pendiente 5: Ejecutar manualmente `database/migrations/017_desacople_historico_papelera.sql` en SSMS despues de validar con `database/diagnostics/003_diagnostico_desacople_historico.sql`.
 
 ## 6. Historial de cambios
+
+### 2026-06-18 - Fase 11H / Desacople historico para eliminacion permanente real
+
+* Archivos creados: `database/migrations/017_desacople_historico_papelera.sql`, `database/diagnostics/003_diagnostico_desacople_historico.sql`.
+* Archivos modificados: `app/repositorios/repositorio_papelera.py`, `app/servicios/servicio_papelera.py`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `log_codex.md`.
+* Que se hizo: Se desacoplaron por diseno las referencias historicas de `ejecuciones` y `logs_tareas` para que la papelera pueda borrar fisicamente registros operativos sin borrar historia.
+* Por que se hizo: Las FKs historicas contra `tareas`, `scripts` y `scripts_versiones` impedian la eliminacion permanente real aunque existieran snapshots.
+* Decisiones tomadas: Mantener `logs_tareas.id_ejecucion` como FK historica valida; volver anulables solo IDs historicos; no tocar FKs operativas vivas; bloquear `/papelera` si la migracion 017 no esta aplicada o si faltan snapshots.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; busqueda sin `alert()`, `window.confirm()`, `confirm()` ni `prompt()` en `app`; busqueda sin `DELETE CASCADE` en `app` y SQL nuevo; `git diff --check`.
+* Riesgos detectados: La migracion 017 debe aplicarse manualmente despues de la 016 y del seed 011; sin esa ejecucion, la UI bloqueara la eliminacion permanente de tareas, scripts y versiones.
+* Proximos pasos: Ejecutar manualmente `database/diagnostics/003_diagnostico_desacople_historico.sql`, aplicar `database/migrations/017_desacople_historico_papelera.sql` en SSMS y repetir diagnostico antes de validar `/papelera` con datos reales.
+
+### 2026-06-18 02:25 - Correccion post Fase 11G suma BIT en papelera
+
+* Archivos modificados: `app/repositorios/repositorio_papelera.py`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Causa: SQL Server no permite sumar columnas `bit` directamente. `/papelera` fallaba en `_dependencias_tarea()` al sumar `eliminado_operativo` de cliente, categoria y tipo.
+* Correccion: Se convirtieron esos `bit` con `CAST(ISNULL(..., 0) AS INT)` antes de sumarlos.
+* Alcance: No se cambio la logica funcional de papelera, restauracion ni eliminacion permanente segura.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; busqueda de sumas directas de `eliminado_operativo` en `repositorio_papelera.py`; busqueda sin `alert()`, `window.confirm()`, `confirm()`, `prompt()` ni `DELETE CASCADE` en `app`.
+* Reglas: No se ejecuto SQL, no se modifico `.env`, no se borro historial, no se implemento Auditoria y no se avanzo a Fase 11H ni Fase 12A.
+
+### 2026-06-18 02:10 - Fase 11G papelera operativa funcional
+
+* Archivos creados: `app/repositorios/repositorio_papelera.py`, `app/servicios/servicio_papelera.py`, `app/rutas_papelera.py`, `app/templates/papelera/listado.html`, `database/seeds/011_permisos_papelera.sql`.
+* Archivos modificados: `app/__init__.py`, `app/seguridad.py`, `app/templates/base.html`, `app/static/css/estilos.css`, `app/servicios/servicio_mantenedores.py`, `app/repositorios/repositorio_mantenedores.py`, `app/servicios/servicio_tareas.py`, `app/servicios/servicio_scripts.py`, `app/servicios/servicio_usuarios.py`, `README.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ROADMAP.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/ARQUITECTURA.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se hizo: Se implemento funcionalmente `/papelera` con filtros, paginacion simple, restauracion como inactivo y eliminacion permanente segura.
+* Sidebar: Se reorganizo por grupos funcionales: Administracion, Operacion, Programador y Control y trazabilidad. Papelera operativa queda dentro de Administracion.
+* Entidades soportadas: usuarios, clientes, categorias, tipos, tareas, scripts y scripts_versiones.
+* Borrado normal: Usuarios, mantenedores, tareas, scripts y versiones se retiran operativamente; la eliminacion permanente queda solo en Papelera.
+* Seguridad: No se borran ejecuciones, logs, eventos del programador, snapshots, auditoria futura ni archivos historicos.
+* Permisos: Se creo seed manual `database/seeds/011_permisos_papelera.sql` para `PAPELERA_VER`, `PAPELERA_RESTAURAR` y `PAPELERA_ELIMINAR_PERMANENTE`.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; verificacion de rutas Flask de papelera; render de `papelera/listado.html` con datos simulados; busqueda de `alert()`, `window.confirm()`, `confirm()` y `prompt()` en app; `git diff --check`.
+* Reglas: No se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria, no se avanzo a Fase 11H ni a Fase 12A.
+
+### 2026-06-18 01:20 - Ajuste diseno Fase 11G eliminacion permanente segura
+
+* Archivos modificados: `README.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ROADMAP.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se hizo: Se ajusto el diseno documental de Fase 11G para que `/papelera` tenga dos acciones claras: `Restaurar` y `Eliminar permanentemente`.
+* Eliminacion permanente: Debe borrar fisicamente solo desde tablas operativas o maestras cuando sea seguro, y hacer desaparecer el registro de papelera, mantenedores, selects, candidatos del scheduler y paneles operativos.
+* Historial protegido: No debe borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+* UX: Se documento el modal corporativo fuerte obligatorio, sin `alert()`, `window.confirm()` ni `prompt()`, y el mensaje exacto para dependencias operativas no historicas.
+* Reglas: No se modifico codigo funcional, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
 
 ### 2026-06-18 01:05 - Reorganizacion formal del roadmap
 
@@ -57,7 +100,7 @@
 * Archivos modificados: `README.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/ARQUITECTURA.md`, `docs/BASE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `docs/UI_UX.md`, `docs/README_PROYECTO.md`, `log_codex.md`.
 * Que se hizo: Se reorganizo documentalmente el roadmap del proyecto en Fase 11 robustez operativa interna, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 * Estado documentado: Se deja como implementado hasta Fase 11F, incluyendo login hibrido, usuarios/roles/permisos, mantenedores, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion, historial, scheduler automatico, configuracion del programador, worker separado, heartbeat, feriados locales, sincronizacion Nager.Date, eventos del programador, resumen inteligente, historial filtrable, UI/UX modernizada, control de ejecuciones huerfanas, borrado operativo seguro y TOP 6 ultimas ejecuciones en panel.
-* Pendientes criticos: Fase 11G papelera/restauracion, Fase 11H purga controlada, Fase 11I revision integral post-borrado y Fase 12A Auditoria base.
+* Pendientes criticos: Fase 11G papelera/restauracion/eliminacion permanente segura, Fase 11H purga controlada, Fase 11I revision integral post-borrado y Fase 12A Auditoria base.
 * Decisiones: `scheduler_eventos`, `ejecuciones`, `logs_tareas` y `logs_sistema` no reemplazan Auditoria; `auditoria_cambios` queda para acciones humanas criticas en Fase 12.
 * Reglas: No se modifico codigo funcional, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
 

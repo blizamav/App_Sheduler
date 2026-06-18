@@ -254,7 +254,7 @@ El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Roadmap arquitectonico
 
-Siguiente bloque recomendado: completar Fase 11 con papelera operativa, restauracion, purga controlada y revision integral post-borrado.
+Siguiente bloque recomendado: completar Fase 11 con purga controlada y revision integral post-borrado.
 
 Bloques posteriores:
 

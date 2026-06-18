@@ -78,7 +78,7 @@
         </div>
         <div class="badges-linea">
             <span class="badge info">Mostrando {{ total_tareas }} tareas</span>
-            <span class="badge advertencia">Sin ejecucion real</span>
+            <span class="badge info">Historial conservado</span>
         </div>
     </div>
 
@@ -91,6 +91,7 @@
                     <th>Programacion</th>
                     <th>Feriados</th>
                     <th>Estado</th>
+                    <th>Ejecucion</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -121,13 +122,20 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if tarea.ejecutable %}
+                        <span class="badge activo">Ejecutable</span>
+                        {% else %}
+                        <span class="badge advertencia" title="{{ tarea.motivo_no_ejecutable }}">No ejecutable: {{ tarea.motivo_no_ejecutable }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         <div class="acciones-tabla">
                             <a class="btn secundario compacto" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea) }}">Editar</a>
                             {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCRIPTS_VER" in session.get("permisos", []) %}
                             <a class="btn secundario compacto" href="{{ url_for('scripts.por_tarea', id_tarea=tarea.id_tarea) }}">Scripts</a>
                             {% endif %}
                             {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", []) %}
-                            {% if tarea.activo and tarea.id_script and tarea.script_activo and tarea.id_version_activa %}
+                            {% if tarea.ejecutable %}
                             <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
                                 <button
                                     class="btn primario compacto requiere-confirmacion"
@@ -142,7 +150,7 @@
                                 </button>
                             </form>
                             {% else %}
-                            <button class="btn secundario compacto" type="button" disabled title="La tarea no tiene script activo asociado.">Ejecutar ahora</button>
+                            <button class="btn secundario compacto" type="button" disabled title="No ejecutable: {{ tarea.motivo_no_ejecutable }}">Ejecutar ahora</button>
                             {% endif %}
                             {% endif %}
                             <form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}">
@@ -163,13 +171,13 @@
                                 <button
                                     class="btn secundario compacto requiere-confirmacion"
                                     type="submit"
-                                    data-confirm-title="Eliminar tarea definitivamente"
-                                    data-confirm-message="Solo se eliminara si no tiene scripts, ejecuciones ni logs asociados. Si tiene informacion asociada, se bloqueara y podras desactivarla."
-                                    data-confirm-ok="Si, eliminar definitivamente"
+                                    data-confirm-title="Borrar tarea"
+                                    data-confirm-message="Este registro tiene historial asociado si ya fue usado. Se retirara de la operacion normal, pero el historial se conservara."
+                                    data-confirm-ok="Borrar conservando historial"
                                     data-confirm-cancel="Cancelar"
                                     data-confirm-type="danger"
                                 >
-                                    Eliminar
+                                    Borrar
                                 </button>
                             </form>
                         </div>
@@ -177,7 +185,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="estado-vacio">No hay tareas para mostrar.</td>
+                    <td colspan="7" class="estado-vacio">No hay tareas para mostrar.</td>
                 </tr>
                 {% endfor %}
             </tbody>

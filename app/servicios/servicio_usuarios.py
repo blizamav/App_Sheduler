@@ -5,10 +5,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.repositorios.repositorio_roles import obtener_rol_por_id
 from app.repositorios.repositorio_usuarios import (
     actualizar_usuario,
+    asegurar_snapshots_usuario,
     cambiar_estado_usuario,
+    contar_administradores_activos,
     crear_usuario,
     existe_usuario,
     listar_usuarios,
+    marcar_usuario_eliminado_operativo,
     obtener_usuario_por_id,
     obtener_usuario_por_usuario,
     registrar_login_exitoso,
@@ -221,3 +224,44 @@ def cambiar_estado_usuario_admin(id_usuario, activo, usuario_accion):
     if activo:
         return True, "Usuario activado correctamente."
     return True, "Usuario deshabilitado correctamente."
+
+
+def eliminar_usuario_admin(id_usuario, usuario_accion, id_usuario_sesion=None):
+    usuario_actual = obtener_usuario_por_id(id_usuario)
+    if not usuario_actual:
+        return False, "Usuario no encontrado."
+
+    if id_usuario_sesion and int(id_usuario_sesion) == int(id_usuario):
+        registrar_log_sistema(
+            "USUARIO_BORRADO_BLOQUEADO_ACTUAL",
+            "USUARIOS",
+            f"Intento bloqueado de borrar usuario actualmente logueado: {usuario_actual['usuario']}.",
+            usuario=usuario_accion,
+            nivel="WARNING",
+        )
+        return False, "No puedes borrar el usuario con el que estas conectado."
+
+    if usuario_actual.get("codigo_rol") == "ADMIN" and contar_administradores_activos(excluir_id=id_usuario) == 0:
+        registrar_log_sistema(
+            "USUARIO_BORRADO_BLOQUEADO_ULTIMO_ADMIN",
+            "USUARIOS",
+            f"Intento bloqueado de borrar ultimo administrador activo: {usuario_actual['usuario']}.",
+            usuario=usuario_accion,
+            nivel="WARNING",
+        )
+        return False, "No puedes borrar el ultimo administrador activo."
+
+    asegurar_snapshots_usuario(usuario_actual["usuario"])
+    marcar_usuario_eliminado_operativo(
+        id_usuario,
+        usuario_accion,
+        "Borrado operativo seguro. Eliminacion permanente disponible solo desde Papelera operativa.",
+    )
+    registrar_log_sistema(
+        "USUARIO_BORRADO_OPERATIVO",
+        "USUARIOS",
+        f"Usuario retirado de operacion conservando historial: {usuario_actual['usuario']}.",
+        usuario=usuario_accion,
+        valor_anterior=str(usuario_actual),
+    )
+    return True, "Usuario borrado de la operacion y enviado a Papelera operativa. No podra iniciar sesion y el historial se conserva."

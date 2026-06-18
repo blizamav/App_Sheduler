@@ -84,7 +84,6 @@ La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, ta
 
 Pendientes visuales asociados al roadmap:
 
-* Fase 11G: vista de papelera operativa y restauracion.
 * Fase 11H: flujo de confirmacion fuerte para purga controlada.
 * Fase 12: modulo Auditoria con filtros, detalle y trazabilidad.
 * Fase 14: exportaciones, notificaciones, reportes y dashboard avanzado.
@@ -105,6 +104,25 @@ Uso esperado:
 * En usuarios, el modal cambia automaticamente si detecta cambio de rol, cambio de contrasena o ambos.
 
 El componente queda preparado para acciones futuras como reemplazar script, cambiar version activa, ejecutar tarea manual, suspender tarea o cambios criticos de configuracion.
+
+## Modal Fase 11G - Eliminar permanentemente
+
+Implementado en Fase 11G.
+
+La accion `Eliminar permanentemente` desde `/papelera` debe usar modal corporativo fuerte, no `alert()`, `window.confirm()` ni `prompt()`.
+
+Texto exacto:
+
+```text
+Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Ya no aparecerá en mantenedores, papelera, selects ni paneles operativos. El historial de ejecuciones, logs, eventos del programador y snapshots históricos se conservará. Esta acción no se puede deshacer desde la aplicación.
+```
+
+Botones:
+
+* `Cancelar`.
+* `Eliminar permanentemente`.
+
+Si el backend bloquea la eliminacion por dependencias operativas no historicas, la UI debe mostrar: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
 
 ## Resumen de confirmacion de tareas
 

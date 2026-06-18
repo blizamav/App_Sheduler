@@ -20,6 +20,7 @@ def obtener_tarea_contexto(id_tarea):
         INNER JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
         LEFT JOIN dbo.programaciones p ON p.id_tarea = t.id_tarea AND p.activo = 1
         WHERE t.id_tarea = ?
+          AND ISNULL(t.eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -34,6 +35,7 @@ def obtener_script_por_tarea(id_tarea):
                s.activo, s.fecha_creacion, s.fecha_actualizacion
         FROM dbo.scripts s
         WHERE s.id_tarea = ?
+          AND ISNULL(s.eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -47,6 +49,7 @@ def obtener_script(id_script):
         SELECT id_script, id_tarea, nombre_script, descripcion, id_version_activa, activo
         FROM dbo.scripts
         WHERE id_script = ?
+          AND ISNULL(eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -62,6 +65,7 @@ def listar_versiones(id_script):
                requiere_env, ruta_env_fisica, ruta_env_relativa, fecha_creacion, fecha_actualizacion
         FROM dbo.scripts_versiones
         WHERE id_script = ?
+          AND ISNULL(eliminado_operativo, 0) = 0
         ORDER BY numero_version
     """
     with obtener_conexion() as conexion:
@@ -79,6 +83,8 @@ def obtener_version(id_version):
         FROM dbo.scripts_versiones v
         INNER JOIN dbo.scripts s ON s.id_script = v.id_script
         WHERE v.id_version = ?
+          AND ISNULL(v.eliminado_operativo, 0) = 0
+          AND ISNULL(s.eliminado_operativo, 0) = 0
     """
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -196,6 +202,47 @@ def eliminar_version(id_version):
         conexion.commit()
 
 
+def marcar_version_eliminada_operativa(id_version, usuario, motivo=None):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            UPDATE dbo.scripts_versiones
+            SET eliminado_operativo = 1,
+                estado_version = CASE WHEN estado_version = 'ACTIVA' THEN 'INACTIVA' ELSE estado_version END,
+                es_activa = 0,
+                fecha_eliminado_operativo = COALESCE(fecha_eliminado_operativo, SYSDATETIME()),
+                usuario_eliminado_operativo = ?,
+                motivo_eliminado_operativo = COALESCE(?, motivo_eliminado_operativo),
+                fecha_actualizacion = SYSDATETIME()
+            WHERE id_version = ?
+            """,
+            usuario,
+            motivo,
+            id_version,
+        )
+        cursor.execute(
+            """
+            UPDATE s
+            SET id_version_activa = NULL,
+                activo = CASE WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM dbo.scripts_versiones v
+                    WHERE v.id_script = s.id_script
+                      AND ISNULL(v.eliminado_operativo, 0) = 0
+                      AND v.es_activa = 1
+                ) THEN 0 ELSE activo END,
+                fecha_actualizacion = SYSDATETIME(),
+                usuario_actualizacion = ?
+            FROM dbo.scripts s
+            WHERE s.id_version_activa = ?
+            """,
+            usuario,
+            id_version,
+        )
+        conexion.commit()
+
+
 def desactivar_script(id_script, usuario):
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
@@ -205,6 +252,46 @@ def desactivar_script(id_script, usuario):
             SET activo = 0, usuario_actualizacion = ?, fecha_actualizacion = SYSDATETIME()
             WHERE id_script = ?
             """,
+            usuario,
+            id_script,
+        )
+        conexion.commit()
+
+
+def marcar_script_eliminado_operativo(id_script, usuario, motivo=None):
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            UPDATE dbo.scripts_versiones
+            SET eliminado_operativo = 1,
+                estado_version = CASE WHEN estado_version = 'ACTIVA' THEN 'INACTIVA' ELSE estado_version END,
+                es_activa = 0,
+                fecha_eliminado_operativo = COALESCE(fecha_eliminado_operativo, SYSDATETIME()),
+                usuario_eliminado_operativo = ?,
+                motivo_eliminado_operativo = COALESCE(?, motivo_eliminado_operativo),
+                fecha_actualizacion = SYSDATETIME()
+            WHERE id_script = ?
+            """,
+            usuario,
+            motivo,
+            id_script,
+        )
+        cursor.execute(
+            """
+            UPDATE dbo.scripts
+            SET activo = 0,
+                id_version_activa = NULL,
+                eliminado_operativo = 1,
+                fecha_eliminado_operativo = COALESCE(fecha_eliminado_operativo, SYSDATETIME()),
+                usuario_eliminado_operativo = ?,
+                motivo_eliminado_operativo = COALESCE(?, motivo_eliminado_operativo),
+                usuario_actualizacion = ?,
+                fecha_actualizacion = SYSDATETIME()
+            WHERE id_script = ?
+            """,
+            usuario,
+            motivo,
             usuario,
             id_script,
         )
