@@ -92,7 +92,7 @@ def _insertar_evento_programador_con_snapshots(evento):
 
 def listar_eventos_programador(filtros=None, limite=10):
     columnas = _columnas_eventos()
-    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea, 'Tarea eliminada') AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "COALESCE(nombre_tarea, 'Tarea eliminada') AS nombre_tarea"
     nombre_tarea_filtro = "COALESCE(nombre_tarea_snapshot, nombre_tarea)" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
     filtros = filtros or {}
     condiciones = ["activo = 1"]
@@ -140,7 +140,7 @@ def resumir_eventos_recientes(limite=10):
 
 def obtener_resumen_eventos_hoy():
     columnas = _columnas_eventos()
-    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea, 'Tarea eliminada') AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "COALESCE(nombre_tarea, 'Tarea eliminada') AS nombre_tarea"
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(
@@ -196,7 +196,7 @@ def obtener_omisiones_por_motivo_hoy():
 
 def obtener_eventos_relevantes_recientes(limite=10):
     columnas = _columnas_eventos()
-    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea, 'Tarea eliminada') AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "COALESCE(nombre_tarea, 'Tarea eliminada') AS nombre_tarea"
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         cursor.execute(
@@ -249,7 +249,7 @@ def listar_eventos_programador_paginado(filtros=None, page=1, per_page=25):
         per_page = 25
 
     columnas = _columnas_eventos()
-    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea) AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "nombre_tarea"
+    nombre_tarea_select = "COALESCE(nombre_tarea_snapshot, nombre_tarea, 'Tarea eliminada') AS nombre_tarea" if "nombre_tarea_snapshot" in columnas else "COALESCE(nombre_tarea, 'Tarea eliminada') AS nombre_tarea"
     condiciones, parametros = _condiciones_eventos(filtros, columnas)
     where_sql = " AND ".join(condiciones)
     offset = (page - 1) * per_page

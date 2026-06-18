@@ -2,12 +2,10 @@
 
 ## Roadmap de flujos pendiente
 
-Los flujos implementados llegan hasta Fase 11G. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+Los flujos implementados llegan hasta Fase 11I. El roadmap formal se mantiene en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
-* Fase 11H: desacople historico para eliminacion permanente real.
-* Fase 11I: revision integral post-borrado.
 * Fase 12A: Auditoria base.
 
 ## Flujo de disponibilidad de ejecucion manual en tareas
@@ -175,6 +173,21 @@ Implementado en Fase 11H:
 8. Luego borra solo `programaciones`, `scripts_versiones`, `scripts` o `tareas` operativas segun corresponda.
 9. `logs_tareas.id_ejecucion` se mantiene como vinculo hacia la ejecucion historica.
 10. `/ejecuciones`, consola, logs y eventos siguen leyendo snapshots o texto historico.
+
+## Flujo de revision post desacople historico
+
+Implementado en Fase 11I:
+
+1. Una ejecucion historica puede quedar con `id_tarea`, `id_script` e `id_version` en `NULL`.
+2. `/ejecuciones` lista la ejecucion usando snapshot de tarea, script, archivo, version y usuario.
+3. Si el snapshot no existe, intenta mostrar maestro operativo.
+4. Si tampoco existe maestro, muestra fallback claro como `Tarea eliminada`, `Script eliminado` o `Archivo historico`.
+5. `/ejecuciones/<id>` y la consola cargan por `id_ejecucion`, no por maestro operativo.
+6. Los logs se consultan por `logs_tareas.id_ejecucion`; `logs_tareas.id_tarea` puede ser `NULL`.
+7. `/scheduler/eventos` muestra nombre desde snapshots del evento o fallback si la tarea fue eliminada.
+8. `/panel` y panel del programador no fallan si una ultima ejecucion ya no tiene tarea maestra.
+9. Las vistas operativas `/tareas` y gestion de scripts siguen mostrando solo registros operativos existentes.
+10. La revision no borra historial, no modifica snapshots y no implementa Auditoria.
 
 ## Flujo futuro de purga controlada
 

@@ -5,10 +5,10 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 creada para Fase 11H, pendiente de ejecucion manual.
-* Estado actual: Fase 11H implementada con desacople historico para eliminacion permanente real desde papelera; roadmap formal reorganizado en fases 11 a 14.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H.
+* Estado actual: Fase 11I implementada con revision integral post-borrado y uso robusto de snapshots historicos; roadmap formal reorganizado en fases 11 a 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11H - Desacople historico para eliminacion permanente real.
+* Fase actual: Fase 11I - Revision integral post-borrado.
 * Ultima actualizacion: 2026-06-18
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
-* Modulos pendientes: Fase 11I revision integral post-borrado, Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
+* Modulos pendientes: Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -48,9 +48,20 @@
 * Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
 * Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
-* Pendiente 5: Ejecutar manualmente `database/migrations/017_desacople_historico_papelera.sql` en SSMS despues de validar con `database/diagnostics/003_diagnostico_desacople_historico.sql`.
 
 ## 6. Historial de cambios
+
+### 2026-06-18 - Fase 11I / Revision integral post-borrado y desacople historico
+
+* Archivos creados: `database/diagnostics/004_validacion_post_desacople_historico.sql`.
+* Archivos modificados: `app/repositorios/repositorio_ejecuciones.py`, `app/repositorios/repositorio_panel.py`, `app/repositorios/repositorio_panel_scheduler.py`, `app/repositorios/repositorio_scheduler_eventos.py`, `app/templates/ejecuciones/listado.html`, `app/templates/ejecuciones/consola.html`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se hizo: Se revisaron consultas historicas post Fase 11H y se reforzo el uso de snapshots/fallbacks para ejecuciones desacopladas.
+* Problemas encontrados: Algunas expresiones historicas podian quedar en `NULL` si el maestro operativo ya no existia; el filtro de usuario no consideraba `usuario_ejecucion_snapshot`; paneles/eventos podian mostrar tarea vacia si el maestro fue eliminado.
+* Correcciones: `/ejecuciones`, `/ejecuciones/<id>`, panel principal, panel programador y eventos usan fallback claro; consola/listado muestran badge `Snapshot historico` cuando aplica.
+* Validacion reportada por usuario: `id_ejecucion = 14` quedo con `id_tarea`, `id_script` e `id_version` en `NULL` y snapshots completos de `Prueba5`.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; render de `ejecuciones/listado.html` y `ejecuciones/consola.html` con datos simulados de ejecucion 14 desacoplada; busqueda de `INNER JOIN` en repositorios historicos; busqueda de fallbacks historicos.
+* No ejecutado: No se ejecuto SQL manual ni scripts de migracion; no se ejecuto `scheduler_worker.py --once` porque escribe heartbeat/eventos; la validacion real de rutas con DB quedo bloqueada por error ODBC local de cifrado/credenciales.
+* Reglas: No se borro historial, no se modifico `.env`, no se implemento Auditoria y no se avanzo a Fase 12A.
 
 ### 2026-06-18 - Fase 11H / Desacople historico para eliminacion permanente real
 

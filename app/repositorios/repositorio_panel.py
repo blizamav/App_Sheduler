@@ -57,7 +57,7 @@ def obtener_ultima_ejecucion():
                    e.estado_ejecucion,
                    e.origen_ejecucion,
                    e.fecha_hora_inicio,
-                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
+                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, 'Tarea eliminada') AS nombre_tarea
             FROM dbo.ejecuciones e
             LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
             ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC
@@ -77,7 +77,7 @@ def listar_ultimas_ejecuciones(limite=6):
                    e.estado_ejecucion,
                    e.origen_ejecucion,
                    e.fecha_hora_inicio,
-                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
+                   COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, 'Tarea eliminada') AS nombre_tarea
             FROM dbo.ejecuciones e
             LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
             ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC

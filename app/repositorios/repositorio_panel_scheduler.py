@@ -51,7 +51,7 @@ def listar_ultimas_ejecuciones_automaticas(limite=8):
                {fecha_programada} AS fecha_programada,
                {clave_programacion} AS clave_programacion,
                {nombre_worker} AS nombre_worker,
-               COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea) AS nombre_tarea
+               COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, 'Tarea eliminada') AS nombre_tarea
         FROM dbo.ejecuciones e
         LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
         WHERE e.origen_ejecucion = 'AUTOMATICA'

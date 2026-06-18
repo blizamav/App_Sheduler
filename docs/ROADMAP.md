@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 11H con robustez operativa interna avanzada. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa y desacople historico para eliminacion permanente real.
+El proyecto se encuentra en Fase 11I con robustez operativa interna avanzada. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real y revision integral post-borrado.
 
 ## Implementado
 
@@ -31,6 +31,7 @@ El proyecto se encuentra en Fase 11H con robustez operativa interna avanzada. AP
 * Restauracion de registros retirados como inactivos.
 * Eliminacion permanente segura desde papelera.
 * Desacople historico para que la eliminacion permanente pueda borrar filas operativas sin borrar historia.
+* Revision post-desacople para que `/ejecuciones`, consola, paneles y eventos usen snapshots y fallback historico.
 * TOP 6 ultimas ejecuciones en panel principal.
 
 ## Fase 11 - Robustez Operativa Interna
@@ -48,7 +49,7 @@ Estado: parcialmente implementada. La fase concentra estabilidad, trazabilidad o
 * 11F Borrado operativo seguro con snapshots. Implementado.
 * 11G Papelera operativa, restauracion y eliminacion permanente segura. Implementado.
 * 11H Desacople historico para eliminacion permanente real. Implementado.
-* 11I Revision integral post-borrado. Pendiente.
+* 11I Revision integral post-borrado. Implementado.
 
 ## Fase 12 - Auditoria
 
@@ -185,6 +186,19 @@ La migracion debe ejecutarse manualmente en SSMS despues de la migracion 016 y d
 
 ## Auditoria Pendiente
 
+## Fase 11I - Revision Integral Post-Borrado
+
+Implementado. Se revisaron las consultas historicas posteriores al desacople de Fase 11H para evitar que ejecuciones con `id_tarea`, `id_script` o `id_version` en `NULL` desaparezcan de listados o detalle.
+
+Cambios aplicados:
+
+* `/ejecuciones` y `/ejecuciones/<id>` usan `LEFT JOIN`, snapshots y fallback explicito para tarea, cliente, categoria, tipo, script, archivo, version y usuario.
+* La consola muestra indicador discreto `Snapshot historico` y estado de maestro cuando la tarea/script/version ya no existe.
+* `/panel`, panel del programador y `/scheduler/eventos` usan fallback `Tarea eliminada` cuando el maestro operativo no existe.
+* Se agrega diagnostico manual `database/diagnostics/004_validacion_post_desacople_historico.sql`.
+
+No se crean migraciones nuevas, no se ejecuta SQL desde Codex y Auditoria sigue pendiente para Fase 12.
+
 Auditoria funcional sigue pendiente para Fase 12.
 
 Distinciones obligatorias:
@@ -199,7 +213,6 @@ Distinciones obligatorias:
 
 Pendiente critico inmediato:
 
-* Fase 11I Revision integral post-borrado.
 * Fase 12A Auditoria.
 
 Pendiente operativo:
@@ -219,4 +232,4 @@ Pendiente mejora:
 
 ## Proxima Fase Recomendada
 
-La proxima fase recomendada es Fase 11I: revision integral post-borrado. No debe implementar Auditoria ni Fase 12A.
+La proxima fase recomendada es Fase 12A: Auditoria base, solo cuando se autorice explicitamente.

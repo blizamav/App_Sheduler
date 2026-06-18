@@ -126,11 +126,17 @@
                     <article class="ejecucion-item">
                         <div class="ejecucion-main">
                             <strong>#{{ ejecucion.id_ejecucion }} | {{ ejecucion.nombre_tarea }}</strong>
-                            <span>{{ ejecucion.nombre_archivo }}{% if ejecucion.numero_version %} v{{ ejecucion.numero_version }}{% endif %}</span>
+                            <span>
+                                {{ ejecucion.nombre_archivo }}
+                                {% if ejecucion.numero_version and ejecucion.numero_version != 'historica' %} v{{ ejecucion.numero_version }}{% endif %}
+                            </span>
                         </div>
                         <div class="ejecucion-tags">
                             <span class="badge info">{{ ejecucion.origen_ejecucion or "-" }}</span>
                             <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
+                            {% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}
+                            <span class="badge inactivo">Snapshot historico</span>
+                            {% endif %}
                         </div>
                         <div class="ejecucion-meta">
                             <span>Inicio {{ ejecucion.fecha_hora_inicio.strftime('%H:%M:%S') if ejecucion.fecha_hora_inicio else '-' }}</span>

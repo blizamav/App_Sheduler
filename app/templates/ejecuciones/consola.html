@@ -9,6 +9,9 @@
         <p class="eyebrow">{{ "Automatica" if ejecucion.origen_ejecucion == "AUTOMATICA" else "Manual" }}</p>
         <h2>{{ ejecucion.nombre_tarea }}</h2>
         <p>{{ ejecucion.nombre_categoria }} / {{ ejecucion.nombre_tipo }} / {{ ejecucion.nombre_cliente }}</p>
+        {% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}
+        <p><span class="badge inactivo">Snapshot historico</span></p>
+        {% endif %}
     </div>
     <a class="btn secundario" href="{{ url_for('ejecuciones.listado') }}">Volver a ejecuciones</a>
 </section>
@@ -24,7 +27,8 @@
         </div>
         <div class="detalle-grid">
             <div><strong>Script activo</strong><span>{{ ejecucion.nombre_archivo }}</span></div>
-            <div><strong>Version</strong><span>v{{ ejecucion.numero_version }}</span></div>
+            <div><strong>Script</strong><span>{{ ejecucion.nombre_script }}</span></div>
+            <div><strong>Version</strong><span>{% if ejecucion.numero_version and ejecucion.numero_version != 'historica' %}v{{ ejecucion.numero_version }}{% else %}Historica{% endif %}</span></div>
             <div><strong>PID</strong><span>{{ ejecucion.pid_proceso or "-" }}</span></div>
             <div><strong>Origen</strong><span>{{ ejecucion.origen_ejecucion or "-" }}</span></div>
             <div><strong>Usuario</strong><span>{{ ejecucion.usuario_ejecucion or "-" }}</span></div>
@@ -32,6 +36,8 @@
             <div><strong>Fecha programada</strong><span>{{ ejecucion.fecha_programada or "-" }}</span></div>
             <div><strong>Inicio</strong><span>{{ ejecucion.fecha_hora_inicio }}</span></div>
             <div><strong>Termino</strong><span data-ejecucion-termino>{{ ejecucion.fecha_hora_termino or "-" }}</span></div>
+            <div><strong>Estado maestro</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Eliminado permanentemente{% else %}Operativo disponible{% endif %}</span></div>
+            <div><strong>Fuente</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Snapshot historico{% else %}Maestro operativo{% endif %}</span></div>
         </div>
         <div class="acciones-formulario">
             <a class="btn secundario compacto" href="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">Actualizar log</a>

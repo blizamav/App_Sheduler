@@ -82,9 +82,10 @@ No se modificaron rutas, permisos, reglas de negocio, consultas SQL, scheduler, 
 
 La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, historial, feriados, sincronizacion, configuracion del programador, panel operativo y eventos del programador.
 
+Desde Fase 11I, el historial de ejecuciones y la consola muestran un badge discreto `Snapshot historico` cuando la ejecucion ya no tiene maestro operativo asociado por eliminacion permanente.
+
 Pendientes visuales asociados al roadmap:
 
-* Fase 11H: flujo de confirmacion fuerte para purga controlada.
 * Fase 12: modulo Auditoria con filtros, detalle y trazabilidad.
 * Fase 14: exportaciones, notificaciones, reportes y dashboard avanzado.
 

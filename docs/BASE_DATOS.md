@@ -323,6 +323,24 @@ Cambios:
 
 La app valida que esta migracion exista antes de permitir eliminacion permanente real de `tareas`, `scripts` o `scripts_versiones` desde `/papelera`.
 
+## Fase 11I - Revision post desacople historico
+
+La revision post desacople valida que los modulos historicos funcionen aunque `ejecuciones.id_tarea`, `ejecuciones.id_script`, `ejecuciones.id_version` y `logs_tareas.id_tarea` sean `NULL`.
+
+Reglas vigentes para historial:
+
+* Un ID historico `NULL` en `ejecuciones` es valido despues de una eliminacion permanente.
+* `logs_tareas` debe seguir consultandose por `id_ejecucion`.
+* Las pantallas historicas deben usar snapshot primero, maestro operativo despues y fallback claro al final.
+* `/ejecuciones` no debe depender de `INNER JOIN` contra `tareas`, `scripts` ni `scripts_versiones`.
+* `/scheduler/eventos` debe usar snapshots o texto historico cuando la tarea ya no existe.
+
+Diagnostico manual agregado:
+
+* `database/diagnostics/004_validacion_post_desacople_historico.sql`.
+
+Este diagnostico es de solo lectura y no debe ejecutarse automaticamente desde la aplicacion.
+
 ## Auditoria pendiente
 
 La tabla `auditoria_cambios` existe en el modelo inicial, pero el modulo funcional de Auditoria sigue pendiente para Fase 12.

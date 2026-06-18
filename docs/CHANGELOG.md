@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-06-18 - Fase 11I revision integral post desacople historico
+
+### Agregado
+
+* Diagnostico manual de solo lectura `database/diagnostics/004_validacion_post_desacople_historico.sql`.
+* Indicador discreto `Snapshot historico` en historial y consola cuando la ejecucion ya no tiene maestro operativo.
+
+### Corregido
+
+* `/ejecuciones` y `/ejecuciones/<id>` usan fallback claro para tarea, cliente, categoria, tipo, script, archivo, version y usuario cuando los IDs historicos son `NULL`.
+* El filtro de usuario en ejecuciones considera `usuario_ejecucion_snapshot`.
+* `/panel`, panel del programador y `/scheduler/eventos` muestran `Tarea eliminada` si el maestro operativo ya no existe.
+
+### Reglas
+
+* No se crearon migraciones.
+* No se ejecuto SQL automaticamente.
+* No se modifico `.env`.
+* No se borro historial.
+* No se implemento Auditoria.
+* No se avanzo a Fase 12A.
+
 ## 2026-06-18 - Fase 11H desacople historico para eliminacion permanente real
 
 ### Agregado

@@ -36,6 +36,7 @@
 * Fase 11F: borrado operativo seguro con snapshots historicos.
 * Fase 11G: papelera operativa, restauracion y eliminacion permanente segura.
 * Fase 11H: desacople historico para eliminacion permanente real desde papelera.
+* Fase 11I: revision integral post-borrado y endurecimiento de historial por snapshots.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -44,7 +45,6 @@ Ver detalle formal en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
-* Fase 11I: revision integral post-borrado.
 * Fase 12A: Auditoria base.
 
 Pendiente operativo:
@@ -75,7 +75,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 11H: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real y disponibilidad visible de ejecucion manual en `/tareas`. Aun no existe Auditoria funcional, despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 11I: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision post-borrado y disponibilidad visible de ejecucion manual en `/tareas`. Aun no existe Auditoria funcional, despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -126,6 +126,7 @@ Implementado en Fase 8:
 * Estados `EN_EJECUCION`, `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`.
 * Seed incremental `database/seeds/006_permisos_ejecuciones.sql`.
 * Fase 9D: filtros por id, tarea, origen, estado, fecha, usuario y worker; resumen por estado calculado con los mismos filtros.
+* Fase 11I: el historial y la consola soportan ejecuciones con `id_tarea`, `id_script` o `id_version` en `NULL`, usando snapshots y fallback historico.
 
 No implementado en Fase 8:
 
@@ -283,7 +284,7 @@ Pendientes derivados:
 * Restauracion controlada cuando sea seguro. Implementado en Fase 11G.
 * Eliminacion permanente segura desde papelera, solo sobre tablas operativas o maestras cuando no destruya trazabilidad. Implementado en Fase 11G.
 * Desacople historico para eliminacion permanente real. Implementado en Fase 11H.
-* Revision integral post-borrado antes de iniciar Auditoria.
+* Revision integral post-borrado antes de iniciar Auditoria. Implementado en Fase 11I.
 
 ## Papelera operativa y eliminacion permanente segura
 

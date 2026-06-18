@@ -317,16 +317,18 @@ def obtener_ejecucion(id_ejecucion):
     fecha_programada = "e.fecha_programada" if "fecha_programada" in columnas else "CAST(NULL AS datetime2(0))"
     clave_programacion = "e.clave_programacion" if "clave_programacion" in columnas else "CAST(NULL AS varchar(200))"
     nombre_worker = "e.nombre_worker" if "nombre_worker" in columnas else "CAST(NULL AS varchar(100))"
-    nombre_tarea = "COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea)" if "nombre_tarea_snapshot" in columnas else "t.nombre_tarea"
-    nombre_cliente = "COALESCE(e.cliente_snapshot, c.nombre_cliente)" if "cliente_snapshot" in columnas else "c.nombre_cliente"
-    nombre_categoria = "COALESCE(e.categoria_snapshot, ca.nombre_categoria)" if "categoria_snapshot" in columnas else "ca.nombre_categoria"
-    nombre_tipo = "COALESCE(e.tipo_snapshot, ti.nombre_tipo)" if "tipo_snapshot" in columnas else "ti.nombre_tipo"
-    numero_version = "COALESCE(e.version_script_snapshot, CONVERT(varchar(10), v.numero_version))" if "version_script_snapshot" in columnas else "CONVERT(varchar(10), v.numero_version)"
-    nombre_archivo = "COALESCE(e.nombre_archivo_snapshot, v.nombre_archivo)" if "nombre_archivo_snapshot" in columnas else "v.nombre_archivo"
+    nombre_tarea = "COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, 'Tarea eliminada')" if "nombre_tarea_snapshot" in columnas else "COALESCE(t.nombre_tarea, 'Tarea eliminada')"
+    nombre_cliente = "COALESCE(e.cliente_snapshot, c.nombre_cliente, 'Cliente historico')" if "cliente_snapshot" in columnas else "COALESCE(c.nombre_cliente, 'Cliente historico')"
+    nombre_categoria = "COALESCE(e.categoria_snapshot, ca.nombre_categoria, 'Categoria historica')" if "categoria_snapshot" in columnas else "COALESCE(ca.nombre_categoria, 'Categoria historica')"
+    nombre_tipo = "COALESCE(e.tipo_snapshot, ti.nombre_tipo, 'Tipo historico')" if "tipo_snapshot" in columnas else "COALESCE(ti.nombre_tipo, 'Tipo historico')"
+    nombre_script = "COALESCE(e.nombre_script_snapshot, s.nombre_script, 'Script eliminado')" if "nombre_script_snapshot" in columnas else "COALESCE(s.nombre_script, 'Script eliminado')"
+    numero_version = "COALESCE(e.version_script_snapshot, CONVERT(varchar(10), v.numero_version), 'historica')" if "version_script_snapshot" in columnas else "COALESCE(CONVERT(varchar(10), v.numero_version), 'historica')"
+    nombre_archivo = "COALESCE(e.nombre_archivo_snapshot, v.nombre_archivo, 'Archivo historico')" if "nombre_archivo_snapshot" in columnas else "COALESCE(v.nombre_archivo, 'Archivo historico')"
+    usuario_ejecucion = "COALESCE(e.usuario_ejecucion_snapshot, e.usuario_ejecucion, 'Usuario historico')" if "usuario_ejecucion_snapshot" in columnas else "COALESCE(e.usuario_ejecucion, 'Usuario historico')"
     consulta = f"""
         SELECT e.id_ejecucion, e.id_tarea, e.id_script, e.id_version, e.origen_ejecucion,
                e.estado_ejecucion, e.fecha_hora_inicio, e.fecha_hora_termino, e.duracion_segundos,
-               e.codigo_salida, e.mensaje_error, e.usuario_ejecucion, e.pid_proceso,
+               e.codigo_salida, e.mensaje_error, {usuario_ejecucion} AS usuario_ejecucion, e.pid_proceso,
                e.usuario_detencion, e.fecha_hora_detencion, e.motivo_detencion, e.fue_detencion_forzada,
                {fecha_programada} AS fecha_programada,
                {clave_programacion} AS clave_programacion,
@@ -335,8 +337,12 @@ def obtener_ejecucion(id_ejecucion):
                {nombre_cliente} AS nombre_cliente,
                {nombre_categoria} AS nombre_categoria,
                {nombre_tipo} AS nombre_tipo,
+               {nombre_script} AS nombre_script,
                {numero_version} AS numero_version,
                {nombre_archivo} AS nombre_archivo,
+               CASE WHEN e.id_tarea IS NULL OR t.id_tarea IS NULL THEN 1 ELSE 0 END AS maestro_tarea_eliminado,
+               CASE WHEN e.id_script IS NULL OR s.id_script IS NULL THEN 1 ELSE 0 END AS maestro_script_eliminado,
+               CASE WHEN e.id_version IS NULL OR v.id_version IS NULL THEN 1 ELSE 0 END AS maestro_version_eliminado,
                v.ruta_relativa,
                lt.ruta_fisica_log, lt.ruta_relativa_log, lt.nombre_archivo_log
         FROM dbo.ejecuciones e
@@ -344,6 +350,7 @@ def obtener_ejecucion(id_ejecucion):
         LEFT JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
         LEFT JOIN dbo.categorias ca ON ca.id_categoria = t.id_categoria
         LEFT JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
+        LEFT JOIN dbo.scripts s ON s.id_script = e.id_script
         LEFT JOIN dbo.scripts_versiones v ON v.id_version = e.id_version
         LEFT JOIN dbo.logs_tareas lt ON lt.id_ejecucion = e.id_ejecucion
         WHERE e.id_ejecucion = ?
@@ -399,7 +406,8 @@ def _where_ejecuciones(filtros, columnas):
         condiciones.append("e.fecha_hora_inicio < DATEADD(DAY, 1, CAST(? AS date))")
         parametros.append(filtros["fecha_hasta"])
     if filtros.get("usuario"):
-        condiciones.append("e.usuario_ejecucion LIKE ?")
+        campo_usuario = "COALESCE(e.usuario_ejecucion_snapshot, e.usuario_ejecucion)" if "usuario_ejecucion_snapshot" in columnas else "e.usuario_ejecucion"
+        condiciones.append(f"{campo_usuario} LIKE ?")
         parametros.append(f"%{filtros['usuario']}%")
     if filtros.get("worker") and "nombre_worker" in columnas:
         condiciones.append("e.nombre_worker LIKE ?")
@@ -416,6 +424,7 @@ def _from_ejecuciones():
         LEFT JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
         LEFT JOIN dbo.categorias ca ON ca.id_categoria = t.id_categoria
         LEFT JOIN dbo.tipos ti ON ti.id_tipo = t.id_tipo
+        LEFT JOIN dbo.scripts s ON s.id_script = e.id_script
         LEFT JOIN dbo.scripts_versiones v ON v.id_version = e.id_version
     """
 
@@ -423,12 +432,14 @@ def _from_ejecuciones():
 def listar_ejecuciones_paginadas(filtros, page=1, per_page=25):
     columnas = _columnas_ejecuciones()
     expresiones = _expresiones_campos_ejecucion(columnas)
-    nombre_tarea = "COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea)" if "nombre_tarea_snapshot" in columnas else "t.nombre_tarea"
-    nombre_cliente = "COALESCE(e.cliente_snapshot, c.nombre_cliente)" if "cliente_snapshot" in columnas else "c.nombre_cliente"
-    nombre_categoria = "COALESCE(e.categoria_snapshot, ca.nombre_categoria)" if "categoria_snapshot" in columnas else "ca.nombre_categoria"
-    nombre_tipo = "COALESCE(e.tipo_snapshot, ti.nombre_tipo)" if "tipo_snapshot" in columnas else "ti.nombre_tipo"
-    numero_version = "COALESCE(e.version_script_snapshot, CONVERT(varchar(10), v.numero_version))" if "version_script_snapshot" in columnas else "CONVERT(varchar(10), v.numero_version)"
-    nombre_archivo = "COALESCE(e.nombre_archivo_snapshot, v.nombre_archivo)" if "nombre_archivo_snapshot" in columnas else "v.nombre_archivo"
+    nombre_tarea = "COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, 'Tarea eliminada')" if "nombre_tarea_snapshot" in columnas else "COALESCE(t.nombre_tarea, 'Tarea eliminada')"
+    nombre_cliente = "COALESCE(e.cliente_snapshot, c.nombre_cliente, 'Cliente historico')" if "cliente_snapshot" in columnas else "COALESCE(c.nombre_cliente, 'Cliente historico')"
+    nombre_categoria = "COALESCE(e.categoria_snapshot, ca.nombre_categoria, 'Categoria historica')" if "categoria_snapshot" in columnas else "COALESCE(ca.nombre_categoria, 'Categoria historica')"
+    nombre_tipo = "COALESCE(e.tipo_snapshot, ti.nombre_tipo, 'Tipo historico')" if "tipo_snapshot" in columnas else "COALESCE(ti.nombre_tipo, 'Tipo historico')"
+    nombre_script = "COALESCE(e.nombre_script_snapshot, s.nombre_script, 'Script eliminado')" if "nombre_script_snapshot" in columnas else "COALESCE(s.nombre_script, 'Script eliminado')"
+    numero_version = "COALESCE(e.version_script_snapshot, CONVERT(varchar(10), v.numero_version), 'historica')" if "version_script_snapshot" in columnas else "COALESCE(CONVERT(varchar(10), v.numero_version), 'historica')"
+    nombre_archivo = "COALESCE(e.nombre_archivo_snapshot, v.nombre_archivo, 'Archivo historico')" if "nombre_archivo_snapshot" in columnas else "COALESCE(v.nombre_archivo, 'Archivo historico')"
+    usuario_ejecucion = "COALESCE(e.usuario_ejecucion_snapshot, e.usuario_ejecucion, 'Usuario historico')" if "usuario_ejecucion_snapshot" in columnas else "COALESCE(e.usuario_ejecucion, 'Usuario historico')"
     where, parametros = _where_ejecuciones(filtros, columnas)
     offset = (page - 1) * per_page
     consulta = f"""
@@ -439,7 +450,7 @@ def listar_ejecuciones_paginadas(filtros, page=1, per_page=25):
                e.estado_ejecucion,
                e.fecha_hora_inicio,
                e.fecha_hora_termino,
-               e.usuario_ejecucion,
+               {usuario_ejecucion} AS usuario_ejecucion,
                e.pid_proceso,
                {expresiones['fecha_programada']} AS fecha_programada,
                {expresiones['clave_programacion']} AS clave_programacion,
@@ -448,8 +459,12 @@ def listar_ejecuciones_paginadas(filtros, page=1, per_page=25):
                {nombre_cliente} AS nombre_cliente,
                {nombre_categoria} AS nombre_categoria,
                {nombre_tipo} AS nombre_tipo,
+               {nombre_script} AS nombre_script,
                {numero_version} AS numero_version,
-               {nombre_archivo} AS nombre_archivo
+               {nombre_archivo} AS nombre_archivo,
+               CASE WHEN e.id_tarea IS NULL OR t.id_tarea IS NULL THEN 1 ELSE 0 END AS maestro_tarea_eliminado,
+               CASE WHEN e.id_script IS NULL OR s.id_script IS NULL THEN 1 ELSE 0 END AS maestro_script_eliminado,
+               CASE WHEN e.id_version IS NULL OR v.id_version IS NULL THEN 1 ELSE 0 END AS maestro_version_eliminado
         {_from_ejecuciones()}
         {where}
         ORDER BY e.fecha_hora_inicio DESC, e.id_ejecucion DESC
