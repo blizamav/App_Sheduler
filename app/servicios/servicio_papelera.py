@@ -26,12 +26,24 @@ ENTIDADES_FILTRO = [
     ("scripts_versiones", "Versiones de scripts"),
 ]
 
+ORDEN_ELIMINACION_MASIVA = (
+    "scripts_versiones",
+    "scripts",
+    "tareas",
+    "clientes",
+    "categorias",
+    "tipos",
+    "usuarios",
+)
+
 
 def listar_papelera(filtros=None):
     filtros = filtros or {}
     pagina = _entero(filtros.get("page"), 1, minimo=1)
     por_pagina = _entero(filtros.get("per_page"), 25, minimo=10, maximo=100)
     registros = listar_eliminados()
+    resumen_entidades = _resumen_por_entidad(registros)
+    total_general = len(registros)
     registros = [_enriquecer(registro) for registro in registros]
     registros = _filtrar(registros, filtros)
     registros.sort(key=lambda item: item.get("fecha_eliminado_operativo") or "", reverse=True)
@@ -50,6 +62,8 @@ def listar_papelera(filtros=None):
         "per_page": por_pagina,
         "total_pages": total_paginas,
         "entidades": ENTIDADES_FILTRO,
+        "total_papelera": total_general,
+        "resumen_entidades": resumen_entidades,
     }
 
 
@@ -163,6 +177,60 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
     return True, "Registro eliminado permanentemente de las tablas operativas. El historial se conserva."
 
 
+def eliminar_todo_permanente(usuario, id_usuario_sesion=None):
+    registros = listar_eliminados()
+    registros_ordenados = sorted(
+        registros,
+        key=lambda item: (
+            ORDEN_ELIMINACION_MASIVA.index(item["entidad"])
+            if item["entidad"] in ORDEN_ELIMINACION_MASIVA
+            else len(ORDEN_ELIMINACION_MASIVA),
+            item["id_registro"],
+        ),
+    )
+    resumen = _crear_resumen_masivo(registros)
+
+    try:
+        for registro in registros_ordenados:
+            entidad = registro["entidad"]
+            id_registro = registro["id_registro"]
+            etiqueta = registro.get("entidad_label") or entidad
+            nombre = registro.get("nombre") or f"#{id_registro}"
+
+            try:
+                ok, mensaje = eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesion)
+            except Exception:
+                ok = False
+                mensaje = "Error controlado al intentar eliminar este registro."
+
+            detalle = {
+                "entidad": entidad,
+                "entidad_label": etiqueta,
+                "id_registro": id_registro,
+                "nombre": nombre,
+                "mensaje": mensaje,
+            }
+            if ok:
+                resumen["eliminados"] += 1
+                resumen["por_entidad"][entidad]["eliminados"] += 1
+            else:
+                resumen["no_eliminados"] += 1
+                resumen["por_entidad"][entidad]["no_eliminados"] += 1
+                detalle["motivo"] = _motivo_seguro(mensaje)
+                resumen["detalles_no_eliminados"].append(detalle)
+                if "error" in _motivo_seguro(mensaje).lower():
+                    resumen["errores"] += 1
+                    resumen["por_entidad"][entidad]["errores"] += 1
+
+        _registrar_cierre_eliminacion_masiva(resumen, usuario, "OK")
+        return resumen
+    except Exception:
+        resumen["errores"] += 1
+        resumen["error_global"] = "Error controlado al ejecutar la eliminacion permanente masiva."
+        _registrar_cierre_eliminacion_masiva(resumen, usuario, "ERROR")
+        return resumen
+
+
 def _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, motivo, usuario):
     registrar_auditoria(
         "ELIMINAR_PERMANENTE",
@@ -176,6 +244,49 @@ def _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, mo
         modulo="PAPELERA",
         usuario=usuario,
     )
+
+
+def _auditar_eliminacion_masiva(resumen, usuario, resultado):
+    registrar_auditoria(
+        "ELIMINAR_PERMANENTE_TODO_PAPELERA",
+        "papelera",
+        descripcion=_mensaje_resumen_masivo(resumen),
+        valores_antes={
+            "total_encontrados": resumen["total"],
+            "por_entidad": resumen["por_entidad"],
+        },
+        valores_despues={
+            "eliminados": resumen["eliminados"],
+            "no_eliminados": resumen["no_eliminados"],
+            "errores": resumen["errores"],
+            "motivos": [item.get("motivo") for item in resumen["detalles_no_eliminados"][:20]],
+        },
+        resultado=resultado,
+        modulo="PAPELERA",
+        usuario=usuario,
+    )
+
+
+def _registrar_cierre_eliminacion_masiva(resumen, usuario, resultado):
+    try:
+        _auditar_eliminacion_masiva(resumen, usuario, resultado)
+        registrar_log_sistema(
+            "PAPELERA_ELIMINACION_PERMANENTE_MASIVA",
+            "PAPELERA",
+            _mensaje_resumen_masivo(resumen),
+            usuario=usuario,
+            nivel="ERROR" if resultado == "ERROR" else "INFO",
+            valor_anterior=str(
+                {
+                    "total": resumen["total"],
+                    "eliminados": resumen["eliminados"],
+                    "no_eliminados": resumen["no_eliminados"],
+                    "errores": resumen["errores"],
+                }
+            ),
+        )
+    except Exception:
+        pass
 
 
 def _enriquecer(registro):
@@ -280,6 +391,51 @@ def _filtrar(registros, filtros):
             continue
         filtrados.append(registro)
     return filtrados
+
+
+def _resumen_por_entidad(registros):
+    resumen = {entidad: {"label": etiqueta, "total": 0} for entidad, etiqueta in ENTIDADES_FILTRO}
+    for registro in registros:
+        entidad = registro.get("entidad")
+        if entidad in resumen:
+            resumen[entidad]["total"] += 1
+    return resumen
+
+
+def _crear_resumen_masivo(registros):
+    por_entidad = {
+        entidad: {"label": etiqueta, "total": 0, "eliminados": 0, "no_eliminados": 0, "errores": 0}
+        for entidad, etiqueta in ENTIDADES_FILTRO
+    }
+    for registro in registros:
+        entidad = registro.get("entidad")
+        if entidad in por_entidad:
+            por_entidad[entidad]["total"] += 1
+    return {
+        "total": len(registros),
+        "eliminados": 0,
+        "no_eliminados": 0,
+        "errores": 0,
+        "por_entidad": por_entidad,
+        "detalles_no_eliminados": [],
+    }
+
+
+def _mensaje_resumen_masivo(resumen):
+    return (
+        "Proceso finalizado. "
+        f"Eliminados permanentemente: {resumen['eliminados']}. "
+        f"No eliminados: {resumen['no_eliminados']}. "
+        f"Errores: {resumen['errores']}."
+    )
+
+
+def _motivo_seguro(mensaje):
+    texto = str(mensaje or "No eliminado por regla de seguridad.")
+    bloqueados = ("pyodbc", "traceback", "constraint", "foreign key", "primary key")
+    if any(patron in texto.lower() for patron in bloqueados):
+        return "Error controlado."
+    return texto
 
 
 def _entero(valor, defecto, minimo=None, maximo=None):

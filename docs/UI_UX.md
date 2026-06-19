@@ -165,6 +165,19 @@ Botones:
 
 Si el backend bloquea la eliminacion por dependencias operativas no historicas, la UI debe mostrar: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
 
+## Modal Fase 12B.1D-Papelera - Eliminar permanentemente todo
+
+La accion masiva `Eliminar permanentemente todo` en `/papelera` debe mantener una friccion mayor que la accion individual:
+
+* Boton visual `danger` con texto explicito.
+* Visible solo para sesiones con `PAPELERA_ELIMINAR_PERMANENTE` o permisos totales.
+* Deshabilitado cuando el total real de Papelera es `0`.
+* Modal corporativo, no `alert()`, `window.confirm()` ni `prompt()`.
+* Resumen previo por entidad y total real de Papelera.
+* Checkbox obligatorio antes de habilitar `Eliminar permanentemente todo`.
+* Mensaje debe explicar que los bloqueados quedan en Papelera y que historial, logs, eventos, auditoria y snapshots se conservan.
+* Despues del proceso, la vista muestra resumen de encontrados, eliminados, no eliminados, errores y motivos seguros.
+
 ## Resumen de confirmacion de tareas
 
 Desde Fase 6.1 el modal global puede mostrar un bloque de resumen para formularios de tareas.

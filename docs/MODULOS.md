@@ -35,6 +35,7 @@
 * Fase 11E: control de ejecuciones huerfanas.
 * Fase 11F: borrado operativo seguro con snapshots historicos.
 * Fase 11G: papelera operativa, restauracion y eliminacion permanente segura.
+* Fase 12B.1D-Papelera: eliminacion permanente masiva segura desde `/papelera`, ejecutada item por item con modal fuerte, resumen y auditoria.
 * Fase 11H: desacople historico para eliminacion permanente real desde papelera.
 * Fase 11I: revision integral post-borrado y endurecimiento de historial por snapshots.
 * Fase 12A: auditoria base con `/auditoria`, detalle, filtros y registro inicial de acciones humanas criticas.
@@ -85,7 +86,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 12B.1F: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados y cobertura ampliada de auditoria para acciones criticas, bloqueos y errores controlados. Las pruebas reales intensivas de ejecucion manual quedan pendientes en entorno con login y SQL Server operativo. Aun no existe despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 12B.1F: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados y cobertura ampliada de auditoria para acciones criticas, bloqueos y errores controlados. Las pruebas reales intensivas de ejecucion manual quedan pendientes en entorno con login y SQL Server operativo. Aun no existe despliegue formal ni worker como servicio.
 
 ## UI/UX general
 

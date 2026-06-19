@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
-* Estado actual: Fase 12B.1F implementada como correccion profunda del shell visual y modernizacion UI/UX premium; Fase 12B.1C de pruebas reales queda pendiente en entorno con login y SQL Server operativo.
+* Estado actual: Fase 12B.1F implementada como correccion profunda del shell visual y modernizacion UI/UX premium; correccion funcional 12B.1D-Papelera implementada para eliminacion permanente masiva segura; Fase 12B.1C de pruebas reales queda pendiente en entorno con login y SQL Server operativo.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 12B.1F - Correccion profunda del shell visual y modernizacion UI/UX premium.
+* Fase actual: Fase 12B.1F + correccion 12B.1D-Papelera - Eliminacion permanente masiva segura.
 * Ultima actualizacion: 2026-06-19
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, rediseno visual profundo del shell Fase 12B.1E y correccion premium del shell Fase 12B.1F.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E y correccion premium del shell Fase 12B.1F.
 * Modulos pendientes: Fase 12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
@@ -50,6 +50,17 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-19 - Fase 12B.1D-Papelera / Eliminacion permanente masiva segura
+
+* Archivos modificados: `app/rutas_papelera.py`, `app/servicios/servicio_papelera.py`, `app/templates/papelera/listado.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/SEGURIDAD.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Objetivo: Agregar una accion masiva segura en `/papelera` para eliminar permanentemente todos los registros eliminados operativamente, sin borrar historial ni cambiar reglas individuales.
+* Backend: Se agrego `eliminar_todo_permanente(...)`, que lista Papelera, ordena el procesamiento y llama item por item a `eliminar_registro_permanente(...)`.
+* Seguridad: Los bloqueos por dependencias, usuario conectado, ultimo administrador, snapshots insuficientes, migracion pendiente o integridad se mantienen por item. Un item bloqueado no detiene el resto del proceso.
+* UI: Se agrego boton `Eliminar permanentemente todo` visible por permiso `PAPELERA_ELIMINAR_PERMANENTE`, modal `danger`, resumen por entidad y checkbox obligatorio antes de confirmar.
+* Resultado: La vista muestra resumen de encontrados, eliminados, no eliminados, errores y motivos seguros de los registros no eliminados.
+* Auditoria: Se registra accion masiva `ELIMINAR_PERMANENTE_TODO_PAPELERA` y se conservan las auditorias individuales de eliminacion permanente o bloqueo por registro.
+* Reglas: No se ejecuto SQL, no se crearon migraciones ni seeds, no se modifico `.env`, no se agrego `DELETE CASCADE`, no se borro historial/auditoria/ejecuciones/logs/eventos/snapshots y no se avanzo a Fase 12B.2, 12C ni Fase 13.
 
 ### 2026-06-19 - Fase 12B.1F / Correccion profunda del shell visual y modernizacion UI/UX premium
 

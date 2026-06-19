@@ -30,6 +30,29 @@ Acciones cubiertas en Fase 12B:
 * Feriados y sincronizacion manual.
 * Bloqueos por permisos, duplicados y reglas de negocio.
 
+## Flujo de eliminacion permanente masiva en Papelera
+
+1. Usuario autorizado abre `/papelera`.
+2. La vista muestra el total filtrado, el total real de Papelera y el boton `Eliminar permanentemente todo` si la sesion tiene `PAPELERA_ELIMINAR_PERMANENTE` o permisos totales.
+3. Al presionar el boton, el modal corporativo muestra advertencia fuerte, resumen por entidad y checkbox obligatorio.
+4. Si el usuario cancela, no se envia el formulario y no se ejecuta ninguna eliminacion.
+5. Si confirma, el backend lista los registros con `eliminado_operativo = 1`.
+6. El servicio ordena el procesamiento para intentar primero versiones de scripts, scripts, tareas, maestros y usuarios.
+7. Cada registro se procesa con `eliminar_registro_permanente(...)`, reutilizando las mismas validaciones de la accion individual.
+8. Si un item se elimina, desaparece de las tablas operativas y de Papelera; el historial se conserva.
+9. Si un item queda bloqueado por regla de seguridad, dependencia o integridad, permanece en Papelera y el proceso continua.
+10. Los errores tecnicos por item se transforman en mensaje seguro, sin `pyodbc`, constraints ni traceback.
+11. Al finalizar, se muestra resumen de encontrados, eliminados, no eliminados, errores y motivos seguros.
+12. La accion masiva registra auditoria `ELIMINAR_PERMANENTE_TODO_PAPELERA`; cada item mantiene la auditoria individual existente.
+
+Reglas:
+
+* No usar `DELETE` masivo bruto sobre Papelera.
+* No usar `DELETE CASCADE` destructivo.
+* No borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, `auditoria_cambios` ni snapshots.
+* No modificar reglas individuales de restauracion o eliminacion permanente.
+* No avanzar a purga automatica ni retencion programada.
+
 ## Flujo transversal de duplicados con Papelera Operativa
 
 1. Usuario intenta crear o editar usuarios, mantenedores, tareas, scripts o versiones.

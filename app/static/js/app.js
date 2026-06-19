@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         formularioPendiente = formulario || configuracion.closest?.("form") || null;
         const dataset = configuracion.dataset || configuracion;
+        modalConfirmar.disabled = false;
         const tipo = dataset.confirmType || "info";
         modalConfirmacion.dataset.tipo = tipo;
         modalTitulo.textContent = dataset.confirmTitle || "Confirmar accion";
@@ -120,6 +121,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (dataset.confirmSummaryNode) {
                 modalResumen.appendChild(dataset.confirmSummaryNode);
                 modalResumen.classList.remove("oculto");
+            }
+            if (dataset.confirmRequiresCheck === "1") {
+                const contenedorCheck = document.createElement("label");
+                contenedorCheck.className = "confirmacion-check";
+                const check = document.createElement("input");
+                check.type = "checkbox";
+                check.addEventListener("change", () => {
+                    modalConfirmar.disabled = !check.checked;
+                });
+                const texto = document.createElement("span");
+                texto.textContent = dataset.confirmCheckLabel || "Entiendo y deseo continuar.";
+                contenedorCheck.append(check, texto);
+                modalResumen.appendChild(contenedorCheck);
+                modalResumen.classList.remove("oculto");
+                modalConfirmar.disabled = true;
             }
         }
         modalConfirmacion.classList.add("abierto");
@@ -137,6 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modalConfirmacion.setAttribute("aria-hidden", "true");
         cuerpo.classList.remove("modal-abierto");
         formularioPendiente = null;
+        modalConfirmar.disabled = false;
         if (modalResumen) {
             modalResumen.replaceChildren();
             modalResumen.classList.add("oculto");
@@ -199,10 +216,60 @@ document.addEventListener("DOMContentLoaded", () => {
         return dataset;
     };
 
+    const crearResumenPapeleraMasiva = (elemento) => {
+        const contenedor = document.createElement("div");
+        contenedor.className = "resumen-tarea resumen-papelera-masiva";
+
+        const seccion = document.createElement("section");
+        const titulo = document.createElement("h3");
+        titulo.textContent = "Resumen previo";
+        const lista = document.createElement("dl");
+
+        const agregarFila = (etiqueta, valor) => {
+            const fila = document.createElement("div");
+            const dt = document.createElement("dt");
+            const dd = document.createElement("dd");
+            dt.textContent = etiqueta;
+            dd.textContent = valor;
+            fila.append(dt, dd);
+            lista.appendChild(fila);
+        };
+
+        agregarFila("Total en Papelera", elemento.dataset.totalPapelera || "0");
+        [
+            ["Usuarios", "total-usuarios"],
+            ["Clientes", "total-clientes"],
+            ["Categorias", "total-categorias"],
+            ["Tipos", "total-tipos"],
+            ["Tareas", "total-tareas"],
+            ["Scripts", "total-scripts"],
+            ["Versiones de scripts", "total-scripts-versiones"],
+        ].forEach(([etiqueta, atributo]) => {
+            const valor = Number(elemento.getAttribute(`data-${atributo}`) || 0);
+            if (valor > 0) {
+                agregarFila(etiqueta, String(valor));
+            }
+        });
+
+        seccion.append(titulo, lista);
+        contenedor.appendChild(seccion);
+        return contenedor;
+    };
+
+    const obtenerConfirmacionElemento = (elemento) => {
+        if (elemento.dataset.confirmSummary === "papelera-masiva") {
+            return {
+                ...elemento.dataset,
+                confirmSummaryNode: crearResumenPapeleraMasiva(elemento),
+            };
+        }
+        return elemento;
+    };
+
     confirmables.forEach((elemento) => {
         elemento.addEventListener("click", (evento) => {
             evento.preventDefault();
-            abrirModalConfirmacion(elemento, elemento.closest("form"));
+            abrirModalConfirmacion(obtenerConfirmacionElemento(elemento), elemento.closest("form"));
         });
     });
 

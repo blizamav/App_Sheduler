@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 12B.1F con correccion definitiva del sidebar, eliminacion del encabezado redundante y limpieza visual de tablas implementada. La Fase 12B.1B esta implementada con Auditoria base, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. Las pruebas reales intensivas de 12B.1C quedan pendientes de ejecucion en un entorno con sesion autenticada y SQL Server accesible.
+El proyecto se encuentra en Fase 12B.1F con correccion definitiva del sidebar, eliminacion del encabezado redundante y limpieza visual de tablas implementada, mas correccion funcional 12B.1D de Papelera para eliminacion permanente masiva segura. La Fase 12B.1B esta implementada con Auditoria base, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. Las pruebas reales intensivas de 12B.1C quedan pendientes de ejecucion en un entorno con sesion autenticada y SQL Server accesible.
 
 ## Implementado
 
@@ -31,6 +31,7 @@ El proyecto se encuentra en Fase 12B.1F con correccion definitiva del sidebar, e
 * Papelera operativa en `/papelera`.
 * Restauracion de registros retirados como inactivos.
 * Eliminacion permanente segura desde papelera.
+* Eliminacion permanente masiva segura desde papelera, item por item y con resumen auditado.
 * Desacople historico para que la eliminacion permanente pueda borrar filas operativas sin borrar historia.
 * Revision post-desacople para que `/ejecuciones`, consola, paneles y eventos usen snapshots y fallback historico.
 * Auditoria base en `/auditoria` con filtros, paginacion, detalle y servicio central `registrar_auditoria(...)`.
@@ -65,6 +66,7 @@ Estado: parcialmente implementada. No debe confundirse con logs operativos, ejec
 * 12B.1B Sincronizacion visual de consola sin recarga completa. Implementado.
 * 12B.1C Pruebas reales intensivas de ejecucion manual. En validacion; bloqueada en entorno Codex por login requerido y error ODBC local.
 * 12B.1D Modernizacion visual general y layout responsive. Implementado en shell y componentes compartidos; validacion visual interna pendiente con sesion autenticada.
+* 12B.1D-Papelera Eliminacion permanente masiva segura. Implementado como correccion funcional acotada; no cambia reglas individuales ni avanza roadmap.
 * 12B.1E Rediseno visual profundo del shell y experiencia UI general. Implementado en app shell compartido sin cambios funcionales.
 * 12B.1F Correccion definitiva del sidebar, eliminacion del encabezado redundante y limpieza visual de tablas. Implementado sin cambios funcionales.
 * 12C Filtros, detalle y trazabilidad extendida. Pendiente.

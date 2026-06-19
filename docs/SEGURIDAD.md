@@ -131,6 +131,7 @@ Bloqueos auditados:
 * Tarea no ejecutable.
 * Detencion de ejecucion no permitida.
 * Restauracion o eliminacion permanente bloqueada en Papelera.
+* Eliminacion permanente masiva de Papelera, manteniendo bloqueos por item.
 * Maximo de versiones o version activa/unica en scripts.
 
 Errores controlados auditados:
@@ -157,6 +158,21 @@ Cambios de usuario que requieren confirmacion explicita:
 * Deshabilitar usuario.
 
 El cambio de contrasena se registra como evento sin guardar ni mostrar el valor de la contrasena ni su hash.
+
+## Papelera y eliminacion permanente masiva
+
+La accion `Eliminar permanentemente todo` en `/papelera` es una accion critica protegida por `PAPELERA_ELIMINAR_PERMANENTE`.
+
+Reglas de seguridad:
+
+* Solo se muestra y ejecuta para usuarios con permiso explicito o permisos totales.
+* Requiere modal corporativo fuerte con resumen por entidad y checkbox obligatorio.
+* Ejecuta la logica item por item mediante la misma regla de eliminacion permanente individual.
+* Si un registro esta bloqueado, permanece en Papelera y el proceso continua.
+* La accion no elimina historial, auditoria, ejecuciones, logs, eventos del programador ni snapshots.
+* No se permite `DELETE CASCADE`, `ON DELETE CASCADE` ni borrado bruto de todos los registros marcados como `eliminado_operativo = 1`.
+* Los mensajes de error expuestos al usuario deben ser seguros y no incluir traceback, constraints, driver ODBC ni detalle interno.
+* La accion masiva queda auditada como `ELIMINAR_PERMANENTE_TODO_PAPELERA`, ademas de las auditorias individuales por registro.
 
 ## Mantenedores base
 

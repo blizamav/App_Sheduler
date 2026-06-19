@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.1D Papelera: eliminacion permanente masiva segura
+
+### Implementado
+
+* Se agrego accion `Eliminar permanentemente todo` en `/papelera`, visible solo para usuarios con `PAPELERA_ELIMINAR_PERMANENTE` o permisos totales.
+* La accion usa modal corporativo `danger`, resumen previo por entidad y checkbox obligatorio antes de habilitar la confirmacion.
+* El backend ejecuta la eliminacion item por item reutilizando `eliminar_registro_permanente(...)`; no usa `DELETE` masivo bruto ni cambia reglas individuales.
+* Los registros bloqueados permanecen en Papelera y el proceso continua con los siguientes registros.
+* El resultado muestra encontrados, eliminados, no eliminados, errores y motivos seguros de los primeros bloqueos.
+* Se registra auditoria de accion masiva `ELIMINAR_PERMANENTE_TODO_PAPELERA` y se conservan las auditorias individuales existentes por cada registro procesado.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones ni seeds.
+* No se modifico `.env`.
+* No se borro historial, auditoria, ejecuciones, logs, eventos del programador ni snapshots.
+* No se agrego `DELETE CASCADE` ni `ON DELETE CASCADE`.
+* No se usaron `alert()`, `confirm()`, `prompt()` ni reload completo.
+* No se avanzo a Fase 12B.2, 12C ni Fase 13.
+
 ## 2026-06-19 - Fase 12B.1F correccion definitiva del sidebar, encabezado y tablas
 
 ### Diagnostico

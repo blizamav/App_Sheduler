@@ -4,6 +4,8 @@
 {% block encabezado %}Papelera operativa{% endblock %}
 
 {% block contenido %}
+{% set permisos_sesion = session.get("permisos", []) %}
+{% set puede_eliminar_permanente = session.get("es_admin_env") or "*" in permisos_sesion or "PAPELERA_ELIMINAR_PERMANENTE" in permisos_sesion %}
 <section class="contenedor bienvenida">
     <div>
         <p class="eyebrow">Administracion</p>
@@ -55,15 +57,94 @@
     </form>
 </section>
 
+{% if resultado_masivo %}
+<section class="bloque resultado-masivo">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Resultado de proceso masivo</p>
+            <h3>Eliminacion permanente masiva</h3>
+        </div>
+        <div class="badges-linea">
+            <span class="badge info">Encontrados {{ resultado_masivo.total }}</span>
+            <span class="badge activo">Eliminados {{ resultado_masivo.eliminados }}</span>
+            <span class="badge advertencia">No eliminados {{ resultado_masivo.no_eliminados }}</span>
+            {% if resultado_masivo.errores %}
+            <span class="badge error">Errores {{ resultado_masivo.errores }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="resumen-masivo-grid">
+        {% for entidad, datos in resultado_masivo.por_entidad.items() %}
+        {% if datos.total %}
+        <div>
+            <strong>{{ datos.label }}</strong>
+            <span>Total {{ datos.total }} | Eliminados {{ datos.eliminados }} | No eliminados {{ datos.no_eliminados }}</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% if resultado_masivo.detalles_no_eliminados %}
+    <div class="tabla-base tabla-compacta">
+        <table>
+            <thead>
+                <tr>
+                    <th>Entidad</th>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Motivo seguro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in resultado_masivo.detalles_no_eliminados[:12] %}
+                <tr>
+                    <td>{{ detalle.entidad_label }}</td>
+                    <td>{{ detalle.id_registro }}</td>
+                    <td>{{ detalle.nombre }}</td>
+                    <td>{{ detalle.motivo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
 <section class="bloque">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Registros retirados</p>
             <h3>Elementos en papelera</h3>
         </div>
-        <div class="badges-linea">
-            <span class="badge info">Total {{ total }}</span>
-            <span class="badge info">Pagina {{ page }} de {{ total_pages }}</span>
+        <div class="acciones-bloque">
+            <div class="badges-linea">
+                <span class="badge info">Total filtrado {{ total }}</span>
+                <span class="badge info">Total papelera {{ total_papelera }}</span>
+                <span class="badge info">Pagina {{ page }} de {{ total_pages }}</span>
+            </div>
+            {% if puede_eliminar_permanente %}
+            <form method="post" action="{{ url_for('papelera.eliminar_permanente_todo') }}">
+                <button
+                    class="btn peligro requiere-confirmacion"
+                    type="submit"
+                    {% if total_papelera == 0 %}disabled{% endif %}
+                    data-confirm-title="Eliminar permanentemente todo"
+                    data-confirm-message="Advertencia: esta accion intentara eliminar permanentemente todos los registros actualmente en Papelera usando las mismas reglas seguras de eliminacion individual. Los registros bloqueados se conservaran en Papelera. El historial de ejecuciones, logs, eventos del programador, auditoria y snapshots historicos se conservara. Esta accion no se puede deshacer desde la aplicacion."
+                    data-confirm-ok="Eliminar permanentemente todo"
+                    data-confirm-cancel="Cancelar"
+                    data-confirm-type="danger"
+                    data-confirm-summary="papelera-masiva"
+                    data-confirm-requires-check="1"
+                    data-confirm-check-label="Entiendo que esta accion es permanente para los registros que superen las reglas de seguridad."
+                    data-total-papelera="{{ total_papelera }}"
+                    {% for entidad, datos in resumen_entidades.items() %}
+                    data-total-{{ entidad|replace('_', '-') }}="{{ datos.total }}"
+                    {% endfor %}
+                >
+                    Eliminar permanentemente todo
+                </button>
+            </form>
+            {% endif %}
         </div>
     </div>
 
