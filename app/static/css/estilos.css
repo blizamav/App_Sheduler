@@ -761,6 +761,97 @@ textarea {
     color: var(--color-azul-oscuro);
 }
 
+.badge.rol.super-admin {
+    background: #e8f5fb;
+    color: var(--color-azul);
+}
+
+.badge.rol.admin {
+    background: #e7f8ef;
+    color: var(--color-verde);
+}
+
+.auditoria-hero {
+    align-items: flex-start;
+}
+
+.auditoria-detalle {
+    margin-bottom: 16px;
+}
+
+.auditoria-resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.dato-auditoria {
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    background: var(--color-superficie-suave);
+}
+
+.dato-auditoria span,
+.dato-auditoria strong {
+    display: block;
+}
+
+.dato-auditoria span {
+    margin-bottom: 6px;
+    color: var(--color-texto-suave);
+    font-size: 0.76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.dato-auditoria strong,
+.auditoria-descripcion {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.dato-ancho {
+    grid-column: span 2;
+}
+
+.auditoria-descripcion {
+    max-width: 100%;
+    padding: 16px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    background: var(--color-superficie-suave);
+    color: var(--color-texto);
+    line-height: 1.55;
+}
+
+.auditoria-valores {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.auditoria-valor-card {
+    min-width: 0;
+}
+
+.auditoria-valor-card pre {
+    max-height: 52vh;
+    margin: 0;
+    padding: 16px;
+    overflow: auto;
+    border: 1px solid #213755;
+    border-radius: var(--radio);
+    background: #07111f;
+    color: #d8f3ff;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .tabla-base {
     width: 100%;
     overflow-x: auto;
@@ -1380,10 +1471,16 @@ tr:last-child td {
     .form-grid,
     .grid-formulario,
     .compacto-grid,
+    .auditoria-resumen-grid,
+    .auditoria-valores,
     .formulario-filtros,
     .formulario-filtros.tareas-filtros,
     .dias-grid {
         grid-template-columns: 1fr;
+    }
+
+    .dato-ancho {
+        grid-column: auto;
     }
 
     .ejecucion-item {

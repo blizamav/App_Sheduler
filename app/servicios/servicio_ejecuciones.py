@@ -28,9 +28,11 @@ from app.servicios.servicio_logs_ejecucion import (
     normalizar_linea_script,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_procesos import (
     detener_proceso,
     iniciar_proceso_python,
+    terminar_proceso,
     olvidar_proceso,
     registrar_proceso,
 )
@@ -41,6 +43,7 @@ ESTADOS_FILTRO = ("EN_EJECUCION", "EXITOSA", "ERROR", "DETENIDA_MANUALMENTE", "C
 ORIGENES_FILTRO = ("MANUAL", "AUTOMATICA")
 PER_PAGE_OPCIONES = (10, 25, 50, 100)
 MAX_LOG_BYTES = 120 * 1024
+MENSAJE_ERROR_MONITOR = "Ejecucion cerrada como ERROR por fallo controlado del monitor de ejecucion."
 MESES = {
     1: "Enero",
     2: "Febrero",
@@ -61,6 +64,16 @@ def iniciar_ejecucion_manual(id_tarea, usuario):
     ok, mensaje, contexto = _validar_contexto_ejecucion(id_tarea, usuario)
     if not ok:
         registrar_log_sistema("EJECUCION_MANUAL_BLOQUEADA", "EJECUCIONES", mensaje, usuario=usuario, nivel="WARNING")
+        registrar_auditoria(
+            "BLOQUEO_EJECUTAR_TAREA_NO_EJECUTABLE",
+            "ejecuciones",
+            id_entidad=id_tarea,
+            descripcion=mensaje,
+            valores_despues={"id_tarea": id_tarea, "motivo_bloqueo": mensaje},
+            resultado="BLOQUEADO",
+            modulo="EJECUCIONES",
+            usuario=usuario,
+        )
         return False, mensaje, None
 
     id_ejecucion = crear_ejecucion_manual(contexto, usuario)
@@ -82,12 +95,27 @@ def iniciar_ejecucion_manual(id_tarea, usuario):
     )
     crear_log_tarea(id_ejecucion, contexto, ruta_fisica_log, ruta_relativa_log, nombre_archivo_log, usuario)
     registrar_log_sistema("EJECUCION_MANUAL_SOLICITADA", "EJECUCIONES", f"Ejecucion {id_ejecucion} solicitada para tarea {contexto['nombre_tarea']}.", usuario=usuario)
+    registrar_auditoria(
+        "EJECUTAR_MANUAL",
+        "ejecuciones",
+        id_entidad=id_ejecucion,
+        nombre_entidad=contexto["nombre_tarea"],
+        descripcion=f"Ejecucion manual {id_ejecucion} solicitada para tarea {contexto['nombre_tarea']}.",
+        valores_despues={
+            "id_tarea": id_tarea,
+            "id_script": contexto.get("id_script"),
+            "id_version": contexto.get("id_version"),
+            "numero_version": contexto.get("numero_version"),
+        },
+        modulo="EJECUCIONES",
+        usuario=usuario,
+    )
 
     app = current_app._get_current_object()
     hilo = threading.Thread(
         target=_ejecutar_en_segundo_plano,
         args=(app, id_ejecucion, contexto, ruta_fisica_log, usuario, "MANUAL"),
-        daemon=True,
+        daemon=False,
     )
     hilo.start()
     return True, "Ejecucion manual iniciada.", id_ejecucion
@@ -224,10 +252,13 @@ def obtener_estado_log(id_ejecucion):
 def detener_ejecucion_manual(id_ejecucion, usuario, motivo=None):
     ejecucion = obtener_ejecucion(id_ejecucion)
     if not ejecucion:
+        _auditar_detencion_bloqueada(id_ejecucion, usuario, "Ejecucion no encontrada.", None)
         return False, "Ejecucion no encontrada."
     if ejecucion.get("estado_ejecucion") != "EN_EJECUCION":
+        _auditar_detencion_bloqueada(id_ejecucion, usuario, "La ejecucion ya no esta en curso.", ejecucion)
         return False, "La ejecucion ya no esta en curso."
     if not ejecucion.get("pid_proceso"):
+        _auditar_detencion_bloqueada(id_ejecucion, usuario, "La ejecucion no tiene PID registrado para detener.", ejecucion)
         return False, "La ejecucion no tiene PID registrado para detener."
 
     fue_forzada = detener_proceso(id_ejecucion, ejecucion.get("pid_proceso"))
@@ -251,6 +282,17 @@ def detener_ejecucion_manual(id_ejecucion, usuario, motivo=None):
         ],
     )
     registrar_log_sistema("EJECUCION_DETENIDA_MANUALMENTE", "EJECUCIONES", f"Ejecucion {id_ejecucion} detenida manualmente.", usuario=usuario, nivel="WARNING")
+    registrar_auditoria(
+        "DETENER_EJECUCION",
+        "ejecuciones",
+        id_entidad=id_ejecucion,
+        nombre_entidad=ejecucion.get("nombre_tarea"),
+        descripcion=f"Ejecucion {id_ejecucion} detenida manualmente.",
+        valores_antes=ejecucion,
+        valores_despues={"estado_ejecucion": "DETENIDA_MANUALMENTE", "fue_forzada": fue_forzada},
+        modulo="EJECUCIONES",
+        usuario=usuario,
+    )
     return True, "Ejecucion detenida manualmente."
 
 
@@ -308,6 +350,8 @@ def _validar_contexto_ejecucion(id_tarea, usuario):
 
 def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usuario, origen="MANUAL"):
     with app.app_context():
+        proceso = None
+        monitor_fallo = False
         try:
             entorno = cargar_env_version(contexto["ruta_env_relativa"]) if contexto.get("requiere_env") else None
             if contexto.get("requiere_env"):
@@ -325,16 +369,15 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
             registrar_log_sistema(accion_inicio, "EJECUCIONES", f"Ejecucion {id_ejecucion} iniciada con PID {proceso.pid}.", usuario=usuario)
             _escribir_log(ruta_fisica_log, [f"PID proceso: {proceso.pid}", "Salida del proceso:"])
 
-            for linea in proceso.stdout:
-                escribir_linea_log(ruta_fisica_log, normalizar_linea_script(linea), "INFO")
+            if proceso.stdout:
+                for linea in proceso.stdout:
+                    escribir_linea_log(ruta_fisica_log, normalizar_linea_script(linea), "INFO")
             codigo = proceso.wait()
-            ejecucion = obtener_ejecucion(id_ejecucion)
-            if ejecucion and ejecucion.get("estado_ejecucion") != "EN_EJECUCION":
+            if not _ejecucion_sigue_en_curso(id_ejecucion):
                 return
             estado = "EXITOSA" if codigo == 0 else "ERROR"
             mensaje_error = None if codigo == 0 else f"Proceso finalizo con codigo {codigo}."
-            finalizar_ejecucion(id_ejecucion, estado, codigo, mensaje_error)
-            actualizar_log_tarea_final(id_ejecucion, estado, codigo, mensaje_error)
+            _cerrar_ejecucion_en_curso(id_ejecucion, estado, codigo, mensaje_error)
             nivel_final = "INFO" if estado == "EXITOSA" else "ERROR"
             _escribir_log(
                 ruta_fisica_log,
@@ -353,13 +396,86 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
                 nivel="INFO" if estado == "EXITOSA" else "ERROR",
             )
         except Exception as error:
-            mensaje = "Error controlado al iniciar o ejecutar proceso."
-            finalizar_ejecucion(id_ejecucion, "ERROR", None, mensaje)
-            actualizar_log_tarea_final(id_ejecucion, "ERROR", None, mensaje)
-            _escribir_log(ruta_fisica_log, [(mensaje, "ERROR"), (str(error), "ERROR"), ("Estado final: ERROR", "ERROR")])
-            registrar_log_sistema("EJECUCION_INICIO_ERROR", "EJECUCIONES", mensaje, usuario=usuario, nivel="ERROR")
+            if origen != "MANUAL":
+                mensaje = "Error controlado al iniciar o ejecutar proceso."
+                finalizar_ejecucion(id_ejecucion, "ERROR", None, mensaje)
+                actualizar_log_tarea_final(id_ejecucion, "ERROR", None, mensaje)
+                _escribir_log(ruta_fisica_log, [(mensaje, "ERROR"), (str(error), "ERROR"), ("Estado final: ERROR", "ERROR")])
+                registrar_log_sistema("EJECUCION_INICIO_ERROR", "EJECUCIONES", mensaje, usuario=usuario, nivel="ERROR")
+                return
+
+            monitor_fallo = True
+            if proceso and proceso.poll() is None:
+                terminar_proceso(proceso)
+            _cerrar_ejecucion_en_curso(id_ejecucion, "ERROR", None, MENSAJE_ERROR_MONITOR)
+            _escribir_log_seguro(
+                ruta_fisica_log,
+                [(MENSAJE_ERROR_MONITOR, "ERROR"), (error.__class__.__name__, "ERROR"), ("Estado final: ERROR", "ERROR")],
+            )
+            registrar_log_sistema("EJECUCION_MONITOR_ERROR", "EJECUCIONES", MENSAJE_ERROR_MONITOR, usuario=usuario, nivel="ERROR")
+            registrar_auditoria(
+                "EJECUTAR_MANUAL",
+                "ejecuciones",
+                id_entidad=id_ejecucion,
+                nombre_entidad=contexto.get("nombre_tarea"),
+                descripcion=MENSAJE_ERROR_MONITOR,
+                valores_antes={"id_tarea": contexto.get("id_tarea"), "id_version": contexto.get("id_version")},
+                valores_despues={"estado_ejecucion": "ERROR", "error": error.__class__.__name__},
+                resultado="ERROR",
+                modulo="EJECUCIONES",
+                usuario=usuario,
+            )
         finally:
+            if origen == "MANUAL" and _ejecucion_sigue_en_curso(id_ejecucion):
+                if proceso and proceso.poll() is None:
+                    terminar_proceso(proceso)
+                _cerrar_ejecucion_en_curso(id_ejecucion, "ERROR", None, MENSAJE_ERROR_MONITOR)
+                _escribir_log_seguro(
+                    ruta_fisica_log,
+                    [
+                        (MENSAJE_ERROR_MONITOR, "ERROR"),
+                        ("El monitor finalizo sin cerrar la ejecucion manual.", "ERROR"),
+                        ("Estado final: ERROR", "ERROR"),
+                    ],
+                )
+                if not monitor_fallo:
+                    registrar_log_sistema("EJECUCION_MONITOR_CIERRE_GARANTIZADO", "EJECUCIONES", MENSAJE_ERROR_MONITOR, usuario=usuario, nivel="ERROR")
             olvidar_proceso(id_ejecucion)
+
+
+def _auditar_detencion_bloqueada(id_ejecucion, usuario, mensaje, ejecucion):
+    registrar_auditoria(
+        "BLOQUEO_DETENER_EJECUCION_FINALIZADA",
+        "ejecuciones",
+        id_entidad=id_ejecucion,
+        nombre_entidad=ejecucion.get("nombre_tarea") if ejecucion else None,
+        descripcion=mensaje,
+        valores_antes={"estado_ejecucion": ejecucion.get("estado_ejecucion")} if ejecucion else None,
+        valores_despues={"motivo_bloqueo": mensaje},
+        resultado="BLOQUEADO",
+        modulo="EJECUCIONES",
+        usuario=usuario,
+    )
+
+
+def _ejecucion_sigue_en_curso(id_ejecucion):
+    ejecucion = obtener_ejecucion(id_ejecucion)
+    return bool(ejecucion and ejecucion.get("estado_ejecucion") == "EN_EJECUCION")
+
+
+def _cerrar_ejecucion_en_curso(id_ejecucion, estado, codigo_salida=None, mensaje_error=None):
+    if not _ejecucion_sigue_en_curso(id_ejecucion):
+        return False
+    finalizar_ejecucion(id_ejecucion, estado, codigo_salida, mensaje_error)
+    actualizar_log_tarea_final(id_ejecucion, estado, codigo_salida, mensaje_error)
+    return True
+
+
+def _escribir_log_seguro(ruta_log, lineas):
+    try:
+        _escribir_log(ruta_log, lineas)
+    except Exception:
+        pass
 
 
 def _crear_rutas_log(id_ejecucion, contexto):

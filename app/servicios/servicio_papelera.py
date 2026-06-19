@@ -12,6 +12,7 @@ from app.repositorios.repositorio_papelera import (
     restaurar,
 )
 from app.repositorios.repositorio_usuarios import contar_administradores_activos
+from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 
@@ -62,6 +63,18 @@ def restaurar_registro(entidad, id_registro, usuario):
 
     ok, motivo = _validar_restauracion(entidad, id_registro)
     if not ok:
+        registrar_auditoria(
+            "RESTAURAR",
+            entidad,
+            id_entidad=id_registro,
+            nombre_entidad=registro.get("nombre"),
+            descripcion=f"Restauracion bloqueada: {motivo}",
+            valores_antes=registro,
+            valores_despues={"motivo_bloqueo": motivo},
+            resultado="BLOQUEADO",
+            modulo="PAPELERA",
+            usuario=usuario,
+        )
         return False, motivo
 
     restaurar(entidad, id_registro, usuario)
@@ -71,6 +84,17 @@ def restaurar_registro(entidad, id_registro, usuario):
         f"Registro restaurado como inactivo desde papelera: {registro['entidad_label']} #{id_registro}.",
         usuario=usuario,
         valor_anterior=str(registro),
+    )
+    registrar_auditoria(
+        "RESTAURAR",
+        entidad,
+        id_entidad=id_registro,
+        nombre_entidad=registro.get("nombre"),
+        descripcion=f"Registro restaurado como inactivo desde papelera: {registro['entidad_label']} #{id_registro}.",
+        valores_antes=registro,
+        valores_despues={"eliminado_operativo": 0, "activo": 0},
+        modulo="PAPELERA",
+        usuario=usuario,
     )
     return True, "Registro restaurado como inactivo. Puedes activarlo manualmente desde su mantenedor si corresponde."
 
@@ -92,6 +116,7 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
             usuario=usuario,
             nivel="WARNING",
         )
+        _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, motivo, usuario)
         return False, motivo
 
     try:
@@ -104,6 +129,7 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
             usuario=usuario,
             nivel="WARNING",
         )
+        _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, str(error), usuario)
         return False, str(error)
     except Exception:
         registrar_log_sistema(
@@ -113,6 +139,7 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
             usuario=usuario,
             nivel="WARNING",
         )
+        _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, MENSAJE_BLOQUEO_PERMANENTE, usuario)
         return False, MENSAJE_BLOQUEO_PERMANENTE
 
     registrar_log_sistema(
@@ -122,7 +149,33 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
         usuario=usuario,
         valor_anterior=str(registro),
     )
+    registrar_auditoria(
+        "ELIMINAR_PERMANENTE",
+        entidad,
+        id_entidad=id_registro,
+        nombre_entidad=registro.get("nombre"),
+        descripcion=f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}.",
+        valores_antes=registro,
+        resultado="OK",
+        modulo="PAPELERA",
+        usuario=usuario,
+    )
     return True, "Registro eliminado permanentemente de las tablas operativas. El historial se conserva."
+
+
+def _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, motivo, usuario):
+    registrar_auditoria(
+        "ELIMINAR_PERMANENTE",
+        entidad,
+        id_entidad=id_registro,
+        nombre_entidad=registro.get("nombre"),
+        descripcion=f"Eliminacion permanente bloqueada: {motivo}",
+        valores_antes=registro,
+        valores_despues={"motivo_bloqueo": motivo},
+        resultado="BLOQUEADO",
+        modulo="PAPELERA",
+        usuario=usuario,
+    )
 
 
 def _enriquecer(registro):

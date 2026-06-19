@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block titulo %}Detalle auditoria - APP Scheduler{% endblock %}
+{% block encabezado %}Detalle auditoria{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida auditoria-hero">
+    <div>
+        <p class="eyebrow">Auditoria #{{ registro.id_auditoria }}</p>
+        <h2>{{ registro.accion or "Accion auditada" }}</h2>
+        <p>{{ registro.fecha_evento or "-" }}</p>
+    </div>
+    <div class="acciones-tabla">
+        <span class="badge {% if registro.resultado == 'ERROR' %}error{% elif registro.resultado == 'BLOQUEADO' %}advertencia{% else %}activo{% endif %}">{{ registro.resultado or "OK" }}</span>
+        <a class="btn secundario" href="{{ url_for('auditoria.listado') }}">Volver</a>
+    </div>
+</section>
+
+<section class="bloque auditoria-detalle">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Usuario</p>
+            <h3>Origen de la accion</h3>
+        </div>
+    </div>
+    <div class="auditoria-resumen-grid">
+        <div class="dato-auditoria"><span>Usuario</span><strong>{{ registro.usuario or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>ID usuario</span><strong>{{ registro.id_usuario or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>IP origen</span><strong>{{ registro.ip_origen or "-" }}</strong></div>
+        <div class="dato-auditoria dato-ancho"><span>User-agent</span><strong>{{ registro.user_agent or "-" }}</strong></div>
+    </div>
+</section>
+
+<section class="bloque auditoria-detalle">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Entidad</p>
+            <h3>Registro afectado</h3>
+        </div>
+    </div>
+    <div class="auditoria-resumen-grid">
+        <div class="dato-auditoria"><span>Entidad</span><strong>{{ registro.entidad or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>ID entidad</span><strong>{{ registro.id_entidad or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>Nombre entidad</span><strong>{{ registro.nombre_entidad or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>Modulo</span><strong>{{ registro.modulo or "-" }}</strong></div>
+        <div class="dato-auditoria"><span>Metodo HTTP</span><strong>{{ registro.metodo_http or "-" }}</strong></div>
+        <div class="dato-auditoria dato-ancho"><span>Ruta</span><strong>{{ registro.ruta or "-" }}</strong></div>
+    </div>
+</section>
+
+<section class="bloque auditoria-detalle">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Descripcion</p>
+            <h3>Resumen del evento</h3>
+        </div>
+    </div>
+    <div class="auditoria-descripcion">{{ registro.descripcion or "-" }}</div>
+</section>
+
+<section class="auditoria-valores">
+    <article class="bloque auditoria-valor-card">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Antes</p>
+                <h3>Valor anterior</h3>
+            </div>
+        </div>
+        <pre>{{ registro.valores_antes_formateado or "-" }}</pre>
+    </article>
+    <article class="bloque auditoria-valor-card">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Despues</p>
+                <h3>Valor nuevo</h3>
+            </div>
+        </div>
+        <pre>{{ registro.valores_despues_formateado or "-" }}</pre>
+    </article>
+</section>
+{% endblock %}

@@ -11,6 +11,7 @@ from app.repositorios.repositorio_ejecuciones import (
 )
 from app.servicios.servicio_logs_ejecucion import escribir_lineas_log
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
 
 
 PROCESO_EXISTE = "EXISTE"
@@ -50,9 +51,19 @@ def detectar_ejecuciones_huerfanas():
 def verificar_ejecucion(id_ejecucion, ejecucion=None, usuario=None):
     ejecucion = ejecucion or obtener_ejecucion(id_ejecucion)
     if not ejecucion:
+        registrar_auditoria(
+            "VERIFICAR_HUERFANA",
+            "ejecuciones",
+            id_entidad=id_ejecucion,
+            descripcion="Verificacion manual de ejecucion no encontrada.",
+            resultado="ERROR",
+            modulo="EJECUCIONES",
+            usuario=usuario,
+        )
         return {"ok": False, "estado_control": "NO_ENCONTRADA", "mensaje": "Ejecucion no encontrada."}
 
     if ejecucion.get("estado_ejecucion") != "EN_EJECUCION":
+        _auditar_verificacion(id_ejecucion, ejecucion, usuario, "FINALIZADA")
         return {
             "ok": True,
             "estado_control": "FINALIZADA",
@@ -62,8 +73,10 @@ def verificar_ejecucion(id_ejecucion, ejecucion=None, usuario=None):
     pid = ejecucion.get("pid_proceso")
     estado_pid = proceso_existe(pid)
     if estado_pid == PROCESO_EXISTE:
+        _auditar_verificacion(id_ejecucion, ejecucion, usuario, "ACTIVA")
         return {"ok": True, "estado_control": "ACTIVA", "mensaje": "La ejecucion sigue activa."}
     if estado_pid == PROCESO_DESCONOCIDO:
+        _auditar_verificacion(id_ejecucion, ejecucion, usuario, "DESCONOCIDA", resultado="ERROR")
         return {
             "ok": False,
             "estado_control": "DESCONOCIDA",
@@ -71,6 +84,7 @@ def verificar_ejecucion(id_ejecucion, ejecucion=None, usuario=None):
         }
 
     _marcar_ejecucion_huerfana(id_ejecucion, ejecucion, usuario)
+    _auditar_verificacion(id_ejecucion, ejecucion, usuario, "HUERFANA")
     return {
         "ok": True,
         "estado_control": "HUERFANA",
@@ -121,6 +135,21 @@ def _marcar_ejecucion_huerfana(id_ejecucion, ejecucion, usuario=None):
         usuario=usuario or "control_ejecuciones",
         nivel="WARNING",
         valor_nuevo=str({"id_ejecucion": id_ejecucion, "pid_proceso": ejecucion.get("pid_proceso")}),
+    )
+
+
+def _auditar_verificacion(id_ejecucion, ejecucion, usuario, estado_control, resultado="OK"):
+    registrar_auditoria(
+        "VERIFICAR_HUERFANA",
+        "ejecuciones",
+        id_entidad=id_ejecucion,
+        nombre_entidad=ejecucion.get("nombre_tarea"),
+        descripcion=f"Verificacion de ejecucion: {estado_control}.",
+        valores_antes={"estado_ejecucion": ejecucion.get("estado_ejecucion"), "pid_proceso": ejecucion.get("pid_proceso")},
+        valores_despues={"estado_control": estado_control},
+        resultado=resultado,
+        modulo="EJECUCIONES",
+        usuario=usuario,
     )
 
 

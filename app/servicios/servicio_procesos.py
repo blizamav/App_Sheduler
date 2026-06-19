@@ -65,3 +65,16 @@ def detener_proceso(id_ejecucion, pid, espera_segundos=5):
             except Exception:
                 pass
     return fue_forzada
+
+
+def terminar_proceso(proceso, espera_segundos=5):
+    if not proceso or proceso.poll() is not None:
+        return False
+    proceso.terminate()
+    try:
+        proceso.wait(timeout=espera_segundos)
+        return False
+    except subprocess.TimeoutExpired:
+        proceso.kill()
+        proceso.wait(timeout=espera_segundos)
+        return True

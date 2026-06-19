@@ -7,6 +7,7 @@ from app.repositorios.repositorio_feriados import (
 )
 from app.repositorios.repositorio_reglas_feriados import obtener_regla_irrenunciable
 from app.servicios.cliente_nager_date import ErrorNagerDate, consultar_nager_feriados
+from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 
@@ -37,9 +38,29 @@ def preparar_preview_sincronizacion(anio, pais, usuario=None):
             usuario=usuario,
             nivel="ERROR",
         )
+        registrar_auditoria(
+            "PREVISUALIZAR_SINCRONIZACION",
+            "feriados",
+            nombre_entidad=f"{pais} {anio}",
+            descripcion="Error controlado al consultar Nager.Date para vista previa.",
+            valores_despues={"anio": anio, "pais": pais, "error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="FERIADOS",
+            usuario=usuario,
+        )
         return False, [str(error)], None
 
     if not datos_api:
+        registrar_auditoria(
+            "PREVISUALIZAR_SINCRONIZACION",
+            "feriados",
+            nombre_entidad=f"{pais} {anio}",
+            descripcion="Nager.Date no retorno feriados para los parametros indicados.",
+            valores_despues={"anio": anio, "pais": pais},
+            resultado="ERROR",
+            modulo="FERIADOS",
+            usuario=usuario,
+        )
         return False, ["Nager.Date no retorno feriados para los parametros indicados."], None
 
     feriados_preview = []
@@ -75,11 +96,29 @@ def preparar_preview_sincronizacion(anio, pais, usuario=None):
         usuario=usuario,
         valor_nuevo=str(resumen),
     )
+    registrar_auditoria(
+        "PREVISUALIZAR_SINCRONIZACION",
+        "feriados",
+        nombre_entidad=f"{pais} {anio}",
+        descripcion=f"Vista previa de sincronizacion generada para {pais} {anio}.",
+        valores_despues=resumen,
+        resultado="ERROR" if resumen.get("errores") else "OK",
+        modulo="FERIADOS",
+        usuario=usuario,
+    )
     return True, ["Vista previa generada correctamente."], preview
 
 
 def aplicar_sincronizacion(preview, usuario=None):
     if not preview or not isinstance(preview.get("feriados_preview"), list):
+        registrar_auditoria(
+            "SINCRONIZAR",
+            "feriados",
+            descripcion="Sincronizacion bloqueada por vista previa invalida.",
+            resultado="ERROR",
+            modulo="FERIADOS",
+            usuario=usuario,
+        )
         return False, ["No existe una vista previa valida para aplicar."], None
 
     resumen = _resumen_vacio()
@@ -111,6 +150,16 @@ def aplicar_sincronizacion(preview, usuario=None):
         usuario=usuario,
         valor_nuevo=str({**resumen, "errores_detalle": errores[:5]}),
         nivel="ERROR" if errores else "INFO",
+    )
+    registrar_auditoria(
+        "SINCRONIZAR",
+        "feriados",
+        nombre_entidad=f"{preview.get('pais')} {preview.get('anio')}",
+        descripcion=f"Sincronizacion de feriados aplicada para {preview.get('pais')} {preview.get('anio')}.",
+        valores_despues={**resumen, "errores_detalle": errores[:5]},
+        resultado="ERROR" if errores else "OK",
+        modulo="FERIADOS",
+        usuario=usuario,
     )
     mensajes = ["Sincronizacion aplicada correctamente." if not errores else "Sincronizacion aplicada con errores controlados."]
     return True, mensajes, {"resumen": resumen, "errores": errores}

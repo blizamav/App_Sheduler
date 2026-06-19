@@ -67,7 +67,11 @@
                 <a class="nav-link deshabilitado" href="#"><span>13</span>Feriados</a>
                 {% endif %}
                 <p class="nav-seccion">Control y trazabilidad</p>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "AUDITORIA_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('auditoria.') %}activo{% endif %}" href="{{ url_for('auditoria.listado') }}"><span>14</span>Auditoria</a>
+                {% else %}
                 <a class="nav-link deshabilitado" href="#"><span>14</span>Auditoria</a>
+                {% endif %}
             </nav>
             <div class="sidebar-footer">
                 <span class="badge info">Operacion</span>

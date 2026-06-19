@@ -1,5 +1,126 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.1A cierre garantizado de ejecucion manual
+
+### Corregido
+
+* El hilo de ejecucion manual deja de ser `daemon`, para reducir riesgo de cierre abrupto por ciclo de vida del proceso Flask.
+* El monitor manual ahora tiene cierre defensivo en `finally`: si sale y la ejecucion sigue `EN_EJECUCION`, la cierra como `ERROR`.
+* Si falla el monitor de ejecucion, se intenta terminar el proceso hijo y se marca la ejecucion como `ERROR` con mensaje controlado.
+* El cierre normal sigue usando `process.wait()`: returncode `0` deja `EXITOSA`; returncode distinto de `0` deja `ERROR`.
+* Detenciones manuales existentes no se sobrescriben porque el cierre solo actua si la ejecucion sigue `EN_EJECUCION`.
+
+### Diagnostico
+
+* El proceso se lanza con `subprocess.Popen` desde `servicio_procesos.iniciar_proceso_python()`.
+* La ejecucion manual se monitorea en `_ejecutar_en_segundo_plano()` dentro de `servicio_ejecuciones.py`.
+* La causa probable era la combinacion de hilo `daemon=True` y ausencia de cierre garantizado en `finally`; si el monitor terminaba o era interrumpido antes de cerrar estado, la ejecucion podia quedar huerfana hasta usar `Verificar`.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se cambio el programador automatico ni `scheduler_worker.py`.
+* No se borro historial, auditoria, ejecuciones, logs, eventos ni snapshots.
+* No se avanzo a Fase 12C ni Fase 13.
+
+## 2026-06-19 - Fase 12B cobertura ampliada de auditoria
+
+### Agregado
+
+* Normalizacion central de acciones de auditoria hacia nombres especificos como `CREAR_USUARIO`, `EDITAR_CONFIG_PROGRAMADOR`, `EJECUTAR_TAREA_MANUAL` y `ELIMINAR_PERMANENTE_TAREA`.
+* Auditoria de bloqueos por permisos con `BLOQUEO_PERMISO` y resultado `BLOQUEADO`.
+* Auditoria de bloqueos de ejecucion manual no ejecutable y detencion no permitida.
+* Auditoria de errores controlados en ejecucion manual, detencion, verificacion de huerfanas y configuracion del programador.
+* Auditoria de previsualizacion de sincronizacion de feriados, incluyendo errores controlados.
+* Auditoria de restauracion bloqueada en Papelera.
+* Auditoria de bloqueo por maximo de versiones y bloqueos operativos de versiones activas/unicas.
+
+### Seguridad
+
+* Sanitizacion ampliada para claves sensibles: `pass`, `key`, `api_key`, `api`, `credential`, `connection`, `conn`, `cadena_conexion`, `client_secret`, `refresh_token`, `access_token`, `smtp_password`, `db_password`, entre otras.
+* Los cambios de `.env` por version siguen auditando solo metadatos, rutas/estado y presencia de archivo; no se guarda contenido ni valores.
+* Auditoria sigue siendo best-effort: si falla el registro, no rompe la accion principal y deja log tecnico cuando es posible.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se borro historial, ejecuciones, logs, eventos, snapshots ni auditoria.
+* No se agrego `DELETE CASCADE`.
+* No se implementaron exportaciones, notificaciones ni reportes.
+* No se avanzo a Fase 12C ni Fase 13.
+
+## 2026-06-18 - Fase 12A.2 validacion transversal de duplicados con Papelera
+
+### Corregido
+
+* La validacion de duplicados ahora considera registros activos, inactivos y en Papelera Operativa antes de insertar o actualizar.
+* Usuarios valida `usuario` y `email` con mensajes controlados.
+* Mantenedores (`clientes`, `categorias`, `tipos`) validan `nombre_normalizado` incluyendo Papelera.
+* Tareas validan la clave de negocio `nombre_tarea + cliente + categoria + tipo` incluyendo Papelera.
+* Scripts bloquea la creacion de un nuevo contenedor si ya existe uno para la tarea en Papelera.
+* Versiones de scripts calculan `v1`, `v2` y `v3` considerando versiones en Papelera para no reutilizar numeros reservados por `UNIQUE(id_script, numero_version)`.
+
+### Seguridad y auditoria
+
+* Se agrego servicio comun para clasificar duplicados como activos, inactivos, en Papelera o error de integridad SQL.
+* Los bloqueos registran auditoria `BLOQUEO_DUPLICADO` con resultado `BLOQUEADO` cuando la auditoria esta disponible.
+* Los errores de integridad por duplicado se traducen a mensaje amigable sin exponer `pyodbc`, constraints ni traceback.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se borro historial, ejecuciones, logs, eventos, snapshots ni auditoria.
+* No se agrego `DELETE CASCADE`.
+* No se avanzo a Fase 12B ni Fase 13.
+
+## 2026-06-18 - Fase 12A.1 correccion visual auditoria y roles
+
+### Corregido
+
+* Detalle de `/auditoria/<id>` reorganizado en bloques de usuario, entidad, descripcion y valores antes/despues.
+* Valores de auditoria formateados como JSON legible cuando corresponde y protegidos contra desbordes visuales.
+* Reglas backend de jerarquia de roles para impedir escalamiento indebido a `SUPER_ADMIN`.
+* La regla de ultimo administrador ahora permite que `SUPER_ADMIN` administre usuarios `ADMIN` si queda capacidad administrativa activa.
+
+### Seguridad
+
+* Solo `SUPER_ADMIN` puede asignar o quitar rol `SUPER_ADMIN`.
+* `ADMIN` no puede editar, desactivar ni eliminar usuarios `SUPER_ADMIN`.
+* No se puede desactivar ni borrar el usuario conectado.
+* No se puede desactivar ni borrar el ultimo `SUPER_ADMIN` activo.
+* El usuario definido en `.env` se mantiene como bootstrap tecnico fuera de `/usuarios`.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se modifico `.env`.
+* No se borro historial, ejecuciones, logs, eventos, snapshots ni auditoria.
+* No se avanzo a Fase 12B ni Fase 13.
+
+## 2026-06-18 - Fase 12A auditoria base
+
+### Agregado
+
+* Migracion manual e idempotente `database/migrations/018_crear_o_ajustar_auditoria_cambios.sql`.
+* Seed manual `database/seeds/012_permisos_auditoria.sql` para `AUDITORIA_VER` y `AUDITORIA_DETALLE`.
+* Modulo `/auditoria` con filtros, paginacion y detalle.
+* Servicio central `registrar_auditoria(...)` con sanitizacion de secretos.
+* Registro inicial de auditoria para acciones humanas criticas: papelera, borrados operativos, usuarios, mantenedores, tareas, scripts/versiones/env, ejecucion manual, detencion, verificacion huerfana, scheduler y feriados.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se modifico `.env`.
+* No se borro historial, ejecuciones, logs, eventos, snapshots ni auditoria.
+* No se agrego `DELETE CASCADE`.
+* No se avanzo a Fase 12B ni Fase 13.
+
 ## 2026-06-18 - Fase 11I revision integral post desacople historico
 
 ### Agregado

@@ -45,13 +45,106 @@ No permitido:
 * Crear automaticamente el usuario `blizama` en base de datos.
 * Exponer credenciales o hashes en pantalla.
 * Borrar el usuario actualmente logueado.
-* Borrar el ultimo administrador activo.
+* Borrar o desactivar el ultimo `SUPER_ADMIN` activo.
+* Permitir que un `ADMIN` asigne, quite o administre rol `SUPER_ADMIN`.
+
+Jerarquia vigente:
+
+1. `SUPER_ADMIN`.
+2. `ADMIN`.
+3. `TI`.
+4. `TERCERO` u otros roles.
+
+Reglas de jerarquia:
+
+* Solo `SUPER_ADMIN` puede asignar o quitar rol `SUPER_ADMIN`.
+* `ADMIN` no puede autoelevarse a `SUPER_ADMIN`.
+* `ADMIN` no puede editar, desactivar ni borrar usuarios `SUPER_ADMIN`.
+* `SUPER_ADMIN` no puede desactivar ni borrar su propio usuario.
+* `SUPER_ADMIN` no puede desactivar ni borrar el ultimo `SUPER_ADMIN` activo.
+* `SUPER_ADMIN` puede desactivar o borrar usuarios `ADMIN`, incluso si es el ultimo `ADMIN`, siempre que quede al menos un `SUPER_ADMIN` activo.
+* La validacion se aplica en backend aunque el formulario sea manipulado manualmente.
+
+Usuario `.env`:
+
+* El usuario definido por `USUARIO_ADMIN_DEFECTO` y `PASSWORD_ADMIN_DEFECTO` es un bootstrap tecnico fuera de la base de datos.
+* No se fuerza su creacion en `usuarios`.
+* No se administra desde `/usuarios`.
+* En auditoria puede aparecer como usuario textual sin `id_usuario`.
 
 Fase 4.2 usa modal corporativo propio antes de activar o desactivar usuarios. Si el administrador cancela, no se envia el formulario y no se registra evento como cambio realizado.
 
 El formulario de edicion advierte cuando se cambia el rol o se ingresa una nueva contrasena. Estas advertencias no bloquean la accion, pero refuerzan claridad antes de guardar.
 
 Las acciones criticas deben usar confirmacion explicita del sistema. No se deben usar `alert()`, `confirm()` ni `prompt()` nativos del navegador para acciones operativas.
+
+## Validacion transversal de duplicados
+
+Fase 12A.2 agrega una regla comun para entidades operativas que pueden quedar en Papelera Operativa.
+
+Entidades cubiertas:
+
+* `usuarios`.
+* `clientes`.
+* `categorias`.
+* `tipos`.
+* `tareas`.
+* `scripts`.
+* `scripts_versiones`.
+
+Reglas:
+
+* Antes de crear o editar, el backend consulta duplicados sin filtrar fuera los registros con `eliminado_operativo = 1`.
+* Si el duplicado esta activo, se informa que ya existe un registro activo con esos datos.
+* Si el duplicado esta inactivo, se informa que puede activarse o editarse el registro existente.
+* Si el duplicado esta en Papelera Operativa, se informa que debe restaurarse o eliminarse permanentemente antes de crear otro.
+* Si el bloqueo llega desde una constraint unica de SQL Server, se muestra un mensaje generico seguro sin nombres de constraints, `pyodbc` ni traceback.
+* El bloqueo se registra como auditoria `BLOQUEO_DUPLICADO` con resultado `BLOQUEADO` cuando `auditoria_cambios` esta disponible.
+* No se registran passwords, hashes, tokens, secretos ni contenido de `.env`.
+
+Campos validados:
+
+* Usuarios: `usuario` y `email`.
+* Mantenedores: `nombre_normalizado`.
+* Tareas: `nombre_tarea`, `id_cliente`, `id_categoria`, `id_tipo`.
+* Scripts: `id_tarea`.
+* Versiones de scripts: `id_script`, `numero_version`.
+
+## Auditoria consolidada
+
+Fase 12B consolida la cobertura de auditoria para acciones humanas criticas.
+
+Resultados:
+
+* `OK`: accion humana completada correctamente.
+* `BLOQUEADO`: accion impedida por permisos, seguridad o regla de negocio.
+* `ERROR`: error controlado de aplicacion durante una accion humana.
+
+Bloqueos auditados:
+
+* Permiso insuficiente en rutas protegidas.
+* Escalamiento o administracion indebida de `SUPER_ADMIN`.
+* Autoeliminacion o autodesactivacion de usuario conectado.
+* Eliminacion del ultimo usuario con capacidad administrativa critica.
+* Duplicados activos, inactivos o en Papelera.
+* Borrado con dependencias operativas.
+* Tarea no ejecutable.
+* Detencion de ejecucion no permitida.
+* Restauracion o eliminacion permanente bloqueada en Papelera.
+* Maximo de versiones o version activa/unica en scripts.
+
+Errores controlados auditados:
+
+* Inicio, detencion y verificacion manual de ejecuciones.
+* Validacion o guardado de configuracion del programador.
+* Previsualizacion o aplicacion de sincronizacion de feriados.
+* Carga/reemplazo de scripts y metadatos `.env` por version.
+
+Sanitizacion:
+
+* Se reemplazan por `***` claves sensibles que contengan `password`, `pass`, `contrasena`, `contraseña`, `hash`, `token`, `secret`, `.env`, `pwd`, `key`, `api_key`, `api`, `credential`, `credentials`, `connection`, `conn`, `cadena_conexion`, `client_secret`, `refresh_token`, `access_token`, `smtp_password` o `db_password`.
+* No se auditan contrasenas, hashes, tokens, cadenas de conexion, credenciales ni contenido completo de `.env`.
+* En `.env` por version se guarda solo metadato operativo, no valores internos.
 
 Cambios de usuario que requieren confirmacion explicita:
 
@@ -131,7 +224,7 @@ Reglas:
 * Las omisiones no crean registros en `ejecuciones`.
 * Las omisiones no crean `logs_tareas`.
 * `logs_sistema` no debe usarse para cada omision del programador para evitar ruido operativo.
-* La tabla `scheduler_eventos` no reemplaza auditoria funcional; auditoria queda pendiente para una fase posterior.
+* La tabla `scheduler_eventos` no reemplaza auditoria funcional; auditoria de acciones humanas queda en `auditoria_cambios` desde Fase 12A.
 
 ## Borrado operativo seguro
 
@@ -145,10 +238,10 @@ El retiro operativo evita perdida de evidencia:
 * No borra ejecuciones.
 * No borra logs historicos.
 * No borra eventos del programador.
-* No borra auditoria futura.
+* No borra `auditoria_cambios`.
 * No elimina archivos fisicos asociados a ejecuciones historicas.
 
-Auditoria funcional queda pendiente; por ahora se mantiene `logs_sistema` para trazabilidad operativa basica.
+Auditoria base queda implementada desde Fase 12A para acciones humanas relevantes; `logs_sistema` se mantiene como trazabilidad operativa basica y no la reemplaza.
 
 Pendientes de seguridad asociados:
 
@@ -177,15 +270,15 @@ Botones:
 Reglas de seguridad:
 
 * No usar `DELETE CASCADE` destructivo.
-* No borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, futura `auditoria_cambios` ni archivos historicos de log.
+* No borrar `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots historicos, `auditoria_cambios` ni archivos historicos de log.
 * Para `tareas`, `scripts` y `scripts_versiones`, exigir migracion 017 aplicada antes de borrar fisicamente.
 * Antes de borrar, asegurar snapshots y nulificar referencias historicas anulables en `ejecuciones`, `logs_tareas` y `scheduler_eventos`.
 * Si el borrado fisico no es seguro, no forzar el `DELETE`.
 * Si existen dependencias operativas no historicas, mantener `eliminado_operativo = 1` y mostrar: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
 
-## Auditoria funcional pendiente
+## Auditoria funcional
 
-Auditoria no esta implementada funcionalmente.
+Auditoria base esta implementada funcionalmente desde Fase 12A.
 
 No son Auditoria:
 
@@ -194,7 +287,14 @@ No son Auditoria:
 * `logs_tareas`, porque conserva salida y metadatos de ejecucion.
 * `logs_sistema`, porque registra eventos operativos basicos.
 
-La fase 12 debe implementar `auditoria_cambios` como registro de acciones humanas relevantes, con usuario, modulo, tabla, registro, accion, valor anterior, valor nuevo, fecha, IP y user-agent cuando aplique.
+`auditoria_cambios` registra acciones humanas relevantes con usuario, modulo, entidad, registro, accion, valor anterior, valor nuevo, resultado, fecha, IP y user-agent cuando aplica.
+
+Reglas:
+
+* No registrar contrasenas, hashes, tokens, secretos, contenido de `.env` ni credenciales.
+* No borrar auditoria desde flujos operativos.
+* La migracion 018 y el seed 012 deben ejecutarse manualmente.
+* Fase 12B debe ampliar cobertura y criterios de revision sin cambiar estas restricciones.
 
 ## Scripts y versiones
 

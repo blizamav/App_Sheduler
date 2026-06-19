@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 11F implementada. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 12A implementada. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -12,10 +12,10 @@ Estado actual: Fase 11F implementada. El roadmap formal desde esta reorganizacio
 * Aplicacion: rutas Flask y control de sesion.
 * Configuracion: lectura de `.env`.
 * Datos: SQL Server mediante `pyodbc` y repositorios dedicados.
-* Servicios: reglas de negocio para usuarios, mantenedores, tareas, scripts, ejecuciones, programador, feriados, paneles, eventos y borrado operativo.
+* Servicios: reglas de negocio para usuarios, mantenedores, tareas, scripts, ejecuciones, programador, feriados, paneles, eventos, borrado operativo y auditoria.
 * Worker: `scheduler_worker.py` como proceso separado para evaluacion automatica.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
-* Auditoria: tabla `auditoria_cambios` existe en el modelo, pero el modulo funcional de Auditoria sigue pendiente para Fase 12.
+* Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 
 ## Flujo de datos inicial
 
@@ -87,7 +87,7 @@ Fase 11F agrega borrado operativo seguro con snapshots:
 * Repositorios de ejecuciones y eventos del programador: leen `COALESCE(snapshot, maestro)` para historial legible.
 * Panel y scheduler: excluyen registros retirados de operacion normal.
 
-Regla arquitectonica: las tablas historicas no deben depender solo del registro maestro para mostrar nombres. No se usan cascadas destructivas sobre `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos` ni auditoria futura.
+Regla arquitectonica: las tablas historicas no deben depender solo del registro maestro para mostrar nombres. No se usan cascadas destructivas sobre `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos` ni `auditoria_cambios`.
 
 Fase 8 agrega capa de ejecucion manual:
 
@@ -168,7 +168,7 @@ Fase 11D agrega eventos del programador:
 * `app/servicios/servicio_scheduler_worker.py`: registra decisiones relevantes del ciclo automatico.
 * `/scheduler/panel`: muestra eventos recientes del programador.
 
-Esta capa es solo trazabilidad operativa. Una omision no crea `ejecuciones`, no crea `logs_tareas` y no reemplaza auditoria funcional futura.
+Esta capa es solo trazabilidad operativa. Una omision no crea `ejecuciones`, no crea `logs_tareas` y no reemplaza auditoria funcional.
 
 El heartbeat vive en una tabla dedicada porque cambia frecuentemente. `logs_sistema` solo registra eventos relevantes: inicio, detencion, error, recuperacion o fallo al actualizar heartbeat.
 
@@ -178,7 +178,7 @@ Distincion con Auditoria:
 * `ejecuciones` registra intentos reales de ejecucion.
 * `logs_sistema` registra eventos operativos basicos.
 * Ninguno de esos componentes reemplaza `auditoria_cambios`.
-* Auditoria funcional queda pendiente para Fase 12 y debe registrar acciones humanas criticas con trazabilidad antes/despues.
+* Auditoria funcional queda implementada como base en Fase 12A y debe ampliarse en Fase 12B.
 
 La FK `scripts.id_version_activa -> scripts_versiones.id_version` se agrega en `006_crear_indices.sql` por dependencia circular entre `scripts` y `scripts_versiones`.
 
@@ -254,7 +254,7 @@ El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Roadmap arquitectonico
 
-Siguiente bloque recomendado: completar Fase 11 con purga controlada y revision integral post-borrado.
+Siguiente bloque recomendado: completar Fase 12B con ampliacion de cobertura y criterios de revision de auditoria.
 
 Bloques posteriores:
 

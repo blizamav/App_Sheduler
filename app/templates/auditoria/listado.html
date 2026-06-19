@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block titulo %}Auditoria - APP Scheduler{% endblock %}
+{% block encabezado %}Auditoria{% endblock %}
+
+{% macro query_pagina(numero) -%}
+{{ url_for('auditoria.listado',
+    page=numero,
+    per_page=per_page,
+    fecha_desde=filtros.get('fecha_desde'),
+    fecha_hasta=filtros.get('fecha_hasta'),
+    usuario=filtros.get('usuario'),
+    accion=filtros.get('accion'),
+    entidad=filtros.get('entidad'),
+    resultado=filtros.get('resultado'),
+    modulo=filtros.get('modulo'),
+    texto=filtros.get('texto')) }}
+{%- endmacro %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Control y trazabilidad</p>
+        <h2>Auditoria de acciones humanas</h2>
+        <p>Registro formal de acciones administrativas y operativas relevantes con usuario, origen, entidad y valores antes/despues cuando aplica.</p>
+    </div>
+    <span class="badge info">{{ total }} registros filtrados</span>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Filtros</p>
+            <h3>Buscar auditoria</h3>
+        </div>
+        <a class="btn secundario compacto" href="{{ url_for('auditoria.listado') }}">Limpiar filtros</a>
+    </div>
+    <form class="formulario-admin" method="get">
+        <input type="hidden" name="page" value="1">
+        <div class="grid-formulario compacto-grid">
+            <div class="campo">
+                <label for="fecha_desde">Fecha desde</label>
+                <input id="fecha_desde" name="fecha_desde" type="date" value="{{ filtros.get('fecha_desde') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="fecha_hasta">Fecha hasta</label>
+                <input id="fecha_hasta" name="fecha_hasta" type="date" value="{{ filtros.get('fecha_hasta') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="usuario">Usuario</label>
+                <input id="usuario" name="usuario" value="{{ filtros.get('usuario') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="accion">Accion</label>
+                <input id="accion" name="accion" value="{{ filtros.get('accion') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="entidad">Entidad</label>
+                <input id="entidad" name="entidad" value="{{ filtros.get('entidad') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="resultado">Resultado</label>
+                <select id="resultado" name="resultado">
+                    <option value="">Todos</option>
+                    {% for opcion in ["OK", "ERROR", "BLOQUEADO"] %}
+                    <option value="{{ opcion }}" {% if filtros.get('resultado') == opcion %}selected{% endif %}>{{ opcion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
+                <label for="modulo">Modulo</label>
+                <input id="modulo" name="modulo" value="{{ filtros.get('modulo') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="texto">Texto</label>
+                <input id="texto" name="texto" value="{{ filtros.get('texto') or '' }}">
+            </div>
+            <div class="campo">
+                <label for="per_page">Por pagina</label>
+                <select id="per_page" name="per_page">
+                    {% for opcion in per_page_opciones %}
+                    <option value="{{ opcion }}" {% if per_page == opcion %}selected{% endif %}>{{ opcion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="acciones-formulario">
+            <button class="btn primario" type="submit">Filtrar</button>
+            <a class="btn secundario" href="{{ url_for('auditoria.listado') }}">Limpiar filtros</a>
+        </div>
+    </form>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Historial formal</p>
+            <h3>Registros auditados</h3>
+        </div>
+        <span class="badge info">Pagina {{ page }} de {{ total_paginas }}</span>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Accion</th>
+                    <th>Entidad</th>
+                    <th>Resultado</th>
+                    <th>Modulo</th>
+                    <th>Descripcion</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in registros %}
+                <tr>
+                    <td>{{ item.fecha_evento or "-" }}</td>
+                    <td>{{ item.usuario or "-" }}</td>
+                    <td><span class="badge info">{{ item.accion or "-" }}</span></td>
+                    <td>
+                        {{ item.entidad or "-" }}
+                        {% if item.id_entidad %}<br><small>ID {{ item.id_entidad }}</small>{% endif %}
+                        {% if item.nombre_entidad %}<br><small>{{ item.nombre_entidad }}</small>{% endif %}
+                    </td>
+                    <td><span class="badge {% if item.resultado == 'ERROR' %}error{% elif item.resultado == 'BLOQUEADO' %}advertencia{% else %}activo{% endif %}">{{ item.resultado or "OK" }}</span></td>
+                    <td>{{ item.modulo or "-" }}</td>
+                    <td>{{ (item.descripcion or "-")|truncate(140, True) }}</td>
+                    <td><a class="btn secundario compacto" href="{{ url_for('auditoria.detalle', id_auditoria=item.id_auditoria) }}">Detalle</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="estado-vacio">Sin registros de auditoria para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="paginacion">
+    <span>Pagina {{ page }} de {{ total_paginas }} - {{ total }} registros</span>
+    <div class="paginacion-acciones">
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(1) }}">Primero</a>
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(page - 1 if page > 1 else 1) }}">Anterior</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(page + 1 if page < total_paginas else total_paginas) }}">Siguiente</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(total_paginas) }}">Ultimo</a>
+    </div>
+</section>
+{% endblock %}

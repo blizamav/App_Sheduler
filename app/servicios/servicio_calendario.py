@@ -11,6 +11,7 @@ from app.repositorios.repositorio_feriados import (
     obtener_feriado_por_id,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
 
 
 def es_feriado(fecha, pais="CL"):
@@ -70,6 +71,17 @@ def guardar_feriado(datos, usuario, id_feriado=None):
             valor_anterior=str(actual),
             valor_nuevo=str(normalizados),
         )
+        registrar_auditoria(
+            "EDITAR",
+            "feriados",
+            id_entidad=id_feriado,
+            nombre_entidad=normalizados["nombre"],
+            descripcion=f"Feriado editado: {normalizados['fecha']} {normalizados['pais']}.",
+            valores_antes=actual,
+            valores_despues=normalizados,
+            modulo="FERIADOS",
+            usuario=usuario,
+        )
         return True, ["Feriado actualizado correctamente."], obtener_feriado_por_id(id_feriado)
 
     nuevo_id = crear_feriado(normalizados)
@@ -79,6 +91,16 @@ def guardar_feriado(datos, usuario, id_feriado=None):
         f"Feriado creado: {normalizados['fecha']} {normalizados['pais']}.",
         usuario=usuario,
         valor_nuevo=str(normalizados),
+    )
+    registrar_auditoria(
+        "CREAR",
+        "feriados",
+        id_entidad=nuevo_id,
+        nombre_entidad=normalizados["nombre"],
+        descripcion=f"Feriado creado: {normalizados['fecha']} {normalizados['pais']}.",
+        valores_despues=normalizados,
+        modulo="FERIADOS",
+        usuario=usuario,
     )
     return True, ["Feriado creado correctamente."], obtener_feriado_por_id(nuevo_id)
 
@@ -99,6 +121,17 @@ def cambiar_estado_feriado_admin(id_feriado, activo, usuario):
         valor_anterior=str(actual["activo"]),
         valor_nuevo=str(1 if activo else 0),
     )
+    registrar_auditoria(
+        "ACTIVAR" if activo else "DESACTIVAR",
+        "feriados",
+        id_entidad=id_feriado,
+        nombre_entidad=actual["nombre"],
+        descripcion=f"Feriado {'activado' if activo else 'desactivado'}: {actual['fecha']} {actual['pais']}.",
+        valores_antes={"activo": actual["activo"]},
+        valores_despues={"activo": 1 if activo else 0},
+        modulo="FERIADOS",
+        usuario=usuario,
+    )
     return True, "Feriado activado correctamente." if activo else "Feriado desactivado correctamente."
 
 
@@ -113,6 +146,16 @@ def eliminar_feriado_admin(id_feriado, usuario):
         f"Feriado eliminado definitivamente: {actual['fecha']} {actual['pais']}.",
         usuario=usuario,
         valor_anterior=str(actual),
+    )
+    registrar_auditoria(
+        "ELIMINAR",
+        "feriados",
+        id_entidad=id_feriado,
+        nombre_entidad=actual["nombre"],
+        descripcion=f"Feriado eliminado definitivamente: {actual['fecha']} {actual['pais']}.",
+        valores_antes=actual,
+        modulo="FERIADOS",
+        usuario=usuario,
     )
     return True, "Feriado eliminado definitivamente."
 

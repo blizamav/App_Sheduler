@@ -2,7 +2,7 @@
 
 ## Estado
 
-Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual. Fase 11G agrega seed 011 para permisos de papelera, pendiente de ejecucion manual. Fase 11H agrega migracion 017 para desacople historico, pendiente de ejecucion manual.
+Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual. Fase 11G agrega seed 011 para permisos de papelera, pendiente de ejecucion manual. Fase 11H agrega migracion 017 para desacople historico, pendiente de ejecucion manual. Fase 12A agrega migracion 018 y seed 012 para auditoria, pendientes de ejecucion manual.
 
 Roadmap vigente: `docs/ROADMAP.md`.
 
@@ -53,6 +53,7 @@ database/
     015_crear_eventos_programador.sql
     016_agregar_snapshots_historial_borrado_operativo.sql
     017_desacople_historico_papelera.sql
+    018_crear_o_ajustar_auditoria_cambios.sql
   seeds/
     001_datos_iniciales_catalogos.sql
     002_roles_permisos_iniciales.sql
@@ -62,6 +63,7 @@ database/
     009_reglas_irrenunciables_chile.sql
     010_permisos_sincronizacion_feriados.sql
     011_permisos_papelera.sql
+    012_permisos_auditoria.sql
 ```
 
 Orden correcto de ejecucion manual en SQL Server Management Studio:
@@ -94,6 +96,8 @@ Orden correcto de ejecucion manual en SQL Server Management Studio:
 26. `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`
 27. `database/seeds/011_permisos_papelera.sql`
 28. `database/migrations/017_desacople_historico_papelera.sql`
+29. `database/migrations/018_crear_o_ajustar_auditoria_cambios.sql`
+30. `database/seeds/012_permisos_auditoria.sql`
 
 Resumen por script:
 
@@ -114,6 +118,7 @@ Resumen por script:
 * `015_crear_eventos_programador.sql`: crea tabla `scheduler_eventos` para registrar decisiones, omisiones y errores del programador; no crea ejecuciones ni logs de tarea.
 * `016_agregar_snapshots_historial_borrado_operativo.sql`: agrega snapshots historicos y campos de borrado operativo seguro para retirar registros sin perder historial.
 * `017_desacople_historico_papelera.sql`: elimina FKs historicas desde `ejecuciones` y `logs_tareas`, vuelve anulables sus IDs historicos y conserva snapshots para permitir eliminacion permanente real desde papelera sin borrar historia.
+* `018_crear_o_ajustar_auditoria_cambios.sql`: crea o ajusta `auditoria_cambios` para acciones humanas, conservando compatibilidad con el esquema inicial y sin cascadas destructivas.
 * `001_datos_iniciales_catalogos.sql`: inserta estados y catalogos base con `MERGE`.
 * `002_roles_permisos_iniciales.sql`: inserta roles y permisos base con `MERGE`; no crea usuarios.
 * `003_permisos_mantenedores.sql`: inserta permisos incrementales para clientes, categorias y tipos, y los asigna a roles base.
@@ -125,6 +130,7 @@ Resumen por script:
 * `009_reglas_irrenunciables_chile.sql`: carga reglas iniciales Chile para 01/01, 01/05, 18/09, 19/09 y 25/12.
 * `010_permisos_sincronizacion_feriados.sql`: inserta permiso `FERIADOS_SINCRONIZAR`.
 * `011_permisos_papelera.sql`: inserta permisos `PAPELERA_VER`, `PAPELERA_RESTAURAR` y `PAPELERA_ELIMINAR_PERMANENTE`. Debe ejecutarse manualmente en SSMS.
+* `012_permisos_auditoria.sql`: inserta permisos `AUDITORIA_VER` y `AUDITORIA_DETALLE`, asignados a roles administrativos y TI. Debe ejecutarse manualmente en SSMS.
 
 ## Fase 11B - Heartbeat worker scheduler
 
@@ -309,6 +315,26 @@ Si no es seguro eliminar fisicamente:
 * El registro mantiene `eliminado_operativo = 1`.
 * El registro sigue visible en `/papelera` y oculto de la operacion normal.
 
+## Validacion de duplicados con Papelera Operativa
+
+Fase 12A.2 no modifica constraints ni crea migraciones. La app ajusta servicios y repositorios para respetar las claves unicas fisicas cuando existen registros retirados con `eliminado_operativo = 1`.
+
+Claves relevantes:
+
+* `usuarios.usuario`: `UX_usuarios_usuario`.
+* `clientes.nombre_normalizado`: `UX_clientes_nombre_normalizado`.
+* `categorias.nombre_normalizado`: `UX_categorias_nombre_normalizado`.
+* `tipos.nombre_normalizado`: `UX_tipos_nombre_normalizado`.
+* `scripts.id_tarea`: `UX_scripts_id_tarea`.
+* `scripts_versiones.id_script + numero_version`: `UX_scripts_versiones_script_numero`.
+
+Regla de aplicacion:
+
+* Las consultas de validacion de duplicados no deben excluir Papelera.
+* El mensaje debe distinguir activo, inactivo y Papelera antes de intentar guardar.
+* Si SQL Server rechaza por constraint unica, el backend debe mostrar mensaje seguro sin nombre de constraint ni detalle tecnico.
+* No se ejecutan restauraciones ni eliminaciones automaticas para resolver duplicados.
+
 ## Fase 11H - Desacople historico de papelera
 
 La migracion `017_desacople_historico_papelera.sql` separa las referencias historicas de las relaciones operativas vivas.
@@ -341,16 +367,56 @@ Diagnostico manual agregado:
 
 Este diagnostico es de solo lectura y no debe ejecutarse automaticamente desde la aplicacion.
 
-## Auditoria pendiente
+## Fase 12A - Auditoria base
 
-La tabla `auditoria_cambios` existe en el modelo inicial, pero el modulo funcional de Auditoria sigue pendiente para Fase 12.
+La tabla `auditoria_cambios` queda ajustada por migracion manual `018_crear_o_ajustar_auditoria_cambios.sql` para registrar acciones humanas relevantes.
 
-Distincion:
+Campos nuevos principales:
+
+* `fecha_evento`
+* `id_usuario`
+* `usuario`
+* `accion`
+* `entidad`
+* `id_entidad`
+* `nombre_entidad`
+* `descripcion`
+* `valores_antes`
+* `valores_despues`
+* `ip_origen`
+* `user_agent`
+* `resultado`
+* `modulo`
+* `ruta`
+* `metodo_http`
+
+## Fase 12B - Cobertura ampliada de Auditoria
+
+Fase 12B no requiere migraciones nuevas. La consolidacion se realiza en capa de servicio sobre la tabla `auditoria_cambios` ya creada por Fase 12A.
+
+Normalizacion logica:
+
+* `accion`: mayuscula, sin espacios y especifica por accion, por ejemplo `CREAR_USUARIO`, `BLOQUEO_PERMISO`, `EDITAR_CONFIG_PROGRAMADOR`.
+* `entidad`: nombres estables como `usuarios`, `clientes`, `categorias`, `tipos`, `tareas`, `scripts`, `scripts_versiones`, `ejecuciones`, `scheduler_config`, `feriados` y `papelera`.
+* `resultado`: `OK`, `ERROR` o `BLOQUEADO`.
+* `modulo`: nombre funcional legible como `Usuarios`, `Mantenedores`, `Tareas`, `Scripts`, `Ejecuciones`, `Programador`, `Feriados`, `Papelera` o `Seguridad`.
+
+Valores:
+
+* Ediciones y cambios de estado guardan valores antes/despues cuando el servicio los tiene disponibles.
+* Bloqueos guardan motivo y contexto minimo.
+* Errores controlados guardan clase de error o resumen operativo.
+* No se guardan contrasenas, hashes, tokens, credenciales, cadenas de conexion ni contenido de `.env`.
+* `activo`
+
+La migracion conserva columnas historicas iniciales como `tabla_afectada`, `id_registro`, `valor_anterior`, `valor_nuevo`, `ip` y `fecha_hora` para compatibilidad. No usa `DELETE CASCADE` y no borra historia.
+
+Distincion vigente:
 
 * `scheduler_eventos` registra decisiones automaticas del programador.
 * `ejecuciones` registra intentos reales de ejecutar scripts.
 * `logs_sistema` registra eventos operativos basicos.
-* `auditoria_cambios` debe registrar acciones humanas criticas en una fase posterior.
+* `auditoria_cambios` registra acciones humanas relevantes.
 
 ## Fase 7 - Scripts y versiones
 

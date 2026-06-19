@@ -7,9 +7,10 @@ from app.repositorios.repositorio_usuarios import (
     actualizar_usuario,
     asegurar_snapshots_usuario,
     cambiar_estado_usuario,
-    contar_administradores_activos,
+    contar_super_admin_activos,
+    contar_usuarios_capacidad_admin_activos,
+    buscar_duplicado_usuario,
     crear_usuario,
-    existe_usuario,
     listar_usuarios,
     marcar_usuario_eliminado_operativo,
     obtener_usuario_por_id,
@@ -18,10 +19,19 @@ from app.repositorios.repositorio_usuarios import (
     registrar_login_fallido,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
+from app.servicios.servicio_duplicados import (
+    MENSAJE_DUPLICADO_SQL,
+    es_error_duplicado_sql,
+    registrar_bloqueo_duplicado,
+    validar_sin_duplicado,
+)
 from app.servicios.servicio_permisos import cargar_accesos_usuario
 
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+ROL_SUPER_ADMIN = "SUPER_ADMIN"
+ROL_ADMIN = "ADMIN"
 
 
 def autenticar_usuario_bd(usuario, password):
@@ -86,7 +96,7 @@ def obtener_usuario_admin(id_usuario):
     return obtener_usuario_por_id(id_usuario)
 
 
-def _validar_datos_usuario(datos, modo, id_usuario=None):
+def _validar_datos_usuario(datos, modo, id_usuario=None, usuario_accion=None):
     errores = []
     usuario = datos.get("usuario", "").strip()
     nombre = datos.get("nombre_completo", "").strip()
@@ -98,14 +108,32 @@ def _validar_datos_usuario(datos, modo, id_usuario=None):
     if modo == "crear":
         if not usuario:
             errores.append("El usuario es obligatorio.")
-        elif existe_usuario(usuario):
-            errores.append("El usuario ya existe.")
+        else:
+            mensaje = validar_sin_duplicado(
+                buscar_duplicado_usuario("usuario", usuario, id_usuario),
+                "usuarios",
+                usuario_accion,
+                valores={"campo": "usuario", "valor": usuario},
+                modulo="USUARIOS",
+            )
+            if mensaje:
+                errores.append(mensaje)
 
     if not nombre:
         errores.append("El nombre completo es obligatorio.")
 
     if email and not EMAIL_RE.match(email):
         errores.append("El email informado no tiene un formato valido.")
+    elif email:
+        mensaje = validar_sin_duplicado(
+            buscar_duplicado_usuario("email", email, id_usuario),
+            "usuarios",
+            usuario_accion,
+            valores={"campo": "email", "valor": email},
+            modulo="USUARIOS",
+        )
+        if mensaje:
+            errores.append(mensaje)
 
     if not id_rol:
         errores.append("Debes seleccionar un rol.")
@@ -124,10 +152,23 @@ def _validar_datos_usuario(datos, modo, id_usuario=None):
     return errores
 
 
-def crear_usuario_admin(datos, usuario_accion):
-    errores = _validar_datos_usuario(datos, "crear")
+def crear_usuario_admin(datos, usuario_accion, actor=None):
+    errores = _validar_datos_usuario(datos, "crear", usuario_accion=usuario_accion)
     if errores:
         return False, errores, None
+
+    rol_nuevo = obtener_rol_por_id(datos.get("id_rol"))
+    if _es_rol_super_admin(rol_nuevo) and not _actor_es_super_admin(actor):
+        mensaje = "Solo un SUPER_ADMIN puede asignar el rol SUPER_ADMIN."
+        _auditar_bloqueo_rol(
+            "CREAR",
+            None,
+            datos.get("usuario"),
+            mensaje,
+            usuario_accion,
+            valores_despues={"id_rol": datos.get("id_rol"), "codigo_rol": ROL_SUPER_ADMIN},
+        )
+        return False, [mensaje], None
 
     datos_bd = {
         "usuario": datos["usuario"].strip(),
@@ -138,7 +179,20 @@ def crear_usuario_admin(datos, usuario_accion):
         "activo": 1 if datos.get("activo") else 0,
         "usuario_accion": usuario_accion,
     }
-    id_usuario = crear_usuario(datos_bd)
+    try:
+        id_usuario = crear_usuario(datos_bd)
+    except Exception as error:
+        if es_error_duplicado_sql(error):
+            registrar_bloqueo_duplicado(
+                "usuarios",
+                usuario_accion,
+                MENSAJE_DUPLICADO_SQL,
+                nombre_entidad=datos_bd["usuario"],
+                valores={"usuario": datos_bd["usuario"], "email": datos_bd.get("email")},
+                modulo="USUARIOS",
+            )
+            return False, [MENSAJE_DUPLICADO_SQL], None
+        raise
     registrar_log_sistema(
         "USUARIO_CREADO",
         "USUARIOS",
@@ -146,17 +200,47 @@ def crear_usuario_admin(datos, usuario_accion):
         usuario=usuario_accion,
         valor_nuevo=datos_bd["usuario"],
     )
+    registrar_auditoria(
+        "CREAR",
+        "usuarios",
+        id_entidad=id_usuario,
+        nombre_entidad=datos_bd["usuario"],
+        descripcion=f"Usuario creado: {datos_bd['usuario']}.",
+        valores_despues=datos_bd,
+        modulo="USUARIOS",
+        usuario=usuario_accion,
+    )
     return True, ["Usuario creado correctamente."], id_usuario
 
 
-def actualizar_usuario_admin(id_usuario, datos, usuario_accion):
+def actualizar_usuario_admin(id_usuario, datos, usuario_accion, actor=None):
     usuario_actual = obtener_usuario_por_id(id_usuario)
     if not usuario_actual:
         return False, ["Usuario no encontrado."]
 
-    errores = _validar_datos_usuario(datos, "editar", id_usuario)
+    errores = _validar_datos_usuario(datos, "editar", id_usuario, usuario_accion)
     if errores:
         return False, errores
+
+    rol_nuevo = obtener_rol_por_id(datos.get("id_rol"))
+    ok_seguridad, mensaje_seguridad = _validar_operacion_usuario(
+        actor,
+        usuario_actual,
+        "EDITAR",
+        nuevo_rol=rol_nuevo,
+        nuevo_activo=1 if datos.get("activo") else 0,
+    )
+    if not ok_seguridad:
+        _auditar_bloqueo_rol(
+            "EDITAR",
+            id_usuario,
+            usuario_actual["usuario"],
+            mensaje_seguridad,
+            usuario_accion,
+            valores_antes=usuario_actual,
+            valores_despues={"id_rol": datos.get("id_rol"), "activo": 1 if datos.get("activo") else 0},
+        )
+        return False, [mensaje_seguridad]
 
     datos_bd = {
         "nombre_completo": datos["nombre_completo"].strip(),
@@ -169,7 +253,21 @@ def actualizar_usuario_admin(id_usuario, datos, usuario_accion):
         datos_bd["password_hash"] = generate_password_hash(datos["password"])
         datos_bd["password_actualizada"] = True
 
-    actualizar_usuario(id_usuario, datos_bd)
+    try:
+        actualizar_usuario(id_usuario, datos_bd)
+    except Exception as error:
+        if es_error_duplicado_sql(error):
+            registrar_bloqueo_duplicado(
+                "usuarios",
+                usuario_accion,
+                MENSAJE_DUPLICADO_SQL,
+                id_entidad=id_usuario,
+                nombre_entidad=usuario_actual["usuario"],
+                valores={"email": datos_bd.get("email")},
+                modulo="USUARIOS",
+            )
+            return False, [MENSAJE_DUPLICADO_SQL]
+        raise
     rol_anterior = usuario_actual.get("id_rol")
     rol_nuevo = datos_bd["id_rol"]
     mensajes = ["Usuario actualizado correctamente."]
@@ -181,6 +279,17 @@ def actualizar_usuario_admin(id_usuario, datos, usuario_accion):
         usuario=usuario_accion,
         valor_anterior=str(usuario_actual),
         valor_nuevo=str({k: v for k, v in datos_bd.items() if k != "password_hash"}),
+    )
+    registrar_auditoria(
+        "EDITAR",
+        "usuarios",
+        id_entidad=id_usuario,
+        nombre_entidad=usuario_actual["usuario"],
+        descripcion=f"Usuario editado: {usuario_actual['usuario']}.",
+        valores_antes=usuario_actual,
+        valores_despues=datos_bd,
+        modulo="USUARIOS",
+        usuario=usuario_accion,
     )
 
     if str(rol_anterior) != str(rol_nuevo):
@@ -206,10 +315,28 @@ def actualizar_usuario_admin(id_usuario, datos, usuario_accion):
     return True, mensajes
 
 
-def cambiar_estado_usuario_admin(id_usuario, activo, usuario_accion):
+def cambiar_estado_usuario_admin(id_usuario, activo, usuario_accion, actor=None):
     usuario_actual = obtener_usuario_por_id(id_usuario)
     if not usuario_actual:
         return False, "Usuario no encontrado."
+
+    ok_seguridad, mensaje_seguridad = _validar_operacion_usuario(
+        actor,
+        usuario_actual,
+        "ACTIVAR" if activo else "DESACTIVAR",
+        nuevo_activo=1 if activo else 0,
+    )
+    if not ok_seguridad:
+        _auditar_bloqueo_rol(
+            "ACTIVAR" if activo else "DESACTIVAR",
+            id_usuario,
+            usuario_actual["usuario"],
+            mensaje_seguridad,
+            usuario_accion,
+            valores_antes=usuario_actual,
+            valores_despues={"activo": 1 if activo else 0},
+        )
+        return False, mensaje_seguridad
 
     cambiar_estado_usuario(id_usuario, 1 if activo else 0, usuario_accion)
     accion = "USUARIO_ACTIVADO" if activo else "USUARIO_DESACTIVADO"
@@ -221,15 +348,48 @@ def cambiar_estado_usuario_admin(id_usuario, activo, usuario_accion):
         valor_anterior=str(usuario_actual["activo"]),
         valor_nuevo=str(1 if activo else 0),
     )
+    registrar_auditoria(
+        "ACTIVAR" if activo else "DESACTIVAR",
+        "usuarios",
+        id_entidad=id_usuario,
+        nombre_entidad=usuario_actual["usuario"],
+        descripcion=f"Estado actualizado para usuario: {usuario_actual['usuario']}.",
+        valores_antes={"activo": usuario_actual["activo"]},
+        valores_despues={"activo": 1 if activo else 0},
+        modulo="USUARIOS",
+        usuario=usuario_accion,
+    )
     if activo:
         return True, "Usuario activado correctamente."
     return True, "Usuario deshabilitado correctamente."
 
 
-def eliminar_usuario_admin(id_usuario, usuario_accion, id_usuario_sesion=None):
+def eliminar_usuario_admin(id_usuario, usuario_accion, id_usuario_sesion=None, actor=None):
     usuario_actual = obtener_usuario_por_id(id_usuario)
     if not usuario_actual:
         return False, "Usuario no encontrado."
+
+    ok_seguridad, mensaje_seguridad = _validar_operacion_usuario(actor, usuario_actual, "BORRAR_OPERATIVO")
+    if not ok_seguridad:
+        registrar_log_sistema(
+            "USUARIO_BORRADO_BLOQUEADO_ROL",
+            "USUARIOS",
+            f"Intento bloqueado de borrar usuario protegido: {usuario_actual['usuario']}.",
+            usuario=usuario_accion,
+            nivel="WARNING",
+        )
+        registrar_auditoria(
+            "BLOQUEO_AUTO_ELIMINACION",
+            "usuarios",
+            id_entidad=id_usuario,
+            nombre_entidad=usuario_actual["usuario"],
+            descripcion=mensaje_seguridad,
+            valores_antes=usuario_actual,
+            resultado="BLOQUEADO",
+            modulo="USUARIOS",
+            usuario=usuario_accion,
+        )
+        return False, mensaje_seguridad
 
     if id_usuario_sesion and int(id_usuario_sesion) == int(id_usuario):
         registrar_log_sistema(
@@ -239,17 +399,18 @@ def eliminar_usuario_admin(id_usuario, usuario_accion, id_usuario_sesion=None):
             usuario=usuario_accion,
             nivel="WARNING",
         )
-        return False, "No puedes borrar el usuario con el que estas conectado."
-
-    if usuario_actual.get("codigo_rol") == "ADMIN" and contar_administradores_activos(excluir_id=id_usuario) == 0:
-        registrar_log_sistema(
-            "USUARIO_BORRADO_BLOQUEADO_ULTIMO_ADMIN",
-            "USUARIOS",
-            f"Intento bloqueado de borrar ultimo administrador activo: {usuario_actual['usuario']}.",
+        registrar_auditoria(
+            "BORRAR_OPERATIVO",
+            "usuarios",
+            id_entidad=id_usuario,
+            nombre_entidad=usuario_actual["usuario"],
+            descripcion="Intento bloqueado de borrar el usuario actualmente conectado.",
+            valores_antes=usuario_actual,
+            resultado="BLOQUEADO",
+            modulo="USUARIOS",
             usuario=usuario_accion,
-            nivel="WARNING",
         )
-        return False, "No puedes borrar el ultimo administrador activo."
+        return False, "No puedes borrar el usuario con el que estas conectado."
 
     asegurar_snapshots_usuario(usuario_actual["usuario"])
     marcar_usuario_eliminado_operativo(
@@ -264,4 +425,105 @@ def eliminar_usuario_admin(id_usuario, usuario_accion, id_usuario_sesion=None):
         usuario=usuario_accion,
         valor_anterior=str(usuario_actual),
     )
+    registrar_auditoria(
+        "BORRAR_OPERATIVO",
+        "usuarios",
+        id_entidad=id_usuario,
+        nombre_entidad=usuario_actual["usuario"],
+        descripcion=f"Usuario retirado de operacion conservando historial: {usuario_actual['usuario']}.",
+        valores_antes=usuario_actual,
+        valores_despues={"eliminado_operativo": 1, "activo": 0},
+        modulo="USUARIOS",
+        usuario=usuario_accion,
+    )
     return True, "Usuario borrado de la operacion y enviado a Papelera operativa. No podra iniciar sesion y el historial se conserva."
+
+
+def actor_es_super_admin(actor):
+    return _actor_es_super_admin(actor)
+
+
+def accion_usuario_permitida(actor, usuario_objetivo, accion):
+    ok, _mensaje = _validar_operacion_usuario(actor, usuario_objetivo, accion)
+    return ok
+
+
+def _validar_operacion_usuario(actor, usuario_objetivo, accion, nuevo_rol=None, nuevo_activo=None):
+    actor = actor or {}
+    codigo_rol_actual = usuario_objetivo.get("codigo_rol")
+    objetivo_es_super = codigo_rol_actual == ROL_SUPER_ADMIN
+    actor_super = _actor_es_super_admin(actor)
+    mismo_usuario = _mismo_usuario(actor, usuario_objetivo)
+
+    if objetivo_es_super and not actor_super:
+        return False, "Solo un SUPER_ADMIN puede modificar, desactivar o eliminar usuarios SUPER_ADMIN."
+
+    if nuevo_rol and _es_rol_super_admin(nuevo_rol) and not actor_super:
+        return False, "Solo un SUPER_ADMIN puede asignar el rol SUPER_ADMIN."
+
+    if objetivo_es_super and nuevo_rol and not _es_rol_super_admin(nuevo_rol) and not actor_super:
+        return False, "Solo un SUPER_ADMIN puede quitar el rol SUPER_ADMIN."
+
+    if accion in ("DESACTIVAR", "BORRAR_OPERATIVO") and mismo_usuario:
+        return False, "No puedes desactivar ni borrar el usuario con el que estas conectado."
+
+    if accion in ("DESACTIVAR", "BORRAR_OPERATIVO") and objetivo_es_super:
+        if contar_super_admin_activos(excluir_id=usuario_objetivo["id_usuario"]) == 0:
+            return False, "No puedes desactivar ni borrar el ultimo SUPER_ADMIN activo."
+
+    if accion == "EDITAR" and objetivo_es_super:
+        deja_de_ser_super = nuevo_rol and not _es_rol_super_admin(nuevo_rol)
+        queda_inactivo = nuevo_activo == 0
+        if mismo_usuario and queda_inactivo:
+            return False, "No puedes desactivar el usuario con el que estas conectado."
+        if (deja_de_ser_super or queda_inactivo) and contar_super_admin_activos(excluir_id=usuario_objetivo["id_usuario"]) == 0:
+            return False, "No puedes quitar o desactivar el ultimo SUPER_ADMIN activo."
+
+    if accion == "BORRAR_OPERATIVO" and codigo_rol_actual == ROL_ADMIN:
+        if contar_usuarios_capacidad_admin_activos(excluir_id=usuario_objetivo["id_usuario"]) == 0:
+            return False, "No puedes borrar el ultimo usuario con capacidad administrativa."
+
+    return True, ""
+
+
+def _actor_es_super_admin(actor):
+    roles = actor.get("roles") or []
+    permisos = actor.get("permisos") or []
+    return bool(actor.get("es_admin_env") or "*" in permisos or ROL_SUPER_ADMIN in roles or "SUPER_ADMIN_ENV" in roles)
+
+
+def _mismo_usuario(actor, usuario_objetivo):
+    id_actor = actor.get("id_usuario")
+    return id_actor is not None and str(id_actor) == str(usuario_objetivo.get("id_usuario"))
+
+
+def _es_rol_super_admin(rol):
+    return bool(rol and rol.get("codigo_rol") == ROL_SUPER_ADMIN)
+
+
+def _auditar_bloqueo_rol(accion, id_usuario, nombre_usuario, mensaje, usuario_accion, valores_antes=None, valores_despues=None):
+    registrar_auditoria(
+        _accion_bloqueo_usuario(mensaje, accion),
+        "usuarios",
+        id_entidad=id_usuario,
+        nombre_entidad=nombre_usuario,
+        descripcion=mensaje,
+        valores_antes=valores_antes,
+        valores_despues=valores_despues,
+        resultado="BLOQUEADO",
+        modulo="USUARIOS",
+        usuario=usuario_accion,
+    )
+
+
+def _accion_bloqueo_usuario(mensaje, accion_base):
+    texto = str(mensaje or "").lower()
+    if "super_admin" in texto and ("asignar" in texto or "quitar" in texto):
+        return "BLOQUEO_ESCALAMIENTO_PRIVILEGIOS"
+    if "super_admin" in texto and ("modificar" in texto or "editar" in texto or "desactivar" in texto or "eliminar" in texto):
+        return "BLOQUEO_MODIFICAR_SUPER_ADMIN"
+    if "ultimo super_admin" in texto or "ultimo usuario con capacidad administrativa" in texto:
+        return "BLOQUEO_ELIMINAR_ULTIMO_SUPER_ADMIN"
+    if "con el que estas conectado" in texto:
+        return "BLOQUEO_AUTO_ELIMINACION"
+    return accion_base

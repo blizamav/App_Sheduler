@@ -6,6 +6,7 @@ from app.repositorios.repositorio_configuracion_scheduler import (
     obtener_configuracion_activa,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
 
 
 def obtener_configuracion_scheduler(usuario=None):
@@ -29,13 +30,40 @@ def guardar_configuracion_scheduler(formulario, usuario):
             usuario=usuario,
             nivel="WARNING",
         )
+        registrar_auditoria(
+            "EDITAR_CONFIG_PROGRAMADOR",
+            "scheduler_config",
+            id_entidad=actual.get("id_configuracion"),
+            nombre_entidad=actual.get("nombre_worker_principal"),
+            descripcion="Error controlado al validar configuracion del scheduler.",
+            valores_antes=_snapshot_config(actual),
+            valores_despues={"errores": errores, "datos": datos},
+            resultado="ERROR",
+            modulo="SCHEDULER",
+            usuario=usuario,
+        )
         return False, errores, actual
 
     cambios = _calcular_cambios(actual, datos)
     if not cambios:
         return False, ["No hay cambios para guardar."], actual
 
-    actualizar_configuracion(actual["id_configuracion"], datos, usuario)
+    try:
+        actualizar_configuracion(actual["id_configuracion"], datos, usuario)
+    except Exception as error:
+        registrar_auditoria(
+            "EDITAR_CONFIG_PROGRAMADOR",
+            "scheduler_config",
+            id_entidad=actual["id_configuracion"],
+            nombre_entidad=actual.get("nombre_worker_principal"),
+            descripcion="Error controlado al actualizar configuracion del scheduler.",
+            valores_antes={c["campo"]: c["anterior"] for c in cambios},
+            valores_despues={"error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="SCHEDULER",
+            usuario=usuario,
+        )
+        raise
     nuevo = obtener_configuracion_scheduler(usuario)
     registrar_log_sistema(
         "SCHEDULER_CONFIG_ACTUALIZADA",
@@ -52,6 +80,17 @@ def guardar_configuracion_scheduler(formulario, usuario):
             f"{cambio['campo']}: {cambio['anterior']} -> {cambio['nuevo']}",
             usuario=usuario,
         )
+    registrar_auditoria(
+        "CONFIGURAR",
+        "configuracion_scheduler",
+        id_entidad=actual["id_configuracion"],
+        nombre_entidad=actual.get("nombre_worker_principal"),
+        descripcion="Configuracion operativa del scheduler actualizada.",
+        valores_antes={c["campo"]: c["anterior"] for c in cambios},
+        valores_despues={c["campo"]: c["nuevo"] for c in cambios},
+        modulo="SCHEDULER",
+        usuario=usuario,
+    )
     return True, ["Configuracion del scheduler actualizada correctamente."], nuevo
 
 
@@ -113,6 +152,17 @@ def _calcular_cambios(actual, datos):
         if anterior != nuevo:
             cambios.append({"campo": campo, "anterior": anterior, "nuevo": nuevo})
     return cambios
+
+
+def _snapshot_config(configuracion):
+    return {
+        "scheduler_activo": configuracion.get("scheduler_activo"),
+        "permitir_ejecucion_automatica": configuracion.get("permitir_ejecucion_automatica"),
+        "modo_mantenimiento": configuracion.get("modo_mantenimiento"),
+        "intervalo_revision_segundos": configuracion.get("intervalo_revision_segundos"),
+        "max_ejecuciones_concurrentes": configuracion.get("max_ejecuciones_concurrentes"),
+        "nombre_worker_principal": configuracion.get("nombre_worker_principal"),
+    }
 
 
 def _advertencias(configuracion):

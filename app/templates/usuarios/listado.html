@@ -76,7 +76,7 @@
                     <td>{{ item.email or "-" }}</td>
                     <td>
                         {% if item.nombre_rol or item.codigo_rol %}
-                        <span class="badge rol">{{ item.nombre_rol or item.codigo_rol|replace("_", " ")|title }}</span>
+                        <span class="badge rol {% if item.codigo_rol == 'SUPER_ADMIN' %}super-admin{% elif item.codigo_rol == 'ADMIN' %}admin{% endif %}">{{ item.nombre_rol or item.codigo_rol|replace("_", " ")|title }}</span>
                         {% else %}
                         <span class="badge inactivo">Sin rol</span>
                         {% endif %}
@@ -91,7 +91,12 @@
                     <td>{{ item.fecha_creacion }}</td>
                     <td>
                         <div class="acciones-tabla">
+                            {% if item.puede_editar %}
                             <a class="btn secundario compacto" href="{{ url_for('usuarios.editar', id_usuario=item.id_usuario) }}">Editar</a>
+                            {% else %}
+                            <span class="badge inactivo">Protegido</span>
+                            {% endif %}
+                            {% if item.puede_cambiar_estado %}
                             <form method="post" action="{{ url_for('usuarios.estado', id_usuario=item.id_usuario) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
                                 <button
@@ -106,6 +111,8 @@
                                     {{ "Desactivar" if item.activo else "Activar" }}
                                 </button>
                             </form>
+                            {% endif %}
+                            {% if item.puede_eliminar %}
                             <form method="post" action="{{ url_for('usuarios.eliminar', id_usuario=item.id_usuario) }}">
                                 <button
                                     class="btn secundario compacto requiere-confirmacion"
@@ -119,6 +126,7 @@
                                     Borrar
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

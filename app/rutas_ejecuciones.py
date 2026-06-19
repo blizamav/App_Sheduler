@@ -9,6 +9,7 @@ from app.servicios.servicio_ejecuciones import (
     obtener_estado_log,
 )
 from app.servicios.servicio_control_ejecuciones import verificar_ejecucion
+from app.servicios.servicio_auditoria import registrar_auditoria
 
 
 bp_ejecuciones = Blueprint("ejecuciones", __name__)
@@ -28,7 +29,17 @@ def listado():
 def ejecutar_tarea(id_tarea):
     try:
         ok, mensaje, id_ejecucion = iniciar_ejecucion_manual(id_tarea, session.get("usuario"))
-    except Exception:
+    except Exception as error:
+        registrar_auditoria(
+            "EJECUTAR_MANUAL",
+            "ejecuciones",
+            id_entidad=id_tarea,
+            descripcion="Error controlado al iniciar ejecucion manual.",
+            valores_despues={"error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="EJECUCIONES",
+            usuario=session.get("usuario"),
+        )
         ok, mensaje, id_ejecucion = False, "No fue posible iniciar la ejecucion manual.", None
     flash(mensaje, "success" if ok else "error")
     if ok:
@@ -60,7 +71,17 @@ def log(id_ejecucion):
 def detener(id_ejecucion):
     try:
         ok, mensaje = detener_ejecucion_manual(id_ejecucion, session.get("usuario"))
-    except Exception:
+    except Exception as error:
+        registrar_auditoria(
+            "DETENER_EJECUCION",
+            "ejecuciones",
+            id_entidad=id_ejecucion,
+            descripcion="Error controlado al detener ejecucion.",
+            valores_despues={"error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="EJECUCIONES",
+            usuario=session.get("usuario"),
+        )
         ok, mensaje = False, "No fue posible detener la ejecucion."
     flash(mensaje, "success" if ok else "error")
     return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))
@@ -71,7 +92,17 @@ def detener(id_ejecucion):
 def verificar(id_ejecucion):
     try:
         resultado = verificar_ejecucion(id_ejecucion, usuario=session.get("usuario"))
-    except Exception:
+    except Exception as error:
+        registrar_auditoria(
+            "VERIFICAR_HUERFANA",
+            "ejecuciones",
+            id_entidad=id_ejecucion,
+            descripcion="Error controlado al verificar ejecucion huerfana.",
+            valores_despues={"error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="EJECUCIONES",
+            usuario=session.get("usuario"),
+        )
         resultado = {"ok": False, "mensaje": "No fue posible verificar la ejecucion."}
     flash(resultado.get("mensaje"), "success" if resultado.get("ok") else "error")
     return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))

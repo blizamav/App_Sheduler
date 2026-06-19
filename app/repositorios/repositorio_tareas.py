@@ -193,6 +193,38 @@ def existe_tarea_duplicada(nombre_tarea, id_cliente, id_categoria, id_tipo, excl
         return cursor.fetchone()[0] > 0
 
 
+def buscar_duplicado_tarea(nombre_tarea, id_cliente, id_categoria, id_tipo, excluir_id=None):
+    consulta = """
+        SELECT TOP 1 id_tarea AS id,
+               nombre_tarea AS nombre,
+               activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM dbo.tareas
+        WHERE UPPER(LTRIM(RTRIM(nombre_tarea))) = UPPER(LTRIM(RTRIM(?)))
+          AND id_cliente = ?
+          AND id_categoria = ?
+          AND id_tipo = ?
+    """
+    parametros = [nombre_tarea, id_cliente, id_categoria, id_tipo]
+    if excluir_id:
+        consulta += " AND id_tarea <> ?"
+        parametros.append(excluir_id)
+    consulta += """
+        ORDER BY CASE
+            WHEN ISNULL(eliminado_operativo, 0) = 0 AND activo = 1 THEN 0
+            WHEN ISNULL(eliminado_operativo, 0) = 0 THEN 1
+            ELSE 2
+        END,
+        id_tarea DESC
+    """
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
+
+
 def crear_tarea(datos_tarea, datos_programacion):
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()

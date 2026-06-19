@@ -4,6 +4,30 @@
 
 Estilo moderno, sobrio, corporativo y futurista moderado. La interfaz debe sentirse como una herramienta interna de control TI: clara, rapida de escanear, con jerarquia visual y sin efectos que reduzcan legibilidad.
 
+## Mensajes de duplicados
+
+Desde Fase 12A.2 los formularios de usuarios, mantenedores, tareas y scripts deben mostrar mensajes claros cuando un duplicado exista fuera o dentro de Papelera Operativa.
+
+Mensajes esperados:
+
+* Registro activo: informar que ya existe un registro activo con esos datos.
+* Registro inactivo: sugerir activar o editar el registro existente.
+* Registro en Papelera Operativa: sugerir restaurar o eliminar permanentemente antes de crear otro.
+* Error de integridad SQL por duplicado: mostrar mensaje generico seguro, sin `pyodbc`, nombre de constraint ni traceback.
+
+La UI no debe abrir `alert()`, `window.confirm()` ni `prompt()` para resolver duplicados. La accion de restaurar o eliminar permanentemente sigue perteneciendo a `/papelera`.
+
+## Auditoria
+
+Desde Fase 12B, `/auditoria` debe mostrar con claridad:
+
+* Resultado `OK`, `ERROR` o `BLOQUEADO` mediante badge.
+* Accion normalizada en mayusculas y con guion bajo.
+* Entidad, modulo, usuario, ruta y metodo HTTP cuando existan.
+* Valores antes/despues formateados sin romper layout.
+
+No se implementan exportaciones en Fase 12B.
+
 ## Paleta de colores
 
 Variables CSS principales definidas en `app/static/css/estilos.css`:
@@ -80,13 +104,15 @@ No se modificaron rutas, permisos, reglas de negocio, consultas SQL, scheduler, 
 
 ## Estado visual actual
 
-La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, historial, feriados, sincronizacion, configuracion del programador, panel operativo y eventos del programador.
+La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, historial, feriados, sincronizacion, configuracion del programador, panel operativo, eventos del programador y auditoria.
 
 Desde Fase 11I, el historial de ejecuciones y la consola muestran un badge discreto `Snapshot historico` cuando la ejecucion ya no tiene maestro operativo asociado por eliminacion permanente.
 
+Desde Fase 12A.1, el detalle de auditoria muestra bloques separados para accion, usuario, entidad, descripcion y valores antes/despues. Los valores largos o JSON usan bloques con scroll y corte de palabra controlado para no romper el layout.
+
 Pendientes visuales asociados al roadmap:
 
-* Fase 12: modulo Auditoria con filtros, detalle y trazabilidad.
+* Fase 12B: ampliar filtros, cobertura y trazabilidad de Auditoria.
 * Fase 14: exportaciones, notificaciones, reportes y dashboard avanzado.
 
 ## Modal de confirmacion

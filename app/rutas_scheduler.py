@@ -5,6 +5,7 @@ from app.servicios.servicio_configuracion_scheduler import (
     guardar_configuracion_scheduler,
     obtener_configuracion_scheduler,
 )
+from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_panel_scheduler import obtener_panel_scheduler
 from app.servicios.servicio_scheduler_eventos import listar_historial_eventos
@@ -58,9 +59,30 @@ def configuracion():
                 usuario=session.get("usuario"),
                 nivel="WARNING",
             )
+            registrar_auditoria(
+                "BLOQUEO_PERMISO",
+                "scheduler_config",
+                descripcion="Intento bloqueado de editar configuracion del scheduler sin permiso.",
+                valores_despues={"permiso_requerido": "SCHEDULER_CONFIG_EDITAR"},
+                resultado="BLOQUEADO",
+                modulo="SEGURIDAD",
+                usuario=session.get("usuario"),
+            )
             flash("No tienes permisos para editar la configuracion del scheduler.", "error")
         else:
-            ok, mensajes, _ = guardar_configuracion_scheduler(request.form, session.get("usuario"))
+            try:
+                ok, mensajes, _ = guardar_configuracion_scheduler(request.form, session.get("usuario"))
+            except Exception as error:
+                registrar_auditoria(
+                    "EDITAR_CONFIG_PROGRAMADOR",
+                    "scheduler_config",
+                    descripcion="Error controlado al guardar configuracion del scheduler.",
+                    valores_despues={"error": error.__class__.__name__},
+                    resultado="ERROR",
+                    modulo="SCHEDULER",
+                    usuario=session.get("usuario"),
+                )
+                ok, mensajes = False, ["No fue posible guardar la configuracion del scheduler."]
             for mensaje in mensajes:
                 flash(mensaje, "success" if ok else "info" if mensaje == "No hay cambios para guardar." else "error")
 

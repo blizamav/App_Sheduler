@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H.
-* Estado actual: Fase 11I implementada con revision integral post-borrado y uso robusto de snapshots historicos; roadmap formal reorganizado en fases 11 a 14.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
+* Estado actual: Fase 12B.1A implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria y cierre garantizado de ejecucion manual; roadmap formal reorganizado en fases 11 a 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 11I - Revision integral post-borrado.
-* Ultima actualizacion: 2026-06-18
+* Fase actual: Fase 12B.1A - Diagnostico y cierre garantizado de ejecucion manual.
+* Ultima actualizacion: 2026-06-19
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -19,7 +19,7 @@
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
 * Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
-* Auditoria: Pendiente para Fase 12.
+* Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
 * Docker/despliegue: Pendiente para Fase 13.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I y disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`.
-* Modulos pendientes: Fase 12 Auditoria, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B y cierre garantizado de ejecucion manual Fase 12B.1A.
+* Modulos pendientes: Fase 12B/12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,66 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-19 - Fase 12B.1A / Diagnostico y cierre garantizado de ejecucion manual
+
+* Archivos modificados: `app/servicios/servicio_ejecuciones.py`, `app/servicios/servicio_procesos.py`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `log_codex.md`.
+* Diagnostico obligatorio:
+  * `subprocess.Popen` se lanza en `app/servicios/servicio_procesos.py`, funcion `iniciar_proceso_python()`.
+  * La ejecucion manual crea un `threading.Thread` desde `iniciar_ejecucion_manual()` y ejecuta `_ejecutar_en_segundo_plano()`.
+  * El hilo usa `app.app_context()` y no depende del objeto request despues de recibir `app`, `id_ejecucion`, `contexto`, ruta de log y usuario.
+  * `pid_proceso` se guarda con `actualizar_pid_ejecucion()` despues de iniciar el proceso.
+  * stdout/stderr se lee desde `proceso.stdout`; stderr va combinado a stdout por `stderr=subprocess.STDOUT`.
+  * `process.wait()` se ejecuta despues de consumir stdout.
+  * El estado final se actualiza con `finalizar_ejecucion()` y `actualizar_log_tarea_final()`.
+  * Si el script termina rapido, el iterador de stdout termina y luego `wait()` devuelve returncode.
+  * Si la lectura de stdout falla, ahora se cierra como `ERROR` por fallo controlado del monitor.
+  * Si falla la escritura de logs o una operacion del monitor, ahora existe cierre defensivo para dejar `ERROR` si sigue `EN_EJECUCION`.
+  * Antes, una excepcion o finalizacion anomala del monitor podia dejar solo `olvidar_proceso()` en `finally`, sin cierre garantizado.
+  * Con Flask debug/reloader, un hilo `daemon=True` puede ser mas vulnerable a cierre abrupto del proceso; se cambio el hilo manual a `daemon=False`.
+  * Faltaba un bloque `finally` que verificara si la ejecucion manual seguia `EN_EJECUCION`.
+* Causa probable: combinacion de hilo daemon y ausencia de cierre defensivo final; si el monitor terminaba/fallaba antes de ejecutar `finalizar_ejecucion()`, el proceso real podia morir y la fila quedar `EN_EJECUCION` hasta usar `Verificar`.
+* Correccion: El hilo manual ya no es daemon; si el proceso finaliza con returncode `0`, cierra `EXITOSA`; con returncode distinto de `0`, cierra `ERROR`; si falla el monitor, intenta terminar el proceso hijo y cierra `ERROR` con mensaje controlado; en `finally`, si sigue `EN_EJECUCION`, cierra `ERROR`.
+* Verificacion huerfana: Se mantiene como recuperacion excepcional; no debe ser necesaria para ejecuciones manuales normales.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; simulacion en memoria de cierre manual exitoso `EXITOSA`, cierre con returncode distinto de cero `ERROR` y fallo de monitor `ERROR`; busqueda sin coincidencias de `alert()`, `window.confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`; `git diff --check`.
+* Reglas: No se ejecuto SQL, no se crearon migraciones, no se modifico `.env`, no se toco `scheduler_worker.py`, no se cambio el programador automatico, no se borro historial y no se avanzo a Fase 12C ni Fase 13.
+
+### 2026-06-19 - Fase 12B / Cobertura ampliada y consolidacion de Auditoria
+
+* Archivos modificados: `app/servicios/servicio_auditoria.py`, `app/seguridad.py`, `app/servicios/servicio_ejecuciones.py`, `app/rutas_ejecuciones.py`, `app/servicios/servicio_configuracion_scheduler.py`, `app/rutas_scheduler.py`, `app/servicios/servicio_sincronizacion_feriados.py`, `app/servicios/servicio_scripts.py`, `app/servicios/servicio_usuarios.py`, `app/servicios/servicio_mantenedores.py`, `app/servicios/servicio_tareas.py`, `app/servicios/servicio_papelera.py`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/FLUJOS.md`, `docs/SEGURIDAD.md`, `docs/BASE_DATOS.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Que se hizo: Se consolido la auditoria de acciones humanas criticas con normalizacion central de acciones, entidades, resultados y modulos.
+* Acciones nuevas/cubiertas: bloqueos por permisos, bloqueos de ejecucion manual no ejecutable, bloqueos de detencion, restauracion bloqueada en Papelera, bloqueo por maximo de versiones, bloqueos de version activa/unica, previsualizacion de sincronizacion de feriados y errores controlados de configuracion/ejecuciones/scripts.
+* Sanitizacion: Se amplio la lista de claves sensibles para ocultar passwords, tokens, secrets, keys, api keys, credentials, cadenas de conexion y valores relacionados; `.env` por script no guarda contenido ni valores.
+* Resultado esperado: Acciones exitosas quedan `OK`, bloqueos quedan `BLOQUEADO` y errores controlados quedan `ERROR`.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; prueba ligera de sanitizacion y normalizacion de acciones; render simulado de `auditoria/listado.html` y `auditoria/detalle.html`; busqueda sin coincidencias de `alert()`, `window.confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`; `git diff --check`.
+* Reglas: No se ejecuto SQL, no se crearon migraciones, no se modifico `.env`, no se borro historial, no se agrego `DELETE CASCADE`, no se implementaron exportaciones/notificaciones/reportes y no se avanzo a Fase 12C ni Fase 13.
+
+### 2026-06-18 - Fase 12A.2 / Validacion transversal de duplicados con Papelera Operativa
+
+* Archivos creados: `app/servicios/servicio_duplicados.py`.
+* Archivos modificados: `app/repositorios/repositorio_usuarios.py`, `app/repositorios/repositorio_mantenedores.py`, `app/repositorios/repositorio_tareas.py`, `app/repositorios/repositorio_scripts.py`, `app/servicios/servicio_usuarios.py`, `app/servicios/servicio_mantenedores.py`, `app/servicios/servicio_tareas.py`, `app/servicios/servicio_scripts.py`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `docs/UI_UX.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se agrego validacion transversal para detectar duplicados activos, inactivos o en Papelera antes de guardar usuarios, mantenedores, tareas, scripts y versiones.
+* Detalle tecnico: Usuarios valida `usuario` y `email`; mantenedores valida `nombre_normalizado`; tareas valida `nombre_tarea + cliente + categoria + tipo`; scripts valida `id_tarea`; versiones valida `id_script + numero_version` y calcula `v1` a `v3` incluyendo Papelera.
+* Auditoria: Los bloqueos registran `BLOQUEO_DUPLICADO` con resultado `BLOQUEADO` cuando auditoria esta disponible.
+* UX: Los errores de constraint unica se traducen a mensaje seguro sin `pyodbc`, nombre de constraint ni traceback.
+* Pruebas realizadas: `python -m compileall app`; prueba ligera de clasificacion/mensaje de duplicados; `git diff --check`; busqueda sin coincidencias de `alert()`, `window.confirm()`, `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`.
+* Reglas: No se ejecuto SQL, no se crearon migraciones, no se modifico `.env`, no se borro historial, no se agrego `DELETE CASCADE`, no se cambio Papelera ni Scheduler y no se avanzo a Fase 12B ni Fase 13.
+
+### 2026-06-18 - Fase 12A.1 / Correccion visual Auditoria y roles
+
+* Archivos modificados: `app/repositorios/repositorio_auditoria.py`, `app/servicios/servicio_auditoria.py`, `app/templates/auditoria/detalle.html`, `app/static/css/estilos.css`, `app/rutas_usuarios.py`, `app/repositorios/repositorio_usuarios.py`, `app/servicios/servicio_usuarios.py`, `app/templates/usuarios/formulario.html`, `app/templates/usuarios/listado.html`, `docs/SEGURIDAD.md`, `docs/MODULOS.md`, `docs/UI_UX.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: Se redisenio el detalle de auditoria con bloques legibles y valores antes/despues formateados; se reforzo backend contra escalamiento a `SUPER_ADMIN`.
+* Reglas de roles: Solo `SUPER_ADMIN` puede asignar/quitar `SUPER_ADMIN`; `ADMIN` no puede modificar, desactivar ni borrar `SUPER_ADMIN`; no se puede desactivar/borrar el usuario conectado ni el ultimo `SUPER_ADMIN` activo; `SUPER_ADMIN` puede administrar `ADMIN` si queda capacidad administrativa.
+* Usuario `.env`: Se mantiene como bootstrap tecnico fuera de BD, sin forzar su creacion ni administrarlo desde `/usuarios`.
+* Reglas: No se ejecuto SQL, no se modifico `.env`, no se cambio Papelera ni Scheduler, no se borro historial y no se avanzo a Fase 12B ni Fase 13.
+
+### 2026-06-18 - Fase 12A / Auditoria base
+
+* Archivos creados: `app/repositorios/repositorio_auditoria.py`, `app/servicios/servicio_auditoria.py`, `app/rutas_auditoria.py`, `app/templates/auditoria/listado.html`, `app/templates/auditoria/detalle.html`, `database/migrations/018_crear_o_ajustar_auditoria_cambios.sql`, `database/seeds/012_permisos_auditoria.sql`.
+* Archivos modificados: `app/__init__.py`, `app/templates/base.html`, servicios de papelera, usuarios, mantenedores, tareas, scripts, ejecuciones, control de ejecuciones, scheduler, calendario y sincronizacion de feriados, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/BASE_DATOS.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/SEGURIDAD.md`, `docs/UI_UX.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Que se hizo: Se implemento modulo `/auditoria` con filtros, paginacion, detalle, permisos y servicio central `registrar_auditoria(...)`.
+* Cobertura inicial: papelera, eliminacion permanente, borrados operativos, usuarios, mantenedores, tareas, scripts/versiones/env, ejecucion manual, detencion, verificacion huerfana, scheduler y feriados.
+* Reglas: No se ejecuto SQL, no se modifico `.env`, no se borro historial, no se agrego `DELETE CASCADE`, no se avanzo a Fase 12B ni Fase 13.
 
 ### 2026-06-18 - Fase 11I / Revision integral post-borrado y desacople historico
 
@@ -91,7 +151,7 @@
 * Sidebar: Se reorganizo por grupos funcionales: Administracion, Operacion, Programador y Control y trazabilidad. Papelera operativa queda dentro de Administracion.
 * Entidades soportadas: usuarios, clientes, categorias, tipos, tareas, scripts y scripts_versiones.
 * Borrado normal: Usuarios, mantenedores, tareas, scripts y versiones se retiran operativamente; la eliminacion permanente queda solo en Papelera.
-* Seguridad: No se borran ejecuciones, logs, eventos del programador, snapshots, auditoria futura ni archivos historicos.
+* Seguridad: No se borran ejecuciones, logs, eventos del programador, snapshots, `auditoria_cambios` ni archivos historicos.
 * Permisos: Se creo seed manual `database/seeds/011_permisos_papelera.sql` para `PAPELERA_VER`, `PAPELERA_RESTAURAR` y `PAPELERA_ELIMINAR_PERMANENTE`.
 * Pruebas realizadas: `python -m compileall app scheduler_worker.py`; verificacion de rutas Flask de papelera; render de `papelera/listado.html` con datos simulados; busqueda de `alert()`, `window.confirm()`, `confirm()` y `prompt()` en app; `git diff --check`.
 * Reglas: No se ejecuto SQL, no se modifico `.env`, no se implemento Auditoria, no se avanzo a Fase 11H ni a Fase 12A.

@@ -44,6 +44,35 @@ def obtener_script_por_tarea(id_tarea):
         return _fila_a_dict(cursor, fila) if fila else None
 
 
+def buscar_duplicado_script_tarea(id_tarea, excluir_id=None):
+    consulta = """
+        SELECT TOP 1 id_script AS id,
+               nombre_script AS nombre,
+               activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM dbo.scripts
+        WHERE id_tarea = ?
+    """
+    parametros = [id_tarea]
+    if excluir_id:
+        consulta += " AND id_script <> ?"
+        parametros.append(excluir_id)
+    consulta += """
+        ORDER BY CASE
+            WHEN ISNULL(eliminado_operativo, 0) = 0 AND activo = 1 THEN 0
+            WHEN ISNULL(eliminado_operativo, 0) = 0 THEN 1
+            ELSE 2
+        END,
+        id_script DESC
+    """
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
+
+
 def obtener_script(id_script):
     consulta = """
         SELECT id_script, id_tarea, nombre_script, descripcion, id_version_activa, activo
@@ -72,6 +101,53 @@ def listar_versiones(id_script):
         cursor = conexion.cursor()
         cursor.execute(consulta, id_script)
         return [_fila_a_dict(cursor, fila) for fila in cursor.fetchall()]
+
+
+def listar_versiones_incluyendo_papelera(id_script):
+    consulta = """
+        SELECT id_version, id_script, numero_version, nombre_archivo, ruta_fisica, ruta_relativa,
+               hash_archivo, estado_version, es_activa, usuario_carga, fecha_carga, observacion,
+               requiere_env, ruta_env_fisica, ruta_env_relativa, fecha_creacion, fecha_actualizacion,
+               CASE WHEN estado_version IN ('ACTIVA', 'DISPONIBLE') THEN 1 ELSE 0 END AS activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM dbo.scripts_versiones
+        WHERE id_script = ?
+        ORDER BY numero_version
+    """
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, id_script)
+        return [_fila_a_dict(cursor, fila) for fila in cursor.fetchall()]
+
+
+def buscar_duplicado_version_numero(id_script, numero_version, excluir_id=None):
+    consulta = """
+        SELECT TOP 1 id_version AS id,
+               CONCAT('v', numero_version) AS nombre,
+               CASE WHEN estado_version IN ('ACTIVA', 'DISPONIBLE') THEN 1 ELSE 0 END AS activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM dbo.scripts_versiones
+        WHERE id_script = ?
+          AND numero_version = ?
+    """
+    parametros = [id_script, numero_version]
+    if excluir_id:
+        consulta += " AND id_version <> ?"
+        parametros.append(excluir_id)
+    consulta += """
+        ORDER BY CASE
+            WHEN ISNULL(eliminado_operativo, 0) = 0 AND estado_version IN ('ACTIVA', 'DISPONIBLE') THEN 0
+            WHEN ISNULL(eliminado_operativo, 0) = 0 THEN 1
+            ELSE 2
+        END,
+        id_version DESC
+    """
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
 
 
 def obtener_version(id_version):

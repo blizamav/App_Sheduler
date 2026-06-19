@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import abort, flash, redirect, session, url_for
+from flask import abort, flash, redirect, request, session, url_for
 
 
 def login_requerido(vista):
@@ -56,6 +56,7 @@ def permiso_requerido(codigo_permiso):
                 return redirect(url_for("principal.login"))
 
             if not usuario_tiene_permiso(codigo_permiso):
+                _auditar_permiso_bloqueado(codigo_permiso)
                 flash("No tienes permisos suficientes para acceder a esta seccion.", "error")
                 return abort(403)
 
@@ -64,3 +65,25 @@ def permiso_requerido(codigo_permiso):
         return wrapper
 
     return decorador
+
+
+def _auditar_permiso_bloqueado(codigo_permiso):
+    try:
+        from app.servicios.servicio_auditoria import registrar_auditoria
+
+        registrar_auditoria(
+            "BLOQUEO_PERMISO",
+            "seguridad",
+            nombre_entidad=codigo_permiso,
+            descripcion="Acceso bloqueado por permiso insuficiente.",
+            valores_despues={
+                "permiso_requerido": codigo_permiso,
+                "ruta": request.path,
+                "metodo": request.method,
+            },
+            resultado="BLOQUEADO",
+            modulo="SEGURIDAD",
+            usuario=session.get("usuario"),
+        )
+    except Exception:
+        pass

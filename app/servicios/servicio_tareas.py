@@ -4,16 +4,23 @@ from datetime import datetime
 from app.repositorios.repositorio_tareas import (
     actualizar_tarea,
     asegurar_snapshots_tarea,
+    buscar_duplicado_tarea,
     cambiar_estado_tarea,
     crear_tarea,
     existe_ejecucion_en_curso_tarea,
-    existe_tarea_duplicada,
     listar_catalogo,
     listar_tareas,
     marcar_tarea_eliminada_operativa,
     obtener_tarea,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_auditoria import registrar_auditoria
+from app.servicios.servicio_duplicados import (
+    MENSAJE_DUPLICADO_SQL,
+    es_error_duplicado_sql,
+    registrar_bloqueo_duplicado,
+    validar_sin_duplicado,
+)
 
 
 TIPOS_PROGRAMACION = ("MANUAL", "DIARIA", "SEMANAL", "MENSUAL", "FECHA_ESPECIFICA")
@@ -47,7 +54,7 @@ def obtener_tarea_admin(id_tarea):
     return tarea
 
 
-def validar_tarea(datos, id_tarea=None):
+def validar_tarea(datos, id_tarea=None, usuario_accion=None):
     errores = []
     nombre = datos.get("nombre_tarea", "").strip()
     id_cliente = datos.get("id_cliente")
@@ -64,15 +71,27 @@ def validar_tarea(datos, id_tarea=None):
         errores.append("Debes seleccionar un tipo.")
 
     if nombre and id_cliente and id_categoria and id_tipo:
-        if existe_tarea_duplicada(nombre, id_cliente, id_categoria, id_tipo, id_tarea):
-            errores.append("Ya existe una tarea con el mismo nombre, cliente, categoria y tipo.")
+        mensaje = validar_sin_duplicado(
+            buscar_duplicado_tarea(nombre, id_cliente, id_categoria, id_tipo, id_tarea),
+            "tareas",
+            usuario_accion,
+            valores={
+                "nombre_tarea": nombre,
+                "id_cliente": id_cliente,
+                "id_categoria": id_categoria,
+                "id_tipo": id_tipo,
+            },
+            modulo="TAREAS",
+        )
+        if mensaje:
+            errores.append(mensaje)
 
     errores.extend(_validar_programacion(datos))
     return errores
 
 
 def crear_tarea_admin(datos, usuario_accion):
-    errores = validar_tarea(datos)
+    errores = validar_tarea(datos, usuario_accion=usuario_accion)
     if errores:
         registrar_log_sistema(
             "TAREA_VALIDACION_ERROR",
@@ -85,9 +104,37 @@ def crear_tarea_admin(datos, usuario_accion):
         return False, errores, None
 
     datos_tarea, datos_programacion = _preparar_datos(datos, usuario_accion)
-    id_tarea = crear_tarea(datos_tarea, datos_programacion)
+    try:
+        id_tarea = crear_tarea(datos_tarea, datos_programacion)
+    except Exception as error:
+        if es_error_duplicado_sql(error):
+            registrar_bloqueo_duplicado(
+                "tareas",
+                usuario_accion,
+                MENSAJE_DUPLICADO_SQL,
+                nombre_entidad=datos_tarea["nombre_tarea"],
+                valores={
+                    "nombre_tarea": datos_tarea["nombre_tarea"],
+                    "id_cliente": datos_tarea["id_cliente"],
+                    "id_categoria": datos_tarea["id_categoria"],
+                    "id_tipo": datos_tarea["id_tipo"],
+                },
+                modulo="TAREAS",
+            )
+            return False, [MENSAJE_DUPLICADO_SQL], None
+        raise
     registrar_log_sistema("TAREA_CREADA", "TAREAS", f"Tarea creada: {datos_tarea['nombre_tarea']}.", usuario=usuario_accion)
     registrar_log_sistema("PROGRAMACION_CREADA", "TAREAS", f"Programacion creada para tarea: {datos_tarea['nombre_tarea']}.", usuario=usuario_accion)
+    registrar_auditoria(
+        "CREAR",
+        "tareas",
+        id_entidad=id_tarea,
+        nombre_entidad=datos_tarea["nombre_tarea"],
+        descripcion=f"Tarea creada: {datos_tarea['nombre_tarea']}.",
+        valores_despues={"tarea": datos_tarea, "programacion": datos_programacion},
+        modulo="TAREAS",
+        usuario=usuario_accion,
+    )
     return True, ["Tarea creada correctamente."], id_tarea
 
 
@@ -96,7 +143,7 @@ def actualizar_tarea_admin(id_tarea, datos, usuario_accion):
     if not actual:
         return False, ["Tarea no encontrada."]
 
-    errores = validar_tarea(datos, id_tarea)
+    errores = validar_tarea(datos, id_tarea, usuario_accion)
     if errores:
         registrar_log_sistema(
             "TAREA_VALIDACION_ERROR",
@@ -112,9 +159,39 @@ def actualizar_tarea_admin(id_tarea, datos, usuario_accion):
     if not _hay_cambios_tarea(actual, datos_tarea, datos_programacion):
         return False, ["No hay cambios para guardar."]
 
-    actualizar_tarea(id_tarea, datos_tarea, datos_programacion)
+    try:
+        actualizar_tarea(id_tarea, datos_tarea, datos_programacion)
+    except Exception as error:
+        if es_error_duplicado_sql(error):
+            registrar_bloqueo_duplicado(
+                "tareas",
+                usuario_accion,
+                MENSAJE_DUPLICADO_SQL,
+                id_entidad=id_tarea,
+                nombre_entidad=actual["nombre_tarea"],
+                valores={
+                    "nombre_tarea": datos_tarea["nombre_tarea"],
+                    "id_cliente": datos_tarea["id_cliente"],
+                    "id_categoria": datos_tarea["id_categoria"],
+                    "id_tipo": datos_tarea["id_tipo"],
+                },
+                modulo="TAREAS",
+            )
+            return False, [MENSAJE_DUPLICADO_SQL]
+        raise
     registrar_log_sistema("TAREA_EDITADA", "TAREAS", f"Tarea editada: {datos_tarea['nombre_tarea']}.", usuario=usuario_accion, valor_anterior=str(actual))
     registrar_log_sistema("PROGRAMACION_EDITADA", "TAREAS", f"Programacion editada para tarea: {datos_tarea['nombre_tarea']}.", usuario=usuario_accion)
+    registrar_auditoria(
+        "EDITAR",
+        "tareas",
+        id_entidad=id_tarea,
+        nombre_entidad=datos_tarea["nombre_tarea"],
+        descripcion=f"Tarea editada: {datos_tarea['nombre_tarea']}.",
+        valores_antes=actual,
+        valores_despues={"tarea": datos_tarea, "programacion": datos_programacion},
+        modulo="TAREAS",
+        usuario=usuario_accion,
+    )
     return True, ["Tarea actualizada correctamente."]
 
 
@@ -125,6 +202,17 @@ def cambiar_estado_tarea_admin(id_tarea, activo, usuario_accion):
     cambiar_estado_tarea(id_tarea, activo, usuario_accion)
     accion = "TAREA_ACTIVADA" if activo else "TAREA_DESACTIVADA"
     registrar_log_sistema(accion, "TAREAS", f"Estado actualizado para tarea: {tarea['nombre_tarea']}.", usuario=usuario_accion)
+    registrar_auditoria(
+        "ACTIVAR" if activo else "DESACTIVAR",
+        "tareas",
+        id_entidad=id_tarea,
+        nombre_entidad=tarea["nombre_tarea"],
+        descripcion=f"Estado actualizado para tarea: {tarea['nombre_tarea']}.",
+        valores_antes={"activo": tarea.get("activo"), "estado_tarea": tarea.get("estado_tarea")},
+        valores_despues={"activo": 1 if activo else 0, "estado_tarea": "ACTIVA" if activo else "INACTIVA"},
+        modulo="TAREAS",
+        usuario=usuario_accion,
+    )
     return True, "Tarea activada correctamente." if activo else "Tarea desactivada correctamente."
 
 
@@ -143,6 +231,17 @@ def eliminar_tarea_admin(id_tarea, usuario_accion):
             valor_anterior=str({"id_tarea": id_tarea}),
             nivel="WARNING",
         )
+        registrar_auditoria(
+            "BLOQUEO_ELIMINAR_TAREA_EN_EJECUCION",
+            "tareas",
+            id_entidad=id_tarea,
+            nombre_entidad=tarea["nombre_tarea"],
+            descripcion="Intento bloqueado de borrar tarea con ejecucion en curso.",
+            valores_antes={"id_tarea": id_tarea},
+            resultado="BLOQUEADO",
+            modulo="TAREAS",
+            usuario=usuario_accion,
+        )
         return False, mensaje
 
     asegurar_snapshots_tarea(id_tarea)
@@ -157,6 +256,17 @@ def eliminar_tarea_admin(id_tarea, usuario_accion):
         f"Tarea retirada de operacion conservando historial: {tarea['nombre_tarea']}.",
         usuario=usuario_accion,
         valor_anterior=str({"id_tarea": id_tarea}),
+    )
+    registrar_auditoria(
+        "BORRAR_OPERATIVO",
+        "tareas",
+        id_entidad=id_tarea,
+        nombre_entidad=tarea["nombre_tarea"],
+        descripcion=f"Tarea retirada de operacion conservando historial: {tarea['nombre_tarea']}.",
+        valores_antes=tarea,
+        valores_despues={"eliminado_operativo": 1, "activo": 0},
+        modulo="TAREAS",
+        usuario=usuario_accion,
     )
     return True, "Tarea borrada de la operacion y enviada a Papelera operativa. El historial de ejecuciones se conserva."
 

@@ -109,6 +109,42 @@ def existe_usuario(usuario, excluir_id=None):
         return cursor.fetchone()[0] > 0
 
 
+def buscar_duplicado_usuario(campo, valor, excluir_id=None):
+    columnas = {"usuario": "usuario", "email": "email"}
+    columna = columnas.get(campo)
+    if not columna or not valor:
+        return None
+
+    consulta = f"""
+        SELECT TOP 1 id_usuario AS id,
+               {columna} AS nombre,
+               usuario,
+               email,
+               activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM dbo.usuarios
+        WHERE UPPER(LTRIM(RTRIM({columna}))) = UPPER(LTRIM(RTRIM(?)))
+    """
+    parametros = [valor]
+    if excluir_id:
+        consulta += " AND id_usuario <> ?"
+        parametros.append(excluir_id)
+    consulta += """
+        ORDER BY CASE
+            WHEN ISNULL(eliminado_operativo, 0) = 0 AND activo = 1 THEN 0
+            WHEN ISNULL(eliminado_operativo, 0) = 0 THEN 1
+            ELSE 2
+        END,
+        id_usuario DESC
+    """
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
+
+
 def crear_usuario(datos):
     consulta_usuario = """
         INSERT INTO dbo.usuarios
@@ -236,6 +272,46 @@ def contar_administradores_activos(excluir_id=None):
         WHERE u.activo = 1
           AND ISNULL(u.eliminado_operativo, 0) = 0
           AND r.codigo_rol = 'ADMIN'
+    """
+    parametros = []
+    if excluir_id:
+        consulta += " AND u.id_usuario <> ?"
+        parametros.append(excluir_id)
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        return cursor.fetchone()[0]
+
+
+def contar_usuarios_capacidad_admin_activos(excluir_id=None):
+    consulta = """
+        SELECT COUNT(DISTINCT u.id_usuario)
+        FROM dbo.usuarios u
+        INNER JOIN dbo.usuarios_roles ur ON ur.id_usuario = u.id_usuario AND ur.activo = 1
+        INNER JOIN dbo.roles r ON r.id_rol = ur.id_rol AND r.activo = 1
+        WHERE u.activo = 1
+          AND ISNULL(u.eliminado_operativo, 0) = 0
+          AND r.codigo_rol IN ('SUPER_ADMIN', 'ADMIN')
+    """
+    parametros = []
+    if excluir_id:
+        consulta += " AND u.id_usuario <> ?"
+        parametros.append(excluir_id)
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        return cursor.fetchone()[0]
+
+
+def contar_super_admin_activos(excluir_id=None):
+    consulta = """
+        SELECT COUNT(DISTINCT u.id_usuario)
+        FROM dbo.usuarios u
+        INNER JOIN dbo.usuarios_roles ur ON ur.id_usuario = u.id_usuario AND ur.activo = 1
+        INNER JOIN dbo.roles r ON r.id_rol = ur.id_rol AND r.activo = 1
+        WHERE u.activo = 1
+          AND ISNULL(u.eliminado_operativo, 0) = 0
+          AND r.codigo_rol = 'SUPER_ADMIN'
     """
     parametros = []
     if excluir_id:

@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 11I con robustez operativa interna avanzada. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real y revision integral post-borrado.
+El proyecto se encuentra en Fase 12B.1A con Auditoria base implementada, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria y cierre garantizado de ejecucion manual. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision integral post-borrado y modulo de auditoria de acciones humanas.
 
 ## Implementado
 
@@ -13,6 +13,7 @@ El proyecto se encuentra en Fase 11I con robustez operativa interna avanzada. AP
 * Scripts versionados por tarea, con hasta tres versiones.
 * `.env` por version de script, guardando solo rutas y nunca contenido.
 * Ejecucion manual con validacion de tarea, script, version activa, archivo fisico, `.env` requerido y ejecucion en curso.
+* Cierre garantizado de ejecucion manual: `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`.
 * Consola de ejecucion con polling.
 * Detencion manual de ejecuciones.
 * Historial de ejecuciones agrupado, filtrable y paginado.
@@ -32,6 +33,8 @@ El proyecto se encuentra en Fase 11I con robustez operativa interna avanzada. AP
 * Eliminacion permanente segura desde papelera.
 * Desacople historico para que la eliminacion permanente pueda borrar filas operativas sin borrar historia.
 * Revision post-desacople para que `/ejecuciones`, consola, paneles y eventos usen snapshots y fallback historico.
+* Auditoria base en `/auditoria` con filtros, paginacion, detalle y servicio central `registrar_auditoria(...)`.
+* Correccion visual del detalle de auditoria y reglas criticas `SUPER_ADMIN`/`ADMIN`.
 * TOP 6 ultimas ejecuciones en panel principal.
 
 ## Fase 11 - Robustez Operativa Interna
@@ -53,10 +56,11 @@ Estado: parcialmente implementada. La fase concentra estabilidad, trazabilidad o
 
 ## Fase 12 - Auditoria
 
-Estado: pendiente. No debe confundirse con logs operativos, ejecuciones ni eventos del programador.
+Estado: parcialmente implementada. No debe confundirse con logs operativos, ejecuciones ni eventos del programador.
 
-* 12A Modulo Auditoria base. Pendiente.
-* 12B Auditoria aplicada a acciones criticas. Pendiente.
+* 12A Modulo Auditoria base. Implementado.
+* 12A.1 Correccion visual de Auditoria y reglas criticas de roles. Implementado.
+* 12B Auditoria aplicada a acciones criticas. Implementado.
 * 12C Filtros, detalle y trazabilidad extendida. Pendiente.
 
 ## Fase 13 - Operacion y Despliegue
@@ -184,7 +188,7 @@ Archivos agregados:
 
 La migracion debe ejecutarse manualmente en SSMS despues de la migracion 016 y del seed 011. Codex no ejecuto SQL.
 
-## Auditoria Pendiente
+## Auditoria
 
 ## Fase 11I - Revision Integral Post-Borrado
 
@@ -197,9 +201,7 @@ Cambios aplicados:
 * `/panel`, panel del programador y `/scheduler/eventos` usan fallback `Tarea eliminada` cuando el maestro operativo no existe.
 * Se agrega diagnostico manual `database/diagnostics/004_validacion_post_desacople_historico.sql`.
 
-No se crean migraciones nuevas, no se ejecuta SQL desde Codex y Auditoria sigue pendiente para Fase 12.
-
-Auditoria funcional sigue pendiente para Fase 12.
+No se crean migraciones nuevas, no se ejecuta SQL desde Codex. Auditoria fue implementada posteriormente en Fase 12A.
 
 Distinciones obligatorias:
 
@@ -207,13 +209,13 @@ Distinciones obligatorias:
 * `ejecuciones` registra intentos reales de ejecutar scripts.
 * `logs_sistema` registra eventos operativos basicos.
 * Ninguno de los anteriores reemplaza Auditoria.
-* `auditoria_cambios` debe registrar acciones humanas relevantes en una fase posterior, con valores antes/despues, usuario, fecha, modulo e identificador afectado.
+* `auditoria_cambios` registra acciones humanas relevantes desde Fase 12A, con valores antes/despues, usuario, fecha, modulo e identificador afectado cuando aplica.
 
 ## Checklist Pendiente
 
 Pendiente critico inmediato:
 
-* Fase 12A Auditoria.
+* Fase 12C Auditoria extendida.
 
 Pendiente operativo:
 
@@ -232,4 +234,4 @@ Pendiente mejora:
 
 ## Proxima Fase Recomendada
 
-La proxima fase recomendada es Fase 12A: Auditoria base, solo cuando se autorice explicitamente.
+La proxima fase recomendada es Fase 12C: trazabilidad extendida de Auditoria, solo cuando se autorice explicitamente.

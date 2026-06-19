@@ -2,11 +2,53 @@
 
 ## Roadmap de flujos pendiente
 
-Los flujos implementados llegan hasta Fase 11I. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+Los flujos implementados llegan hasta Fase 12B. El roadmap formal se mantiene en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
-* Fase 12A: Auditoria base.
+* Fase 12C: trazabilidad extendida, exportaciones futuras y mejoras avanzadas de consulta.
+
+## Flujo consolidado de Auditoria
+
+1. Usuario realiza una accion humana critica desde la UI.
+2. El servicio ejecuta la accion principal y prepara valores antes/despues cuando corresponde.
+3. Si la accion se completa, registra auditoria con resultado `OK`.
+4. Si una regla de seguridad o negocio bloquea la accion, registra resultado `BLOQUEADO`.
+5. Si ocurre un error controlado de aplicacion, registra resultado `ERROR`.
+6. `registrar_auditoria(...)` normaliza `accion`, `entidad`, `resultado` y `modulo`.
+7. La sanitizacion reemplaza claves sensibles por `***` antes de persistir valores.
+8. Si auditoria falla, la accion principal no se rompe; se intenta dejar evidencia tecnica en `logs_sistema`.
+9. Los errores repetitivos del worker automatico siguen en `scheduler_eventos` o `logs_sistema`, no en auditoria funcional.
+
+Acciones cubiertas en Fase 12B:
+
+* Usuarios, mantenedores, tareas, scripts y versiones.
+* `.env` por version sin valores secretos.
+* Papelera, restauracion y eliminacion permanente.
+* Ejecucion manual, detencion y verificacion de huerfanas.
+* Configuracion del programador.
+* Feriados y sincronizacion manual.
+* Bloqueos por permisos, duplicados y reglas de negocio.
+
+## Flujo transversal de duplicados con Papelera Operativa
+
+1. Usuario intenta crear o editar usuarios, mantenedores, tareas, scripts o versiones.
+2. El servicio valida campos obligatorios y normaliza la clave de negocio correspondiente.
+3. Antes de guardar, consulta duplicados incluyendo registros con `eliminado_operativo = 1`.
+4. Si el duplicado esta activo, bloquea con mensaje de registro activo existente.
+5. Si el duplicado esta inactivo, bloquea indicando que se puede activar o editar el registro existente.
+6. Si el duplicado esta en Papelera Operativa, bloquea indicando que se debe restaurar o eliminar permanentemente antes de crear otro.
+7. Si SQL Server igualmente devuelve una violacion unica, el servicio captura solo ese caso y muestra mensaje seguro sin detalle tecnico.
+8. Cada bloqueo registra auditoria `BLOQUEO_DUPLICADO` con resultado `BLOQUEADO` cuando la tabla de auditoria esta disponible.
+9. No se ejecutan restauraciones ni eliminaciones automaticas desde este flujo.
+
+Claves validadas:
+
+* Usuarios: `usuario` y `email`.
+* Mantenedores: `nombre_normalizado`.
+* Tareas: `nombre_tarea + cliente + categoria + tipo`.
+* Scripts: un contenedor por `id_tarea`.
+* Versiones: `id_script + numero_version`, contando tambien versiones en Papelera para `v1`, `v2` y `v3`.
 
 ## Flujo de disponibilidad de ejecucion manual en tareas
 
@@ -17,6 +59,21 @@ Pendiente critico inmediato:
 5. Si falta alguna condicion, el listado muestra `No ejecutable: motivo`; si no existe fila en `scripts`, el motivo es `Sin script asociado`.
 6. El boton `Ejecutar ahora` usa la misma clasificacion del servicio.
 7. Una tarea no ejecutable conserva visible `Editar`, `Scripts`, cambio de estado y borrado segun permisos.
+
+## Flujo de cierre garantizado de ejecucion manual
+
+1. Usuario presiona `Ejecutar ahora`.
+2. El backend valida tarea, script, version, archivo fisico, `.env` requerido y ejecucion en curso.
+3. Se crea `ejecuciones` en `EN_EJECUCION` y `logs_tareas` en `EN_EJECUCION`.
+4. Se inicia un hilo monitor no daemon para la ejecucion manual.
+5. El monitor entra con `app_context`, lanza `subprocess.Popen`, guarda `pid_proceso` y lee stdout/stderr combinado.
+6. Al terminar el proceso, `process.wait()` entrega returncode.
+7. Si returncode es `0`, se cierra como `EXITOSA`.
+8. Si returncode es distinto de `0`, se cierra como `ERROR`.
+9. Si el usuario detiene desde UI, el estado queda `DETENIDA_MANUALMENTE` y el monitor no lo sobrescribe.
+10. Si falla el monitor, se intenta terminar el proceso hijo y se cierra como `ERROR` con mensaje controlado.
+11. En `finally`, si la ejecucion manual sigue `EN_EJECUCION`, se cierra como `ERROR`.
+12. El boton `Verificar ejecucion` queda como recuperacion excepcional para procesos realmente huerfanos.
 
 ## Flujo de panel principal general
 
@@ -59,7 +116,7 @@ Reglas:
 
 * `scheduler_worker_heartbeat` sigue registrando senal de vida en tabla separada.
 * `logs_sistema` no se usa para cada omision del programador.
-* Los eventos del programador no reemplazan la auditoria funcional futura.
+* Los eventos del programador no reemplazan la auditoria funcional.
 
 ## Flujo de resumen inteligente de eventos del programador
 
@@ -111,8 +168,8 @@ Reglas:
 6. El registro maestro queda con `eliminado_operativo = 1`, `activo = 0` y metadatos de retiro.
 7. Los mantenedores, selects, candidatos del scheduler y metricas operativas excluyen registros retirados.
 8. `/ejecuciones`, `/ejecuciones/<id>`, logs y eventos del programador siguen mostrando nombres legibles mediante snapshots.
-9. No se borran ejecuciones, logs historicos, eventos del programador ni auditoria futura.
-10. Auditoria funcional queda pendiente para fase posterior.
+9. No se borran ejecuciones, logs historicos, eventos del programador ni `auditoria_cambios`.
+10. La accion queda trazada por Auditoria desde Fase 12A cuando aplica.
 11. Papelera operativa, restauracion y eliminacion permanente segura fueron implementadas en Fase 11G.
 12. Desacople historico para eliminacion permanente real implementado en Fase 11H.
 
@@ -139,7 +196,7 @@ Implementado en Fase 11G:
 5. Si confirma, el backend valida que la eliminacion fisica sea segura.
 6. Si es segura, ejecuta `DELETE` solo sobre tablas operativas o maestras correspondientes.
 7. No usa `DELETE CASCADE` destructivo.
-8. No borra `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots, `auditoria_cambios` futura ni archivos de log historicos necesarios.
+8. No borra `ejecuciones`, `logs_tareas`, `logs_sistema`, `scheduler_eventos`, snapshots, `auditoria_cambios` ni archivos de log historicos necesarios.
 9. El registro desaparece de `/papelera` y de la operacion normal.
 10. Si no es segura, no fuerza `DELETE`, mantiene `eliminado_operativo = 1` y muestra: `No fue posible eliminar permanentemente este registro porque aún existen dependencias operativas no históricas. El registro seguirá en papelera y oculto de la operación normal.`
 
@@ -187,7 +244,7 @@ Implementado en Fase 11I:
 7. `/scheduler/eventos` muestra nombre desde snapshots del evento o fallback si la tarea fue eliminada.
 8. `/panel` y panel del programador no fallan si una ultima ejecucion ya no tiene tarea maestra.
 9. Las vistas operativas `/tareas` y gestion de scripts siguen mostrando solo registros operativos existentes.
-10. La revision no borra historial, no modifica snapshots y no implementa Auditoria.
+10. La revision no borra historial ni modifica snapshots.
 
 ## Flujo futuro de purga controlada
 
@@ -197,11 +254,11 @@ Pendiente para fase posterior:
 2. El sistema exige confirmacion fuerte y validaciones de seguridad.
 3. Debe existir criterio explicito de retencion y respaldo.
 4. La purga elimina fisicamente solo registros permitidos por regla.
-5. La accion debe quedar trazada por Auditoria cuando Fase 12 exista.
+5. La accion debe quedar trazada por Auditoria.
 
-## Flujo futuro de Auditoria
+## Flujo de Auditoria
 
-Pendiente para Fase 12:
+Implementado como base en Fase 12A:
 
 1. Una accion humana critica llega al backend.
 2. El servicio registra valor anterior y valor nuevo.

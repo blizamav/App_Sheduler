@@ -118,6 +118,37 @@ def existe_nombre_normalizado(entidad, nombre_normalizado, excluir_id=None):
         return cursor.fetchone()[0] > 0
 
 
+def buscar_duplicado_nombre_normalizado(entidad, nombre_normalizado, excluir_id=None):
+    cfg = _config(entidad)
+    consulta = f"""
+        SELECT TOP 1 {cfg['id']} AS id,
+               {cfg['nombre']} AS nombre,
+               nombre_normalizado,
+               activo,
+               ISNULL(eliminado_operativo, 0) AS eliminado_operativo
+        FROM {cfg['tabla']}
+        WHERE nombre_normalizado = ?
+    """
+    parametros = [nombre_normalizado]
+    if excluir_id:
+        consulta += f" AND {cfg['id']} <> ?"
+        parametros.append(excluir_id)
+    consulta += f"""
+        ORDER BY CASE
+            WHEN ISNULL(eliminado_operativo, 0) = 0 AND activo = 1 THEN 0
+            WHEN ISNULL(eliminado_operativo, 0) = 0 THEN 1
+            ELSE 2
+        END,
+        {cfg['id']} DESC
+    """
+
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(consulta, *parametros)
+        fila = cursor.fetchone()
+        return _fila_a_dict(cursor, fila) if fila else None
+
+
 def crear(entidad, datos):
     cfg = _config(entidad)
     consulta = f"""

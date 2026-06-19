@@ -47,6 +47,9 @@
                     </option>
                     {% endfor %}
                 </select>
+                {% if not actor_super_admin %}
+                <small class="texto-ayuda">Solo un SUPER_ADMIN puede asignar o quitar el rol SUPER_ADMIN.</small>
+                {% endif %}
                 {% if modo == "editar" %}
                 <div class="alerta advertencia alerta-inline oculto" data-alerta-rol>
                     Estas modificando el rol del usuario. Esto puede cambiar sus permisos dentro del sistema.
