@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
-* Estado actual: Fase 12B.1B implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola; roadmap formal reorganizado en fases 11 a 14.
+* Estado actual: Fase 12B.1C iniciada como validacion operativa de ejecucion manual; pruebas reales bloqueadas en este entorno por login requerido y error ODBC de cifrado/credenciales. Fase 12B.1B queda implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 12B.1B - Sincronizacion visual de consola y notificacion de termino de ejecucion.
+* Fase actual: Fase 12B.1C - Pruebas reales intensivas de ejecucion manual, pendiente de ejecucion real en entorno con login y SQL Server operativo.
 * Ultima actualizacion: 2026-06-19
 
 ## 2. Decisiones tecnicas vigentes
@@ -50,6 +50,18 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-19 - Fase 12B.1C / Validacion operativa de ejecucion manual
+
+* Tipo de fase: Validacion operativa, sin desarrollo funcional grande.
+* Objetivo: Probar ejecuciones manuales reales repetidas para confirmar cierre automatico `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`, sincronizacion visual sin reload, toast unico y ausencia de huerfanas normales.
+* Resultado en este entorno: Bloqueado para pruebas reales completas. La app local responde en `http://127.0.0.1:5000/`, pero redirige a `/login`; no se leyeron credenciales desde `.env`. La consulta de tareas ejecutables mediante la capa de servicio fallo por `pyodbc.OperationalError` con mensaje de cifrado/credenciales SSL/ODBC Driver 17.
+* Pruebas reales no ejecutadas: 5 ejecuciones rapidas exitosas, 2 largas exitosas, 2 con error, 1 detenida manualmente, apertura de ejecucion ya finalizada y verificacion sobre finalizada. No se reportan IDs reales porque no se pudo iniciar ejecuciones contra BD.
+* Validaciones tecnicas ejecutadas: `python -m compileall app scheduler_worker.py`; busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`; prueba ligera del contrato de polling para `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`; `git diff --check`.
+* Bugs encontrados: Ningun bug nuevo confirmado en codigo durante esta fase; la limitacion fue ambiental/conexion.
+* Correcciones aplicadas: Ninguna correccion funcional. No se modifico el cierre garantizado de Fase 12B.1A ni la sincronizacion visual de Fase 12B.1B.
+* Pendiente operativo: Repetir la matriz de pruebas reales desde una sesion autenticada y con SQL Server accesible; ejecutar manualmente en SSMS las consultas de validacion documentadas en `docs/FLUJOS.md`.
+* Reglas: No se ejecuto SQL automaticamente, no se crearon migraciones, no se modifico `.env`, no se cambio `scheduler_worker.py`, no se borro historial/auditoria/ejecuciones/logs/eventos/snapshots, no se avanzo a Fase 12B.1D, 12B.2, 12C ni Fase 13.
 
 ### 2026-06-19 - Fase 12B.1B / Sincronizacion visual de consola y notificacion de termino
 

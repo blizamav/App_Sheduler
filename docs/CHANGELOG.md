@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.1C validacion operativa de ejecucion manual
+
+### Validacion
+
+* Se inicio fase de pruebas reales intensivas de ejecucion manual.
+* La app local responde en `http://127.0.0.1:5000/`, pero redirige a `/login`; no se leyeron credenciales desde `.env`.
+* La consulta de tareas ejecutables mediante la capa de servicios quedo bloqueada por error ODBC local de cifrado/credenciales.
+* No se pudieron ejecutar desde este entorno las pruebas reales de ejecucion rapida, larga, error controlado, detencion manual, apertura de finalizadas ni verificacion sobre finalizada.
+
+### Validaciones tecnicas realizadas
+
+* `python -m compileall app scheduler_worker.py`.
+* Contrato de polling validado para `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE`.
+* Busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`.
+* Busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`.
+* `git diff --check`.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se cambio el cierre garantizado de Fase 12B.1A ni la sincronizacion visual de Fase 12B.1B.
+* No se cambio `scheduler_worker.py`.
+* No se avanzo a Fase 12B.1D, 12B.2, 12C ni Fase 13.
+
 ## 2026-06-19 - Fase 12B.1B sincronizacion visual de consola
 
 ### Corregido

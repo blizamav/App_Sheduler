@@ -89,6 +89,56 @@ Claves validadas:
 10. Si la ejecucion ya estaba finalizada al abrir la pagina, se muestra su estado final desde el inicio, no se repite toast de termino y el polling se corta despues de la primera sincronizacion.
 11. La detencion y la verificacion desde consola pueden enviarse por `fetch`; la respuesta se sincroniza con el mismo contrato JSON y no requiere refresh completo.
 
+## Protocolo de validacion operativa 12B.1C
+
+La fase 12B.1C es de validacion, no de desarrollo funcional. Debe ejecutarse desde la app real con usuario autenticado y SQL Server accesible.
+
+Matriz minima:
+
+1. Ejecutar 5 veces un script rapido exitoso: debe terminar `EXITOSA`, `codigo_salida = 0`, con termino y duracion poblados, sin usar `Verificar`.
+2. Ejecutar 2 veces un script exitoso con espera de 20 a 30 segundos: logs progresivos, cierre `EXITOSA` y sin huerfanas.
+3. Ejecutar 2 veces un script con error controlado: cierre `ERROR`, codigo distinto de cero o `mensaje_error`.
+4. Ejecutar 1 script largo y detenerlo desde consola: cierre `DETENIDA_MANUALMENTE`, sin PID vivo y sin sobreescritura posterior a `ERROR`.
+5. Abrir una ejecucion ya finalizada: debe cargar con estado final, no mostrar `EN_EJECUCION` ni toast repetitivo.
+6. Presionar `Verificar ejecucion` sobre una ejecucion finalizada: no debe cambiar estado ni marcar `ERROR`.
+
+Consultas manuales sugeridas para SSMS, ajustadas a los nombres reales del esquema:
+
+```sql
+SELECT TOP 30
+    id_ejecucion,
+    estado_ejecucion,
+    pid_proceso,
+    codigo_salida,
+    fecha_hora_inicio,
+    fecha_hora_termino,
+    duracion_segundos,
+    mensaje_error
+FROM dbo.ejecuciones
+ORDER BY id_ejecucion DESC;
+```
+
+```sql
+SELECT
+    id_ejecucion,
+    estado_ejecucion,
+    pid_proceso,
+    fecha_hora_inicio,
+    fecha_hora_termino
+FROM dbo.ejecuciones
+WHERE estado_ejecucion = 'EN_EJECUCION'
+ORDER BY id_ejecucion DESC;
+```
+
+```sql
+SELECT *
+FROM dbo.logs_tareas
+WHERE id_ejecucion = <ID_EJECUCION>
+ORDER BY id_log ASC;
+```
+
+Estado de ejecucion desde Codex: bloqueado por login requerido y error local ODBC de cifrado/credenciales. No se ejecuto SQL automaticamente.
+
 ## Flujo de panel principal general
 
 1. Usuario autenticado abre `/panel`.

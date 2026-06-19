@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 12B.1B con Auditoria base implementada, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision integral post-borrado y modulo de auditoria de acciones humanas.
+El proyecto se encuentra en Fase 12B.1C de validacion operativa de ejecucion manual. La Fase 12B.1B esta implementada con Auditoria base, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. Las pruebas reales intensivas de 12B.1C quedan pendientes de ejecucion en un entorno con sesion autenticada y SQL Server accesible.
 
 ## Implementado
 
@@ -63,6 +63,7 @@ Estado: parcialmente implementada. No debe confundirse con logs operativos, ejec
 * 12B Auditoria aplicada a acciones criticas. Implementado.
 * 12B.1A Cierre garantizado de ejecucion manual. Implementado.
 * 12B.1B Sincronizacion visual de consola sin recarga completa. Implementado.
+* 12B.1C Pruebas reales intensivas de ejecucion manual. En validacion; bloqueada en entorno Codex por login requerido y error ODBC local.
 * 12C Filtros, detalle y trazabilidad extendida. Pendiente.
 
 ## Fase 13 - Operacion y Despliegue
