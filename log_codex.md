@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
-* Estado actual: Fase 12B.1C iniciada como validacion operativa de ejecucion manual; pruebas reales bloqueadas en este entorno por login requerido y error ODBC de cifrado/credenciales. Fase 12B.1B queda implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola.
+* Estado actual: Fase 12B.1F implementada como correccion profunda del shell visual y modernizacion UI/UX premium; Fase 12B.1C de pruebas reales queda pendiente en entorno con login y SQL Server operativo.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 12B.1C - Pruebas reales intensivas de ejecucion manual, pendiente de ejecucion real en entorno con login y SQL Server operativo.
+* Fase actual: Fase 12B.1F - Correccion profunda del shell visual y modernizacion UI/UX premium.
 * Ultima actualizacion: 2026-06-19
 
 ## 2. Decisiones tecnicas vigentes
@@ -24,13 +24,13 @@
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
-* Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 11C moderniza botones, tablas, cards, formularios, consola y textos visibles.
+* Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A y sincronizacion visual de consola Fase 12B.1B.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, rediseno visual profundo del shell Fase 12B.1E y correccion premium del shell Fase 12B.1F.
 * Modulos pendientes: Fase 12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
@@ -50,6 +50,41 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-19 - Fase 12B.1F / Correccion profunda del shell visual y modernizacion UI/UX premium
+
+* Archivos modificados: `app/templates/base.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Causa del sidebar cortado: La navegacion tenia overflow, pero no era el hijo flexible principal del sidebar; con zoom alto o pantallas bajas, header, nav y footer podian competir por la altura disponible dentro del aside.
+* Causa de redundancia superior: La topbar mostraba marca y titulo (`APP Scheduler` + pantalla actual) mientras cada vista ya presentaba su contexto operativo en el contenido principal.
+* Causa del espacio vacio posterior: Al retirar el titulo global, la topbar quedo como zona flotante de acciones; el boton de sidebar quedaba desanclado visualmente y el contenido no aprovechaba bien la composicion superior.
+* Solucion sidebar: El aside queda `position: fixed` en desktop, usa `100dvh`, `max-height: 100dvh`, header/footer no flexibles y `.nav` como region flexible con scroll interno. El contenido principal usa margen izquierdo equivalente al sidebar. Se conserva off-canvas mobile, overlay, cierre por enlace, Escape y normalizacion por resize.
+* Solucion topbar: Se elimina el titulo global de la topbar; queda como barra compacta en flujo normal, con toggle de sidebar a la izquierda, acciones a la derecha y el titulo del modulo dentro del contenido real de cada vista.
+* Tablas: Se elimina el efecto de raya/borde celeste por celda y se reemplaza por hover suave de fila completa.
+* Componentes: Se modernizaron botones, icon buttons, cards, contenedores, bloques, formularios, badges, foco, hover, active y microinteracciones sin cambiar clases funcionales ni condiciones de permisos.
+* Validacion visual realizada: `/login` probado con viewport 390, 820 y 1280 px sin overflow horizontal global ni errores JavaScript. Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+* Validaciones tecnicas: `python -m compileall app scheduler_worker.py`; busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` u `ON DELETE CASCADE` en `app` y `database`; `git diff --check`.
+* Reglas: No se cambio logica funcional, no se tocaron rutas/servicios/repositorios de negocio, no se ejecuto SQL, no se crearon migraciones ni seeds, no se modifico `.env`, no se agregaron dependencias externas, no se cambio `scheduler_worker.py`, no se avanzo a Fase 12B.2, 12C ni Fase 13.
+
+### 2026-06-19 - Fase 12B.1E / Rediseno visual profundo del shell y experiencia UI general
+
+* Archivos modificados: `app/templates/base.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Problema detectado: El shell ya era responsive, pero la navegacion seguia dependiendo de numeracion visual y la topbar repetia informacion de ambiente, generando una jerarquia mas pesada que la necesaria.
+* Solucion implementada: Se reemplazo la numeracion del sidebar por iconos textuales de modulo con etiquetas controladas, se compacto la topbar con marca `APP Scheduler` y titulo de pantalla, y se ajustaron fondo, ancho del sidebar, espaciados, estados activos y bienvenida para una experiencia mas profesional.
+* Responsive: El sidebar colapsado en desktop queda como carril de iconos textuales; en vistas compactas conserva off-canvas con etiquetas completas.
+* Validacion visual realizada: `/login` probado con viewport 390, 820 y 1280 px sin overflow horizontal global ni errores JavaScript. Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+* Validaciones tecnicas: `python -m compileall app scheduler_worker.py`; busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` u `ON DELETE CASCADE` en `app` y `database`; `git diff --check`.
+* Reglas: No se cambio logica funcional, no se tocaron rutas/servicios/repositorios de negocio, no se ejecuto SQL, no se crearon migraciones ni seeds, no se modifico `.env`, no se agregaron dependencias externas, no se cambio `scheduler_worker.py`, no se avanzo a Fase 12B.2, 12C ni Fase 13.
+
+### 2026-06-19 - Fase 12B.1D / Modernizacion visual general y layout responsive
+
+* Archivos modificados: `app/templates/base.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/UI_UX.md`, `log_codex.md`.
+* Problema detectado: El shell era funcional pero podia volverse rigido con zoom alto o anchos intermedios; el sidebar no tenia colapso desktop ni scroll interno robusto y algunas grillas/tablas podian empujar ancho global.
+* Solucion implementada: Se agregaron variables de layout (`--sidebar-width`, `--sidebar-width-collapsed`, `--topbar-height`), colapso desktop persistido en `localStorage`, sidebar off-canvas en vistas compactas, scroll interno del menu, cierre al seleccionar opcion en mobile/tablet y tablas con overflow horizontal interno.
+* Topbar: El boton de menu queda visible; en desktop colapsa/expande el sidebar y en vistas compactas abre el menu lateral.
+* Componentes: Se reforzaron grillas de filtros/formularios/tarjetas/listados para degradar a dos o una columna segun ancho; botones, inputs y contenedores evitan desbordes por min-width; panel de logs tiene scroll propio.
+* Validacion visual realizada: `/login` probado con viewport 390, 820 y 1280 px sin overflow horizontal global. Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+* Validaciones tecnicas: `python -m compileall app scheduler_worker.py`; busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`; `git diff --check`.
+* Reglas: No se cambio logica funcional, no se tocaron rutas/servicios/repositorios de negocio, no se ejecuto SQL, no se crearon migraciones, no se modifico `.env`, no se agregaron dependencias externas, no se cambio `scheduler_worker.py`, no se avanzo a Fase 12B.1E, 12B.2, 12C ni Fase 13.
 
 ### 2026-06-19 - Fase 12B.1C / Validacion operativa de ejecucion manual
 

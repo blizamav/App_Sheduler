@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cuerpo = document.body;
     const botonesSidebar = document.querySelectorAll("[data-sidebar-toggle]");
     const cierresSidebar = document.querySelectorAll("[data-sidebar-cerrar]");
+    const enlacesSidebar = document.querySelectorAll(".sidebar .nav-link");
     const botonesLogs = document.querySelectorAll("[data-panel-logs-toggle]");
     const alertas = document.querySelectorAll(".alerta");
     const confirmables = document.querySelectorAll(".requiere-confirmacion");
@@ -36,16 +37,47 @@ document.addEventListener("DOMContentLoaded", () => {
     let formularioPendiente = null;
     let envioConfirmado = false;
 
+    const esVistaCompacta = () => window.matchMedia("(max-width: 960px)").matches;
+    const cerrarSidebarCompacto = () => cuerpo.classList.remove("sidebar-abierto");
+
     botonesSidebar.forEach((boton) => {
         boton.addEventListener("click", () => {
-            cuerpo.classList.add("sidebar-abierto");
+            if (esVistaCompacta()) {
+                cuerpo.classList.add("sidebar-abierto");
+                return;
+            }
+            cuerpo.classList.toggle("sidebar-colapsado");
+            localStorage.setItem(
+                "appSchedulerSidebar",
+                cuerpo.classList.contains("sidebar-colapsado") ? "colapsado" : "expandido"
+            );
         });
     });
 
     cierresSidebar.forEach((boton) => {
         boton.addEventListener("click", () => {
-            cuerpo.classList.remove("sidebar-abierto");
+            cerrarSidebarCompacto();
         });
+    });
+
+    enlacesSidebar.forEach((enlace) => {
+        enlace.addEventListener("click", () => {
+            if (esVistaCompacta()) {
+                cerrarSidebarCompacto();
+            }
+        });
+    });
+
+    window.addEventListener("resize", () => {
+        if (!esVistaCompacta()) {
+            cerrarSidebarCompacto();
+        }
+    });
+
+    document.addEventListener("keydown", (evento) => {
+        if (evento.key === "Escape") {
+            cerrarSidebarCompacto();
+        }
     });
 
     botonesLogs.forEach((boton) => {

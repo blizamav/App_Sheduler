@@ -1,5 +1,95 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.1F correccion definitiva del sidebar, encabezado y tablas
+
+### Diagnostico
+
+* El sidebar podia seguir viendose cortado con zoom alto porque la navegacion tenia overflow propio, pero no era la region flexible principal del aside; header, menu y footer competian por altura dentro de `100vh`.
+* La topbar mantenia redundancia visual al mostrar marca y titulo mientras las vistas ya tienen contexto propio en el bloque principal.
+* La eliminacion del titulo global habia dejado una topbar flotante poco integrada, con boton de sidebar suelto y espacio superior mal aprovechado.
+* El hover de tablas usaba una sombra interna celeste por celda, generando rayas verticales invasivas en listados.
+
+### Mejorado
+
+* Sidebar fijo en desktop, desacoplado del alto del contenido, con altura `100dvh`, max-height controlado, header/footer no flexibles y navegacion como region flexible con scroll interno independiente.
+* Sidebar mas compacto y estable en desktop, con ancho revisado, estado colapsado mas limpio y comportamiento off-canvas preservado en mobile.
+* Contenido principal con margen izquierdo equivalente al sidebar, evitando que el menu dependa de `.app-shell` o del alto renderizado de la pagina.
+* Topbar global convertida en acciones flotantes: se elimina el titulo global y la pantalla comienza con el contenido real de cada vista.
+* Ajuste puntual posterior: la topbar vuelve al flujo normal como barra compacta, con toggle del sidebar a la izquierda y acciones a la derecha, sin titulo redundante ni franja vacia.
+* Botones primarios, secundarios, compactos e iconicos con mejores bordes, sombras, hover, active, focus y disabled.
+* Cards, contenedores y bloques con superficie mas refinada, sombra sutil, borde consistente y microinteraccion ligera.
+* Tablas con encabezados mas legibles, hover suave de fila completa y sin rayas/bordes celestes verticales.
+* Inputs, selects y textareas con foco mas pulido.
+* Badges con borde por estado para mejorar contraste y consistencia.
+* Overlay mobile, Escape y resize mantienen el sidebar en un estado visual estable sin alterar reglas funcionales.
+
+### Validacion visual
+
+* Se valido `/login` en anchos 390, 820 y 1280 px sin overflow horizontal global ni errores JavaScript.
+* Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+
+### Reglas
+
+* No se cambio logica funcional, rutas, servicios, consultas SQL, permisos, roles, Scheduler, Papelera, ejecuciones ni auditoria.
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones ni seeds.
+* No se modifico `.env`.
+* No se agregaron dependencias externas.
+* No se usaron `alert()`, `confirm()`, `prompt()` ni reload completo.
+* No se avanzo a Fase 12B.2, 12C ni Fase 13.
+
+## 2026-06-19 - Fase 12B.1E rediseno visual profundo del shell
+
+### Mejorado
+
+* Sidebar redisenado con iconos textuales compactos y etiquetas persistentes, reemplazando numeracion rigida por senales visuales de modulo.
+* Topbar compacta sin bloque redundante de ambiente; mantiene marca, titulo de pantalla, acciones de logs, usuario y salida.
+* Fondo, sidebar, espaciados, altura de navegacion y bienvenida ajustados para una experiencia mas pulida y menos pesada.
+* Estado colapsado del sidebar mantiene solo iconos textuales en desktop y recupera etiquetas completas en vista compacta.
+* Se preservaron agrupaciones, permisos, rutas y visibilidad condicional del menu.
+
+### Validacion visual
+
+* Se valido `/login` en anchos 390, 820 y 1280 px sin overflow horizontal global ni errores JavaScript.
+* Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+
+### Reglas
+
+* No se cambio logica funcional, rutas, servicios, consultas SQL, permisos, roles, Scheduler, Papelera, ejecuciones ni auditoria.
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones ni seeds.
+* No se modifico `.env`.
+* No se agregaron dependencias externas.
+* No se usaron `alert()`, `confirm()`, `prompt()` ni reload completo.
+* No se avanzo a Fase 12B.2, 12C ni Fase 13.
+
+## 2026-06-19 - Fase 12B.1D modernizacion visual general y layout responsive
+
+### Mejorado
+
+* App shell con sidebar de ancho variable, colapso desktop y off-canvas en pantallas compactas.
+* Sidebar con scroll interno para que el menu no quede inaccesible en zoom alto o pantallas bajas.
+* Boton de menu visible en topbar: en desktop colapsa/expande el sidebar y en tablet/mobile abre el menu lateral.
+* Cierre automatico del sidebar al seleccionar una opcion en vista compacta.
+* Tablas con overflow horizontal interno y ancho minimo controlado para evitar scroll horizontal global.
+* Grillas de filtros, formularios, tarjetas y ejecuciones ajustadas para degradar mejor en tablet/mobile.
+* Panel lateral de logs con scroll propio y sidebar estable para zoom alto.
+
+### Validacion visual
+
+* Se valido `/login` en anchos 390, 820 y 1280 px sin overflow horizontal global.
+* Las rutas internas no se validaron visualmente desde navegador por login requerido y sin lectura de credenciales desde `.env`.
+
+### Reglas
+
+* No se cambio logica funcional, rutas, servicios, consultas SQL, motor de ejecucion, Scheduler, Papelera, roles ni duplicados.
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se agregaron dependencias externas.
+* No se usaron `alert()`, `confirm()`, `prompt()` ni reload completo.
+* No se avanzo a Fase 12B.1E, 12B.2, 12C ni Fase 13.
+
 ## 2026-06-19 - Fase 12B.1C validacion operativa de ejecucion manual
 
 ### Validacion

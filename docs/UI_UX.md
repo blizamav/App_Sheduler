@@ -32,7 +32,7 @@ No se implementan exportaciones en Fase 12B.
 
 Variables CSS principales definidas en `app/static/css/estilos.css`:
 
-* `--color-fondo: #f4f7fb`: fondo general claro.
+* `--color-fondo: #eef3f8`: fondo general claro.
 * `--color-superficie: #ffffff`: tarjetas, paneles y formularios.
 * `--color-azul: #0f4cbd`: acciones primarias e informacion relevante.
 * `--color-azul-oscuro: #071b35`: sidebar y paneles de alto contraste.
@@ -105,6 +105,18 @@ No se modificaron rutas, permisos, reglas de negocio, consultas SQL, scheduler, 
 ## Estado visual actual
 
 La UI ya cubre modulos operativos principales: panel, usuarios, mantenedores, tareas, scripts, ejecuciones, consola, historial, feriados, sincronizacion, configuracion del programador, panel operativo, eventos del programador y auditoria.
+
+Desde Fase 12B.1D, el app shell mejora su comportamiento responsive: el sidebar tiene scroll interno, puede colapsarse en desktop, opera como off-canvas en tablet/mobile y se cierra al seleccionar una opcion en vista compacta. La topbar mantiene el boton de menu visible; en desktop colapsa el sidebar y en vistas compactas abre el menu lateral.
+
+Tambien desde Fase 12B.1D, tablas y listados usan overflow horizontal interno con ancho minimo controlado para evitar scroll horizontal global. Las grillas de filtros, formularios, tarjetas y ejecuciones degradan a dos columnas o una columna segun el ancho disponible.
+
+Desde Fase 12B.1E, el shell reemplaza la numeracion del sidebar por iconos textuales de modulo y etiquetas con elipsis controlada. La topbar elimina el bloque redundante `Ambiente local`, usa una marca compacta `APP Scheduler` y conserva el titulo de pantalla, logs y usuario en una sola franja. En escritorio, el sidebar colapsado queda como carril de iconos; en tablet/mobile mantiene el comportamiento off-canvas con etiquetas completas.
+
+Desde Fase 12B.1F, el sidebar corrige su distribucion vertical y su dependencia del contenido: el aside queda fijo en desktop, usa `100dvh`, header y footer quedan fuera del scroll y la navegacion pasa a ser la region flexible con scroll interno independiente. El contenido principal usa margen izquierdo equivalente al ancho del sidebar. Esto evita cortes cuando la pagina tiene poco contenido, zoom alto o pantallas bajas.
+
+Tambien desde Fase 12B.1F, la topbar global deja de renderizar titulo o marca repetida. Queda como una barra compacta integrada al flujo del contenido: toggle del sidebar a la izquierda y acciones de sistema a la derecha. El titulo del modulo vive dentro del contenido de cada vista.
+
+Tambien desde Fase 12B.1F, botones, cards, contenedores, tablas, formularios y badges reciben un tratamiento visual premium: bordes mas finos, sombras sobrias, foco visible, hover/active mas pulidos y microinteracciones ligeras sin cambiar la semantica ni los permisos. Las tablas reemplazan el efecto de raya/borde celeste por hover suave de fila completa.
 
 Desde Fase 11I, el historial de ejecuciones y la consola muestran un badge discreto `Snapshot historico` cuando la ejecucion ya no tiene maestro operativo asociado por eliminacion permanente.
 
