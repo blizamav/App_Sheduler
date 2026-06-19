@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.1B sincronizacion visual de consola
+
+### Corregido
+
+* La consola ya no depende solo del estado renderizado al abrir la pagina.
+* El polling de `/ejecuciones/<id_ejecucion>/log` ahora entrega estado actual, bandera final, codigo de salida, fecha de termino, alias `fecha_hora_fin`, duracion y mensaje de error.
+* La pantalla actualiza sin recarga completa el titulo de estado, badge superior, indicador de consola, termino, duracion, codigo de salida y acciones disponibles.
+* Al llegar a `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`, el boton de detencion/verificacion en curso se oculta o deshabilita.
+* Se muestra toast no bloqueante una sola vez cuando una ejecucion abierta pasa a estado final.
+* La detencion y verificacion desde consola pueden enviarse por `fetch` para evitar refresh completo y sincronizar la UI con el mismo polling.
+
+### Diagnostico
+
+* El backend de Fase 12B.1A cerraba correctamente la ejecucion como `EXITOSA`, pero el frontend solo refrescaba el contenido del log.
+* El badge superior y algunos datos de resumen seguian mostrando el estado inicial `EN_EJECUCION`, generando contradiccion visual con el log final.
+
+### Reglas
+
+* No se ejecuto SQL automaticamente.
+* No se crearon migraciones.
+* No se modifico `.env`.
+* No se cambio el motor de ejecucion ni la correccion de cierre garantizado de Fase 12B.1A.
+* No se cambio `scheduler_worker.py`.
+* No se agregaron `alert()`, `confirm()`, `prompt()` ni recarga completa de pagina.
+* No se avanzo a Fase 12B.1C, 12B.1D, 12C ni Fase 13.
+
 ## 2026-06-19 - Fase 12B.1A cierre garantizado de ejecucion manual
 
 ### Corregido

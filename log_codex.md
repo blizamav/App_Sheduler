@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
-* Estado actual: Fase 12B.1A implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria y cierre garantizado de ejecucion manual; roadmap formal reorganizado en fases 11 a 14.
+* Estado actual: Fase 12B.1B implementada con auditoria base, detalle visual corregido, reglas criticas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola; roadmap formal reorganizado en fases 11 a 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 12B.1A - Diagnostico y cierre garantizado de ejecucion manual.
+* Fase actual: Fase 12B.1B - Sincronizacion visual de consola y notificacion de termino de ejecucion.
 * Ultima actualizacion: 2026-06-19
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B y cierre garantizado de ejecucion manual Fase 12B.1A.
-* Modulos pendientes: Fase 12B/12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A y sincronizacion visual de consola Fase 12B.1B.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,18 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-19 - Fase 12B.1B / Sincronizacion visual de consola y notificacion de termino
+
+* Archivos modificados: `app/templates/ejecuciones/consola.html`, `app/static/js/app.js`, `app/servicios/servicio_ejecuciones.py`, `app/rutas_ejecuciones.py`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/UI_UX.md`, `docs/ROADMAP.md`, `log_codex.md`.
+* Diagnostico: Fase 12B.1A ya cerraba correctamente la ejecucion manual en backend, pero la consola solo refrescaba el texto del log. El badge superior, titulo de estado, resumen y acciones seguian usando el estado inicial renderizado al cargar la pagina.
+* Causa visual: contrato de polling insuficiente y JS parcial; `/ejecuciones/<id>/log` entregaba estado basico, pero el frontend no aplicaba ese estado a todos los componentes visibles ni notificaba el termino.
+* Correccion backend: `obtener_estado_log()` ahora devuelve `estado_actual`, `estado_es_final`, `codigo_salida`, `fecha_hora_termino`, alias `fecha_hora_fin`, `duracion_segundos`, `mensaje_error`, `en_ejecucion` y `detener_polling`, manteniendo `estado` y `es_final` por compatibilidad.
+* Correccion frontend: la consola actualiza sin reload el titulo de estado, badge superior, indicador de consola, fecha de termino, duracion, codigo de salida y acciones en curso. Al finalizar, oculta/deshabilita acciones de ejecucion en curso y corta polling tras la primera sincronizacion final.
+* Toast: se reutiliza el toast del sistema; `EXITOSA`, `ERROR` y `DETENIDA_MANUALMENTE` muestran notificacion no bloqueante una sola vez al detectar transicion desde estado no final.
+* Detencion/verificacion: los formularios de detencion y verificacion en consola pueden enviarse por `fetch` y sincronizar respuesta JSON sin refresh completo; el flujo normal por POST queda como fallback.
+* Pruebas realizadas: `python -m compileall app scheduler_worker.py`; busqueda sin coincidencias de `location.reload()`, `window.location.reload()`, `alert()`, `window.confirm()`, `confirm()` y `prompt()` en `app`; busqueda sin coincidencias de `DELETE CASCADE` en `app` y `database`; `git diff --check`.
+* Reglas: No se ejecuto SQL, no se crearon migraciones, no se modifico `.env`, no se cambio `scheduler_worker.py`, no se borro historial/auditoria/ejecuciones/logs/eventos/snapshots, no se cambio el motor de ejecucion ni el cierre garantizado de Fase 12B.1A, no se avanzo a Fase 12B.1C, 12B.1D, 12C ni Fase 13.
 
 ### 2026-06-19 - Fase 12B.1A / Diagnostico y cierre garantizado de ejecucion manual
 

@@ -2,7 +2,7 @@
 
 ## Roadmap de flujos pendiente
 
-Los flujos implementados llegan hasta Fase 12B. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+Los flujos implementados llegan hasta Fase 12B.1B. El roadmap formal se mantiene en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
@@ -74,6 +74,20 @@ Claves validadas:
 10. Si falla el monitor, se intenta terminar el proceso hijo y se cierra como `ERROR` con mensaje controlado.
 11. En `finally`, si la ejecucion manual sigue `EN_EJECUCION`, se cierra como `ERROR`.
 12. El boton `Verificar ejecucion` queda como recuperacion excepcional para procesos realmente huerfanos.
+
+## Flujo de sincronizacion visual de consola
+
+1. Usuario abre `/ejecuciones/<id_ejecucion>`.
+2. El render inicial muestra el estado real almacenado en base de datos.
+3. Si la ejecucion sigue en curso, la consola consulta `/ejecuciones/<id_ejecucion>/log` cada 3 segundos.
+4. El endpoint devuelve log, `estado_actual`, `estado_es_final`, fecha de termino, alias `fecha_hora_fin`, duracion, codigo de salida y mensaje de error cuando existen.
+5. El frontend actualiza sin recargar pagina el titulo de estado, badge superior, indicador de consola, termino, duracion y codigo de salida.
+6. Mientras la ejecucion esta `EN_EJECUCION`, se mantienen visibles las acciones operativas aplicables.
+7. Cuando el estado pasa a `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`, se ocultan o deshabilitan las acciones de ejecucion en curso.
+8. Al detectar una transicion desde estado no final a final, se muestra un toast no bloqueante una sola vez.
+9. `EXITOSA` muestra toast de finalizacion correcta; `ERROR` muestra toast de error; `DETENIDA_MANUALMENTE` muestra toast de detencion.
+10. Si la ejecucion ya estaba finalizada al abrir la pagina, se muestra su estado final desde el inicio, no se repite toast de termino y el polling se corta despues de la primera sincronizacion.
+11. La detencion y la verificacion desde consola pueden enviarse por `fetch`; la respuesta se sincroniza con el mismo contrato JSON y no requiere refresh completo.
 
 ## Flujo de panel principal general
 

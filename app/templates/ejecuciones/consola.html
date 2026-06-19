@@ -23,7 +23,7 @@
                 <p class="eyebrow">Estado</p>
                 <h3 data-ejecucion-estado>{{ ejecucion.estado_ejecucion }}</h3>
             </div>
-            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
+            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion in ['EN_EJECUCION', 'PENDIENTE', 'DETENIDA_MANUALMENTE'] else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'inactivo' }}" data-ejecucion-badge>{{ ejecucion.estado_ejecucion }}</span>
         </div>
         <div class="detalle-grid">
             <div><strong>Script activo</strong><span>{{ ejecucion.nombre_archivo }}</span></div>
@@ -36,18 +36,22 @@
             <div><strong>Fecha programada</strong><span>{{ ejecucion.fecha_programada or "-" }}</span></div>
             <div><strong>Inicio</strong><span>{{ ejecucion.fecha_hora_inicio }}</span></div>
             <div><strong>Termino</strong><span data-ejecucion-termino>{{ ejecucion.fecha_hora_termino or "-" }}</span></div>
+            <div><strong>Duracion</strong><span data-ejecucion-duracion>{{ ejecucion.duracion_segundos if ejecucion.duracion_segundos is not none else "-" }}</span></div>
+            <div><strong>Codigo salida</strong><span data-ejecucion-codigo>{{ ejecucion.codigo_salida if ejecucion.codigo_salida is not none else "-" }}</span></div>
             <div><strong>Estado maestro</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Eliminado permanentemente{% else %}Operativo disponible{% endif %}</span></div>
             <div><strong>Fuente</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Snapshot historico{% else %}Maestro operativo{% endif %}</span></div>
         </div>
-        <div class="acciones-formulario">
+        <div class="acciones-formulario" data-ejecucion-acciones>
             <a class="btn secundario compacto" href="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">Actualizar log</a>
             {% if ejecucion.en_ejecucion %}
-            <form method="post" action="{{ url_for('ejecuciones.verificar', id_ejecucion=ejecucion.id_ejecucion) }}">
+            <div class="acciones-formulario" data-ejecucion-accion-en-curso>
+            <form method="post" action="{{ url_for('ejecuciones.verificar', id_ejecucion=ejecucion.id_ejecucion) }}" data-ejecucion-verificar-form>
                 <button class="btn secundario compacto" type="submit">Verificar ejecucion</button>
             </form>
-            <form method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}">
+            <form method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}" data-ejecucion-detener-form>
                 <button class="btn secundario compacto requiere-confirmacion" type="submit" data-confirm-title="Detener ejecucion" data-confirm-message="Estas a punto de detener esta ejecucion en curso. El proceso sera finalizado y quedara registrado en el sistema. Deseas continuar?" data-confirm-ok="Si, detener ejecucion" data-confirm-cancel="Cancelar" data-confirm-type="danger">Detener ejecucion</button>
             </form>
+            </div>
             {% endif %}
         </div>
     </article>

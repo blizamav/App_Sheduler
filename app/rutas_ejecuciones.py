@@ -83,6 +83,15 @@ def detener(id_ejecucion):
             usuario=session.get("usuario"),
         )
         ok, mensaje = False, "No fue posible detener la ejecucion."
+    if request.headers.get("Accept") == "application/json" or request.headers.get("X-Requested-With") == "fetch":
+        estado = obtener_estado_log(id_ejecucion)
+        return jsonify(
+            {
+                "ok": ok,
+                "mensaje": mensaje,
+                "estado": estado,
+            }
+        ), 200 if ok else 400
     flash(mensaje, "success" if ok else "error")
     return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))
 
@@ -104,5 +113,14 @@ def verificar(id_ejecucion):
             usuario=session.get("usuario"),
         )
         resultado = {"ok": False, "mensaje": "No fue posible verificar la ejecucion."}
+    if request.headers.get("Accept") == "application/json" or request.headers.get("X-Requested-With") == "fetch":
+        estado = obtener_estado_log(id_ejecucion)
+        return jsonify(
+            {
+                "ok": resultado.get("ok"),
+                "mensaje": resultado.get("mensaje"),
+                "estado": estado,
+            }
+        ), 200 if resultado.get("ok") else 400
     flash(resultado.get("mensaje"), "success" if resultado.get("ok") else "error")
     return redirect(url_for("ejecuciones.consola", id_ejecucion=id_ejecucion))

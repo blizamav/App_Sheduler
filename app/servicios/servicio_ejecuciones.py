@@ -241,11 +241,22 @@ def obtener_estado_log(id_ejecucion):
     ejecucion = obtener_ejecucion(id_ejecucion)
     if not ejecucion:
         return None
+    estado = ejecucion.get("estado_ejecucion")
+    es_final = estado in ESTADOS_FINALES
+    fecha_hora_termino = str(ejecucion.get("fecha_hora_termino") or "")
     return {
-        "estado": ejecucion.get("estado_ejecucion"),
+        "estado": estado,
+        "estado_actual": estado,
+        "estado_es_final": es_final,
         "log": leer_log_ejecucion(ejecucion),
-        "fecha_hora_termino": str(ejecucion.get("fecha_hora_termino") or ""),
-        "es_final": ejecucion.get("estado_ejecucion") in ESTADOS_FINALES,
+        "fecha_hora_termino": fecha_hora_termino,
+        "fecha_hora_fin": fecha_hora_termino,
+        "duracion_segundos": ejecucion.get("duracion_segundos"),
+        "codigo_salida": ejecucion.get("codigo_salida"),
+        "mensaje_error": ejecucion.get("mensaje_error") or "",
+        "en_ejecucion": estado == "EN_EJECUCION",
+        "es_final": es_final,
+        "detener_polling": es_final,
     }
 
 

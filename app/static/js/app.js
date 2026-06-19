@@ -25,8 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const togglesPanelEnv = document.querySelectorAll("[data-panel-env-toggle]");
     const consolaEjecucion = document.querySelector("[data-ejecucion-log]");
     const estadoEjecucion = document.querySelector("[data-ejecucion-estado]");
+    const badgeEjecucion = document.querySelector("[data-ejecucion-badge]");
     const terminoEjecucion = document.querySelector("[data-ejecucion-termino]");
+    const duracionEjecucion = document.querySelector("[data-ejecucion-duracion]");
+    const codigoEjecucion = document.querySelector("[data-ejecucion-codigo]");
     const indicadorEjecucion = document.querySelector("[data-ejecucion-indicador]");
+    const accionesEnCursoEjecucion = document.querySelector("[data-ejecucion-accion-en-curso]");
+    const formularioDetenerEjecucion = document.querySelector("[data-ejecucion-detener-form]");
+    const formularioVerificarEjecucion = document.querySelector("[data-ejecucion-verificar-form]");
     let formularioPendiente = null;
     let envioConfirmado = false;
 
@@ -244,6 +250,75 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (consolaEjecucion?.dataset.logUrl) {
+        const estadosFinales = new Set(["EXITOSA", "ERROR", "DETENIDA_MANUALMENTE", "CANCELADA"]);
+        let estadoVisualActual = estadoEjecucion?.textContent?.trim() || "";
+        let toastFinalMostrado = estadosFinales.has(estadoVisualActual);
+
+        const claseBadgeEstado = (estado) => {
+            if (estado === "EXITOSA") {
+                return "activo";
+            }
+            if (estado === "ERROR") {
+                return "error";
+            }
+            if (estado === "EN_EJECUCION" || estado === "PENDIENTE" || estado === "DETENIDA_MANUALMENTE") {
+                return "advertencia";
+            }
+            return "inactivo";
+        };
+
+        const mensajeToastFinal = (estado) => {
+            const mensajes = {
+                EXITOSA: ["Ejecucion finalizada correctamente. La tarea termino con estado EXITOSA.", "success"],
+                ERROR: ["La ejecucion termino con error. Revisa el log para mas detalles.", "error"],
+                DETENIDA_MANUALMENTE: ["Ejecucion detenida. La ejecucion fue detenida manualmente.", "warning"],
+            };
+            return mensajes[estado] || [`Ejecucion finalizada con estado ${estado}.`, "info"];
+        };
+
+        const actualizarEstadoVisual = (datos, permitirToast = true) => {
+            const estado = datos.estado_actual || datos.estado || "";
+            const esFinal = Boolean(datos.estado_es_final ?? datos.es_final);
+            if (!estado) {
+                return esFinal;
+            }
+
+            if (estadoEjecucion) {
+                estadoEjecucion.textContent = estado;
+            }
+            if (badgeEjecucion) {
+                badgeEjecucion.textContent = estado;
+                badgeEjecucion.className = `badge ${claseBadgeEstado(estado)}`;
+            }
+            if (terminoEjecucion) {
+                terminoEjecucion.textContent = datos.fecha_hora_termino || datos.fecha_hora_fin || "-";
+            }
+            if (duracionEjecucion) {
+                duracionEjecucion.textContent = datos.duracion_segundos ?? "-";
+            }
+            if (codigoEjecucion) {
+                codigoEjecucion.textContent = datos.codigo_salida ?? "-";
+            }
+            if (indicadorEjecucion) {
+                indicadorEjecucion.textContent = esFinal ? "Finalizada" : estado === "PENDIENTE" ? "Pendiente" : "En ejecucion...";
+                indicadorEjecucion.className = `badge ${esFinal ? claseBadgeEstado(estado) : "advertencia"}`;
+            }
+            if (accionesEnCursoEjecucion) {
+                accionesEnCursoEjecucion.classList.toggle("oculto", esFinal);
+                accionesEnCursoEjecucion.querySelectorAll("button").forEach((boton) => {
+                    boton.disabled = esFinal;
+                });
+            }
+
+            if (permitirToast && esFinal && !toastFinalMostrado && estadoVisualActual !== estado) {
+                const [mensaje, tipo] = mensajeToastFinal(estado);
+                mostrarToast(mensaje, tipo);
+                toastFinalMostrado = true;
+            }
+            estadoVisualActual = estado;
+            return esFinal;
+        };
+
         const actualizarConsola = async () => {
             try {
                 const respuesta = await fetch(consolaEjecucion.dataset.logUrl, {
@@ -255,16 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const datos = await respuesta.json();
                 consolaEjecucion.textContent = datos.log || "";
                 consolaEjecucion.scrollTop = consolaEjecucion.scrollHeight;
-                if (estadoEjecucion) {
-                    estadoEjecucion.textContent = datos.estado || "";
-                }
-                if (terminoEjecucion && datos.fecha_hora_termino) {
-                    terminoEjecucion.textContent = datos.fecha_hora_termino;
-                }
-                if (indicadorEjecucion) {
-                    indicadorEjecucion.textContent = datos.es_final ? "Finalizada" : "En ejecucion...";
-                }
-                return datos.es_final;
+                return actualizarEstadoVisual(datos);
             } catch (error) {
                 return false;
             }
@@ -276,7 +342,72 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearInterval(intervalo);
             }
         }, 3000);
-        actualizarConsola();
+        actualizarConsola().then((finalizada) => {
+            if (finalizada) {
+                clearInterval(intervalo);
+            }
+        });
+
+        if (formularioDetenerEjecucion) {
+            formularioDetenerEjecucion.addEventListener("submit", async (evento) => {
+                evento.preventDefault();
+                const boton = formularioDetenerEjecucion.querySelector("button[type='submit']");
+                if (boton) {
+                    boton.disabled = true;
+                }
+                try {
+                    const respuesta = await fetch(formularioDetenerEjecucion.action, {
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json",
+                            "X-Requested-With": "fetch",
+                        },
+                    });
+                    const datos = await respuesta.json();
+                    if (datos.estado) {
+                        actualizarEstadoVisual(datos.estado, false);
+                    }
+                    mostrarToast(datos.mensaje || "Solicitud de detencion procesada.", respuesta.ok ? "warning" : "error");
+                    await actualizarConsola();
+                } catch (error) {
+                    mostrarToast("No fue posible detener la ejecucion.", "error");
+                    if (boton) {
+                        boton.disabled = false;
+                    }
+                }
+            });
+        }
+
+        if (formularioVerificarEjecucion) {
+            formularioVerificarEjecucion.addEventListener("submit", async (evento) => {
+                evento.preventDefault();
+                const boton = formularioVerificarEjecucion.querySelector("button[type='submit']");
+                if (boton) {
+                    boton.disabled = true;
+                }
+                try {
+                    const respuesta = await fetch(formularioVerificarEjecucion.action, {
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json",
+                            "X-Requested-With": "fetch",
+                        },
+                    });
+                    const datos = await respuesta.json();
+                    if (datos.estado) {
+                        actualizarEstadoVisual(datos.estado, false);
+                    }
+                    mostrarToast(datos.mensaje || "Verificacion procesada.", respuesta.ok ? "info" : "error");
+                    await actualizarConsola();
+                } catch (error) {
+                    mostrarToast("No fue posible verificar la ejecucion.", "error");
+                } finally {
+                    if (boton && !accionesEnCursoEjecucion?.classList.contains("oculto")) {
+                        boton.disabled = false;
+                    }
+                }
+            });
+        }
     }
 
     const alternarGrupo = (formulario, selector, visible) => {

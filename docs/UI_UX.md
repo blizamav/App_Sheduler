@@ -110,9 +110,11 @@ Desde Fase 11I, el historial de ejecuciones y la consola muestran un badge discr
 
 Desde Fase 12A.1, el detalle de auditoria muestra bloques separados para accion, usuario, entidad, descripcion y valores antes/despues. Los valores largos o JSON usan bloques con scroll y corte de palabra controlado para no romper el layout.
 
+Desde Fase 12B.1B, la consola de ejecucion sincroniza visualmente el estado desde el polling JSON. El badge superior, el titulo de estado, el indicador de consola, fecha de termino, duracion, codigo de salida y acciones disponibles se actualizan sin recarga completa. Al pasar a `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`, se muestra un toast no bloqueante una sola vez.
+
 Pendientes visuales asociados al roadmap:
 
-* Fase 12B: ampliar filtros, cobertura y trazabilidad de Auditoria.
+* Fase 12C: trazabilidad extendida de Auditoria cuando se autorice.
 * Fase 14: exportaciones, notificaciones, reportes y dashboard avanzado.
 
 ## Modal de confirmacion
@@ -172,6 +174,7 @@ Desde el ajuste visual de Fase 6.2 existe un componente `toast` flotante para av
 Uso actual:
 
 * Mostrar `No hay cambios para guardar.` cuando el usuario intenta guardar una tarea sin cambios.
+* Mostrar termino de ejecucion desde consola: `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`.
 * Evitar alertas incrustadas dentro del formulario.
 * Evitar `alert()` nativo del navegador.
 

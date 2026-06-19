@@ -42,6 +42,7 @@
 * Fase 12A.2: validacion transversal de duplicados considerando registros activos, inactivos y en Papelera Operativa.
 * Fase 12B: cobertura ampliada de auditoria, acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
 * Fase 12B.1A: cierre garantizado de ejecucion manual para evitar ejecuciones huerfanas en condiciones normales.
+* Fase 12B.1B: sincronizacion visual de consola para badge, resumen, acciones y toast de termino sin recarga completa.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -80,7 +81,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 12B.1A: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados y cobertura ampliada de auditoria para acciones criticas, bloqueos y errores controlados. Aun no existe despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 12B.1B: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados y cobertura ampliada de auditoria para acciones criticas, bloqueos y errores controlados. Aun no existe despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -132,6 +133,8 @@ Implementado en Fase 8:
 * Seed incremental `database/seeds/006_permisos_ejecuciones.sql`.
 * Fase 9D: filtros por id, tarea, origen, estado, fecha, usuario y worker; resumen por estado calculado con los mismos filtros.
 * Fase 11I: el historial y la consola soportan ejecuciones con `id_tarea`, `id_script` o `id_version` en `NULL`, usando snapshots y fallback historico.
+* Fase 12B.1B: `/ejecuciones/<id_ejecucion>/log` tambien entrega estado, bandera final, termino, alias `fecha_hora_fin`, duracion, codigo de salida y mensaje de error para sincronizar la consola sin reload.
+* Fase 12B.1B: la consola actualiza badge, texto de estado, indicador, resumen y acciones; muestra toast una sola vez al pasar a estado final.
 
 No implementado en Fase 8:
 

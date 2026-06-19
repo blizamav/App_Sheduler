@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 12B.1A con Auditoria base implementada, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria y cierre garantizado de ejecucion manual. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision integral post-borrado y modulo de auditoria de acciones humanas.
+El proyecto se encuentra en Fase 12B.1B con Auditoria base implementada, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. APP Scheduler ya no es un prototipo: cuenta con autenticacion, seguridad por permisos, mantenedores, tareas programables, scripts versionados, ejecucion manual, ejecucion automatica, consola, historial, calendario de feriados, paneles operativos, eventos del programador, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa, desacople historico para eliminacion permanente real, revision integral post-borrado y modulo de auditoria de acciones humanas.
 
 ## Implementado
 
@@ -14,7 +14,7 @@ El proyecto se encuentra en Fase 12B.1A con Auditoria base implementada, detalle
 * `.env` por version de script, guardando solo rutas y nunca contenido.
 * Ejecucion manual con validacion de tarea, script, version activa, archivo fisico, `.env` requerido y ejecucion en curso.
 * Cierre garantizado de ejecucion manual: `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`.
-* Consola de ejecucion con polling.
+* Consola de ejecucion con polling y sincronizacion visual de estado sin refresh completo.
 * Detencion manual de ejecuciones.
 * Historial de ejecuciones agrupado, filtrable y paginado.
 * Scheduler automatico mediante `scheduler_worker.py` como proceso separado.
@@ -61,6 +61,8 @@ Estado: parcialmente implementada. No debe confundirse con logs operativos, ejec
 * 12A Modulo Auditoria base. Implementado.
 * 12A.1 Correccion visual de Auditoria y reglas criticas de roles. Implementado.
 * 12B Auditoria aplicada a acciones criticas. Implementado.
+* 12B.1A Cierre garantizado de ejecucion manual. Implementado.
+* 12B.1B Sincronizacion visual de consola sin recarga completa. Implementado.
 * 12C Filtros, detalle y trazabilidad extendida. Pendiente.
 
 ## Fase 13 - Operacion y Despliegue
