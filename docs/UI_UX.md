@@ -124,6 +124,8 @@ Desde Fase 12A.1, el detalle de auditoria muestra bloques separados para accion,
 
 Desde Fase 12B.1B, la consola de ejecucion sincroniza visualmente el estado desde el polling JSON. El badge superior, el titulo de estado, el indicador de consola, fecha de termino, duracion, codigo de salida y acciones disponibles se actualizan sin recarga completa. Al pasar a `EXITOSA`, `ERROR` o `DETENIDA_MANUALMENTE`, se muestra un toast no bloqueante una sola vez.
 
+Desde Fase 12B.2, la validacion visual esperada para Programador incluye `/scheduler/panel`, `/scheduler/eventos`, `/ejecuciones`, consola de ejecucion y `/panel`. En el entorno Codex actual no se pudo validar rutas internas por login requerido y error ODBC local contra SQL Server; la validacion visual real queda pendiente en una sesion autenticada con base accesible.
+
 Pendientes visuales asociados al roadmap:
 
 * Fase 12C: trazabilidad extendida de Auditoria cuando se autorice.

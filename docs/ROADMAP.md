@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 12B.1F con correccion definitiva del sidebar, eliminacion del encabezado redundante y limpieza visual de tablas implementada, mas correccion funcional 12B.1D de Papelera para eliminacion permanente masiva segura. La Fase 12B.1B esta implementada con Auditoria base, detalle visual corregido, reglas criticas de roles reforzadas, validacion transversal de duplicados considerando Papelera Operativa, cobertura ampliada de auditoria, cierre garantizado de ejecucion manual y sincronizacion visual de consola sin recarga completa. Las pruebas reales intensivas de 12B.1C quedan pendientes de ejecucion en un entorno con sesion autenticada y SQL Server accesible.
+El proyecto se encuentra en Fase 12B.2 de validacion real del `scheduler_worker.py`, con correccion definitiva del sidebar 12B.1F y correccion funcional 12B.1D de Papelera ya implementadas. La validacion del worker quedo bloqueada en este entorno por error ODBC local de cifrado/credenciales, aunque se corrigieron dos riesgos detectados: cierre de ejecuciones automaticas en modo `--once` y tolerancia del heartbeat ante fallo de SQL Server. No se avanza a Fase 12C ni Fase 13.
 
 ## Implementado
 
@@ -69,6 +69,7 @@ Estado: parcialmente implementada. No debe confundirse con logs operativos, ejec
 * 12B.1D-Papelera Eliminacion permanente masiva segura. Implementado como correccion funcional acotada; no cambia reglas individuales ni avanza roadmap.
 * 12B.1E Rediseno visual profundo del shell y experiencia UI general. Implementado en app shell compartido sin cambios funcionales.
 * 12B.1F Correccion definitiva del sidebar, eliminacion del encabezado redundante y limpieza visual de tablas. Implementado sin cambios funcionales.
+* 12B.2 Validacion real del scheduler_worker / Programador automatico. En validacion; bloqueada en entorno Codex por error ODBC local. Correcciones acotadas aplicadas al cierre de ejecucion automatica y robustez de heartbeat.
 * 12C Filtros, detalle y trazabilidad extendida. Pendiente.
 
 ## Fase 13 - Operacion y Despliegue

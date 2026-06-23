@@ -160,6 +160,55 @@ Luego abrir:
 http://127.0.0.1:5000/scheduler/configuracion
 ```
 
+## Validacion manual del worker Fase 12B.2
+
+La configuracion del Programador en la app no inicia por si sola `scheduler_worker.py`. La app solo guarda reglas operativas; el proceso worker debe levantarse manualmente o, en Fase 13, mediante servicio/proceso gestionado.
+
+Validacion de una vuelta:
+
+```powershell
+python scheduler_worker.py --once
+```
+
+Validacion continua manual:
+
+```powershell
+python scheduler_worker.py
+```
+
+Detener con `CTRL+C` en la consola donde se ejecuto.
+
+Estados esperados:
+
+* Worker apagado: no ejecuta tareas aunque el Programador este activo.
+* Worker encendido + Programador inactivo: no ejecuta y registra omision del ciclo.
+* Worker encendido + ejecucion automatica deshabilitada: no ejecuta y registra omision del ciclo.
+* Worker encendido + modo mantenimiento: no ejecuta y registra omision del ciclo.
+* Worker encendido + Programador activo + ejecucion automatica habilitada: evalua tareas elegibles y puede crear ejecuciones `AUTOMATICA`.
+
+Validaciones manuales en SSMS despues de correr el worker:
+
+```sql
+SELECT TOP 30 id_ejecucion, id_tarea, origen_ejecucion, estado_ejecucion,
+       pid_proceso, codigo_salida, fecha_hora_inicio, fecha_hora_termino,
+       duracion_segundos
+FROM dbo.ejecuciones
+ORDER BY id_ejecucion DESC;
+```
+
+```sql
+SELECT TOP 50 id_evento, fecha_evento, tipo_evento, decision, motivo,
+       id_tarea, nombre_tarea, nombre_worker, detalle
+FROM dbo.scheduler_eventos
+ORDER BY id_evento DESC;
+```
+
+```sql
+SELECT TOP 20 *
+FROM dbo.scheduler_worker_heartbeat
+ORDER BY fecha_actualizacion DESC;
+```
+
 La configuracion operativa vive en SQL Server. No se requiere agregar variables a `.env` para controlar el scheduler.
 
 ## Worker Scheduler Fase 9B

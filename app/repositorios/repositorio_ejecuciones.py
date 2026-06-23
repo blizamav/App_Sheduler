@@ -215,10 +215,16 @@ def finalizar_ejecucion(id_ejecucion, estado, codigo_salida=None, mensaje_error=
         cursor = conexion.cursor()
         cursor.execute(
             """
+            DECLARE @fecha_termino datetime2(0) = SYSDATETIME();
+
             UPDATE dbo.ejecuciones
             SET estado_ejecucion = ?,
-                fecha_hora_termino = SYSDATETIME(),
-                duracion_segundos = DATEDIFF(SECOND, fecha_hora_inicio, SYSDATETIME()),
+                fecha_hora_termino = @fecha_termino,
+                duracion_segundos =
+                    CASE
+                        WHEN DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino) < 0 THEN 0
+                        ELSE DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino)
+                    END,
                 codigo_salida = ?,
                 mensaje_error = ?
             WHERE id_ejecucion = ? AND estado_ejecucion = 'EN_EJECUCION'
@@ -236,12 +242,18 @@ def marcar_ejecucion_detenida(id_ejecucion, usuario, motivo, fue_forzada):
         cursor = conexion.cursor()
         cursor.execute(
             """
+            DECLARE @fecha_termino datetime2(0) = SYSDATETIME();
+
             UPDATE dbo.ejecuciones
             SET estado_ejecucion = 'DETENIDA_MANUALMENTE',
-                fecha_hora_termino = SYSDATETIME(),
-                duracion_segundos = DATEDIFF(SECOND, fecha_hora_inicio, SYSDATETIME()),
+                fecha_hora_termino = @fecha_termino,
+                duracion_segundos =
+                    CASE
+                        WHEN DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino) < 0 THEN 0
+                        ELSE DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino)
+                    END,
                 usuario_detencion = ?,
-                fecha_hora_detencion = SYSDATETIME(),
+                fecha_hora_detencion = @fecha_termino,
                 motivo_detencion = ?,
                 fue_detencion_forzada = ?
             WHERE id_ejecucion = ? AND estado_ejecucion = 'EN_EJECUCION'
@@ -281,10 +293,16 @@ def actualizar_log_tarea_final(id_ejecucion, estado, codigo_salida=None, mensaje
         cursor = conexion.cursor()
         cursor.execute(
             """
+            DECLARE @fecha_termino datetime2(0) = SYSDATETIME();
+
             UPDATE dbo.logs_tareas
             SET estado_final = ?,
-                fecha_hora_termino = SYSDATETIME(),
-                duracion_segundos = DATEDIFF(SECOND, fecha_hora_inicio, SYSDATETIME()),
+                fecha_hora_termino = @fecha_termino,
+                duracion_segundos =
+                    CASE
+                        WHEN DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino) < 0 THEN 0
+                        ELSE DATEDIFF(SECOND, fecha_hora_inicio, @fecha_termino)
+                    END,
                 codigo_salida = ?,
                 mensaje_error = ?
             WHERE id_ejecucion = ?

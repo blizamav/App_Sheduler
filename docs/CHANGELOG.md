@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-06-19 - Fase 12B.2 validacion real del scheduler_worker
+
+### Validacion
+
+* Se ejecuto `python scheduler_worker.py --once`.
+* Se ejecuto arranque continuo breve de `python scheduler_worker.py` y se detuvo desde wrapper de prueba.
+* En este entorno la validacion real contra SQL Server quedo bloqueada por error ODBC local de cifrado/credenciales: `Encryption not supported on the client` y `SSL Provider: No hay credenciales disponibles en el paquete de seguridad`.
+* No se pudieron validar tareas elegibles, duplicado de slot, concurrencia, feriados, registros reales en `scheduler_eventos`, `ejecuciones`, `logs_tareas` ni heartbeat persistido.
+
+### Corregido
+
+* La ejecucion automatica ya no usa hilo daemon. Esto evita que `scheduler_worker.py --once` termine el proceso antes de que el monitor cierre la ejecucion automatica.
+* El cierre garantizado del monitor ahora cubre tambien ejecuciones automaticas si quedan `EN_EJECUCION` por una salida anomala del monitor.
+* Los fallos al registrar heartbeat/logs del worker ya no propagan excepcion cuando SQL Server no esta disponible; el worker informa error controlado por consola.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL manual ni consultas SQL desde Codex.
+* No se crearon migraciones ni seeds.
+* No se borro historial, auditoria, ejecuciones, logs, eventos del programador ni snapshots.
+* No se cambio Papelera, roles, duplicados ni reglas de ejecucion manual.
+* No se implemento Docker, systemd, Celery ni Redis.
+* No se avanzo a Fase 12C ni Fase 13.
+
 ## 2026-06-19 - Fase 12B.1D Papelera: eliminacion permanente masiva segura
 
 ### Implementado

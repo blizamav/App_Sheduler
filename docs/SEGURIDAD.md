@@ -174,6 +174,16 @@ Reglas de seguridad:
 * Los mensajes de error expuestos al usuario deben ser seguros y no incluir traceback, constraints, driver ODBC ni detalle interno.
 * La accion masiva queda auditada como `ELIMINAR_PERMANENTE_TODO_PAPELERA`, ademas de las auditorias individuales por registro.
 
+## Programador automatico y auditoria
+
+Desde Fase 12B.2, la validacion del `scheduler_worker.py` mantiene la separacion entre acciones humanas y decisiones automaticas:
+
+* Los ciclos automaticos del worker se registran en `scheduler_eventos` y heartbeat, no en `auditoria_cambios`.
+* Auditoria queda reservada para acciones humanas desde la app.
+* Las ejecuciones automaticas deben cerrar con el mismo criterio seguro que las manuales: `EXITOSA`, `ERROR` o estado final controlado.
+* Si el monitor de una ejecucion automatica queda en estado anomalo, debe cerrar la ejecucion como `ERROR` antes de liberar el proceso.
+* El worker no debe exponer credenciales ni contenido de `.env` en consola, logs de sistema ni eventos.
+
 ## Mantenedores base
 
 Clientes, categorias y tipos usan permisos especificos por modulo:

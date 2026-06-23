@@ -78,14 +78,17 @@ def registrar_error_worker(nombre_worker, error, incrementar_ciclo=False):
     except Exception as error_bd:
         _registrar_error_heartbeat_log("WORKER_HEARTBEAT_ERROR_REGISTRO_FALLO", error_bd)
 
-    registrar_log_sistema(
-        "WORKER_ERROR",
-        "SCHEDULER",
-        "Proceso programador registro estado ERROR.",
-        usuario=USUARIO_WORKER,
-        valor_nuevo=mensaje,
-        nivel="ERROR",
-    )
+    try:
+        registrar_log_sistema(
+            "WORKER_ERROR",
+            "SCHEDULER",
+            "Proceso programador registro estado ERROR.",
+            usuario=USUARIO_WORKER,
+            valor_nuevo=mensaje,
+            nivel="ERROR",
+        )
+    except Exception:
+        pass
 
 
 def registrar_detencion_worker(nombre_worker):
@@ -166,14 +169,17 @@ def _mensaje_error(error):
 
 
 def _registrar_error_heartbeat_log(accion, error):
-    registrar_log_sistema(
-        accion,
-        "SCHEDULER",
-        "No fue posible actualizar la senal de vida del proceso programador.",
-        usuario=USUARIO_WORKER,
-        valor_nuevo=error.__class__.__name__,
-        nivel="ERROR",
-    )
+    try:
+        registrar_log_sistema(
+            accion,
+            "SCHEDULER",
+            "No fue posible actualizar la senal de vida del proceso programador.",
+            usuario=USUARIO_WORKER,
+            valor_nuevo=error.__class__.__name__,
+            nivel="ERROR",
+        )
+    except Exception:
+        pass
 
 
 def _intervalo_seguro(configuracion):

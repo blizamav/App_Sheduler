@@ -2,11 +2,102 @@
 
 ## Roadmap de flujos pendiente
 
-Los flujos implementados llegan hasta Fase 12B.1B. El roadmap formal se mantiene en `docs/ROADMAP.md`.
+Los flujos implementados llegan hasta Fase 12B.2 en validacion operativa del worker. El roadmap formal se mantiene en `docs/ROADMAP.md`.
 
 Pendiente critico inmediato:
 
 * Fase 12C: trazabilidad extendida, exportaciones futuras y mejoras avanzadas de consulta.
+
+## Protocolo de validacion operativa 12B.2 - scheduler_worker
+
+La Fase 12B.2 valida el Programador automatico real mediante `scheduler_worker.py`. La configuracion del Programador en la app no enciende por si sola el proceso worker; solo define que debe hacer el worker cuando ya esta corriendo.
+
+Estados esperados:
+
+* Worker apagado: no ejecuta tareas aunque el Programador este activo.
+* Worker encendido + Programador inactivo: registra/respeta inactividad y no ejecuta.
+* Worker encendido + Programador activo + ejecucion automatica permitida: puede ejecutar tareas elegibles.
+* Worker encendido + modo mantenimiento: registra/respeta mantenimiento y no ejecuta.
+
+Comandos de validacion:
+
+```powershell
+python scheduler_worker.py --once
+```
+
+```powershell
+python scheduler_worker.py
+```
+
+Matriz minima:
+
+1. Worker una sola vuelta: debe leer configuracion, actualizar heartbeat/eventos si SQL Server esta disponible y finalizar sin romper.
+2. Programador inactivo: no debe crear ejecuciones y debe registrar omision `SCHEDULER_INACTIVO`.
+3. Ejecucion automatica deshabilitada: no debe crear ejecuciones y debe registrar `EJECUCION_AUTOMATICA_DESHABILITADA`.
+4. Modo mantenimiento: no debe crear ejecuciones y debe registrar `MODO_MANTENIMIENTO`.
+5. Tarea elegible: debe crear ejecucion `AUTOMATICA`, `logs_tareas`, evento `TAREA_EJECUTADA` y cierre `EXITOSA` o `ERROR`.
+6. No duplicar slot: un segundo ciclo sobre la misma ventana debe registrar `DUPLICADO_SLOT` o equivalente y no crear otra ejecucion.
+7. Concurrencia: no debe superar `max_ejecuciones_concurrentes`; debe registrar `LIMITE_CONCURRENCIA` cuando aplique.
+8. Feriado: si la tarea no permite feriados, debe omitir y registrar `FERIADO`.
+9. Worker continuo breve: debe actualizar heartbeat, registrar eventos, no duplicar y detenerse sin dejar inconsistencias.
+
+Consultas manuales sugeridas para SSMS. Codex no debe ejecutarlas automaticamente:
+
+```sql
+SELECT TOP 30
+id_ejecucion,
+id_tarea,
+origen_ejecucion,
+estado_ejecucion,
+pid_proceso,
+codigo_salida,
+fecha_hora_inicio,
+fecha_hora_termino,
+duracion_segundos
+FROM dbo.ejecuciones
+ORDER BY id_ejecucion DESC;
+```
+
+```sql
+SELECT TOP 50
+id_evento,
+fecha_evento,
+tipo_evento,
+decision,
+motivo,
+id_tarea,
+nombre_tarea,
+nombre_worker,
+detalle
+FROM dbo.scheduler_eventos
+ORDER BY id_evento DESC;
+```
+
+```sql
+SELECT TOP 20 *
+FROM dbo.scheduler_worker_heartbeat
+ORDER BY fecha_actualizacion DESC;
+```
+
+```sql
+SELECT
+id_ejecucion,
+estado_ejecucion,
+pid_proceso,
+fecha_hora_inicio,
+fecha_hora_termino
+FROM dbo.ejecuciones
+WHERE estado_ejecucion = 'EN_EJECUCION'
+ORDER BY id_ejecucion DESC;
+```
+
+Resultado de esta ejecucion en Codex:
+
+* `python scheduler_worker.py --once` corrio sin romper, pero no pudo conectar a SQL Server por error ODBC local de cifrado/credenciales.
+* El arranque continuo breve de `python scheduler_worker.py` informo el mismo error controlado y entro al ciclo de espera; fue detenido desde wrapper de prueba.
+* No se obtuvieron IDs reales de tarea, ejecucion, eventos ni heartbeat porque SQL Server no estuvo accesible.
+* Se detecto y corrigio un riesgo real: la ejecucion automatica usaba hilo daemon y podia quedar sin cierre en modo `--once`.
+* Se detecto y corrigio robustez de heartbeat: los fallos de registro/log de heartbeat ya no deben tumbar el worker cuando SQL Server no esta disponible.
 
 ## Flujo consolidado de Auditoria
 

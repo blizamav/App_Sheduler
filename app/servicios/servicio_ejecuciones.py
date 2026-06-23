@@ -160,7 +160,7 @@ def iniciar_ejecucion_automatica(id_tarea, nombre_worker, fecha_programada, clav
     hilo = threading.Thread(
         target=_ejecutar_en_segundo_plano,
         args=(app, id_ejecucion, contexto, ruta_fisica_log, "scheduler_worker", "AUTOMATICA"),
-        daemon=True,
+        daemon=False,
     )
     hilo.start()
     return True, "Ejecucion automatica iniciada.", id_ejecucion
@@ -409,8 +409,7 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
         except Exception as error:
             if origen != "MANUAL":
                 mensaje = "Error controlado al iniciar o ejecutar proceso."
-                finalizar_ejecucion(id_ejecucion, "ERROR", None, mensaje)
-                actualizar_log_tarea_final(id_ejecucion, "ERROR", None, mensaje)
+                _cerrar_ejecucion_en_curso(id_ejecucion, "ERROR", None, mensaje)
                 _escribir_log(ruta_fisica_log, [(mensaje, "ERROR"), (str(error), "ERROR"), ("Estado final: ERROR", "ERROR")])
                 registrar_log_sistema("EJECUCION_INICIO_ERROR", "EJECUCIONES", mensaje, usuario=usuario, nivel="ERROR")
                 return
@@ -437,7 +436,7 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
                 usuario=usuario,
             )
         finally:
-            if origen == "MANUAL" and _ejecucion_sigue_en_curso(id_ejecucion):
+            if _ejecucion_sigue_en_curso(id_ejecucion):
                 if proceso and proceso.poll() is None:
                     terminar_proceso(proceso)
                 _cerrar_ejecucion_en_curso(id_ejecucion, "ERROR", None, MENSAJE_ERROR_MONITOR)
@@ -445,12 +444,17 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
                     ruta_fisica_log,
                     [
                         (MENSAJE_ERROR_MONITOR, "ERROR"),
-                        ("El monitor finalizo sin cerrar la ejecucion manual.", "ERROR"),
+                        ("El monitor finalizo sin cerrar la ejecucion.", "ERROR"),
                         ("Estado final: ERROR", "ERROR"),
                     ],
                 )
                 if not monitor_fallo:
-                    registrar_log_sistema("EJECUCION_MONITOR_CIERRE_GARANTIZADO", "EJECUCIONES", MENSAJE_ERROR_MONITOR, usuario=usuario, nivel="ERROR")
+                    accion_cierre = (
+                        "EJECUCION_MONITOR_CIERRE_GARANTIZADO"
+                        if origen == "MANUAL"
+                        else "EJECUCION_AUTOMATICA_MONITOR_CIERRE_GARANTIZADO"
+                    )
+                    registrar_log_sistema(accion_cierre, "EJECUCIONES", MENSAJE_ERROR_MONITOR, usuario=usuario, nivel="ERROR")
             olvidar_proceso(id_ejecucion)
 
 
