@@ -263,3 +263,18 @@ Bloques posteriores:
 * Fase 14: mantenimiento avanzado.
 
 La arquitectura ya evita rutas absolutas para facilitar portabilidad, pero Docker Compose, systemd y worker como servicio quedan pendientes para Fase 13.
+
+## Release SQL limpio
+
+Desde Fase 13A existe `database/release/` como paquete consolidado para instalar `APP_SCHEDULER_QA` desde cero.
+
+Contenido:
+
+* Creacion de base de datos.
+* Esquema final consolidado.
+* Seeds base de roles, permisos, catalogos, configuracion inicial y reglas de feriados.
+* Script de validacion solo lectura.
+
+La carpeta `database/migrations/` conserva el historial incremental de desarrollo. Para instalaciones nuevas se debe usar `database/release/` y no repetir manualmente toda la cadena historica de migraciones salvo que se trate de una actualizacion incremental de un ambiente existente.
+
+El release no contiene usuarios reales, credenciales, servidores, rutas locales, tareas, scripts, ejecuciones, logs historicos ni auditoria historica.

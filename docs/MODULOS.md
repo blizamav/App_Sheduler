@@ -472,3 +472,20 @@ Implementado en Fase 4:
 * Ejecucion manual debe permitir elegir version disponible.
 * Ejecucion automatica debe usar la version activa.
 * Logs y auditoria deben permitir reconstruir que version se ejecuto.
+
+## Modulo de base de datos y release SQL
+
+Implementado en Fase 13A:
+
+* `database/release/` contiene instalacion SQL limpia desde cero para `APP_SCHEDULER_QA`.
+* `002_schema_final.sql` consolida el modelo vigente de seguridad, mantenedores, tareas, scripts, ejecuciones, logs, scheduler, feriados, papelera, snapshots y auditoria.
+* Seeds consolidados cargan datos base sin usuarios reales ni credenciales.
+* `099_validacion_instalacion.sql` valida estructura y datos base con consultas de solo lectura.
+* `database/migrations/` y `database/seeds/` permanecen como historial de desarrollo incremental.
+
+No implementado en Fase 13A:
+
+* No se ejecutan scripts SQL desde Codex.
+* No se crean usuarios reales.
+* No se cambia conexion Flask ni `.env`.
+* No se avanza a scripts operativos, QA Linux, produccion, Docker ni servicios.

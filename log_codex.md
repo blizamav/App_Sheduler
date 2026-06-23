@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; migraciones 001-010 y seeds 001-007 ejecutados localmente; migracion 012 y seed 008 ejecutados y validados localmente para Fase 10A; migracion 013 y seeds 009/010 creados para Fase 10B, pendientes de ejecucion manual; migracion 014 creada para Fase 11B, pendiente de ejecucion manual; migracion 015 creada para Fase 11D, pendiente de ejecucion manual; migracion 016 creada para Fase 11F, pendiente de ejecucion manual; migracion 017 reportada por usuario como ejecutada y validada manualmente para Fase 11H; migracion 018 y seed 012 creados para Fase 12A, pendientes de ejecucion manual.
-* Estado actual: Fase 12B.2 iniciada como validacion real del `scheduler_worker.py`; validacion operativa completa bloqueada por error ODBC local de cifrado/credenciales, con correcciones acotadas aplicadas al cierre de ejecucion automatica y robustez de heartbeat.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
+* Estado actual: Fase 13A implementada como consolidacion SQL release limpio. No se avanzo a Fase 13B ni Fase 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 12B.2 - Validacion real del scheduler_worker / Programador automatico.
-* Ultima actualizacion: 2026-06-19
+* Fase actual: Fase 13A - Consolidacion SQL release limpio e instalacion desde cero.
+* Ultima actualizacion: 2026-06-23
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -20,7 +20,7 @@
 * Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
-* Docker/despliegue: Pendiente para Fase 13.
+* Docker/despliegue: Pendiente para Fase 13B y siguientes; Fase 13A deja release SQL limpio para instalacion desde cero.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
@@ -30,8 +30,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F y validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat.
-* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13 operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat y release SQL limpio Fase 13A.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
 
@@ -50,6 +50,19 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-23 - Fase 13A / Consolidacion SQL release limpio
+
+* Archivos creados: `database/release/README_INSTALACION_SQL.md`, `database/release/001_crear_base_datos.sql`, `database/release/002_schema_final.sql`, `database/release/003_seed_roles_permisos.sql`, `database/release/004_seed_catalogos_base.sql`, `database/release/005_seed_configuracion_inicial.sql`, `database/release/006_seed_feriados_base.sql`, `database/release/099_validacion_instalacion.sql`.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Objetivo: consolidar el historial SQL incremental en un release limpio para instalar `APP_SCHEDULER_QA` desde cero.
+* Que se hizo: se creo script de base, esquema final, seeds consolidados y validacion solo lectura.
+* Modelo incluido: seguridad, mantenedores, tareas, programaciones, scripts versionados, ejecuciones, logs, scheduler, heartbeat, eventos, feriados, reglas irrenunciables, papelera operativa, snapshots y auditoria.
+* Seeds incluidos: roles, permisos, roles_permisos, catalogos, configuracion inicial segura y reglas base de feriados irrenunciables.
+* Que no se incluyo: usuarios reales, passwords, servidores, rutas locales, datos de prueba, tareas, scripts, ejecuciones, logs historicos, auditoria historica ni feriados sincronizados por API.
+* Decisiones: `database/migrations/` y `database/seeds/` quedan como historial; `database/release/` queda como camino recomendado para instalacion limpia.
+* Validaciones: revision de orden logico, dependencias, indices filtrados, checks, ausencia de credenciales y `git diff --check`.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambio backend/frontend/scheduler y no se avanzo a Fase 13B ni Fase 14.
 
 ### 2026-06-19 - Fase 12B.2 / Validacion real del scheduler_worker
 

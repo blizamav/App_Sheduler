@@ -308,3 +308,27 @@ La sincronizacion es manual y controlada. El scheduler no consulta Nager.Date.
 ## Consideraciones de seguridad
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.
+
+## Instalacion SQL limpia Fase 13A
+
+Para una instalacion nueva de la base `APP_SCHEDULER_QA`, usar el paquete consolidado:
+
+```text
+database/release/
+```
+
+Ejecutar manualmente en SQL Server Management Studio, en este orden:
+
+```text
+database/release/001_crear_base_datos.sql
+database/release/002_schema_final.sql
+database/release/003_seed_roles_permisos.sql
+database/release/004_seed_catalogos_base.sql
+database/release/005_seed_configuracion_inicial.sql
+database/release/006_seed_feriados_base.sql
+database/release/099_validacion_instalacion.sql
+```
+
+`database/migrations/` y `database/seeds/` siguen siendo historial de desarrollo. Para instalaciones limpias no mezclar ambos caminos salvo decision tecnica controlada.
+
+El release no crea usuarios reales ni contiene credenciales. Despues de instalar la base, configurar `.env` manualmente por ambiente sin sobrescribirlo automaticamente.

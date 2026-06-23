@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto se encuentra en Fase 12B.2 de validacion real del `scheduler_worker.py`, con correccion definitiva del sidebar 12B.1F y correccion funcional 12B.1D de Papelera ya implementadas. La validacion del worker quedo bloqueada en este entorno por error ODBC local de cifrado/credenciales, aunque se corrigieron dos riesgos detectados: cierre de ejecuciones automaticas en modo `--once` y tolerancia del heartbeat ante fallo de SQL Server. No se avanza a Fase 12C ni Fase 13.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio para instalar `APP_SCHEDULER_QA` desde cero. La validacion operativa real del worker de Fase 12B.2 quedo bloqueada en entorno Codex por error ODBC local de cifrado/credenciales, pero se mantiene documentada. No se avanza a Fase 13B, Fase 14 ni fases posteriores.
 
 ## Implementado
 
@@ -37,6 +37,7 @@ El proyecto se encuentra en Fase 12B.2 de validacion real del `scheduler_worker.
 * Auditoria base en `/auditoria` con filtros, paginacion, detalle y servicio central `registrar_auditoria(...)`.
 * Correccion visual del detalle de auditoria y reglas criticas `SUPER_ADMIN`/`ADMIN`.
 * TOP 6 ultimas ejecuciones en panel principal.
+* Release SQL limpio en `database/release/` para instalacion desde cero.
 
 ## Fase 11 - Robustez Operativa Interna
 
@@ -74,9 +75,10 @@ Estado: parcialmente implementada. No debe confundirse con logs operativos, ejec
 
 ## Fase 13 - Operacion y Despliegue
 
-Estado: pendiente. Debe abordarse despues de cerrar la robustez interna y definir Auditoria base.
+Estado: iniciada con consolidacion SQL limpia. El resto de operacion y despliegue sigue pendiente.
 
-* 13A Scripts operativos Windows/Linux. Pendiente.
+* 13A Consolidacion SQL release limpio e instalacion desde cero. Implementado.
+* 13A.1 Scripts operativos Windows/Linux. Pendiente.
 * 13B Preparacion QA Linux. Pendiente.
 * 13C Preparacion produccion. Pendiente.
 * 13D Worker como servicio. Pendiente.

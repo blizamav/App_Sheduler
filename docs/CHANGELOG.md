@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-06-23 - Fase 13A consolidacion SQL release limpio
+
+### Implementado
+
+* Se creo `database/release/` como paquete SQL consolidado para instalar `APP_SCHEDULER_QA` desde cero.
+* Se agrego script de creacion de base, esquema final, seeds consolidados y validacion de instalacion.
+* El esquema final integra las migraciones vigentes de seguridad, mantenedores, tareas, scripts versionados, ejecuciones, logs, scheduler, feriados, papelera operativa, snapshots y auditoria.
+* Los seeds consolidados cargan roles, permisos, asignaciones, catalogos, configuracion inicial segura del scheduler y reglas base de feriados irrenunciables.
+* `database/migrations/` y `database/seeds/` se mantienen como historial de desarrollo.
+
+### Reglas
+
+* No se incluyeron usuarios reales, passwords, servidores, rutas locales, tareas de prueba, scripts, ejecuciones, logs historicos ni auditoria historica.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se cambio backend, frontend, scheduler, auditoria, papelera, roles funcionales ni ejecuciones.
+* No se hizo commit ni push.
+* No se avanzo a Fase 13B, Fase 14 ni fases posteriores.
+
 ## 2026-06-19 - Fase 12B.2 validacion real del scheduler_worker
 
 ### Validacion
