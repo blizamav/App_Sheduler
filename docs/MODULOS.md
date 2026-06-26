@@ -49,6 +49,8 @@
 * Fase 12B.1E: rediseno visual profundo del shell con sidebar iconografico textual, topbar compacta y ajustes visuales generales sin cambios funcionales.
 * Fase 12B.1F: correccion profunda del shell visual, sidebar con scroll flexible robusto y modernizacion UI/UX premium sin cambios funcionales.
 * Fase 12B.2: validacion real del `scheduler_worker.py` iniciada; bloqueada por error ODBC local, con correccion acotada de cierre seguro en ejecuciones automaticas y robustez de heartbeat.
+* Fase 13A.1: optimizacion de `scheduler_eventos` y limpieza controlada de eventos informativos antiguos.
+* Fase 13A.1B: limpieza parametrizable de eventos del scheduler con whitelist de categorias y previsualizacion.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -489,3 +491,21 @@ No implementado en Fase 13A:
 * No se crean usuarios reales.
 * No se cambia conexion Flask ni `.env`.
 * No se avanza a scripts operativos, QA Linux, produccion, Docker ni servicios.
+
+## Modulo de eventos del programador
+
+Desde Fase 13A.1:
+
+* `scheduler_eventos` queda orientada a hechos relevantes, no a registrar cada ciclo normal sin novedades.
+* No se persisten por defecto `CICLO_INICIADO`, `CICLO_FINALIZADO` ni omisiones por `FUERA_DE_VENTANA`.
+* `/scheduler/eventos` permite limpiar eventos informativos antiguos con permiso `SCHEDULER_CONFIG_EDITAR`.
+* La limpieza solo elimina `CICLO_INICIADO`, `CICLO_FINALIZADO` y `TAREA_OMITIDA/FUERA_DE_VENTANA` anteriores al periodo seleccionado.
+* Eventos importantes como ejecuciones, errores, feriados, duplicados y limites de concurrencia se conservan por defecto.
+
+Desde Fase 13A.1B:
+
+* La limpieza permite seleccionar categorias especificas.
+* El backend usa whitelist `CATEGORIAS_LIMPIEZA`; no acepta tipos libres del navegador.
+* Existe previsualizacion con total y detalle por categoria.
+* La eliminacion recalcula el filtro en backend antes de borrar.
+* Se mantiene permiso `SCHEDULER_CONFIG_EDITAR`; no hay seed ni migracion nueva.

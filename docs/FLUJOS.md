@@ -1,5 +1,53 @@
 # Flujos
 
+## Flujo Fase 13A.1B - Limpieza parametrizable de eventos
+
+La limpieza de eventos del programador permite seleccionar periodo y categorias concretas antes de eliminar registros antiguos.
+
+Flujo:
+
+1. Usuario autorizado abre `/scheduler/eventos`.
+2. Selecciona periodo: 20, 30, 60 o 90 dias.
+3. Selecciona una o varias categorias permitidas, o usa `Seleccionar todas`.
+4. Puede usar `Limpiar solo ruido operativo` para marcar `CICLO_INICIADO`, `CICLO_FINALIZADO` y `TAREA_OMITIDA/FUERA_DE_VENTANA`.
+5. Presiona `Previsualizar limpieza`.
+6. Frontend llama `POST /scheduler/eventos/limpiar/previsualizar`.
+7. Backend valida permiso, periodo y categorias contra whitelist.
+8. Backend retorna fecha limite, total y detalle por categoria.
+9. La vista habilita `Limpiar eventos seleccionados` solo si existe conteo previo mayor a cero.
+10. Al confirmar, el modal muestra periodo, fecha limite, categorias, total, detalle y advertencia.
+11. El usuario marca checkbox obligatorio.
+12. Backend recalcula filtros seguros y elimina solo de `scheduler_eventos`.
+13. Se registra auditoria y log de sistema.
+
+La limpieza no acepta `tipo_evento` o `motivo` libres desde frontend. Las claves seleccionadas se traducen en backend a condiciones SQL controladas.
+
+## Flujo Fase 13A.1 - Eventos del programador y limpieza controlada
+
+Problema detectado: `scheduler_eventos` podia crecer rapido porque cada ciclo normal del worker registraba inicio, fin y omisiones por `FUERA_DE_VENTANA`.
+
+Nueva politica de persistencia:
+
+* No se guardan por defecto `CICLO_INICIADO`.
+* No se guardan por defecto `CICLO_FINALIZADO`.
+* No se guarda por defecto `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`.
+* Si se guardan eventos relevantes: `TAREA_EJECUTADA`, `ERROR_SCHEDULER`, omisiones por `FERIADO`, `DUPLICADO_SLOT`, `LIMITE_CONCURRENCIA`, `EJECUCION_EN_CURSO`, `MODO_MANTENIMIENTO`, `SCHEDULER_INACTIVO`, `EJECUCION_AUTOMATICA_DESHABILITADA` y errores de validacion.
+
+Flujo de limpieza:
+
+1. Usuario autorizado abre `/scheduler/eventos`.
+2. La pantalla muestra la seccion `Limpieza de eventos`.
+3. El usuario selecciona 20, 30, 60 o 90 dias.
+4. La UI muestra conteo previo de eventos informativos antiguos por opcion.
+5. Al presionar `Limpiar eventos antiguos`, se abre modal corporativo danger.
+6. El usuario debe marcar el checkbox obligatorio.
+7. Backend valida permiso `SCHEDULER_CONFIG_EDITAR`.
+8. Backend elimina solo de `scheduler_eventos` los eventos antiguos permitidos.
+9. Se registra auditoria y log de sistema de la accion humana administrativa.
+10. La pantalla muestra resumen con cantidad eliminada y fecha limite.
+
+La limpieza no afecta ejecuciones, logs, auditoria, heartbeat, tareas, scripts, usuarios, configuraciones, papelera ni snapshots.
+
 ## Roadmap de flujos pendiente
 
 Los flujos implementados llegan hasta Fase 12B.2 en validacion operativa del worker. El roadmap formal se mantiene en `docs/ROADMAP.md`.

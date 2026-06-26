@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 13A implementada como consolidacion SQL release limpio. No se avanzo a Fase 13B ni Fase 14.
+* Estado actual: Fase 13A.1B implementada con multiselect visible y paginacion dinamica para eventos del scheduler. No se avanzo a Fase 13B ni Fase 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 13A - Consolidacion SQL release limpio e instalacion desde cero.
-* Ultima actualizacion: 2026-06-23
+* Fase actual: Fase 13A.1B - Limpieza parametrizable de eventos del scheduler.
+* Ultima actualizacion: 2026-06-26
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -17,7 +17,7 @@
 * Frontend: HTML/CSS/JS sin Streamlit.
 * Base de datos: SQL Server local creado con scripts versionados; conexion Flask inicial mediante `pyodbc` y `.env`.
 * Autenticacion: Login hibrido; primero `.env`, luego usuarios activos de SQL Server con password hash.
-* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler.
+* Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler; Fase 13A.1 evita persistir eventos ruidosos y agrega limpieza controlada; Fase 13A.1B agrega limpieza parametrizable con whitelist y previsualizacion.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
 * Docker/despliegue: Pendiente para Fase 13B y siguientes; Fase 13A deja release SQL limpio para instalacion desde cero.
@@ -30,7 +30,7 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat y release SQL limpio Fase 13A.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1 y limpieza parametrizable Fase 13A.1B.
 * Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14 mantenimiento avanzado.
 
 ## 4. Reglas del proyecto
@@ -50,6 +50,71 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-26 - Fase 13A.1B / Paginacion dinamica de eventos scheduler
+
+* Archivos creados: `app/templates/scheduler/_eventos_historial.html`.
+* Archivos modificados: `app/rutas_scheduler.py`, `app/templates/scheduler/eventos.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/UI_UX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: la paginacion del historial en `/scheduler/eventos` recargaba toda la pagina y devolvia al usuario arriba de la vista.
+* Cambio aplicado: la tabla de eventos y la paginacion pasan a un parcial reutilizable; la ruta devuelve ese parcial cuando recibe `X-Requested-With: fetch`.
+* Frontend: `app.js` intercepta clicks en `Primero`, `Anterior`, `Siguiente` y `Ultimo`, carga el parcial con `fetch` y reemplaza solo `[data-eventos-historial]`.
+* UX: no hay scroll automatico ni recarga completa; el bloque de filtros y la limpieza quedan intactos visualmente.
+* URL: se usa `history.pushState` para conservar pagina y filtros; `popstate` vuelve a cargar el parcial correspondiente.
+* Degradacion segura: los enlaces siguen siendo `href` normales si JavaScript falla o esta desactivado.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambio logica de limpieza/scheduler/auditoria/permisos, no se borraron datos y no se avanzo a Fase 13B ni Fase 14.
+
+### 2026-06-26 - Fase 13A.1B / Multiselect visible de limpieza scheduler
+
+* Archivos modificados: `app/templates/scheduler/eventos.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/UI_UX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: el selector `Alcance` funcionaba como preset principal y ocultaba categorias individuales salvo al elegir `Personalizado`.
+* Cambio aplicado: se elimina el selector `Alcance`; las categorias permitidas quedan siempre visibles como checkboxes compactos.
+* Atajos disponibles: `Ruido operativo`, `Seleccionar todo` y `Deseleccionar todo`.
+* Comportamiento UI: el resumen indica sin categorias, una categoria, varias categorias o todas las categorias seleccionadas; la previsualizacion y limpieza usan las categorias marcadas.
+* Backend: no se modifico; se mantiene `request.form.getlist("categorias")`, bloqueo de lista vacia, whitelist de categorias y SQL seguro existente.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambiaron permisos/auditoria/scheduler, no se borraron datos y no se avanzo a Fase 13B ni Fase 14.
+
+### 2026-06-23 - Fase 13A.1B / Limpieza parametrizable de eventos scheduler
+
+* Archivos modificados: `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`, `app/rutas_scheduler.py`, `app/templates/scheduler/eventos.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `docs/ROADMAP.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `log_codex.md`.
+* Objetivo: permitir limpieza parametrizable por periodo y categorias seleccionadas.
+* Backend: se agrego whitelist `CATEGORIAS_LIMPIEZA`, previsualizacion protegida y eliminacion con condiciones SQL internas validadas.
+* UI: se agregaron checkboxes de categorias, botones `Seleccionar todas`, `Limpiar solo ruido operativo`, `Previsualizar limpieza` y modal con resumen dinamico.
+* Permiso usado: `SCHEDULER_CONFIG_EDITAR`.
+* Auditoria: accion `LIMPIAR_EVENTOS_SCHEDULER`, con periodo, categorias, total eliminado y detalle.
+* No se creo seed ni migracion; no se modifico `database/release/`.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se borro auditoria/ejecuciones/logs/heartbeat/datos operativos, no se cambio logica de ejecucion y no se avanzo a Fase 13B ni Fase 14.
+
+### 2026-06-23 - Fase 13A.1B / Ajuste visual compacto de limpieza scheduler
+
+* Archivos modificados: `app/templates/scheduler/eventos.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/UI_UX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico visual: la seccion de limpieza parametrizable ocupaba demasiado espacio por tarjetas, textos largos y checkboxes distribuidos como bloque principal antes del historial.
+* Cambio aplicado: se compacto el bloque en una barra operativa con periodo, desplegable de categorias, acciones rapidas, resumen discreto y previsualizacion bajo demanda.
+* Funcionalidad conservada: whitelist backend, seleccion de categorias, previsualizacion previa, boton deshabilitado hasta validar, modal corporativo con resumen y checkbox obligatorio.
+* Decision UI/UX: mantener la limpieza como herramienta secundaria dentro de `/scheduler/eventos`, sin competir visualmente con filtros, paginacion e historial.
+* Validaciones recomendadas: abrir `/scheduler/eventos`, seleccionar periodo y categorias, usar acciones rapidas, previsualizar, confirmar modal con checkbox y verificar que no aparezcan `alert()`, `confirm()`, `prompt()` ni recargas forzadas.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambiaron repositorios/servicios/rutas en este ajuste visual y no se avanzo a Fase 13B ni Fase 14.
+
+### 2026-06-23 - Fase 13A.1B / Rediseno visual por presets de limpieza scheduler
+
+* Archivos modificados: `app/templates/scheduler/eventos.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/UI_UX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema visual detectado: el selector de categorias seguia abriendo un panel grande, con checkboxes visibles, texto cortado y superposicion sobre la tabla de eventos.
+* Cambio aplicado: la limpieza queda como flujo administrativo compacto: seleccionar periodo, elegir preset de alcance, previsualizar impacto y confirmar eliminacion.
+* Presets visibles: `Ruido operativo`, `Eventos de ejecucion`, `Errores y bloqueos`, `Calendario y programacion`, `Todas las categorias permitidas` y `Personalizado`.
+* Modo personalizado: las categorias individuales se muestran solo si el usuario selecciona `Personalizado`, como lista compacta de checkboxes normales y sin tarjetas.
+* Funcionalidad conservada: el frontend sigue enviando claves `categorias`; el backend mantiene whitelist, permisos, auditoria, previsualizacion y confirmacion fuerte sin cambios.
+* Decision UI/UX: ocultar complejidad tecnica por defecto y presentar la limpieza como una accion administrativa de alcance claro.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambiaron repositorios/servicios/rutas, no se borro informacion y no se avanzo a Fase 13B ni Fase 14.
+
+### 2026-06-23 - Fase 13A.1 / Optimizacion y limpieza controlada de eventos scheduler
+
+* Archivos modificados: `app/repositorios/repositorio_scheduler_eventos.py`, `app/servicios/servicio_scheduler_eventos.py`, `app/rutas_scheduler.py`, `app/templates/scheduler/eventos.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `docs/FLUJOS.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `docs/ROADMAP.md`, `docs/SEGURIDAD.md`, `docs/DESPLIEGUE.md`, `log_codex.md`.
+* Diagnostico: `scheduler_eventos` crecia por eventos normales repetitivos de cada ciclo: inicio, fin y omisiones `FUERA_DE_VENTANA`.
+* Politica nueva: no persistir `CICLO_INICIADO`, `CICLO_FINALIZADO` ni `TAREA_OMITIDA/FUERA_DE_VENTANA`; conservar eventos relevantes.
+* Limpieza: se agrego `POST /scheduler/eventos/limpiar`, protegido con `SCHEDULER_CONFIG_EDITAR`, para eliminar eventos informativos antiguos de 20, 30, 60 o 90 dias.
+* Alcance de limpieza: solo `scheduler_eventos` y solo eventos informativos ruidosos antiguos.
+* Protecciones: modal corporativo danger, checkbox obligatorio, validacion de periodos permitidos, auditoria y log de sistema.
+* No se creo seed ni migracion; no se actualizo `database/release/` porque se reutiliza permiso existente y no hay cambio de schema.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se borro auditoria/ejecuciones/logs/heartbeat/datos operativos, no se cambio logica de ejecucion y no se avanzo a Fase 13B ni Fase 14.
 
 ### 2026-06-23 - Fase 13A / Consolidacion SQL release limpio
 

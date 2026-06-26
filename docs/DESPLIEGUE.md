@@ -332,3 +332,25 @@ database/release/099_validacion_instalacion.sql
 `database/migrations/` y `database/seeds/` siguen siendo historial de desarrollo. Para instalaciones limpias no mezclar ambos caminos salvo decision tecnica controlada.
 
 El release no crea usuarios reales ni contiene credenciales. Despues de instalar la base, configurar `.env` manualmente por ambiente sin sobrescribirlo automaticamente.
+
+## Limpieza de eventos scheduler Fase 13A.1
+
+La limpieza de eventos del programador se ejecuta desde la app en:
+
+```text
+/scheduler/eventos
+```
+
+Requiere permiso `SCHEDULER_CONFIG_EDITAR`. No requiere migracion ni seed adicional.
+
+La accion permite limpiar ruido operativo antiguo de `scheduler_eventos`:
+
+* `CICLO_INICIADO`
+* `CICLO_FINALIZADO`
+* `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`
+
+No elimina ejecuciones, logs, auditoria, heartbeat ni datos operativos. No ejecutar limpiezas directas en SQL Server salvo respaldo y aprobacion.
+
+Desde Fase 13A.1B la limpieza permite seleccionar categorias adicionales autorizadas y exige previsualizacion previa desde la interfaz. La app valida categorias contra whitelist backend y mantiene el mismo permiso `SCHEDULER_CONFIG_EDITAR`.
+
+No requiere migracion, seed ni actualizacion de `database/release/`.

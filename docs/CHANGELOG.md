@@ -1,5 +1,118 @@
 # Changelog
 
+## 2026-06-26 - Fase 13A.1B paginacion dinamica de eventos scheduler
+
+### Implementado
+
+* Se creo un parcial para el historial de eventos y su paginacion.
+* `/scheduler/eventos` puede responder solo el parcial cuando recibe una peticion `fetch`.
+* Los enlaces `Primero`, `Anterior`, `Siguiente` y `Ultimo` se interceptan con JavaScript.
+* La actualizacion reemplaza solo el bloque de historial de eventos.
+* Se mantiene la posicion visual del usuario y no se reinicia el bloque de limpieza.
+* Los links conservan fallback normal si JavaScript falla o esta desactivado.
+
+### Reglas
+
+* No se modifico la logica de limpieza.
+* No se modificaron permisos, auditoria, scheduler ni SQL.
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se avanzo a Fase 13B ni Fase 14.
+
+## 2026-06-26 - Fase 13A.1B multiselect visible de limpieza scheduler
+
+### Implementado
+
+* Se elimino el selector `Alcance` como control principal de limpieza en `/scheduler/eventos`.
+* Las categorias permitidas quedan siempre visibles como checkboxes compactos.
+* Se agregan atajos pequenos: `Ruido operativo`, `Seleccionar todo` y `Deseleccionar todo`.
+* El resumen distingue sin categorias, una categoria, varias categorias o todas las categorias seleccionadas.
+* La previsualizacion y el modal siguen usando las categorias marcadas.
+
+### Reglas
+
+* No se modifico whitelist backend.
+* No se modificaron permisos, auditoria, scheduler ni SQL.
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se avanzo a Fase 13B ni Fase 14.
+
+## 2026-06-23 - Fase 13A.1B rediseno visual por presets de limpieza scheduler
+
+### Implementado
+
+* Se rediseno la seccion `Limpieza de eventos` en `/scheduler/eventos` como flujo administrativo: alcance, previsualizacion y confirmacion.
+* El periodo, preset de alcance y accion `Previsualizar` quedan en una fila compacta.
+* Se reemplazo la lista visible de categorias por presets: ruido operativo, eventos de ejecucion, errores y bloqueos, calendario y programacion, todas las categorias permitidas y personalizado.
+* El modo `Personalizado` muestra categorias individuales como lista compacta con checkboxes normales, sin tarjetas.
+* El resumen de seleccion se muestra en una franja discreta.
+* La previsualizacion queda oculta hasta que el usuario la solicite.
+* El modal corporativo, el checkbox obligatorio y la previsualizacion previa se mantienen sin cambios funcionales.
+
+### Reglas
+
+* No se modificaron repositorios, servicios ni rutas para este ajuste visual.
+* No se cambio whitelist backend, permisos, auditoria ni logica de limpieza.
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se avanzo a Fase 13B ni Fase 14.
+
+## 2026-06-23 - Fase 13A.1B limpieza parametrizable de eventos scheduler
+
+### Implementado
+
+* La limpieza de `/scheduler/eventos` ahora permite seleccionar categorias especificas mediante whitelist backend.
+* Se agrego previsualizacion protegida en `POST /scheduler/eventos/limpiar/previsualizar`.
+* La previsualizacion retorna total, fecha limite y detalle por categoria antes de eliminar.
+* La limpieza final recalcula y elimina solo las categorias seleccionadas dentro del periodo permitido.
+* El modal de confirmacion muestra periodo, fecha limite, categorias, total y detalle por categoria, con checkbox obligatorio.
+* Se mantiene el permiso existente `SCHEDULER_CONFIG_EDITAR`.
+
+### Categorias permitidas
+
+* Ciclos iniciados.
+* Ciclos finalizados.
+* Omitidas por fuera de ventana.
+* Tareas ejecutadas.
+* Errores del scheduler.
+* Omitidas por feriado.
+* Duplicado de slot.
+* Limite de concurrencia.
+* Modo mantenimiento.
+* Scheduler inactivo o ejecucion automatica deshabilitada.
+
+### Reglas
+
+* No se aceptan tipos libres desde frontend.
+* No se uso `TRUNCATE`.
+* No se borra sin periodo ni categorias.
+* No se borra fuera de `scheduler_eventos`.
+* No se creo migracion ni seed.
+* No se modifico `database/release/`.
+* No se modifico `.env`.
+* No se ejecuto SQL automaticamente.
+* No se avanzo a Fase 13B ni Fase 14.
+
+## 2026-06-23 - Fase 13A.1 optimizacion de eventos del scheduler
+
+### Implementado
+
+* Se redujo el ruido futuro en `scheduler_eventos`: ya no se persisten `CICLO_INICIADO`, `CICLO_FINALIZADO` ni `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`.
+* Se mantienen eventos relevantes: ejecuciones, errores, feriados, duplicados, limite de concurrencia, mantenimiento, scheduler inactivo, ejecucion automatica deshabilitada y omisiones importantes.
+* Se agrego limpieza controlada en `/scheduler/eventos` para eliminar eventos informativos antiguos de `scheduler_eventos`.
+* La limpieza permite periodos de 20, 30, 60 y 90 dias, muestra conteo previo por opcion y usa modal corporativo con checkbox obligatorio.
+* La accion usa permiso existente `SCHEDULER_CONFIG_EDITAR` y registra auditoria/log de sistema.
+
+### Reglas
+
+* La limpieza solo afecta `scheduler_eventos`.
+* No borra ejecuciones, `logs_tareas`, `logs_sistema`, auditoria, heartbeat, tareas, scripts, usuarios, configuraciones, papelera ni snapshots.
+* No se creo seed ni migracion.
+* No se modifico `database/release/` porque no hubo cambio de schema ni permisos.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se avanzo a Fase 13B ni Fase 14.
+
 ## 2026-06-23 - Fase 13A consolidacion SQL release limpio
 
 ### Implementado

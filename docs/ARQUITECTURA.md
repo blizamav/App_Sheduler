@@ -278,3 +278,23 @@ Contenido:
 La carpeta `database/migrations/` conserva el historial incremental de desarrollo. Para instalaciones nuevas se debe usar `database/release/` y no repetir manualmente toda la cadena historica de migraciones salvo que se trate de una actualizacion incremental de un ambiente existente.
 
 El release no contiene usuarios reales, credenciales, servidores, rutas locales, tareas, scripts, ejecuciones, logs historicos ni auditoria historica.
+
+## Retencion controlada de eventos scheduler
+
+Desde Fase 13A.1 la tabla `scheduler_eventos` se usa para hechos relevantes del programador. La capa `servicio_scheduler_eventos.py` filtra eventos ruidosos antes de persistirlos:
+
+* `CICLO_INICIADO`.
+* `CICLO_FINALIZADO`.
+* `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`.
+
+La limpieza manual desde `/scheduler/eventos` ejecuta borrado fisico controlado solo sobre `scheduler_eventos` y solo para esos eventos informativos antiguos. No toca tablas historicas ni operativas como `ejecuciones`, `logs_tareas`, `logs_sistema`, `auditoria_cambios` o `scheduler_worker_heartbeat`.
+
+No se agrego schema nuevo ni permiso nuevo; se reutiliza `SCHEDULER_CONFIG_EDITAR`.
+
+Fase 13A.1B amplia esta capa con limpieza parametrizable:
+
+* `servicio_scheduler_eventos.py` define `CATEGORIAS_LIMPIEZA` como whitelist backend.
+* `repositorio_scheduler_eventos.py` recibe condiciones internas ya validadas, no valores libres del usuario.
+* `/scheduler/eventos/limpiar/previsualizar` calcula conteos con la misma logica segura que la eliminacion.
+* `/scheduler/eventos/limpiar` recalcula el alcance antes de ejecutar `DELETE`.
+* La UI solo envia claves de categoria; el backend decide su traduccion SQL.

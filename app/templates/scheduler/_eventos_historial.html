@@ -1,0 +1,72 @@
+{% macro query_pagina(numero) -%}
+{{ url_for('scheduler.eventos',
+    page=numero,
+    per_page=per_page,
+    fecha_desde=filtros.get('fecha_desde'),
+    fecha_hasta=filtros.get('fecha_hasta'),
+    tarea=filtros.get('tarea'),
+    tipo_evento=filtros.get('tipo_evento'),
+    decision=filtros.get('decision'),
+    motivo=filtros.get('motivo'),
+    worker=filtros.get('worker'),
+    texto=filtros.get('texto')) }}
+{%- endmacro %}
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Historial activo</p>
+            <h3>Eventos registrados</h3>
+        </div>
+        <span class="badge info">Pagina {{ page }} de {{ total_paginas }}</span>
+    </div>
+    <div class="tabla-base">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Proceso</th>
+                    <th>Tarea</th>
+                    <th>Tipo evento</th>
+                    <th>Decision</th>
+                    <th>Motivo</th>
+                    <th>Fecha programada</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evento in eventos %}
+                <tr>
+                    <td>{{ evento.fecha_evento }}</td>
+                    <td>{{ evento.nombre_worker or "-" }}</td>
+                    <td>
+                        {{ evento.nombre_tarea or "-" }}
+                        {% if evento.id_tarea %}<br><small>ID {{ evento.id_tarea }}</small>{% endif %}
+                    </td>
+                    <td><span class="badge {% if evento.tipo_evento == 'ERROR_SCHEDULER' %}error{% else %}info{% endif %}">{{ evento.tipo_evento }}</span></td>
+                    <td><span class="badge {% if evento.decision == 'EJECUTAR' %}activo{% elif evento.decision == 'ERROR' %}error{% elif evento.decision == 'OMITIR' %}advertencia{% else %}info{% endif %}">{{ evento.decision }}</span></td>
+                    <td><span class="badge {% if evento.motivo in ['FERIADO','EJECUCION_EN_CURSO','LIMITE_CONCURRENCIA'] %}advertencia{% elif evento.motivo == 'DUPLICADO_SLOT' %}info{% elif evento.decision == 'ERROR' %}error{% else %}inactivo{% endif %}">{{ evento.motivo or "-" }}</span></td>
+                    <td>{{ evento.fecha_programada or "-" }}</td>
+                    <td>
+                        {{ (evento.detalle or "-")|truncate(140, True) }}
+                        {% if evento.nombre_feriado %}<br><small>Feriado: {{ evento.nombre_feriado }}</small>{% endif %}
+                        {% if evento.clave_programacion %}<br><small>{{ evento.clave_programacion }}</small>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="estado-vacio">Sin eventos del programador para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="paginacion" data-eventos-paginacion>
+    <span>Pagina {{ page }} de {{ total_paginas }} - {{ total }} registros</span>
+    <div class="paginacion-acciones">
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(1) }}">Primero</a>
+        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(page - 1 if page > 1 else 1) }}">Anterior</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(page + 1 if page < total_paginas else total_paginas) }}">Siguiente</a>
+        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(total_paginas) }}">Ultimo</a>
+    </div>
+</section>

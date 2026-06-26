@@ -241,6 +241,93 @@ def desactivar_eventos_antiguos(dias_retencion=90):
         return afectados
 
 
+def contar_eventos_limpiables_antiguos(dias_retencion, categorias):
+    dias = int(dias_retencion)
+    detalle = []
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT CONVERT(varchar(19), DATEADD(day, ?, SYSDATETIME()), 120)
+            """,
+            -dias,
+        )
+        fila_limite = cursor.fetchone()
+        fecha_limite = fila_limite[0] if fila_limite else None
+
+        for categoria in categorias:
+            cursor.execute(
+                f"""
+                SELECT COUNT(1) AS total
+                FROM dbo.scheduler_eventos
+                WHERE fecha_evento < DATEADD(day, ?, SYSDATETIME())
+                  AND ({categoria['condicion_sql']})
+                """,
+                -dias,
+            )
+            fila = cursor.fetchone()
+            detalle.append({
+                "clave": categoria["clave"],
+                "nombre": categoria["nombre"],
+                "total": int(fila[0] or 0) if fila else 0,
+            })
+
+    return {
+        "total": sum(item["total"] for item in detalle),
+        "fecha_limite": fecha_limite,
+        "detalle": detalle,
+    }
+
+
+def contar_eventos_informativos_antiguos(dias_retencion):
+    return contar_eventos_limpiables_antiguos(
+        dias_retencion,
+        [
+            {"clave": "ciclo_iniciado", "nombre": "Ciclos iniciados", "condicion_sql": "tipo_evento = 'CICLO_INICIADO'"},
+            {"clave": "ciclo_finalizado", "nombre": "Ciclos finalizados", "condicion_sql": "tipo_evento = 'CICLO_FINALIZADO'"},
+            {"clave": "fuera_ventana", "nombre": "Omitidas por fuera de ventana", "condicion_sql": "tipo_evento = 'TAREA_OMITIDA' AND motivo = 'FUERA_DE_VENTANA'"},
+        ],
+    )
+
+
+def eliminar_eventos_limpiables_antiguos(dias_retencion, categorias):
+    dias = int(dias_retencion)
+    condiciones = [f"({categoria['condicion_sql']})" for categoria in categorias]
+    where_categorias = " OR ".join(condiciones)
+    previo = contar_eventos_limpiables_antiguos(dias, categorias)
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            f"""
+            DELETE FROM dbo.scheduler_eventos
+            WHERE fecha_evento < DATEADD(day, ?, SYSDATETIME())
+              AND ({where_categorias})
+            """,
+            -dias,
+        )
+        eliminados = cursor.rowcount if cursor.rowcount is not None else 0
+        conexion.commit()
+        return {
+            "ok": True,
+            "dias": dias,
+            "fecha_limite": previo.get("fecha_limite"),
+            "eliminados": int(eliminados or 0),
+            "detalle": previo.get("detalle", []),
+            "categorias": [categoria["clave"] for categoria in categorias],
+        }
+
+
+def eliminar_eventos_informativos_antiguos(dias_retencion):
+    return eliminar_eventos_limpiables_antiguos(
+        dias_retencion,
+        [
+            {"clave": "ciclo_iniciado", "nombre": "Ciclos iniciados", "condicion_sql": "tipo_evento = 'CICLO_INICIADO'"},
+            {"clave": "ciclo_finalizado", "nombre": "Ciclos finalizados", "condicion_sql": "tipo_evento = 'CICLO_FINALIZADO'"},
+            {"clave": "fuera_ventana", "nombre": "Omitidas por fuera de ventana", "condicion_sql": "tipo_evento = 'TAREA_OMITIDA' AND motivo = 'FUERA_DE_VENTANA'"},
+        ],
+    )
+
+
 def listar_eventos_programador_paginado(filtros=None, page=1, per_page=25):
     filtros = filtros or {}
     page = max(1, int(page or 1))

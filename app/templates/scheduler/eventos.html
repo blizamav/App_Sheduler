@@ -3,20 +3,6 @@
 {% block titulo %}Eventos programador - APP Scheduler{% endblock %}
 {% block encabezado %}Eventos programador{% endblock %}
 
-{% macro query_pagina(numero) -%}
-{{ url_for('scheduler.eventos',
-    page=numero,
-    per_page=per_page,
-    fecha_desde=filtros.get('fecha_desde'),
-    fecha_hasta=filtros.get('fecha_hasta'),
-    tarea=filtros.get('tarea'),
-    tipo_evento=filtros.get('tipo_evento'),
-    decision=filtros.get('decision'),
-    motivo=filtros.get('motivo'),
-    worker=filtros.get('worker'),
-    texto=filtros.get('texto')) }}
-{%- endmacro %}
-
 {% block contenido %}
 <section class="contenedor bienvenida">
     <div>
@@ -101,62 +87,100 @@
     </form>
 </section>
 
-<section class="bloque">
-    <div class="bloque-header">
+{% set permisos_sesion = session.get("permisos", []) %}
+{% set puede_limpiar_eventos = session.get("es_admin_env") or "*" in permisos_sesion or "SCHEDULER_CONFIG_EDITAR" in permisos_sesion %}
+{% if puede_limpiar_eventos %}
+<section class="bloque limpieza-eventos">
+    <div class="bloque-header limpieza-header">
         <div>
-            <p class="eyebrow">Historial activo</p>
-            <h3>Eventos registrados</h3>
+            <p class="eyebrow">Limpieza controlada</p>
+            <h3>Limpieza de eventos</h3>
+            <p>Elimina eventos antiguos del programador sin afectar ejecuciones, logs ni auditoria.</p>
         </div>
-        <span class="badge info">Pagina {{ page }} de {{ total_paginas }}</span>
+        <span class="badge advertencia">Solo scheduler_eventos</span>
     </div>
-    <div class="tabla-base">
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Proceso</th>
-                    <th>Tarea</th>
-                    <th>Tipo evento</th>
-                    <th>Decision</th>
-                    <th>Motivo</th>
-                    <th>Fecha programada</th>
-                    <th>Detalle</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for evento in eventos %}
-                <tr>
-                    <td>{{ evento.fecha_evento }}</td>
-                    <td>{{ evento.nombre_worker or "-" }}</td>
-                    <td>
-                        {{ evento.nombre_tarea or "-" }}
-                        {% if evento.id_tarea %}<br><small>ID {{ evento.id_tarea }}</small>{% endif %}
-                    </td>
-                    <td><span class="badge {% if evento.tipo_evento == 'ERROR_SCHEDULER' %}error{% else %}info{% endif %}">{{ evento.tipo_evento }}</span></td>
-                    <td><span class="badge {% if evento.decision == 'EJECUTAR' %}activo{% elif evento.decision == 'ERROR' %}error{% elif evento.decision == 'OMITIR' %}advertencia{% else %}info{% endif %}">{{ evento.decision }}</span></td>
-                    <td><span class="badge {% if evento.motivo in ['FERIADO','EJECUCION_EN_CURSO','LIMITE_CONCURRENCIA'] %}advertencia{% elif evento.motivo == 'DUPLICADO_SLOT' %}info{% elif evento.decision == 'ERROR' %}error{% else %}inactivo{% endif %}">{{ evento.motivo or "-" }}</span></td>
-                    <td>{{ evento.fecha_programada or "-" }}</td>
-                    <td>
-                        {{ (evento.detalle or "-")|truncate(140, True) }}
-                        {% if evento.nombre_feriado %}<br><small>Feriado: {{ evento.nombre_feriado }}</small>{% endif %}
-                        {% if evento.clave_programacion %}<br><small>{{ evento.clave_programacion }}</small>{% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="8" class="estado-vacio">Sin eventos del programador para los filtros seleccionados.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+    <form
+        method="post"
+        action="{{ url_for('scheduler.limpiar_eventos') }}"
+        class="formulario-admin limpieza-eventos-form"
+        data-limpieza-eventos-form
+        data-preview-url="{{ url_for('scheduler.previsualizar_limpieza_eventos_scheduler') }}"
+    >
+        <div class="limpieza-toolbar">
+            <div class="campo">
+                <label for="dias_retencion">Periodo</label>
+                <select id="dias_retencion" name="dias_retencion">
+                    {% for periodo in limpieza.periodos %}
+                    <option value="{{ periodo }}" {% if limpieza.dias == periodo %}selected{% endif %}>
+                        Mas antiguos que {{ periodo }} dias
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-<section class="paginacion">
-    <span>Pagina {{ page }} de {{ total_paginas }} - {{ total }} registros</span>
-    <div class="paginacion-acciones">
-        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(1) }}">Primero</a>
-        <a class="btn secundario compacto {% if page <= 1 %}deshabilitado{% endif %}" href="{{ query_pagina(page - 1 if page > 1 else 1) }}">Anterior</a>
-        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(page + 1 if page < total_paginas else total_paginas) }}">Siguiente</a>
-        <a class="btn secundario compacto {% if page >= total_paginas %}deshabilitado{% endif %}" href="{{ query_pagina(total_paginas) }}">Ultimo</a>
-    </div>
+            <div class="acciones-linea limpieza-acciones">
+                <button class="btn secundario compacto" type="button" data-limpieza-preview-btn>Previsualizar</button>
+                <button
+                    class="btn peligro compacto requiere-confirmacion"
+                    type="submit"
+                    disabled
+                    data-limpieza-submit
+                    data-confirm-title="Confirmar limpieza de eventos"
+                    data-confirm-message="Esta accion eliminara eventos historicos del programador segun los filtros seleccionados. No elimina ejecuciones, logs, auditoria, heartbeat ni datos operativos."
+                    data-confirm-ok="Limpiar eventos seleccionados"
+                    data-confirm-cancel="Cancelar"
+                    data-confirm-type="danger"
+                    data-confirm-summary="limpieza-eventos"
+                    data-confirm-requires-check="1"
+                    data-confirm-check-label="Entiendo que esta accion eliminara eventos historicos seleccionados del programador."
+                >
+                    Limpiar seleccionados
+                </button>
+            </div>
+        </div>
+
+        <div class="limpieza-resumen-linea">
+            <span data-limpieza-resumen>Seleccion actual: {{ limpieza.categorias_ruido|length }} categorias seleccionadas - 0 eventos estimados</span>
+        </div>
+
+        <div class="limpieza-categorias-panel">
+            <div class="limpieza-categorias-head">
+                <strong>Categorias a limpiar</strong>
+                <div class="limpieza-atajos">
+                    <button class="btn secundario compacto" type="button" data-limpieza-ruido>Ruido operativo</button>
+                    <button class="btn secundario compacto" type="button" data-limpieza-todas>Seleccionar todo</button>
+                    <button class="btn secundario compacto" type="button" data-limpieza-ninguna>Deseleccionar todo</button>
+                </div>
+            </div>
+            <div class="grid-checks compacta">
+                {% for categoria in limpieza.categorias %}
+                <label class="check-linea" title="{{ categoria.descripcion }}">
+                    <input
+                        type="checkbox"
+                        name="categorias"
+                        value="{{ categoria.clave }}"
+                        {% if categoria.clave in limpieza.categorias_ruido %}checked{% endif %}
+                        data-ruido-operativo="{{ '1' if categoria.ruido_operativo else '0' }}"
+                    >
+                    <span>{{ categoria.nombre }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="limpieza-preview oculto" data-limpieza-preview>
+            <div class="limpieza-preview-head">
+                <strong>Previsualizacion</strong>
+                <span data-limpieza-preview-fecha>Fecha limite pendiente</span>
+            </div>
+            <p class="limpieza-preview-total" data-limpieza-preview-total>No hay eventos que coincidan con esta seleccion.</p>
+            <ul class="limpieza-preview-lista" data-limpieza-preview-detalle></ul>
+        </div>
+    </form>
 </section>
+{% endif %}
+
+<div class="historial-eventos-contenedor" data-eventos-historial>
+    {% include "scheduler/_eventos_historial.html" %}
+</div>
 {% endblock %}

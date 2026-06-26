@@ -138,6 +138,32 @@ Errores controlados auditados:
 
 * Inicio, detencion y verificacion manual de ejecuciones.
 * Validacion o guardado de configuracion del programador.
+
+## Limpieza controlada de eventos del programador
+
+Fase 13A.1 agrega una accion administrativa para limpiar eventos informativos antiguos de `scheduler_eventos`.
+
+Reglas de seguridad:
+
+* Requiere permiso `SCHEDULER_CONFIG_EDITAR`, permiso total o administrador `.env`.
+* Usa modal corporativo con checkbox obligatorio.
+* Registra auditoria y log de sistema.
+* Solo elimina de `scheduler_eventos`.
+* Por defecto permite limpiar ruido operativo antiguo: `CICLO_INICIADO`, `CICLO_FINALIZADO` y `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`.
+* No borra ejecuciones, logs, auditoria, heartbeat, tareas, scripts, configuraciones, papelera ni snapshots.
+* No usa `TRUNCATE` ni borrado sin filtro de fecha.
+* No registra la limpieza dentro de `scheduler_eventos` para evitar circularidad.
+
+Fase 13A.1B agrega parametrizacion segura:
+
+* El frontend solo envia claves de categorias.
+* El backend valida contra whitelist `CATEGORIAS_LIMPIEZA`.
+* La opcion `todas` se expande en backend, no como SQL libre.
+* Las categorias adicionales permitidas incluyen eventos relevantes antiguos seleccionables, como tareas ejecutadas, errores del scheduler, feriados, duplicados y limite de concurrencia.
+* La previsualizacion y la eliminacion usan las mismas categorias validadas.
+* La confirmacion muestra periodo, fecha limite, categorias y total.
+* Se bloquea la limpieza sin periodo permitido o sin categorias seleccionadas.
+* La accion queda auditada como `LIMPIAR_EVENTOS_SCHEDULER`.
 * Previsualizacion o aplicacion de sincronizacion de feriados.
 * Carga/reemplazo de scripts y metadatos `.env` por version.
 

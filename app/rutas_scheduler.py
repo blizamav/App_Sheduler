@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, render_template, request, session
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from app.seguridad import permiso_requerido
 from app.servicios.servicio_configuracion_scheduler import (
@@ -8,7 +8,12 @@ from app.servicios.servicio_configuracion_scheduler import (
 from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_panel_scheduler import obtener_panel_scheduler
-from app.servicios.servicio_scheduler_eventos import listar_historial_eventos
+from app.servicios.servicio_scheduler_eventos import (
+    limpiar_eventos_informativos_antiguos,
+    listar_historial_eventos,
+    obtener_limpieza_eventos,
+    previsualizar_limpieza_eventos,
+)
 
 
 bp_scheduler = Blueprint("scheduler", __name__, url_prefix="/scheduler")
@@ -43,7 +48,67 @@ def eventos():
         page=request.args.get("page", 1),
         per_page=request.args.get("per_page", 25),
     )
-    return render_template("scheduler/eventos.html", **historial)
+    if request.headers.get("X-Requested-With") == "fetch":
+        return render_template("scheduler/_eventos_historial.html", **historial)
+    limpieza = obtener_limpieza_eventos(request.args.get("limpieza_dias", 30))
+    return render_template("scheduler/eventos.html", **historial, limpieza=limpieza)
+
+
+@bp_scheduler.route("/eventos/limpiar", methods=["POST"])
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def limpiar_eventos():
+    if not _puede_editar_scheduler():
+        _registrar_bloqueo_limpieza_eventos()
+        flash("No tienes permisos para limpiar eventos del programador.", "error")
+        return redirect(url_for("scheduler.eventos"))
+
+    try:
+        resultado = limpiar_eventos_informativos_antiguos(
+            request.form.get("dias_retencion"),
+            session.get("usuario"),
+            request.form.getlist("categorias"),
+        )
+        flash(
+            f"Limpieza completada: {resultado['eliminados']} eventos anteriores a {resultado.get('fecha_limite') or 'la fecha limite'} fueron eliminados.",
+            "success",
+        )
+    except ValueError:
+        flash("Periodo de limpieza no permitido.", "error")
+    except Exception as error:
+        registrar_auditoria(
+            "LIMPIAR_EVENTOS_PROGRAMADOR",
+            "scheduler_eventos",
+            descripcion="Error controlado al limpiar eventos del programador.",
+            valores_despues={"error": error.__class__.__name__},
+            resultado="ERROR",
+            modulo="SCHEDULER",
+            usuario=session.get("usuario"),
+        )
+        flash("No fue posible limpiar los eventos del programador.", "error")
+    return redirect(url_for("scheduler.eventos"))
+
+
+@bp_scheduler.route("/eventos/limpiar/previsualizar", methods=["POST"])
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def previsualizar_limpieza_eventos_scheduler():
+    if not _puede_editar_scheduler():
+        _registrar_bloqueo_limpieza_eventos()
+        return jsonify({"ok": False, "mensaje": "No tienes permisos para limpiar eventos del programador."}), 403
+
+    datos = request.get_json(silent=True) or request.form
+    categorias = datos.get("categorias")
+    if hasattr(datos, "getlist"):
+        categorias = datos.getlist("categorias")
+    try:
+        resultado = previsualizar_limpieza_eventos(
+            datos.get("dias_retencion"),
+            categorias,
+        )
+        return jsonify(resultado)
+    except ValueError as error:
+        return jsonify({"ok": False, "mensaje": str(error)}), 400
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible previsualizar la limpieza."}), 500
 
 
 @bp_scheduler.route("/configuracion", methods=["GET", "POST"])
@@ -88,3 +153,27 @@ def configuracion():
 
     configuracion_actual = obtener_configuracion_scheduler(session.get("usuario"))
     return render_template("scheduler/configuracion.html", configuracion=configuracion_actual)
+
+
+def _puede_editar_scheduler():
+    permisos = session.get("permisos", [])
+    return session.get("es_admin_env") or "*" in permisos or "SCHEDULER_CONFIG_EDITAR" in permisos
+
+
+def _registrar_bloqueo_limpieza_eventos():
+    registrar_log_sistema(
+        "SCHEDULER_EVENTOS_LIMPIEZA_BLOQUEADA",
+        "SCHEDULER",
+        "Intento bloqueado de limpiar eventos del programador sin permiso.",
+        usuario=session.get("usuario"),
+        nivel="WARNING",
+    )
+    registrar_auditoria(
+        "BLOQUEO_PERMISO",
+        "scheduler_eventos",
+        descripcion="Intento bloqueado de limpiar eventos del programador sin permiso.",
+        valores_despues={"permiso_requerido": "SCHEDULER_CONFIG_EDITAR"},
+        resultado="BLOQUEADO",
+        modulo="SEGURIDAD",
+        usuario=session.get("usuario"),
+    )

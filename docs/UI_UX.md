@@ -126,6 +126,26 @@ Desde Fase 12B.1B, la consola de ejecucion sincroniza visualmente el estado desd
 
 Desde Fase 12B.2, la validacion visual esperada para Programador incluye `/scheduler/panel`, `/scheduler/eventos`, `/ejecuciones`, consola de ejecucion y `/panel`. En el entorno Codex actual no se pudo validar rutas internas por login requerido y error ODBC local contra SQL Server; la validacion visual real queda pendiente en una sesion autenticada con base accesible.
 
+Desde Fase 13A.1B, la limpieza parametrizable de `/scheduler/eventos` usa un multiselect permanente de categorias para no saturar la vista de historial y mantener control directo:
+
+* La seleccion de periodo queda en una linea operativa corta.
+* Las categorias permitidas se muestran siempre como checkboxes normales, compactos y con nombres amigables.
+* Los atajos `Ruido operativo`, `Seleccionar todo` y `Deseleccionar todo` solo marcan o desmarcan categorias visibles; no reemplazan el multiselect.
+* El resumen de seleccion muestra cero, una, varias o todas las categorias seleccionadas, mas eventos estimados.
+* La previsualizacion aparece solo cuando el usuario la solicita.
+* El boton de limpieza permanece deshabilitado hasta existir una previsualizacion valida.
+* El modal corporativo mantiene resumen detallado y checkbox obligatorio.
+
+Diagnostico visual: la version con selector de presets ocultaba las categorias reales y obligaba a elegir `Personalizado` para operar a nivel fino. El ajuste final elimina el selector `Alcance`, deja categorias siempre visibles y conserva sin cambios la regla funcional de whitelist, previsualizacion y confirmacion fuerte.
+
+Tambien desde Fase 13A.1B, la paginacion del historial en `/scheduler/eventos` se actualiza dinamicamente:
+
+* Los enlaces `Primero`, `Anterior`, `Siguiente` y `Ultimo` actualizan solo el bloque de historial.
+* El bloque de filtros y la limpieza parametrizable no se reinician visualmente.
+* La posicion visual del usuario se conserva porque no hay recarga completa ni scroll automatico.
+* La URL se actualiza con `history.pushState` para conservar el contexto de pagina y filtros.
+* Si JavaScript falla o esta desactivado, los enlaces mantienen navegacion normal server-side.
+
 Pendientes visuales asociados al roadmap:
 
 * Fase 12C: trazabilidad extendida de Auditoria cuando se autorice.

@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const accionesEnCursoEjecucion = document.querySelector("[data-ejecucion-accion-en-curso]");
     const formularioDetenerEjecucion = document.querySelector("[data-ejecucion-detener-form]");
     const formularioVerificarEjecucion = document.querySelector("[data-ejecucion-verificar-form]");
+    const formularioLimpiezaEventos = document.querySelector("[data-limpieza-eventos-form]");
+    const historialEventos = document.querySelector("[data-eventos-historial]");
     let formularioPendiente = null;
     let envioConfirmado = false;
 
@@ -256,11 +258,68 @@ document.addEventListener("DOMContentLoaded", () => {
         return contenedor;
     };
 
+    const crearResumenLimpiezaEventos = (elemento) => {
+        const formulario = elemento.closest("form");
+        const datos = JSON.parse(formulario?.dataset.limpiezaPreview || "{}");
+        const contenedor = document.createElement("div");
+        contenedor.className = "resumen-tarea resumen-limpieza-eventos";
+
+        const seccion = document.createElement("section");
+        const titulo = document.createElement("h3");
+        titulo.textContent = "Resumen de limpieza";
+        const lista = document.createElement("dl");
+
+        const agregarFila = (etiqueta, valor) => {
+            const fila = document.createElement("div");
+            const dt = document.createElement("dt");
+            const dd = document.createElement("dd");
+            dt.textContent = etiqueta;
+            dd.textContent = valor;
+            fila.append(dt, dd);
+            lista.appendChild(fila);
+        };
+
+        agregarFila("Periodo", `Mas antiguos que ${datos.dias || "-"} dias`);
+        agregarFila("Fecha limite", datos.fecha_limite || "-");
+        agregarFila("Total a eliminar", `${datos.total || 0} eventos`);
+        agregarFila("Tabla afectada", "Solo scheduler_eventos");
+        seccion.append(titulo, lista);
+        contenedor.appendChild(seccion);
+
+        const detalle = document.createElement("section");
+        const tituloDetalle = document.createElement("h3");
+        tituloDetalle.textContent = "Categorias seleccionadas";
+        const listaDetalle = document.createElement("dl");
+        (datos.detalle || []).forEach((item) => {
+            const fila = document.createElement("div");
+            const dt = document.createElement("dt");
+            const dd = document.createElement("dd");
+            dt.textContent = item.nombre || item.clave || "-";
+            dd.textContent = `${item.total || 0} eventos`;
+            fila.append(dt, dd);
+            listaDetalle.appendChild(fila);
+        });
+        detalle.append(tituloDetalle, listaDetalle);
+        contenedor.appendChild(detalle);
+
+        const advertencia = document.createElement("p");
+        advertencia.className = "texto-ayuda";
+        advertencia.textContent = "Esta accion no se puede deshacer desde la aplicacion. No elimina ejecuciones, logs, auditoria, heartbeat ni datos operativos.";
+        contenedor.appendChild(advertencia);
+        return contenedor;
+    };
+
     const obtenerConfirmacionElemento = (elemento) => {
         if (elemento.dataset.confirmSummary === "papelera-masiva") {
             return {
                 ...elemento.dataset,
                 confirmSummaryNode: crearResumenPapeleraMasiva(elemento),
+            };
+        }
+        if (elemento.dataset.confirmSummary === "limpieza-eventos") {
+            return {
+                ...elemento.dataset,
+                confirmSummaryNode: crearResumenLimpiezaEventos(elemento),
             };
         }
         return elemento;
@@ -334,6 +393,194 @@ document.addEventListener("DOMContentLoaded", () => {
             cerrarModalConfirmacion();
         }
     });
+
+    if (formularioLimpiezaEventos) {
+        const botonPreview = formularioLimpiezaEventos.querySelector("[data-limpieza-preview-btn]");
+        const botonSubmit = formularioLimpiezaEventos.querySelector("[data-limpieza-submit]");
+        const botonTodas = formularioLimpiezaEventos.querySelector("[data-limpieza-todas]");
+        const botonRuido = formularioLimpiezaEventos.querySelector("[data-limpieza-ruido]");
+        const botonNinguna = formularioLimpiezaEventos.querySelector("[data-limpieza-ninguna]");
+        const panelPreview = formularioLimpiezaEventos.querySelector("[data-limpieza-preview]");
+        const previewTotal = formularioLimpiezaEventos.querySelector("[data-limpieza-preview-total]");
+        const previewFecha = formularioLimpiezaEventos.querySelector("[data-limpieza-preview-fecha]");
+        const previewDetalle = formularioLimpiezaEventos.querySelector("[data-limpieza-preview-detalle]");
+        const resumenLimpieza = formularioLimpiezaEventos.querySelector("[data-limpieza-resumen]");
+        const camposCategorias = formularioLimpiezaEventos.querySelectorAll("[name='categorias']");
+        const camposLimpieza = formularioLimpiezaEventos.querySelectorAll("[name='dias_retencion'], [name='categorias']");
+
+        const categoriasSeleccionadas = () =>
+            Array.from(formularioLimpiezaEventos.querySelectorAll("[name='categorias']:checked"))
+                .map((campo) => campo.value);
+
+        const invalidarPreviewLimpieza = () => {
+            formularioLimpiezaEventos.dataset.limpiezaPreview = "";
+            botonSubmit.disabled = true;
+            panelPreview?.classList.add("oculto");
+            actualizarResumenLimpieza();
+        };
+
+        const actualizarResumenLimpieza = (datos = null) => {
+            const cantidad = categoriasSeleccionadas().length;
+            if (resumenLimpieza) {
+                const estimado = datos ? `${datos.total || 0} eventos estimados` : "0 eventos estimados";
+                let seleccion = "Sin categorias seleccionadas";
+                if (cantidad === camposCategorias.length && cantidad > 0) {
+                    seleccion = "Todas las categorias seleccionadas";
+                } else if (cantidad === 1) {
+                    seleccion = "1 categoria seleccionada";
+                } else if (cantidad > 1) {
+                    seleccion = `${cantidad} categorias seleccionadas`;
+                }
+                resumenLimpieza.textContent = `Seleccion actual: ${seleccion} - ${estimado}`;
+            }
+        };
+
+        const marcarCategoriasLimpieza = (claves) => {
+            const seleccion = new Set(claves);
+            camposCategorias.forEach((campo) => {
+                campo.checked = seleccion.has(campo.value);
+            });
+            invalidarPreviewLimpieza();
+        };
+
+        const renderizarPreviewLimpieza = (datos) => {
+            formularioLimpiezaEventos.dataset.limpiezaPreview = JSON.stringify(datos);
+            if (previewTotal) {
+                const total = Number(datos.total || 0);
+                const dias = datos.dias || formularioLimpiezaEventos.querySelector("[name='dias_retencion']")?.value || "-";
+                previewTotal.textContent = total > 0
+                    ? `Se eliminaran ${total} eventos mas antiguos que ${dias} dias.`
+                    : "No hay eventos que coincidan con esta seleccion.";
+            }
+            if (previewFecha) {
+                previewFecha.textContent = `Fecha limite: ${datos.fecha_limite || "-"}`;
+            }
+            if (previewDetalle) {
+                previewDetalle.replaceChildren();
+                (datos.detalle || []).forEach((item) => {
+                    const fila = document.createElement("li");
+                    const categoria = document.createElement("span");
+                    const total = document.createElement("strong");
+                    categoria.textContent = item.nombre || item.clave || "-";
+                    total.textContent = `${item.total || 0} eventos`;
+                    fila.append(categoria, total);
+                    previewDetalle.appendChild(fila);
+                });
+            }
+            panelPreview?.classList.remove("oculto");
+            botonSubmit.disabled = Number(datos.total || 0) <= 0;
+            actualizarResumenLimpieza(datos);
+        };
+
+        camposLimpieza.forEach((campo) => {
+            campo.addEventListener("change", invalidarPreviewLimpieza);
+        });
+
+        botonTodas?.addEventListener("click", () => {
+            marcarCategoriasLimpieza(Array.from(camposCategorias).map((campo) => campo.value));
+        });
+
+        botonRuido?.addEventListener("click", () => {
+            marcarCategoriasLimpieza(
+                Array.from(camposCategorias)
+                    .filter((campo) => campo.dataset.ruidoOperativo === "1")
+                    .map((campo) => campo.value)
+            );
+        });
+
+        botonNinguna?.addEventListener("click", () => {
+            marcarCategoriasLimpieza([]);
+        });
+
+        botonPreview?.addEventListener("click", async () => {
+            const categorias = categoriasSeleccionadas();
+            if (categorias.length === 0) {
+                mostrarToast("Selecciona al menos una categoria para previsualizar.", "warning");
+                invalidarPreviewLimpieza();
+                return;
+            }
+            botonPreview.disabled = true;
+            try {
+                const respuesta = await fetch(formularioLimpiezaEventos.dataset.previewUrl, {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "fetch",
+                    },
+                    body: JSON.stringify({
+                        dias_retencion: formularioLimpiezaEventos.querySelector("[name='dias_retencion']")?.value,
+                        categorias,
+                    }),
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok || !datos.ok) {
+                    mostrarToast(datos.mensaje || "No fue posible previsualizar la limpieza.", "error");
+                    invalidarPreviewLimpieza();
+                    return;
+                }
+                renderizarPreviewLimpieza(datos);
+                mostrarToast("Previsualizacion de limpieza actualizada.", "info");
+            } catch (error) {
+                mostrarToast("No fue posible previsualizar la limpieza.", "error");
+                invalidarPreviewLimpieza();
+            } finally {
+                botonPreview.disabled = false;
+            }
+        });
+
+        formularioLimpiezaEventos.addEventListener("submit", (evento) => {
+            if (envioConfirmado) {
+                return;
+            }
+            if (!formularioLimpiezaEventos.dataset.limpiezaPreview || botonSubmit.disabled) {
+                evento.preventDefault();
+                mostrarToast("Previsualiza la limpieza antes de continuar.", "warning");
+            }
+        });
+
+        actualizarResumenLimpieza();
+    }
+
+    if (historialEventos) {
+        const cargarHistorialEventos = async (url, actualizarUrl = true) => {
+            historialEventos.classList.add("cargando");
+            try {
+                const respuesta = await fetch(url, {
+                    headers: {
+                        Accept: "text/html",
+                        "X-Requested-With": "fetch",
+                    },
+                });
+                if (!respuesta.ok) {
+                    throw new Error("Respuesta no valida");
+                }
+                historialEventos.innerHTML = await respuesta.text();
+                if (actualizarUrl) {
+                    window.history.pushState({ eventosSchedulerUrl: url }, "", url);
+                }
+            } catch (error) {
+                mostrarToast("No fue posible actualizar la paginacion de eventos.", "error");
+            } finally {
+                historialEventos.classList.remove("cargando");
+            }
+        };
+
+        historialEventos.addEventListener("click", (evento) => {
+            const enlace = evento.target.closest("[data-eventos-paginacion] a");
+            if (!enlace || enlace.classList.contains("deshabilitado")) {
+                return;
+            }
+            evento.preventDefault();
+            cargarHistorialEventos(enlace.href);
+        });
+
+        window.addEventListener("popstate", () => {
+            if (window.location.pathname.endsWith("/scheduler/eventos")) {
+                cargarHistorialEventos(window.location.href, false);
+            }
+        });
+    }
 
     if (selectorRol && alertaRol) {
         selectorRol.addEventListener("change", () => {

@@ -1,5 +1,7 @@
 from app.repositorios.repositorio_scheduler_eventos import (
+    contar_eventos_limpiables_antiguos,
     desactivar_eventos_antiguos,
+    eliminar_eventos_limpiables_antiguos,
     insertar_evento_programador,
     listar_eventos_programador,
     obtener_eventos_relevantes_recientes,
@@ -8,6 +10,8 @@ from app.repositorios.repositorio_scheduler_eventos import (
     listar_eventos_programador_paginado,
     resumir_eventos_recientes,
 )
+from app.servicios.servicio_auditoria import registrar_auditoria
+from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 
 MOTIVOS_OMISION_CONTROLADOS = (
@@ -32,6 +36,70 @@ TIPOS_EVENTO = (
 
 DECISIONES_EVENTO = ("EJECUTAR", "OMITIR", "ERROR", "INFO")
 PER_PAGE_OPCIONES = (10, 25, 50, 100)
+PERIODOS_LIMPIEZA = (20, 30, 60, 90)
+TIPOS_RUIDOSOS = ("CICLO_INICIADO", "CICLO_FINALIZADO")
+CATEGORIAS_LIMPIEZA = {
+    "ciclo_iniciado": {
+        "nombre": "Ciclos iniciados",
+        "descripcion": "tipo_evento = CICLO_INICIADO",
+        "condicion_sql": "tipo_evento = 'CICLO_INICIADO'",
+        "ruido_operativo": True,
+    },
+    "ciclo_finalizado": {
+        "nombre": "Ciclos finalizados",
+        "descripcion": "tipo_evento = CICLO_FINALIZADO",
+        "condicion_sql": "tipo_evento = 'CICLO_FINALIZADO'",
+        "ruido_operativo": True,
+    },
+    "fuera_ventana": {
+        "nombre": "Omitidas por fuera de ventana",
+        "descripcion": "TAREA_OMITIDA / FUERA_DE_VENTANA",
+        "condicion_sql": "tipo_evento = 'TAREA_OMITIDA' AND motivo = 'FUERA_DE_VENTANA'",
+        "ruido_operativo": True,
+    },
+    "tarea_ejecutada": {
+        "nombre": "Tareas ejecutadas",
+        "descripcion": "tipo_evento = TAREA_EJECUTADA",
+        "condicion_sql": "tipo_evento = 'TAREA_EJECUTADA'",
+        "ruido_operativo": False,
+    },
+    "error_scheduler": {
+        "nombre": "Errores del scheduler",
+        "descripcion": "tipo_evento = ERROR_SCHEDULER",
+        "condicion_sql": "tipo_evento = 'ERROR_SCHEDULER'",
+        "ruido_operativo": False,
+    },
+    "feriado": {
+        "nombre": "Omitidas por feriado",
+        "descripcion": "motivo = FERIADO",
+        "condicion_sql": "motivo = 'FERIADO'",
+        "ruido_operativo": False,
+    },
+    "duplicado_slot": {
+        "nombre": "Duplicado de slot",
+        "descripcion": "motivo = DUPLICADO_SLOT",
+        "condicion_sql": "motivo = 'DUPLICADO_SLOT'",
+        "ruido_operativo": False,
+    },
+    "limite_concurrencia": {
+        "nombre": "Limite de concurrencia",
+        "descripcion": "motivo = LIMITE_CONCURRENCIA",
+        "condicion_sql": "motivo = 'LIMITE_CONCURRENCIA'",
+        "ruido_operativo": False,
+    },
+    "modo_mantenimiento": {
+        "nombre": "Modo mantenimiento",
+        "descripcion": "motivo = MODO_MANTENIMIENTO",
+        "condicion_sql": "motivo = 'MODO_MANTENIMIENTO'",
+        "ruido_operativo": False,
+    },
+    "scheduler_inactivo_auto": {
+        "nombre": "Scheduler inactivo o auto deshabilitada",
+        "descripcion": "SCHEDULER_INACTIVO / EJECUCION_AUTOMATICA_DESHABILITADA",
+        "condicion_sql": "motivo IN ('SCHEDULER_INACTIVO', 'EJECUCION_AUTOMATICA_DESHABILITADA')",
+        "ruido_operativo": False,
+    },
+}
 
 
 def registrar_evento_programador(
@@ -47,6 +115,9 @@ def registrar_evento_programador(
     feriado=None,
     es_feriado=None,
 ):
+    if not _debe_persistir_evento(tipo_evento, motivo):
+        return True
+
     evento = {
         "nombre_worker": nombre_worker,
         "id_tarea": _valor_tarea(tarea, "id_tarea"),
@@ -195,6 +266,74 @@ def limpiar_eventos_antiguos(dias_retencion=90):
     return desactivar_eventos_antiguos(dias_retencion=dias_retencion)
 
 
+def obtener_limpieza_eventos(dias_retencion=30):
+    dias = _periodo_limpieza_seguro(dias_retencion, estricto=False)
+    conteos = {}
+    for periodo in PERIODOS_LIMPIEZA:
+        try:
+            conteos[periodo] = contar_eventos_limpiables_antiguos(periodo, _categorias_por_claves(_claves_ruido_operativo()))
+        except Exception:
+            conteos[periodo] = {"total": 0, "fecha_limite": None}
+    try:
+        previo = contar_eventos_limpiables_antiguos(dias, _categorias_por_claves(_claves_ruido_operativo()))
+    except Exception:
+        previo = {"total": 0, "fecha_limite": None}
+    return {
+        "periodos": PERIODOS_LIMPIEZA,
+        "dias": dias,
+        "conteos": conteos,
+        "total_previo": int(previo.get("total") or 0),
+        "fecha_limite": previo.get("fecha_limite"),
+        "categorias": _categorias_presentacion(),
+        "categorias_ruido": _claves_ruido_operativo(),
+    }
+
+
+def previsualizar_limpieza_eventos(dias_retencion, categorias):
+    dias = _periodo_limpieza_seguro(dias_retencion, estricto=True)
+    categorias_validas = _categorias_por_claves(_normalizar_categorias(categorias))
+    resultado = contar_eventos_limpiables_antiguos(dias, categorias_validas)
+    return {
+        "ok": True,
+        "dias": dias,
+        "fecha_limite": resultado.get("fecha_limite"),
+        "total": int(resultado.get("total") or 0),
+        "detalle": resultado.get("detalle") or [],
+        "categorias": [categoria["clave"] for categoria in categorias_validas],
+    }
+
+
+def limpiar_eventos_informativos_antiguos(dias_retencion, usuario, categorias=None):
+    dias = _periodo_limpieza_seguro(dias_retencion, estricto=True)
+    categorias_validas = _categorias_por_claves(_normalizar_categorias(categorias or _claves_ruido_operativo()))
+    resultado = eliminar_eventos_limpiables_antiguos(dias, categorias_validas)
+    registrar_log_sistema(
+        "SCHEDULER_EVENTOS_LIMPIEZA",
+        "SCHEDULER",
+        "Limpieza parametrizable de eventos antiguos del programador.",
+        usuario=usuario,
+        nivel="WARNING",
+        valor_nuevo=f"dias={dias}; categorias={','.join(resultado.get('categorias', []))}; eliminados={resultado['eliminados']}; fecha_limite={resultado.get('fecha_limite')}",
+    )
+    registrar_auditoria(
+        "LIMPIAR_EVENTOS_SCHEDULER",
+        "scheduler_eventos",
+        descripcion="Limpieza parametrizable de eventos antiguos del programador.",
+        valores_despues={
+            "dias": dias,
+            "fecha_limite": resultado.get("fecha_limite"),
+            "eliminados": resultado.get("eliminados"),
+            "categorias": resultado.get("categorias"),
+            "detalle": resultado.get("detalle"),
+            "tablas_afectadas": ["scheduler_eventos"],
+        },
+        resultado="OK",
+        modulo="SCHEDULER",
+        usuario=usuario,
+    )
+    return resultado
+
+
 def listar_historial_eventos(filtros=None, page=1, per_page=25):
     filtros_limpios = _limpiar_filtros(filtros or {})
     page_segura = _page_segura(page)
@@ -295,3 +434,69 @@ def _estado_scheduler(configuracion):
     if not configuracion.get("permitir_ejecucion_automatica"):
         return "EJECUCION_AUTOMATICA_DESHABILITADA"
     return "ACTIVO"
+
+
+def _debe_persistir_evento(tipo_evento, motivo=None):
+    if tipo_evento in TIPOS_RUIDOSOS:
+        return False
+    if tipo_evento == "TAREA_OMITIDA" and motivo == "FUERA_DE_VENTANA":
+        return False
+    return True
+
+
+def _periodo_limpieza_seguro(valor, estricto=True):
+    try:
+        dias = int(valor)
+    except (TypeError, ValueError):
+        dias = 30
+    if dias not in PERIODOS_LIMPIEZA:
+        if not estricto:
+            return 30
+        raise ValueError("Periodo de limpieza no permitido.")
+    return dias
+
+
+def _normalizar_categorias(categorias):
+    if isinstance(categorias, str):
+        categorias = [categorias]
+    claves = [str(categoria or "").strip() for categoria in (categorias or []) if str(categoria or "").strip()]
+    if "todas" in claves:
+        claves = list(CATEGORIAS_LIMPIEZA.keys())
+    claves_unicas = []
+    for clave in claves:
+        if clave not in CATEGORIAS_LIMPIEZA:
+            raise ValueError("Categoria de limpieza no permitida.")
+        if clave not in claves_unicas:
+            claves_unicas.append(clave)
+    if not claves_unicas:
+        raise ValueError("Selecciona al menos una categoria de limpieza.")
+    return claves_unicas
+
+
+def _categorias_por_claves(claves):
+    categorias = []
+    for clave in claves:
+        datos = CATEGORIAS_LIMPIEZA[clave]
+        categorias.append({
+            "clave": clave,
+            "nombre": datos["nombre"],
+            "descripcion": datos["descripcion"],
+            "condicion_sql": datos["condicion_sql"],
+        })
+    return categorias
+
+
+def _categorias_presentacion():
+    return [
+        {
+            "clave": clave,
+            "nombre": datos["nombre"],
+            "descripcion": datos["descripcion"],
+            "ruido_operativo": datos["ruido_operativo"],
+        }
+        for clave, datos in CATEGORIAS_LIMPIEZA.items()
+    ]
+
+
+def _claves_ruido_operativo():
+    return [clave for clave, datos in CATEGORIAS_LIMPIEZA.items() if datos["ruido_operativo"]]
