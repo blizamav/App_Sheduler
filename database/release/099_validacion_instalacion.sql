@@ -5,13 +5,14 @@ Objetivo: validar instalacion limpia con consultas de solo lectura.
 No modifica datos.
 */
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 SELECT
     N'VALIDACION_BASE' AS seccion,
     DB_NAME() AS base_actual,
-    CASE WHEN DB_NAME() = N'APP_SCHEDULER_TEST_INSTALL' THEN N'OK' ELSE N'REVISAR_BASE_DESTINO' END AS resultado;
+    N'$(DB_NAME)' AS base_esperada,
+    CASE WHEN DB_NAME() = N'$(DB_NAME)' THEN N'OK' ELSE N'ERROR_BASE_DESTINO' END AS resultado;
 GO
 
 SELECT

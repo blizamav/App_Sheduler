@@ -9,7 +9,7 @@ Notas:
 - Integra el resultado final de migrations/001..018.
 */
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 /* =========================================================

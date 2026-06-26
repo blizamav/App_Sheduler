@@ -5,7 +5,7 @@ Objetivo: cargar catalogos base del sistema.
 No incluye datos de negocio, tareas, scripts ni ejecuciones.
 */
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 MERGE dbo.cat_estados_tarea AS destino

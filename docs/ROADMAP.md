@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia sobre `APP_SCHEDULER_TEST_INSTALL`; Codex no ejecuto SQL ni avanzo a Fase 13C o Fase 14.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME`. Codex no ejecuto SQL ni avanzo a Fase 13C o Fase 14.
 
 ## Implementado
 
@@ -85,6 +85,7 @@ Estado: iniciada con consolidacion SQL limpia. El resto de operacion y despliegu
 * 13A.2 Scripts operativos Windows/Linux. Pendiente.
 * 13B Prueba de instalacion limpia en base nueva. En validacion manual.
 * 13B.1 Auditoria integral del release SQL contra schema, seeds y usos backend. Implementada sin ejecutar SQL.
+* 13B.2 Parametrizacion del nombre de base en release SQL con SQLCMD `DB_NAME`. Implementada sin ejecutar SQL.
 * 13C Preparacion produccion. Pendiente.
 * 13D Worker como servicio. Pendiente.
 * 13E Docker Compose o systemd. Pendiente.

@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-06-26 - Fase 13B.2 script maestro de instalacion SQLCMD
+
+### Implementado
+
+* Se creo `database/release/000_ejecutar_instalacion_completa.sql`.
+* El script maestro define `DB_NAME` una sola vez y ejecuta `001` a `006` y `099` en orden mediante `:r`.
+* `database/release/README_INSTALACION_SQL.md` establece como flujo recomendado ejecutar el script maestro con `Query > SQLCMD Mode` activo.
+* Se documenta que los scripts individuales son flujo avanzado y requieren `DB_NAME` definido en la misma ventana/script SQLCMD.
+* `database/release/AUDITORIA_RELEASE_SQL.md` registra el motivo operativo del script maestro.
+
+### Reglas
+
+* No se ejecuto SQL desde Codex.
+* No se conecto a SQL Server.
+* No se modifico `.env`.
+* No se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`.
+* No se modifico backend, frontend ni scheduler.
+* No se cambiaron roles/permisos, catalogos ni configuracion.
+* No se hizo commit ni push.
+* No se avanzo a Fase 13C ni Fase 14.
+
+## 2026-06-26 - Fase 13B.2 parametrizacion DB_NAME release SQL
+
+### Implementado
+
+* Se creo `database/release/000_configuracion_instalacion.sql` con SQLCMD variable `DB_NAME`.
+* `001_crear_base_datos.sql` usa `[$(DB_NAME)]` para `CREATE DATABASE` y `USE`.
+* `002_schema_final.sql`, `003_seed_roles_permisos.sql`, `004_seed_catalogos_base.sql`, `005_seed_configuracion_inicial.sql`, `006_seed_feriados_base.sql` y `099_validacion_instalacion.sql` usan `USE [$(DB_NAME)]`.
+* `099_validacion_instalacion.sql` compara `DB_NAME()` contra `'$(DB_NAME)'`.
+* `README_INSTALACION_SQL.md`, `AUDITORIA_RELEASE_SQL.md`, `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md` y `log_codex.md` documentan el uso de SQLCMD Mode y el cambio de base en un solo punto.
+
+### Reglas
+
+* No se ejecuto SQL desde Codex.
+* No se conecto a SQL Server.
+* No se modifico `.env`.
+* No se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`.
+* No se modifico backend, frontend ni scheduler.
+* No se cambiaron roles/permisos, catalogos, configuracion ni schema funcional.
+* No se hizo commit ni push.
+* No se avanzo a Fase 13C ni Fase 14.
+
 ## 2026-06-26 - Fase 13B.1 correccion matriz real roles/permisos QA
 
 ### Corregido

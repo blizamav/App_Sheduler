@@ -87,6 +87,35 @@ Consideraciones:
 * El usuario inicial de aplicacion sigue validandose desde `.env`; los seeds no crean usuario `blizama`.
 * La conexion Flask-SQL Server existe desde Fase 3D mediante `.env` y `pyodbc`.
 
+## Release SQL limpio parametrizable
+
+El paquete consolidado para instalacion limpia esta en:
+
+```text
+database/release/
+```
+
+Desde Fase 13B.2 el nombre de base se define con SQLCMD variable `DB_NAME` en:
+
+```text
+database/release/000_configuracion_instalacion.sql
+```
+
+Uso manual en SSMS:
+
+1. Abrir SQL Server Management Studio.
+2. Activar `Query > SQLCMD Mode`.
+3. Editar `000_configuracion_instalacion.sql`.
+4. Definir `DB_NAME`, por ejemplo `APP_SCHEDULER_TEST_INSTALL`.
+5. Ejecutar `000`, luego `001` a `006` y finalmente `099_validacion_instalacion.sql`.
+
+Recomendaciones:
+
+* Usar `APP_SCHEDULER_TEST_INSTALL` para pruebas de instalacion limpia.
+* No apuntar a `APP_SCHEDULER_QA` salvo decision explicita, manual y con respaldo.
+* No ejecutar sobre una base con datos reales sin respaldo.
+* Mantener SQLCMD Mode activo; si no esta activo, `:setvar` y `$(DB_NAME)` no funcionaran.
+
 ## Docker
 
 Pendiente para Fase 13E. Alternativas previstas: Docker Compose o systemd, segun decision de despliegue.

@@ -1,13 +1,41 @@
 # APP Scheduler - Instalacion SQL release limpio
 
-Este directorio contiene una instalacion limpia de base de datos para `APP_SCHEDULER_TEST_INSTALL`, usada para validar el release desde cero sin tocar la base operativa `APP_SCHEDULER_QA`.
+Este directorio contiene una instalacion limpia de base de datos parametrizable mediante SQLCMD. Por defecto usa `APP_SCHEDULER_TEST_INSTALL` para pruebas, sin tocar la base operativa `APP_SCHEDULER_QA`.
 
 La carpeta `database/migrations/` y `database/seeds/` se conserva como historial de desarrollo. Para una instalacion nueva se debe usar este release consolidado.
 
-## Orden de ejecucion
+## Flujo recomendado
 
-Ejecutar manualmente en SQL Server Management Studio, en este orden:
+Usar el script maestro para evitar problemas de contexto SQLCMD entre pestaÃ±as de SSMS.
 
+1. Abrir SQL Server Management Studio.
+2. Activar `Query > SQLCMD Mode`.
+3. Abrir:
+
+```text
+database/release/000_ejecutar_instalacion_completa.sql
+```
+
+4. Cambiar solo esta linea si se quiere instalar en otra base:
+
+```sql
+:setvar DB_NAME "APP_SCHEDULER_TEST_INSTALL"
+```
+
+5. Ejecutar el script completo.
+6. Revisar la salida final de `099_validacion_instalacion.sql`.
+
+No apuntar a `APP_SCHEDULER_QA` salvo decision manual explicita, con respaldo y aprobacion.
+
+## Flujo avanzado
+
+Los scripts individuales siguen parametrizados con `$(DB_NAME)` y pueden ejecutarse manualmente, pero `DB_NAME` debe estar definido en la misma ventana/script SQLCMD.
+
+Ejecutar `000_configuracion_instalacion.sql` en una pestaÃ±a separada no garantiza que la variable quede disponible para otros scripts abiertos en otra ventana.
+
+Si se usa flujo avanzado, ejecutar manualmente en SQL Server Management Studio con SQLCMD Mode activo, en este orden:
+
+1. `000_configuracion_instalacion.sql`
 1. `001_crear_base_datos.sql`
 2. `002_schema_final.sql`
 3. `003_seed_roles_permisos.sql`
@@ -22,13 +50,13 @@ Si hubo una ejecucion previa fallida durante Fase 13B, reiniciar la prueba desde
 
 Durante la prueba de instalacion limpia no ejecutar estos scripts sobre `APP_SCHEDULER_QA`.
 
-Los scripts de este paquete apuntan explicitamente a:
+Los scripts ejecutables usan la variable SQLCMD:
 
 ```text
-APP_SCHEDULER_TEST_INSTALL
+$(DB_NAME)
 ```
 
-Si se requiere usar otro nombre de base en un ambiente futuro, cambiarlo de forma controlada en todos los scripts del paquete antes de ejecutar y documentar la decision. No hacer reemplazos parciales.
+`APP_SCHEDULER_TEST_INSTALL` queda solo como valor por defecto en `000_configuracion_instalacion.sql` y como ejemplo de documentacion. Si se requiere usar otro nombre de base, cambiarlo solo en `DB_NAME`; no hacer reemplazos manuales en cada script.
 
 ## Alcance
 
@@ -82,7 +110,7 @@ No ejecuta `INSERT`, `UPDATE`, `DELETE`, `DROP` ni cambios de datos.
 
 ## Estado Fase 13B
 
-Codex preparo el paquete para la prueba limpia apuntando a `APP_SCHEDULER_TEST_INSTALL`, pero no ejecuto los scripts SQL. La ejecucion debe realizarse manualmente en SSMS y sus resultados deben registrarse en `log_codex.md` y `docs/CHANGELOG.md`.
+Codex preparo el paquete para la prueba limpia con `DB_NAME = APP_SCHEDULER_TEST_INSTALL`, pero no ejecuto los scripts SQL. La ejecucion recomendada debe realizarse manualmente en SSMS con SQLCMD Mode activo desde `000_ejecutar_instalacion_completa.sql`; sus resultados deben registrarse en `log_codex.md` y `docs/CHANGELOG.md`.
 
 ## Correccion Fase 13B - seed de roles
 

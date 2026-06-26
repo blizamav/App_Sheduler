@@ -5,7 +5,7 @@ Objetivo: cargar configuracion inicial segura.
 No incluye credenciales, servidores ni rutas locales.
 */
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.configuracion_scheduler WHERE activo = 1)

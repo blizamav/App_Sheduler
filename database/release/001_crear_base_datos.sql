@@ -7,13 +7,13 @@ Ejecucion manual en SQL Server Management Studio.
 No incluye usuarios SQL, passwords, servidores ni rutas locales.
 */
 
-IF DB_ID(N'APP_SCHEDULER_TEST_INSTALL') IS NULL
+IF DB_ID(N'$(DB_NAME)') IS NULL
 BEGIN
-    CREATE DATABASE APP_SCHEDULER_TEST_INSTALL;
+    CREATE DATABASE [$(DB_NAME)];
 END;
 GO
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 SELECT

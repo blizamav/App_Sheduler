@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 13B.1 implementada como auditoria integral del release SQL para instalacion limpia sobre `APP_SCHEDULER_TEST_INSTALL`; se corrigio la matriz de roles/permisos para replicar `APP_SCHEDULER_QA` sin crear `OPERADOR`. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
+* Estado actual: Fase 13B.2 implementada como parametrizacion del nombre de base del release SQL mediante SQLCMD `DB_NAME`; se mantiene la matriz validada de roles/permisos. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 13B.1 - Auditoria integral del release SQL.
+* Fase actual: Fase 13B.2 - Parametrizacion del nombre de base en release SQL.
 * Ultima actualizacion: 2026-06-26
 
 ## 2. Decisiones tecnicas vigentes
@@ -50,6 +50,27 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-26 - Fase 13B.2 / Script maestro instalacion SQLCMD
+
+* Archivo creado: `database/release/000_ejecutar_instalacion_completa.sql`.
+* Archivos modificados: `database/release/README_INSTALACION_SQL.md`, `database/release/AUDITORIA_RELEASE_SQL.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: ejecutar `000_configuracion_instalacion.sql` en una pestaÃ±a separada de SSMS no garantiza que `DB_NAME` quede disponible en scripts abiertos en otras ventanas.
+* Cambio aplicado: se crea un script maestro que define `DB_NAME` una sola vez y ejecuta `001` a `006` y `099` con directivas SQLCMD `:r`.
+* Flujo recomendado: abrir `000_ejecutar_instalacion_completa.sql`, activar `Query > SQLCMD Mode`, cambiar solo `DB_NAME` si corresponde y ejecutar el archivo completo.
+* Flujo avanzado: los scripts individuales siguen disponibles, pero requieren `DB_NAME` definido en la misma ventana/script SQLCMD.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`, no se cambio backend/frontend/scheduler, no se alteraron roles/permisos/catalogos/configuracion, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
+
+### 2026-06-26 - Fase 13B.2 / Parametrizacion DB_NAME release SQL
+
+* Archivo creado: `database/release/000_configuracion_instalacion.sql`.
+* Archivos modificados: `database/release/001_crear_base_datos.sql`, `database/release/002_schema_final.sql`, `database/release/003_seed_roles_permisos.sql`, `database/release/004_seed_catalogos_base.sql`, `database/release/005_seed_configuracion_inicial.sql`, `database/release/006_seed_feriados_base.sql`, `database/release/099_validacion_instalacion.sql`, `database/release/README_INSTALACION_SQL.md`, `database/release/AUDITORIA_RELEASE_SQL.md`, `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: permitir que el release SQL se instale en distintas bases cambiando una sola variable.
+* Cambio aplicado: se agrega SQLCMD variable `DB_NAME` con valor por defecto `APP_SCHEDULER_TEST_INSTALL` para pruebas.
+* SQL: `001` usa `CREATE DATABASE [$(DB_NAME)]` y `USE [$(DB_NAME)]`; `002` a `006` y `099` usan `USE [$(DB_NAME)]`.
+* Validacion: `099_validacion_instalacion.sql` compara `DB_NAME()` contra `'$(DB_NAME)'`.
+* Documentacion: README, auditoria y despliegue indican activar `Query > SQLCMD Mode`, ejecutar `000` primero y cambiar solo `DB_NAME` para otro ambiente.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`, no se cambio backend/frontend/scheduler, no se alteraron roles/permisos/catalogos/configuracion/schema funcional, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
 
 ### 2026-06-26 - Fase 13B.1 / Correccion matriz real roles-permisos QA
 

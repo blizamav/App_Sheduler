@@ -5,7 +5,7 @@ Objetivo: cargar roles, permisos y asignaciones base.
 No crea usuarios reales ni credenciales.
 */
 
-USE APP_SCHEDULER_TEST_INSTALL;
+USE [$(DB_NAME)];
 GO
 
 MERGE dbo.roles AS destino

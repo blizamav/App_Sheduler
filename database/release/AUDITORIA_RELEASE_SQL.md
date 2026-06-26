@@ -4,9 +4,37 @@
 
 Se realizo auditoria estatica del release SQL limpio contra el schema consolidado, seeds historicos y usos principales del backend Python.
 
-Resultado: el release tenia inconsistencias de seeds frente a columnas `NOT NULL` del schema final. Se corrigieron los scripts release para que la instalacion limpia pueda reintentarse manualmente en `APP_SCHEDULER_TEST_INSTALL` sin aplicar parches directos en base de datos.
+Resultado: el release tenia inconsistencias de seeds frente a columnas `NOT NULL` del schema final. Se corrigieron los scripts release para que la instalacion limpia pueda reintentarse manualmente usando la variable SQLCMD `DB_NAME`, sin aplicar parches directos en base de datos.
 
 No se ejecuto SQL, no se conecto a SQL Server, no se modifico `.env`, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`.
+
+## 1.1. Parametrizacion SQLCMD Fase 13B.2
+
+El release fue parametrizado con la variable SQLCMD `DB_NAME`.
+
+Archivo de configuracion:
+
+```text
+database/release/000_configuracion_instalacion.sql
+```
+
+Archivo maestro recomendado:
+
+```text
+database/release/000_ejecutar_instalacion_completa.sql
+```
+
+Valor por defecto para pruebas:
+
+```sql
+:setvar DB_NAME "APP_SCHEDULER_TEST_INSTALL"
+```
+
+El script maestro define `DB_NAME` y ejecuta los scripts `001` a `006` y `099` en orden mediante `:r`, evitando depender de variables SQLCMD entre pestaÃ±as separadas de SSMS.
+
+Los scripts ejecutables `001` a `006` y `099` usan `[$(DB_NAME)]` en `CREATE DATABASE` y `USE`. La validacion `099_validacion_instalacion.sql` compara `DB_NAME()` contra `'$(DB_NAME)'`.
+
+Esto permite instalar en otra base cambiando una sola variable, sin editar manualmente todos los scripts. `APP_SCHEDULER_TEST_INSTALL` queda como valor de prueba por defecto; `APP_SCHEDULER_QA` no queda hardcodeado en scripts ejecutables.
 
 ## 2. Errores encontrados durante Fase 13B
 
@@ -189,29 +217,27 @@ El release replica `APP_SCHEDULER_QA`: `OPERADOR` no se crea porque no existe en
 | Rol `OPERADOR` creado por reinterpretacion | Corregido: `OPERADOR` eliminado del release porque no existe en `APP_SCHEDULER_QA`. |
 | Conteos de permisos por rol no coincidian con QA | Corregido: `SUPER_ADMIN = 39`, `ADMIN = 37`, `TI = 31`, `TERCERO = 7`. |
 | No se ejecuto SQL desde Codex | Correcto por regla; validacion real queda manual. |
-| Release apunta a base fija `APP_SCHEDULER_TEST_INSTALL` | Correcto para Fase 13B; si se usa otro nombre debe cambiarse controladamente en todos los scripts. |
+| Release apuntaba a base fija `APP_SCHEDULER_TEST_INSTALL` | Corregido en Fase 13B.2 con SQLCMD variable `DB_NAME`. |
 
 ## 13. Correcciones aplicadas
 
 - `003`: roles con `codigo_rol`, `nombre_rol`, `descripcion`, `es_sistema`; `MERGE` por `codigo_rol`; relaciones por `codigo_rol`; roles base `SUPER_ADMIN`, `ADMIN`, `TI` y `TERCERO`; `OPERADOR` eliminado del release ejecutable.
 - `004`: todos los catalogos incluyen `nombre`; se agrego `CRITICAL`; `cat_tipos_tarea` queda en `MANUAL` y `PROGRAMADA`.
 - `005`: `configuracion_scheduler` usa `descripcion`; se agrega `nombre_worker_principal`; `configuracion_sistema` incluye `tipo_dato`.
-- `099`: validacion por secciones para base, tablas, roles, permisos, catalogos, configuracion, tablas vacias, columnas NOT NULL, seguridad, indices, FKs y checks.
+- `099`: validacion por secciones para base, tablas, roles, permisos, catalogos, configuracion, tablas vacias, columnas NOT NULL, seguridad, indices, FKs y checks; compara `DB_NAME()` contra `'$(DB_NAME)'`.
 
 ## 14. Validaciones manuales que debe ejecutar el usuario
 
 Ejecutar manualmente en SSMS sobre una base limpia:
 
-1. `database/release/001_crear_base_datos.sql`
-2. `database/release/002_schema_final.sql`
-3. `database/release/003_seed_roles_permisos.sql`
-4. `database/release/004_seed_catalogos_base.sql`
-5. `database/release/005_seed_configuracion_inicial.sql`
-6. `database/release/006_seed_feriados_base.sql`
-7. `database/release/099_validacion_instalacion.sql`
+1. Activar `Query > SQLCMD Mode`.
+2. Editar `database/release/000_ejecutar_instalacion_completa.sql` y definir `DB_NAME`.
+3. Ejecutar `database/release/000_ejecutar_instalacion_completa.sql`.
+4. Revisar la salida final de `099_validacion_instalacion.sql`.
 
 Resultados esperados:
 
+- `VALIDACION_BASE.base_actual = VALIDACION_BASE.base_esperada`.
 - `VALIDACION_BASE.resultado = OK`.
 - Todas las tablas esperadas con `existe = 1`.
 - `VALIDACION_ROLES_FALTANTES.roles_faltantes = 0`.
@@ -228,4 +254,4 @@ Resultados esperados:
 
 ## 15. Estado final recomendado
 
-Reintentar Fase 13B desde una base limpia `APP_SCHEDULER_TEST_INSTALL`. No avanzar a Fase 13C hasta que los scripts `001` a `006` y `099` se ejecuten sin errores y los resultados de validacion queden documentados.
+Reintentar Fase 13B desde una base limpia usando `DB_NAME = APP_SCHEDULER_TEST_INSTALL` o el nombre aprobado para el ambiente. No avanzar a Fase 13C hasta que `000_ejecutar_instalacion_completa.sql` ejecute `001` a `006` y `099` sin errores y los resultados de validacion queden documentados.
