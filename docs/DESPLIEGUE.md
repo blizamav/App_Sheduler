@@ -95,19 +95,28 @@ El paquete consolidado para instalacion limpia esta en:
 database/release/
 ```
 
+Desde la limpieza controlada previa a Fase 13C, `database/release/` es la fuente oficial de instalacion limpia. Los scripts incrementales antiguos fueron movidos a:
+
+```text
+database/legacy_pre_release_13B/
+```
+
+Esa carpeta es historica y no debe usarse para instalaciones nuevas sin revision tecnica.
+
 Desde Fase 13B.2 el nombre de base se define con SQLCMD variable `DB_NAME` en:
 
 ```text
-database/release/000_configuracion_instalacion.sql
+database/release/000_ejecutar_instalacion_completa.sql
 ```
 
 Uso manual en SSMS:
 
 1. Abrir SQL Server Management Studio.
 2. Activar `Query > SQLCMD Mode`.
-3. Editar `000_configuracion_instalacion.sql`.
+3. Editar `000_ejecutar_instalacion_completa.sql`.
 4. Definir `DB_NAME`, por ejemplo `APP_SCHEDULER_TEST_INSTALL`.
-5. Ejecutar `000`, luego `001` a `006` y finalmente `099_validacion_instalacion.sql`.
+5. Ejecutar el script maestro completo.
+6. Revisar la salida de `099_validacion_instalacion.sql`.
 
 Recomendaciones:
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-06-26 - Fase 13B.2 limpieza controlada carpeta database
+
+### Implementado
+
+* Se creo `database/INVENTARIO_DATABASE.md` con clasificacion archivo por archivo.
+* Se creo `database/legacy_pre_release_13B/README.md`.
+* Se movieron scripts historicos desde `database/migrations/`, `database/seeds/` y `database/diagnostics/` hacia `database/legacy_pre_release_13B/`.
+* `database/release/` queda como fuente oficial de instalacion limpia.
+* `database/release/000_ejecutar_instalacion_completa.sql` queda como punto de entrada recomendado.
+* `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md` y `log_codex.md` documentan la reorganizacion.
+
+### Reglas
+
+* No se elimino ningun archivo historico; se movieron a legacy para trazabilidad.
+* No se modificaron scripts release validados.
+* No se ejecuto SQL desde Codex.
+* No se conecto a SQL Server.
+* No se modifico `.env`.
+* No se modifico backend, frontend ni scheduler.
+* No se hizo commit ni push.
+* No se avanzo a Fase 13C ni Fase 14.
+
 ## 2026-06-26 - Fase 13B.2 script maestro de instalacion SQLCMD
 
 ### Implementado

@@ -6,7 +6,7 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 13B.2 implementada como parametrizacion del nombre de base del release SQL mediante SQLCMD `DB_NAME`; se mantiene la matriz validada de roles/permisos. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
+* Estado actual: Fase 13B.2 implementada como parametrizacion del nombre de base del release SQL mediante SQLCMD `DB_NAME` y limpieza controlada de `database/`; `database/release/` queda como fuente oficial y los scripts antiguos quedan en `database/legacy_pre_release_13B/`. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Fase 13B.2 - Parametrizacion del nombre de base en release SQL.
 * Ultima actualizacion: 2026-06-26
@@ -50,6 +50,17 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-26 - Fase 13B.2 / Limpieza controlada database
+
+* Archivos creados: `database/INVENTARIO_DATABASE.md`, `database/legacy_pre_release_13B/README.md`.
+* Carpetas movidas: `database/migrations/` a `database/legacy_pre_release_13B/migrations/`, `database/seeds/` a `database/legacy_pre_release_13B/seeds/`, `database/diagnostics/` a `database/legacy_pre_release_13B/diagnostics/`.
+* Objetivo: dejar `database/` ordenado antes de Fase 13C, separando fuente oficial, historicos y trazabilidad pre-release.
+* Fuente oficial: `database/release/`, con entrada recomendada `database/release/000_ejecutar_instalacion_completa.sql`.
+* Historico: `database/legacy_pre_release_13B/` conserva migraciones, seeds y diagnosticos anteriores; no deben usarse para instalaciones nuevas sin revision tecnica.
+* Inventario: `database/INVENTARIO_DATABASE.md` clasifica archivos como `FUENTE_OFICIAL_RELEASE`, `VIGENTE` o `HISTORICO`, con accion recomendada.
+* Eliminaciones: No se elimino ningun archivo; todo lo historico fue movido con trazabilidad.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco backend/frontend/scheduler, no se modificaron scripts release validados, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
 
 ### 2026-06-26 - Fase 13B.2 / Script maestro instalacion SQLCMD
 
