@@ -5,26 +5,33 @@ Objetivo: cargar roles, permisos y asignaciones base.
 No crea usuarios reales ni credenciales.
 */
 
-USE APP_SCHEDULER_QA;
+USE APP_SCHEDULER_TEST_INSTALL;
 GO
 
 MERGE dbo.roles AS destino
 USING (VALUES
-    (N'SUPER_ADMIN', N'Administrador total del sistema.'),
-    (N'ADMIN', N'Administrador operativo del sistema.'),
-    (N'TI', N'Usuario tecnico de TI.'),
-    (N'TERCERO', N'Usuario tercero con acceso limitado.')
-) AS origen(nombre_rol, descripcion)
-ON destino.nombre_rol = origen.nombre_rol
+    (N'SUPER_ADMIN', N'Super Admin', N'Acceso total al sistema.', 1, 1),
+    (N'ADMIN', N'Admin', N'Administracion general sin privilegios reservados.', 1, 1),
+    (N'TI', N'TI', N'Operacion tecnica de tareas y ejecuciones.', 1, 1),
+    (N'TERCERO', N'Tercero', N'Acceso limitado y controlado.', 1, 1)
+) AS origen(codigo_rol, nombre_rol, descripcion, es_sistema, activo)
+ON destino.codigo_rol = origen.codigo_rol
 WHEN MATCHED THEN
-    UPDATE SET descripcion = origen.descripcion, fecha_actualizacion = SYSDATETIME(), usuario_actualizacion = N'release_seed'
+    UPDATE SET nombre_rol = origen.nombre_rol,
+               descripcion = origen.descripcion,
+               es_sistema = origen.es_sistema,
+               activo = origen.activo,
+               fecha_actualizacion = SYSDATETIME(),
+               usuario_actualizacion = N'release_seed'
 WHEN NOT MATCHED THEN
-    INSERT (nombre_rol, descripcion, usuario_creacion)
-    VALUES (origen.nombre_rol, origen.descripcion, N'release_seed');
+    INSERT (codigo_rol, nombre_rol, descripcion, es_sistema, activo, usuario_creacion)
+    VALUES (origen.codigo_rol, origen.nombre_rol, origen.descripcion, origen.es_sistema, origen.activo, N'release_seed');
 GO
 
 MERGE dbo.permisos AS destino
-USING (VALUES
+USING (
+    SELECT codigo_permiso, modulo, accion, descripcion, CAST(1 AS bit) AS activo
+    FROM (VALUES
     (N'PANEL_VER', N'panel', N'ver', N'Ver panel principal'),
     (N'TAREAS_VER', N'tareas', N'ver', N'Ver tareas'),
     (N'TAREAS_CREAR', N'tareas', N'crear', N'Crear tareas'),
@@ -76,24 +83,38 @@ USING (VALUES
     (N'PAPELERA_VER', N'papelera', N'ver', N'Ver papelera operativa'),
     (N'PAPELERA_RESTAURAR', N'papelera', N'restaurar', N'Restaurar registros desde papelera'),
     (N'PAPELERA_ELIMINAR_PERMANENTE', N'papelera', N'eliminar_permanente', N'Eliminar definitivamente registros permitidos')
-) AS origen(codigo_permiso, modulo, accion, descripcion)
+    ) AS v(codigo_permiso, modulo, accion, descripcion)
+) AS origen
 ON destino.codigo_permiso = origen.codigo_permiso
 WHEN MATCHED THEN
     UPDATE SET modulo = origen.modulo,
                accion = origen.accion,
                descripcion = origen.descripcion,
+               activo = origen.activo,
                fecha_actualizacion = SYSDATETIME(),
                usuario_actualizacion = N'release_seed'
 WHEN NOT MATCHED THEN
-    INSERT (codigo_permiso, modulo, accion, descripcion, usuario_creacion)
-    VALUES (origen.codigo_permiso, origen.modulo, origen.accion, origen.descripcion, N'release_seed');
+    INSERT (codigo_permiso, modulo, accion, descripcion, activo, usuario_creacion)
+    VALUES (origen.codigo_permiso, origen.modulo, origen.accion, origen.descripcion, origen.activo, N'release_seed');
 GO
 
 INSERT INTO dbo.roles_permisos (id_rol, id_permiso, usuario_creacion)
 SELECT r.id_rol, p.id_permiso, N'release_seed'
 FROM dbo.roles r
-CROSS JOIN dbo.permisos p
-WHERE r.nombre_rol = N'SUPER_ADMIN'
+JOIN dbo.permisos p ON p.codigo_permiso IN (
+    N'AUDITORIA_DETALLE', N'AUDITORIA_VER', N'CONFIGURACION_ADMIN',
+    N'EJECUCIONES_DETENER', N'EJECUCIONES_EJECUTAR', N'EJECUCIONES_LOG_VER', N'EJECUCIONES_VER',
+    N'FERIADOS_CREAR', N'FERIADOS_EDITAR', N'FERIADOS_ELIMINAR', N'FERIADOS_ESTADO',
+    N'FERIADOS_SINCRONIZAR', N'FERIADOS_VER', N'LOGS_VER', N'PANEL_VER',
+    N'PAPELERA_ELIMINAR_PERMANENTE', N'PAPELERA_RESTAURAR', N'PAPELERA_VER',
+    N'SCHEDULER_CONFIG_EDITAR', N'SCHEDULER_CONFIG_VER',
+    N'SCRIPTS_ACTIVAR_VERSION', N'SCRIPTS_CARGAR', N'SCRIPTS_CREAR', N'SCRIPTS_DESACTIVAR',
+    N'SCRIPTS_EDITAR', N'SCRIPTS_ELIMINAR', N'SCRIPTS_ENV_GESTIONAR', N'SCRIPTS_REEMPLAZAR',
+    N'SCRIPTS_VER', N'SCRIPTS_VERSIONAR',
+    N'TAREAS_ACTIVAR', N'TAREAS_CREAR', N'TAREAS_EDITAR', N'TAREAS_EJECUTAR', N'TAREAS_ELIMINAR',
+    N'TAREAS_ESTADO', N'TAREAS_SUSPENDER', N'TAREAS_VER', N'USUARIOS_ADMIN'
+)
+WHERE r.codigo_rol = N'SUPER_ADMIN'
   AND NOT EXISTS (
       SELECT 1 FROM dbo.roles_permisos rp
       WHERE rp.id_rol = r.id_rol AND rp.id_permiso = p.id_permiso
@@ -104,20 +125,19 @@ INSERT INTO dbo.roles_permisos (id_rol, id_permiso, usuario_creacion)
 SELECT r.id_rol, p.id_permiso, N'release_seed'
 FROM dbo.roles r
 JOIN dbo.permisos p ON p.codigo_permiso IN (
-    N'PANEL_VER', N'TAREAS_VER', N'TAREAS_CREAR', N'TAREAS_EDITAR', N'TAREAS_ACTIVAR', N'TAREAS_SUSPENDER',
-    N'TAREAS_ESTADO', N'TAREAS_EJECUTAR', N'TAREAS_ELIMINAR',
-    N'SCRIPTS_VER', N'SCRIPTS_CREAR', N'SCRIPTS_EDITAR', N'SCRIPTS_CARGAR', N'SCRIPTS_REEMPLAZAR',
-    N'SCRIPTS_VERSIONAR', N'SCRIPTS_ACTIVAR_VERSION', N'SCRIPTS_DESACTIVAR', N'SCRIPTS_ELIMINAR',
-    N'SCRIPTS_ENV_GESTIONAR', N'EJECUCIONES_VER', N'EJECUCIONES_EJECUTAR', N'EJECUCIONES_DETENER',
-    N'EJECUCIONES_LOG_VER', N'LOGS_VER', N'AUDITORIA_VER', N'AUDITORIA_DETALLE', N'USUARIOS_ADMIN',
-    N'CONFIGURACION_ADMIN', N'CLIENTES_VER', N'CLIENTES_CREAR', N'CLIENTES_EDITAR', N'CLIENTES_ESTADO',
-    N'CATEGORIAS_VER', N'CATEGORIAS_CREAR', N'CATEGORIAS_EDITAR', N'CATEGORIAS_ESTADO',
-    N'TIPOS_VER', N'TIPOS_CREAR', N'TIPOS_EDITAR', N'TIPOS_ESTADO',
-    N'SCHEDULER_CONFIG_VER', N'SCHEDULER_CONFIG_EDITAR',
-    N'FERIADOS_VER', N'FERIADOS_CREAR', N'FERIADOS_EDITAR', N'FERIADOS_ESTADO', N'FERIADOS_ELIMINAR',
-    N'FERIADOS_SINCRONIZAR', N'PAPELERA_VER', N'PAPELERA_RESTAURAR'
+    N'AUDITORIA_DETALLE', N'AUDITORIA_VER',
+    N'EJECUCIONES_DETENER', N'EJECUCIONES_EJECUTAR', N'EJECUCIONES_LOG_VER', N'EJECUCIONES_VER',
+    N'FERIADOS_CREAR', N'FERIADOS_EDITAR', N'FERIADOS_ELIMINAR', N'FERIADOS_ESTADO',
+    N'FERIADOS_SINCRONIZAR', N'FERIADOS_VER', N'LOGS_VER', N'PANEL_VER',
+    N'PAPELERA_RESTAURAR', N'PAPELERA_VER',
+    N'SCHEDULER_CONFIG_EDITAR', N'SCHEDULER_CONFIG_VER',
+    N'SCRIPTS_ACTIVAR_VERSION', N'SCRIPTS_CARGAR', N'SCRIPTS_CREAR', N'SCRIPTS_DESACTIVAR',
+    N'SCRIPTS_EDITAR', N'SCRIPTS_ELIMINAR', N'SCRIPTS_ENV_GESTIONAR', N'SCRIPTS_REEMPLAZAR',
+    N'SCRIPTS_VER', N'SCRIPTS_VERSIONAR',
+    N'TAREAS_ACTIVAR', N'TAREAS_CREAR', N'TAREAS_EDITAR', N'TAREAS_EJECUTAR', N'TAREAS_ELIMINAR',
+    N'TAREAS_ESTADO', N'TAREAS_SUSPENDER', N'TAREAS_VER', N'USUARIOS_ADMIN'
 )
-WHERE r.nombre_rol = N'ADMIN'
+WHERE r.codigo_rol = N'ADMIN'
   AND NOT EXISTS (
       SELECT 1 FROM dbo.roles_permisos rp
       WHERE rp.id_rol = r.id_rol AND rp.id_permiso = p.id_permiso
@@ -128,18 +148,17 @@ INSERT INTO dbo.roles_permisos (id_rol, id_permiso, usuario_creacion)
 SELECT r.id_rol, p.id_permiso, N'release_seed'
 FROM dbo.roles r
 JOIN dbo.permisos p ON p.codigo_permiso IN (
-    N'PANEL_VER', N'TAREAS_VER', N'TAREAS_CREAR', N'TAREAS_EDITAR', N'TAREAS_ACTIVAR', N'TAREAS_SUSPENDER',
-    N'TAREAS_ESTADO', N'TAREAS_EJECUTAR',
-    N'SCRIPTS_VER', N'SCRIPTS_CREAR', N'SCRIPTS_EDITAR', N'SCRIPTS_CARGAR', N'SCRIPTS_REEMPLAZAR',
-    N'SCRIPTS_VERSIONAR', N'SCRIPTS_ACTIVAR_VERSION', N'SCRIPTS_DESACTIVAR', N'SCRIPTS_ENV_GESTIONAR',
-    N'EJECUCIONES_VER', N'EJECUCIONES_EJECUTAR', N'EJECUCIONES_DETENER', N'EJECUCIONES_LOG_VER',
-    N'LOGS_VER', N'AUDITORIA_VER', N'AUDITORIA_DETALLE',
-    N'CLIENTES_VER', N'CATEGORIAS_VER', N'TIPOS_VER',
-    N'SCHEDULER_CONFIG_VER', N'SCHEDULER_CONFIG_EDITAR',
-    N'FERIADOS_VER', N'FERIADOS_CREAR', N'FERIADOS_EDITAR', N'FERIADOS_ESTADO', N'FERIADOS_SINCRONIZAR',
-    N'PAPELERA_VER'
+    N'AUDITORIA_DETALLE', N'AUDITORIA_VER',
+    N'EJECUCIONES_DETENER', N'EJECUCIONES_EJECUTAR', N'EJECUCIONES_LOG_VER', N'EJECUCIONES_VER',
+    N'FERIADOS_CREAR', N'FERIADOS_EDITAR', N'FERIADOS_ESTADO', N'FERIADOS_SINCRONIZAR',
+    N'FERIADOS_VER', N'LOGS_VER', N'PANEL_VER', N'PAPELERA_VER',
+    N'SCHEDULER_CONFIG_EDITAR', N'SCHEDULER_CONFIG_VER',
+    N'SCRIPTS_ACTIVAR_VERSION', N'SCRIPTS_CARGAR', N'SCRIPTS_CREAR', N'SCRIPTS_EDITAR',
+    N'SCRIPTS_ENV_GESTIONAR', N'SCRIPTS_REEMPLAZAR', N'SCRIPTS_VER', N'SCRIPTS_VERSIONAR',
+    N'TAREAS_ACTIVAR', N'TAREAS_CREAR', N'TAREAS_EDITAR', N'TAREAS_EJECUTAR',
+    N'TAREAS_ESTADO', N'TAREAS_SUSPENDER', N'TAREAS_VER'
 )
-WHERE r.nombre_rol = N'TI'
+WHERE r.codigo_rol = N'TI'
   AND NOT EXISTS (
       SELECT 1 FROM dbo.roles_permisos rp
       WHERE rp.id_rol = r.id_rol AND rp.id_permiso = p.id_permiso
@@ -150,10 +169,12 @@ INSERT INTO dbo.roles_permisos (id_rol, id_permiso, usuario_creacion)
 SELECT r.id_rol, p.id_permiso, N'release_seed'
 FROM dbo.roles r
 JOIN dbo.permisos p ON p.codigo_permiso IN (
-    N'PANEL_VER', N'TAREAS_VER', N'TAREAS_EJECUTAR', N'SCRIPTS_VER',
-    N'EJECUCIONES_VER', N'EJECUCIONES_LOG_VER', N'LOGS_VER'
+    N'PANEL_VER', N'TAREAS_VER', N'TAREAS_EJECUTAR',
+    N'SCRIPTS_VER',
+    N'EJECUCIONES_VER', N'EJECUCIONES_LOG_VER',
+    N'LOGS_VER'
 )
-WHERE r.nombre_rol = N'TERCERO'
+WHERE r.codigo_rol = N'TERCERO'
   AND NOT EXISTS (
       SELECT 1 FROM dbo.roles_permisos rp
       WHERE rp.id_rol = r.id_rol AND rp.id_permiso = p.id_permiso

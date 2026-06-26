@@ -309,13 +309,15 @@ La sincronizacion es manual y controlada. El scheduler no consulta Nager.Date.
 
 No subir secretos, logs reales, scripts productivos ni configuraciones privadas.
 
-## Instalacion SQL limpia Fase 13A
+## Instalacion SQL limpia Fase 13B
 
-Para una instalacion nueva de la base `APP_SCHEDULER_QA`, usar el paquete consolidado:
+Para la prueba de instalacion limpia de Fase 13B, usar el paquete consolidado:
 
 ```text
 database/release/
 ```
+
+Regla critica: esta prueba se ejecuta sobre `APP_SCHEDULER_TEST_INSTALL`, no sobre `APP_SCHEDULER_QA`.
 
 Ejecutar manualmente en SQL Server Management Studio, en este orden:
 
@@ -329,9 +331,44 @@ database/release/006_seed_feriados_base.sql
 database/release/099_validacion_instalacion.sql
 ```
 
+Si la prueba tuvo errores previos, reiniciar desde una base limpia `APP_SCHEDULER_TEST_INSTALL` antes de reintentar. No corregir datos directamente en tablas; corregir los scripts release y volver a ejecutar el orden completo.
+
 `database/migrations/` y `database/seeds/` siguen siendo historial de desarrollo. Para instalaciones limpias no mezclar ambos caminos salvo decision tecnica controlada.
 
 El release no crea usuarios reales ni contiene credenciales. Despues de instalar la base, configurar `.env` manualmente por ambiente sin sobrescribirlo automaticamente.
+
+Codex no debe ejecutar automaticamente estos scripts. El resultado de cada script y la salida de `099_validacion_instalacion.sql` deben validarse manualmente en SSMS.
+
+La auditoria tecnica de Fase 13B.1 esta documentada en:
+
+```text
+database/release/AUDITORIA_RELEASE_SQL.md
+```
+
+Consultas complementarias recomendadas sobre `APP_SCHEDULER_TEST_INSTALL`:
+
+```sql
+SELECT name
+FROM sys.tables
+ORDER BY name;
+
+SELECT COUNT(*) AS total_roles FROM roles;
+SELECT COUNT(*) AS total_permisos FROM permisos;
+SELECT COUNT(*) AS total_roles_permisos FROM roles_permisos;
+SELECT COUNT(*) AS total_tareas FROM tareas;
+SELECT COUNT(*) AS total_scripts FROM scripts;
+SELECT COUNT(*) AS total_ejecuciones FROM ejecuciones;
+SELECT COUNT(*) AS total_logs_tareas FROM logs_tareas;
+SELECT COUNT(*) AS total_auditoria FROM auditoria_cambios;
+SELECT COUNT(*) AS total_config_programador FROM configuracion_scheduler;
+
+SELECT
+    cc.name AS constraint_name,
+    OBJECT_NAME(cc.parent_object_id) AS tabla,
+    cc.definition
+FROM sys.check_constraints cc
+ORDER BY tabla, constraint_name;
+```
 
 ## Limpieza de eventos scheduler Fase 13A.1
 

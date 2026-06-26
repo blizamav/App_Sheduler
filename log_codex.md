@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 13A.1B implementada con multiselect visible y paginacion dinamica para eventos del scheduler. No se avanzo a Fase 13B ni Fase 14.
+* Estado actual: Fase 13B.1 implementada como auditoria integral del release SQL para instalacion limpia sobre `APP_SCHEDULER_TEST_INSTALL`; se corrigio la matriz de roles/permisos para replicar `APP_SCHEDULER_QA` sin crear `OPERADOR`. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 13A.1B - Limpieza parametrizable de eventos del scheduler.
+* Fase actual: Fase 13B.1 - Auditoria integral del release SQL.
 * Ultima actualizacion: 2026-06-26
 
 ## 2. Decisiones tecnicas vigentes
@@ -50,6 +50,64 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-26 - Fase 13B.1 / Correccion matriz real roles-permisos QA
+
+* Archivos modificados: `database/release/003_seed_roles_permisos.sql`, `database/release/099_validacion_instalacion.sql`, `database/release/AUDITORIA_RELEASE_SQL.md`, `database/release/README_INSTALACION_SQL.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo corregido: el release debe replicar el estado base real de `APP_SCHEDULER_QA`, no redisenar seguridad ni crear roles inexistentes.
+* Hallazgo: `APP_SCHEDULER_QA` no tiene rol `OPERADOR`; el release lo estaba creando indebidamente.
+* Correccion aplicada: `OPERADOR` fue eliminado del seed ejecutable de roles y de las validaciones esperadas.
+* Roles finales del release: `SUPER_ADMIN`, `ADMIN`, `TI` y `TERCERO`.
+* Matriz de permisos esperada: `SUPER_ADMIN = 39`, `ADMIN = 37`, `TI = 31`, `TERCERO = 7`.
+* `003`: `SUPER_ADMIN` deja de recibir todos los permisos por `CROSS JOIN`; todos los roles usan listas explicitas de permisos equivalentes a QA.
+* `099`: se agregan validaciones de roles esperados, roles no esperados, ausencia de `OPERADOR` y diferencias de permisos por rol.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`, no se cambio backend/frontend/scheduler, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
+
+### 2026-06-26 - Fase 13B.1 / Correccion de criterio roles base
+
+* Archivos modificados: `database/release/003_seed_roles_permisos.sql`, `database/release/099_validacion_instalacion.sql`, `database/release/AUDITORIA_RELEASE_SQL.md`, `database/release/README_INSTALACION_SQL.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Nota: entrada superada por la correccion posterior de matriz real QA; el release final no crea `OPERADOR`.
+* Problema detectado: la correccion anterior del release simplifico indebidamente los roles base a `SUPER_ADMIN`, `ADMIN` y `OPERADOR`, dejando fuera los roles historicos funcionales `TI` y `TERCERO`.
+* Criterio corregido: el release limpio debe reconstruir fielmente el estado funcional del sistema, no redisenar ni eliminar roles historicos.
+* Correccion aplicada: `003_seed_roles_permisos.sql` restaura `TI` y `TERCERO`; todos los roles informan `codigo_rol` y el `MERGE` usa `codigo_rol`.
+* Validacion: `099_validacion_instalacion.sql` agrega `VALIDACION_ROLES_BASE` y `VALIDACION_ROLES_FALTANTES`; se espera `roles_faltantes = 0`.
+* Documentacion: README y auditoria del release explican la correccion de criterio y los roles base esperados.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`, no se cambio backend/frontend/scheduler, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
+
+### 2026-06-26 - Fase 13B.1 / Auditoria integral release SQL
+
+* Archivos creados: `database/release/AUDITORIA_RELEASE_SQL.md`.
+* Archivos modificados: `database/release/004_seed_catalogos_base.sql`, `database/release/005_seed_configuracion_inicial.sql`, `database/release/099_validacion_instalacion.sql`, `database/release/README_INSTALACION_SQL.md`, `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: detener parches puntuales y revisar integralmente el release SQL contra schema final, seeds historicos y usos del backend.
+* Hallazgo 1: `004_seed_catalogos_base.sql` omitia `nombre` en catalogos con columna `nombre NOT NULL`.
+* Hallazgo 2: `cat_tipos_tarea` contenia tipos tecnicos, pero el backend guarda `MANUAL` y `PROGRAMADA`.
+* Hallazgo 3: `005_seed_configuracion_inicial.sql` usaba `observacion` en `configuracion_scheduler`, columna inexistente en el schema final.
+* Hallazgo 4: `configuracion_sistema.tipo_dato` es obligatorio y no estaba informado por el seed.
+* Correcciones: `004` informa `codigo`, `nombre`, `descripcion`; `005` usa columnas reales y `tipo_dato`; `099` queda como reporte de validacion por secciones.
+* Auditoria: se documento matriz tabla por tabla, matriz seed por seed, tablas con datos, tablas vacias, columnas NOT NULL, catalogos, roles/permisos, configuracion minima, riesgos y reintento manual.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco `APP_SCHEDULER_QA` ni `APP_SCHEDULER_TEST_INSTALL`, no se cambio backend/frontend/scheduler, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
+
+### 2026-06-26 - Fase 13B / Preparacion de prueba de instalacion limpia
+
+* Archivos modificados: `database/release/001_crear_base_datos.sql`, `database/release/002_schema_final.sql`, `database/release/003_seed_roles_permisos.sql`, `database/release/004_seed_catalogos_base.sql`, `database/release/005_seed_configuracion_inicial.sql`, `database/release/006_seed_feriados_base.sql`, `database/release/099_validacion_instalacion.sql`, `database/release/README_INSTALACION_SQL.md`, `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: el paquete release apuntaba a `APP_SCHEDULER_QA`, pero la prueba de Fase 13B debe ejecutarse en una base nueva para no tocar datos reales.
+* Cambio aplicado: los scripts release ahora apuntan a `APP_SCHEDULER_TEST_INSTALL` para la prueba limpia manual.
+* Documentacion: se reforzo en README de release y despliegue que la ejecucion debe realizarse manualmente en SSMS y que Codex no debe ejecutar SQL.
+* Estado de ejecucion: pendiente de ejecucion manual por el usuario en SQL Server Management Studio.
+* Pruebas esperadas: ejecutar scripts `001` a `006`, luego `099_validacion_instalacion.sql`, revisar tablas, roles, permisos, relaciones, configuracion, indices, checks y ausencia de datos operativos.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se toco `APP_SCHEDULER_QA`, no se cambio backend/frontend/scheduler/logica funcional, no se hizo commit ni push y no se avanzo a Fase 13C ni Fase 14.
+
+### 2026-06-26 - Fase 13B / Correccion seed roles release
+
+* Error reportado por el usuario en SSMS: `Cannot insert the value NULL into column 'codigo_rol', table 'APP_SCHEDULER_TEST_INSTALL.dbo.roles'; column does not allow nulls`.
+* Diagnostico: `database/release/002_schema_final.sql` define `dbo.roles.codigo_rol varchar(50) NOT NULL` y `UX_roles_codigo_rol`, pero `database/release/003_seed_roles_permisos.sql` creaba roles solo con `nombre_rol` y `descripcion`.
+* Causa raiz: el `MERGE dbo.roles` del release no incluia `codigo_rol` en el origen ni en el `INSERT`.
+* Correccion: el seed ahora usa `codigo_rol`, `nombre_rol`, `descripcion` y `es_sistema`; la clave de emparejamiento del `MERGE` es `codigo_rol`.
+* Correccion superada por Fase 13B.1: el release final no crea `OPERADOR`; los roles reales son `SUPER_ADMIN`, `ADMIN`, `TI` y `TERCERO`.
+* Relaciones: los inserts de `roles_permisos` ahora filtran por `r.codigo_rol`; se elimino la dependencia de `nombre_rol`.
+* Validacion adicional: `099_validacion_instalacion.sql` reporta `roles_codigo_nulo`, que debe ser `0`.
+* Estado de ejecucion: pendiente reintento manual del script `003` corregido en SSMS; no avanzar a `004` hasta que `003` termine sin errores.
+* Reglas: No se modifico `.env`, no se ejecuto SQL desde Codex, no se toco `APP_SCHEDULER_QA`, no se cambio backend/frontend/scheduler, no se hizo commit ni push y no se avanzo a `004`, Fase 13C ni Fase 14.
 
 ### 2026-06-26 - Fase 13A.1B / Paginacion dinamica de eventos scheduler
 

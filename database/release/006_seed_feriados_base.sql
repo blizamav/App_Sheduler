@@ -5,7 +5,7 @@ Objetivo: cargar reglas base de feriados irrenunciables.
 No carga feriados por fecha ni consulta APIs externas.
 */
 
-USE APP_SCHEDULER_QA;
+USE APP_SCHEDULER_TEST_INSTALL;
 GO
 
 MERGE dbo.reglas_feriados_irrenunciables AS destino
