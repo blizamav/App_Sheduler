@@ -51,6 +51,7 @@
 * Fase 12B.2: validacion real del `scheduler_worker.py` iniciada; bloqueada por error ODBC local, con correccion acotada de cierre seguro en ejecuciones automaticas y robustez de heartbeat.
 * Fase 13A.1: optimizacion de `scheduler_eventos` y limpieza controlada de eventos informativos antiguos.
 * Fase 13A.1B: limpieza parametrizable de eventos del scheduler con whitelist de categorias y previsualizacion.
+* Fase 14B.1: logging controlado del worker con `app/servicios/servicio_logging_worker.py`, salida simultanea a terminal y buffer visual `logs/worker_console.log`.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -66,6 +67,7 @@ Pendiente operativo:
 * Scripts para levantar web y worker.
 * Worker como servicio.
 * Preparacion QA/produccion.
+* Endpoints de solo lectura para exponer logs del worker en fase posterior.
 * Estrategia de backups.
 * Estrategia de retencion automatica.
 
@@ -89,7 +91,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 12B.2 de validacion del Programador automatico: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados y cobertura ampliada de auditoria para acciones criticas, bloqueos y errores controlados. La validacion real de `scheduler_worker.py` queda pendiente en entorno con SQL Server accesible por error ODBC local; ya se corrigio el riesgo de cierre en ejecucion automatica y el fallback de heartbeat. Aun no existe despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 14B.1 a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria y logging controlado del worker con buffer visual acotado. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible; Fase 14B.1 no cambia la logica del scheduler ni crea endpoints. Aun no existe despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -200,6 +202,16 @@ Implementado en Fase 11B:
 * Clasificacion visual del estado del worker segun ultimo heartbeat e intervalo configurado.
 * Seccion `Estado del worker` en `/scheduler/panel`.
 * `python scheduler_worker.py --once` actualiza heartbeat y registra salida controlada.
+
+Implementado en Fase 14B.1:
+
+* `app/servicios/servicio_logging_worker.py`: configuracion centralizada de logging estandar del worker.
+* `scheduler_worker.py`: inicializa logging antes de crear la app Flask.
+* `logs/worker_console.log`: fuente controlada inicial para futura consola visual.
+* `StreamHandler`: mantiene salida visible en terminal.
+* Handler de buffer acotado: persiste salida reciente en archivo unico, maximo 300 lineas y sin backups.
+* `servicio_scheduler_worker.py`: reemplaza `print()` por logging estructurado con origen `WORKER`, `CONFIG`, `HEARTBEAT`, `CICLO`, `SCHEDULER` y `EJECUCION`.
+* `servicio_worker_heartbeat.py`: registra lineas operativas de inicio/error/detencion del heartbeat sin usar `scheduler_eventos` para ruido normal ni escribir heartbeat cada ciclo en el buffer visual.
 
 Implementado en Fase 11D:
 

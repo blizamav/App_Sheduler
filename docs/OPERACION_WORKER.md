@@ -23,6 +23,7 @@ Validaciones previas:
 - No registra ruido operativo normal en `scheduler_eventos`.
 - Registra eventos importantes en `scheduler_eventos`.
 - Actualiza heartbeat en `scheduler_worker_heartbeat`.
+- Desde Fase 14B.1 escribe salida operativa tambien en `logs/worker_console.log` como buffer visual limitado.
 
 ## Problema que resuelve
 
@@ -286,20 +287,46 @@ Alternativas:
 | Fuente | Evaluacion |
 |---|---|
 | Logging estandar Python | Recomendado. Permite escribir a stdout y a destino persistido controlado. |
-| Archivo log rotativo | Recomendado como primera fuente para consola visual, por ejemplo `logs/worker.log` con rotacion. |
+| Archivo buffer acotado | Recomendado en esta etapa. `logs/worker_console.log` como buffer visual reciente sin historial acumulativo. |
 | `logs_sistema` | Util para eventos generales, no para cada ciclo normal. |
 | `scheduler_eventos` | Mantener solo eventos importantes; no llenarla de ruido operativo. |
-| Tabla futura `worker_logs` | Evaluar si archivo rotativo/logging no alcanza. |
+| Tabla futura `worker_logs` | No recomendada en esta etapa; solo evaluar si el buffer visual ya no alcanza en una fase posterior. |
 | stdout Docker | Util para `docker compose logs -f worker`, pero la app no debe depender del Docker socket. |
 
 Recomendacion:
 
 - Usar logging estandar de Python.
 - Mantener stdout para terminal real y Docker logs.
-- Persistir salida controlada para que la app lea ultimas lineas.
+- Persistir salida controlada en buffer visual reciente para que la app lea ultimas lineas.
 - Evitar llenar `scheduler_eventos` con ciclos normales.
 - Usar heartbeat para estado de vida.
 - Usar `scheduler_eventos` para eventos importantes.
+
+Implementacion actual de Fase 14B.1:
+
+- Modulo: `app/servicios/servicio_logging_worker.py`.
+- Archivo persistido: `logs/worker_console.log`.
+- Handlers: `StreamHandler` y handler propio de buffer acotado.
+- Formato: `timestamp | nivel | origen | mensaje`.
+- Politica: archivo unico, maximo 300 lineas, reinicio por nueva sesion y sin backups.
+- La carpeta `logs/` se crea de forma segura si no existe.
+- No se usan rutas absolutas locales ni se exponen secretos.
+- No se usa Notepad como mecanismo operativo; el archivo existe solo como fuente tecnica para futura lectura segura desde la app.
+
+Distincion operativa vigente:
+
+- `logs/worker_console.log`: buffer visual reciente para futura consola.
+- `scheduler_worker_heartbeat`: estado de vida y ultimo ciclo.
+- `scheduler_eventos`: hechos importantes del programador.
+- `ejecuciones` y `logs_tareas`: ejecucion real de scripts.
+
+Reglas del buffer visual:
+
+- Debe reiniciarse al iniciar una nueva sesion del worker.
+- Debe conservar como maximo 300 lineas.
+- No debe crear `worker_console.log.1`, `worker_console.log.2` ni archivos equivalentes.
+- No debe convertirse en historico operativo, auditoria ni fuente de verdad.
+- La futura UI podra mostrar solo las ultimas 100 lineas, aunque la fuente completa no supere 300.
 
 ## Estado de vida del worker
 
@@ -457,12 +484,12 @@ sudo systemctl status app-scheduler-worker
 journalctl -u app-scheduler-worker -f
 ```
 
-## Criterio de aprobacion para pasar a Fase 14B
+## Criterio de aprobacion para pasar a Fase 14C
 
-Antes de implementar servicios o consola real:
+Antes de implementar endpoints o consola visual real:
 
 - Decision web/worker separados aceptada.
-- Fuente de salida operativa definida.
+- Fuente de salida operativa implementada.
 - Umbrales de heartbeat definidos.
 - Permisos confirmados.
 - Riesgo de worker duplicado cubierto.
@@ -472,16 +499,13 @@ Antes de implementar servicios o consola real:
 
 ## Pendientes de decision
 
-- Fuente persistida final para salida tipo terminal: archivo rotativo o tabla dedicada.
-- Retencion y rotacion del log del worker.
+- Politica exacta de limpieza cuando la futura UI solo consuma ultimas 100 lineas.
 - Umbrales exactos de vivo/advertencia/caido.
 - Permiso especifico `WORKER_MONITOREAR` o reutilizacion de permisos actuales.
 - Alcance de acciones futuras: solo monitoreo o tambien operacion controlada.
 
 ## Proximas fases sugeridas
 
-- Fase 14B: implementar fuente controlada de logs del worker y endpoints de solo lectura.
-- Fase 14C: evolucionar panel Logs a consola visual real.
+- Fase 14C: implementar endpoints de solo lectura y evolucionar panel Logs a consola visual real.
 - Fase 14D: definir Docker Compose o systemd operativo.
 - Fase 14E: alertas, retencion y reportes operativos.
-

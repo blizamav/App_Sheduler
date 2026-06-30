@@ -113,6 +113,7 @@ Validar:
 - En desarrollo local, levantar worker en terminal separada solo para prueba controlada.
 - En QA/Produccion, usar proceso separado para web y worker.
 - Worker no debe registrar ruido operativo.
+- Si se levanta el worker, debe generar `logs/worker_console.log` como buffer visual local y mantener salida visible en terminal.
 - Si se prueba worker, debe hacerse con tarea controlada.
 - No activar scheduler en produccion sin configuracion revisada.
 

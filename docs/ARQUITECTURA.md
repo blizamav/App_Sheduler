@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 14A documenta la operacion formal del worker y la consola visual futura de monitoreo. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14B.1 deja implementado el buffer visual limitado del worker. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -14,6 +14,7 @@ Estado actual: Fase 14A documenta la operacion formal del worker y la consola vi
 * Datos: SQL Server mediante `pyodbc` y repositorios dedicados.
 * Servicios: reglas de negocio para usuarios, mantenedores, tareas, scripts, ejecuciones, programador, feriados, paneles, eventos, borrado operativo y auditoria.
 * Worker: `scheduler_worker.py` como proceso separado para evaluacion automatica.
+* Logging worker: `app/servicios/servicio_logging_worker.py` para salida estructurada a terminal y buffer visual acotado.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 
@@ -160,6 +161,27 @@ Fase 11B agrega heartbeat del worker:
 * `app/servicios/servicio_scheduler_worker.py`: integra actualizacion de heartbeat sin cambiar el modelo de ejecucion automatica.
 * `/scheduler/panel`: muestra estado del worker, ultimo heartbeat, ultimo ciclo, PID, host y contadores del ultimo ciclo.
 
+Fase 14B.1 agrega buffer visual limitado del worker:
+
+* `app/servicios/servicio_logging_worker.py`: configura logger dedicado `app_scheduler.worker`.
+* `scheduler_worker.py`: inicializa el logger antes de levantar contexto Flask.
+* `app/servicios/servicio_scheduler_worker.py`: usa logging estructurado en lugar de `print()`.
+* `app/servicios/servicio_worker_heartbeat.py`: agrega trazas operativas de heartbeat al mismo logger.
+* `logs/worker_console.log`: archivo local unico como buffer visual reciente para futura lectura segura.
+
+Formato vigente:
+
+```text
+YYYY-MM-DD HH:mm:ss | NIVEL | ORIGEN | mensaje
+```
+
+Politica vigente del buffer:
+
+* archivo unico
+* maximo 300 lineas
+* reinicio por nueva sesion del worker
+* sin backups rotativos
+
 Fase 11D agrega eventos del programador:
 
 * `database/migrations/015_crear_eventos_programador.sql`: tabla `scheduler_eventos`.
@@ -204,7 +226,7 @@ Reglas principales:
 * Desde Fase 11A puede monitorearse en `/scheduler/panel`, sin control operacional del proceso.
 * Desde Fase 11B registra heartbeat en `scheduler_worker_heartbeat`.
 
-## Operacion worker Fase 14A
+## Operacion worker Fase 14A y 14B
 
 Decision arquitectonica: el worker no debe ejecutarse dentro del proceso Flask.
 
@@ -234,9 +256,9 @@ La app web debe monitorear al worker mediante fuentes controladas:
 * `scheduler_worker_heartbeat` para estado de vida.
 * `configuracion_scheduler` para estado del scheduler.
 * `scheduler_eventos` para eventos importantes.
-* Salida operativa persistida futura para mostrar una consola visual equivalente a terminal.
+* `logs/worker_console.log` como salida operativa persistida inicial para mostrar una consola visual equivalente a terminal en fase posterior.
 
-El panel lateral abierto desde el boton `Logs` podra evolucionar a una consola visual del worker. Esa consola no debe ser una terminal real: no debe ejecutar comandos, no debe acceder al Docker socket, no debe mostrar secretos y no debe iniciar/detener procesos en Fase 14A.
+El panel lateral abierto desde el boton `Logs` podra evolucionar a una consola visual del worker. Esa consola no debe ser una terminal real: no debe ejecutar comandos, no debe acceder al Docker socket, no debe mostrar secretos y no debe iniciar/detener procesos en Fase 14A ni 14B.
 
 Diseno detallado: `docs/OPERACION_WORKER.md`.
 
@@ -290,7 +312,7 @@ El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Roadmap arquitectonico
 
-Siguiente bloque recomendado: implementar Fase 14B con fuente controlada de logs del worker y endpoints de solo lectura, manteniendo web y worker separados.
+Siguiente bloque recomendado: implementar Fase 14C con endpoints de solo lectura y consola visual real del worker, manteniendo web y worker separados.
 
 Bloques posteriores:
 
@@ -298,7 +320,7 @@ Bloques posteriores:
 * Fase 13: release, instalacion limpia y checklist de despliegue.
 * Fase 14: operacion avanzada del worker, monitoreo y servicios.
 
-La arquitectura ya evita rutas absolutas para facilitar portabilidad. Docker Compose, systemd y worker como servicio quedan pendientes de implementacion posterior; Fase 14A solo deja el diseno operativo formal.
+La arquitectura ya evita rutas absolutas para facilitar portabilidad. Docker Compose, systemd y worker como servicio quedan pendientes de implementacion posterior; Fase 14A deja el diseno operativo formal, Fase 14B implementa una primera version y Fase 14B.1 la corrige hacia buffer visual limitado.
 
 ## Release SQL limpio
 

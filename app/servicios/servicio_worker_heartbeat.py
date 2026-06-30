@@ -12,6 +12,7 @@ from app.repositorios.repositorio_worker_heartbeat import (
     registrar_fin_ciclo_worker,
     upsert_inicio_worker,
 )
+from app.servicios.servicio_logging_worker import registrar_log_worker
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 
@@ -27,6 +28,10 @@ def registrar_inicio_worker(nombre_worker):
     }
     try:
         upsert_inicio_worker(datos)
+        registrar_log_worker(
+            f"Senal de vida iniciada. worker={datos['nombre_worker']}; pid={datos['pid_proceso']}; host={datos['host']}.",
+            origen="HEARTBEAT",
+        )
         registrar_log_sistema(
             "WORKER_HEARTBEAT_INICIADO",
             "SCHEDULER",
@@ -75,6 +80,11 @@ def registrar_error_worker(nombre_worker, error, incrementar_ciclo=False):
     mensaje = _mensaje_error(error)
     try:
         registrar_error_worker_bd(_nombre_worker_seguro(nombre_worker), mensaje, incrementar_ciclo)
+        registrar_log_worker(
+            f"Heartbeat marco estado ERROR. worker={_nombre_worker_seguro(nombre_worker)}; detalle={mensaje}",
+            origen="HEARTBEAT",
+            nivel="ERROR",
+        )
     except Exception as error_bd:
         _registrar_error_heartbeat_log("WORKER_HEARTBEAT_ERROR_REGISTRO_FALLO", error_bd)
 
@@ -94,6 +104,11 @@ def registrar_error_worker(nombre_worker, error, incrementar_ciclo=False):
 def registrar_detencion_worker(nombre_worker):
     try:
         registrar_detencion_worker_bd(_nombre_worker_seguro(nombre_worker))
+        registrar_log_worker(
+            f"Senal de vida marcada como detenida. worker={_nombre_worker_seguro(nombre_worker)}.",
+            origen="HEARTBEAT",
+            nivel="WARNING",
+        )
         registrar_log_sistema(
             "WORKER_DETENIDO",
             "SCHEDULER",

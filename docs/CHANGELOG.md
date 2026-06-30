@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-06-30 - Fase 14B fuente controlada de logs del worker
+
+### Implementado
+
+* Se creo `app/servicios/servicio_logging_worker.py` para centralizar el logging del worker.
+* `scheduler_worker.py` inicializa logging estandar antes de crear la app Flask.
+* El worker mantiene salida visible en terminal mediante `StreamHandler`.
+* La salida operativa tambien se persiste en `logs/worker.log`.
+* `logs/worker.log` usa `RotatingFileHandler` con rotacion de `2 MB` y `5` backups.
+* El formato vigente es `timestamp | nivel | origen | mensaje`.
+* `app/servicios/servicio_scheduler_worker.py` deja de depender de `print()` y usa logging estructurado por origen: `WORKER`, `CONFIG`, `HEARTBEAT`, `CICLO`, `SCHEDULER` y `EJECUCION`.
+* `app/servicios/servicio_worker_heartbeat.py` agrega trazas operativas del heartbeat al mismo logger.
+* `scheduler_eventos` no vuelve a llenarse con ruido operativo normal; sigue reservado para hechos importantes.
+* `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md` y `log_codex.md` quedaron alineados.
+
+### Reglas
+
+* No se crearon endpoints.
+* No se modifico frontend.
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se cambio release SQL ni estructura de base de datos.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14C.
+
+## 2026-06-30 - Fase 14B.1 ajuste logging worker a buffer visual limitado
+
+### Corregido
+
+* `app/servicios/servicio_logging_worker.py` deja de usar `RotatingFileHandler`.
+* La fuente visual del worker pasa a `logs/worker_console.log`.
+* `logs/worker_console.log` queda como archivo unico, sin backups y sin acumulacion historica.
+* El buffer visual se reinicia al comenzar una nueva sesion del worker.
+* El buffer conserva como maximo `300` lineas.
+* La salida en terminal se mantiene mediante `StreamHandler`.
+* `app/servicios/servicio_worker_heartbeat.py` deja de registrar `heartbeat` en cada ciclo al buffer visual.
+* `app/servicios/servicio_scheduler_worker.py` reduce ruido repetitivo en la salida visual: no registra cada ciclo ni cada omision por fuera de ventana.
+* La separacion de fuentes queda reforzada: `scheduler_worker_heartbeat`, `configuracion_scheduler`, `scheduler_eventos`, `ejecuciones/logs_tareas` y `logs/worker_console.log`.
+
+### Reglas
+
+* No se crearon tablas.
+* No se modifico release SQL.
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se modifico frontend ni se crearon endpoints.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14C.
+
 ## 2026-06-30 - Fase 14A diseno operativo worker y consola visual
 
 ### Documentado

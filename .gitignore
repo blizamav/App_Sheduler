@@ -25,6 +25,11 @@ __pycache__/
 /env_scripts/
 **/.env
 instance/
+# Logs y archivos generados por runtime
+logs/
+*.log
+/logs_tareas/
+/logs_sistema/
 
 # Testing y cobertura
 .pytest_cache/

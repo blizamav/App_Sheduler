@@ -151,6 +151,7 @@ Decision vigente:
 * Preferencia: Docker Compose con servicios `web` y `worker`.
 * Alternativa: systemd en Ubuntu sin Docker.
 * La consola visual futura dentro de la app debe ser solo monitoreo controlado, no una terminal real.
+* Desde Fase 14B.1 la salida operativa del worker se persiste tambien en `logs/worker_console.log` como buffer visual limitado.
 
 ## Docker
 
@@ -168,7 +169,7 @@ Pendientes de Fase 13:
 
 Pendientes de Fase 14:
 
-* Implementar fuente controlada de logs del worker.
+* Implementar endpoints de solo lectura para exponer la fuente controlada del worker.
 * Evolucionar panel Logs a consola visual real.
 * Docker Compose o systemd operativo.
 * Retencion automatica.
@@ -245,6 +246,15 @@ python scheduler_worker.py
 ```
 
 Detener con `CTRL+C` en la consola donde se ejecuto.
+
+Con Fase 14B, al correr el worker se espera:
+
+* salida visible en la terminal;
+* archivo `logs/worker_console.log`;
+* reinicio del archivo al iniciar una nueva sesion;
+* maximo de 300 lineas;
+* sin backups rotativos;
+* sin dependencias de Docker socket, terminal remota ni tabla nueva.
 
 Estados esperados:
 

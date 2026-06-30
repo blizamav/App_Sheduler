@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14A implementada documentalmente como diseno operativo del scheduler worker y consola visual futura de monitoreo. No se ejecuto SQL desde Codex y no se avanzo a Fase 14B.
+* Estado actual: Fase 14B.1 implementada como ajuste del logging del scheduler worker a buffer visual limitado en archivo unico. No se ejecuto SQL desde Codex y no se avanzo a Fase 14C.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14A - Diseno operativo del scheduler worker y consola visual de monitoreo.
+* Fase actual: Fase 14B.1 - Ajuste del logging del scheduler worker a buffer visual limitado.
 * Ultima actualizacion: 2026-06-30
 
 ## 2. Decisiones tecnicas vigentes
@@ -21,6 +21,7 @@
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
 * Docker/despliegue: Release SQL limpio listo; Fase 14A recomienda Docker Compose con servicios separados `web` y `worker`, con systemd como alternativa documental.
+* Logging worker: Fase 14B.1 implementa `logs/worker_console.log` como buffer visual reciente, usando logging estandar de Python, salida simultanea a consola, archivo unico, maximo 300 lineas y sin backups.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
@@ -30,8 +31,8 @@
 
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
-* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1 y limpieza parametrizable Fase 13A.1B.
-* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14 mantenimiento avanzado.
+* Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1, limpieza parametrizable Fase 13A.1B y buffer visual limitado del worker Fase 14B.1.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14C+ endpoints/monitoreo visual/operacion avanzada del worker.
 
 ## 4. Reglas del proyecto
 
@@ -62,6 +63,34 @@
 * Seguridad: la consola visual no debe ser terminal real, no debe ejecutar comandos, no debe mostrar secretos, no debe acceder al Docker socket y no debe iniciar/detener procesos en esta fase.
 * Riesgos: se documenta riesgo de workers duplicados, controles existentes y controles recomendados.
 * Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se modifico `scheduler_worker.py`, no se cambio backend/frontend/scheduler, no se crearon endpoints, no se implemento Docker/systemd, no se hizo commit ni push y no se avanzo a Fase 14B.
+
+### 2026-06-30 - Fase 14B / Fuente controlada de logs del worker
+
+* Archivo creado: `app/servicios/servicio_logging_worker.py`.
+* Archivos modificados: `scheduler_worker.py`, `app/servicios/servicio_scheduler_worker.py`, `app/servicios/servicio_worker_heartbeat.py`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: crear una fuente controlada, simple y segura para exponer la salida operativa del worker sin depender de una terminal real del sistema operativo.
+* Cambio aplicado: se implementa logging estandar de Python para `scheduler_worker.py` con `StreamHandler` y `RotatingFileHandler` apuntando a `logs/worker.log`.
+* Formato: `timestamp | nivel | origen | mensaje`.
+* Rotacion configurada: `2 MB` por archivo y `5` backups.
+* Alcance tecnico: el worker sigue mostrando salida en terminal, ahora tambien la persiste en archivo; `scheduler_eventos` mantiene solo hechos importantes y no recupera ruido operativo.
+* Origenes visibles: `WORKER`, `CONFIG`, `HEARTBEAT`, `CICLO`, `SCHEDULER` y `EJECUCION`.
+* Decisiones tomadas: no crear endpoints todavia; no crear tabla nueva; no cambiar heartbeat ni `scheduler_eventos` como fuentes de verdad; dejar `logs/worker.log` como base para Fase 14C.
+* Pruebas recomendadas: `python -m py_compile scheduler_worker.py`, `python -m py_compile app/servicios/servicio_logging_worker.py`, `python scheduler_worker.py --once` en ambiente local controlado y verificacion manual de `logs/worker.log`.
+* Riesgos: falta validacion manual del archivo en entorno con SQL Server accesible; si el worker no se ejecuta, el archivo no se crea todavia.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server desde esta fase, no se cambiaron release SQL ni tablas, no se modifico frontend, no se hicieron endpoints, no se hizo commit ni push y no se avanzo a Fase 14C.
+
+### 2026-06-30 - Fase 14B.1 / Ajuste logging worker a buffer visual limitado
+
+* Archivo modificado: `app/servicios/servicio_logging_worker.py`.
+* Archivos modificados: `app/servicios/servicio_scheduler_worker.py`, `app/servicios/servicio_worker_heartbeat.py`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`, `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/MODULOS.md`.
+* Objetivo: corregir el enfoque de archivo rotativo para que la futura consola visual dependa de un buffer visual reciente y no de historicos acumulativos.
+* Cambio aplicado: se reemplaza `RotatingFileHandler` por handler propio de buffer limitado en `logs/worker_console.log`.
+* Politica: archivo unico, maximo 300 lineas, reinicio por nueva sesion, sin backups.
+* Ajuste de ruido: se elimina el registro repetitivo de `heartbeat` por ciclo y se reducen lineas de ciclo/omision que no aportan al buffer visual.
+* Separacion de fuentes: `scheduler_worker_heartbeat` sigue como estado real del worker; `configuracion_scheduler` sigue como estado del scheduler; `scheduler_eventos` sigue para hechos importantes; `ejecuciones` y `logs_tareas` siguen para ejecucion real; `logs/worker_console.log` queda solo como buffer visual.
+* Pruebas recomendadas: compilacion Python, prueba aislada del servicio de logging sin SQL y verificacion manual de `logs/worker_console.log`.
+* Riesgos: falta validacion manual del arranque completo del worker en entorno con SQL Server accesible; cualquier archivo `worker.log` antiguo que exista localmente ya no es parte del enfoque vigente.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se cambiaron tablas ni release SQL, no se modifico frontend, no se crearon endpoints, no se hizo commit ni push y no se avanzo a Fase 14C.
 
 ### 2026-06-26 - Fase 13C / Checklist de despliegue y validacion
 
