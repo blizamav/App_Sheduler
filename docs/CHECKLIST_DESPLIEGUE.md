@@ -20,7 +20,9 @@ Objetivos:
 - Dependencias del proyecto instalables desde `requirements.txt`.
 - Repositorio actualizado.
 - Archivo `.env` preparado manualmente por ambiente.
+- Si Docker necesita escape distinto de `$`, preparar archivo separado basado en `.env.docker.example`.
 - Respaldo disponible antes de tocar bases con datos reales.
+- Docker y Docker Compose disponibles si se valida el modo contenedorizado de Fase 14E.
 
 No ejecutar sobre bases reales sin respaldo y aprobacion explicita.
 
@@ -91,10 +93,13 @@ Validar:
 - La app levanta sin error de conexion.
 - Login funciona.
 - Panel principal carga.
+- Si `/panel` muestra `Advertencias tecnicas del panel`, registrar el origen exacto antes de continuar. El login bootstrap desde `.env` no prueba conectividad SQL Server.
+- Verificar parametros ODBC efectivos: `DB_DRIVER`, `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`.
 
 ## Validacion funcional minima
 
 - `/panel` carga.
+- Si `/panel` carga con advertencias, el detalle visible debe identificar el bloque fallido (`metricas_panel`, `configuracion_scheduler` o `ejecuciones_recientes`).
 - Usuarios carga.
 - Tareas carga vacio.
 - Scripts carga vacio.
@@ -112,11 +117,28 @@ Validar:
 - Worker no debe ejecutarse dentro del proceso Flask.
 - En desarrollo local, levantar worker en terminal separada solo para prueba controlada.
 - En QA/Produccion, usar proceso separado para web y worker.
+- Si se usa Docker Compose, confirmar que existan solo dos servicios operativos: `web` y `worker`.
+- No levantar dos contenedores `worker` para el mismo ambiente.
 - Worker no debe registrar ruido operativo.
 - Si se levanta el worker, debe generar `logs/worker_console.log` como buffer visual local y mantener salida visible en terminal.
 - Si se levanta el worker y la sesion tiene permiso `SCHEDULER_CONFIG_VER`, `/api/worker/estado` y `/api/worker/consola` deben responder sin exponer secretos.
 - Si se prueba worker, debe hacerse con tarea controlada.
 - No activar scheduler en produccion sin configuracion revisada.
+
+Validacion opcional Docker Compose:
+
+- `docker compose up -d --build`
+- `docker compose ps`
+- `docker compose logs -f worker`
+- `docker compose stop worker`
+- `docker compose up -d worker`
+
+Si Docker requiere un archivo distinto por escape de password:
+
+- crear `.env.docker` desde `.env.docker.example`;
+- usar `DOCKER_ENV_FILE=.env.docker`;
+- no sobrescribir `.env` local;
+- no versionar `.env.docker`.
 
 Referencia operativa:
 

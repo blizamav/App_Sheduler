@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 14D.3 deja implementado el buffer visual limitado del worker, la API interna de monitoreo de solo lectura y el panel lateral `Logs` conectado a esa API como monitor del programador enfocado en eventos propios, con clasificacion real de estados segun heartbeat y detencion explicita. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14E deja implementado el buffer visual limitado del worker, la API interna de monitoreo de solo lectura y el panel lateral `Logs` conectado a esa API como monitor del programador enfocado en eventos propios, con clasificacion real de estados segun heartbeat y detencion explicita. Fase 14F.1 agrega diagnostico seguro en `/panel` para distinguir advertencias reales de conectividad SQL Server versus ausencia legitima de datos. Fase 14F.2 normaliza la construccion ODBC en `app/database/conexion.py` y deja `Encrypt`, `TrustServerCertificate` y `Connection Timeout` parametrizados por configuracion. Ademas queda preparado el despliegue con procesos separados `web` y `worker` mediante Docker Compose. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -18,6 +18,7 @@ Estado actual: Fase 14D.3 deja implementado el buffer visual limitado del worker
 * API monitoreo worker: endpoints `/api/worker/*` protegidos, solo lectura y sin control operativo del proceso.
 * UI monitoreo worker: panel lateral `Logs` conectado a la API del worker con polling moderado mientras el panel esta abierto.
 * UX monitoreo worker: estado de vista separado del estado real del programador, consola como apoyo diagnostico y resize horizontal del panel en escritorio.
+* Runtime separado: `docker-compose.yml` define `web` y `worker` como procesos distintos sobre la misma base de codigo y compartiendo volumenes operativos.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 
@@ -51,7 +52,7 @@ Backend Python Flask con estructura inicial y modulos Fase 4:
 
 HTML/CSS/JS sin Streamlit. Desde Fase 2 el layout incluye login corporativo, sidebar responsive, topbar con usuario, tarjetas de metricas, tabla base, badges de estado y panel lateral visual preparado para logs.
 
-La capa visual mantiene el diseno de Fase 2. Desde Fase 11A.1 el panel principal consume metricas reales de SQL Server mediante repositorio y servicio dedicados; las pantallas `/usuarios`, `/clientes`, `/categorias`, `/tipos`, `/tareas`, `/ejecuciones`, `/feriados` y `/scheduler` consumen datos reales segun permisos.
+La capa visual mantiene el diseno de Fase 2. Desde Fase 11A.1 el panel principal consume metricas reales de SQL Server mediante repositorio y servicio dedicados; las pantallas `/usuarios`, `/clientes`, `/categorias`, `/tipos`, `/tareas`, `/ejecuciones`, `/feriados` y `/scheduler` consumen datos reales segun permisos. Desde Fase 14F.1, cuando `/panel` no puede leer SQL Server, muestra alertas tecnicas seguras por bloque (`metricas_panel`, `configuracion_scheduler`, `ejecuciones_recientes`) y registra el detalle en el logger Flask sin exponer secretos.
 
 ## Base de datos
 
@@ -59,7 +60,7 @@ SQL Server sera incorporado desde Fase 3. Base objetivo: `APP_SCHEDULER_QA`, con
 
 En Fase 3B se crearon scripts SQL versionados bajo `database/migrations/` y `database/seeds/`. Estos scripts no se ejecutan automaticamente. Desde Fase 3D Flask se conecta a SQL Server mediante `pyodbc` y desde fases posteriores la persistencia queda aislada en repositorios/servicios para evitar consultas SQL directas desde rutas Flask.
 
-En Fase 3D se agrego la capa inicial de conexion en `app/database/conexion.py`. Esta capa lee `DB_SERVER`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` y `DB_DRIVER` desde `.env`, construye la cadena ODBC sin quemar credenciales, permite probar `SELECT 1` y retorna errores amigables sin exponer password.
+En Fase 3D se agrego la capa inicial de conexion en `app/database/conexion.py`. Desde Fase 14F.2 esta capa lee `DB_SERVER`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD`, `DB_DRIVER`, `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT` desde configuracion, construye la cadena ODBC sin quemar credenciales, permite probar `SELECT 1` y registra solo resumen seguro sin exponer password.
 
 La ruta temporal `/diagnostico/bd` valida conectividad solo en ambientes `LOCAL` o `QA`, requiere sesion iniciada y no esta disponible en `PRODUCCION`.
 
@@ -328,7 +329,7 @@ El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Roadmap arquitectonico
 
-Siguiente bloque recomendado: implementar Fase 14C con endpoints de solo lectura y consola visual real del worker, manteniendo web y worker separados.
+Siguiente bloque recomendado: implementar Fase 14F con retencion, backups, exportaciones, notificaciones y reportes operativos, manteniendo `web` y `worker` separados.
 
 Bloques posteriores:
 
@@ -336,7 +337,7 @@ Bloques posteriores:
 * Fase 13: release, instalacion limpia y checklist de despliegue.
 * Fase 14: operacion avanzada del worker, monitoreo y servicios.
 
-La arquitectura ya evita rutas absolutas para facilitar portabilidad. Docker Compose, systemd y worker como servicio quedan pendientes de implementacion posterior; Fase 14A deja el diseno operativo formal, Fase 14B implementa una primera version y Fase 14B.1 la corrige hacia buffer visual limitado.
+La arquitectura ya evita rutas absolutas para facilitar portabilidad. Docker Compose queda implementado como base operativa en Fase 14E y `systemd` queda como alternativa documental posterior.
 
 ## Release SQL limpio
 

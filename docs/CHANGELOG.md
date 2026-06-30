@@ -1,5 +1,104 @@
 # Changelog
 
+## 2026-06-30 - Fase 14F.2 normalizacion segura de cadena SQL Server ODBC
+
+### Corregido
+
+* Se confirmo que la app ya construia la conexion en un unico punto: `app/database/conexion.py`.
+* Se confirmo que `Encrypt=no` y `TrustServerCertificate=yes` no faltaban; ya estaban presentes, pero estaban hardcodeados y sin parametrizacion explicita por entorno.
+* `app/config.py` ahora expone `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`.
+* `app/database/conexion.py` ahora normaliza y centraliza todos los parametros ODBC: driver, server, database, user, password, encrypt, trust cert y timeout.
+* Se agrega resumen seguro de conexion para logging tecnico sin exponer password ni cadena completa.
+* `probar_conexion_bd()` y `obtener_conexion()` ahora registran errores seguros con driver, server, database, encrypt, trust cert, timeout y tipo de error.
+* `.env.example` documenta las nuevas variables ODBC.
+* `docker-compose.yml` admite `DOCKER_ENV_FILE` para usar un archivo de variables distinto al `.env` local sin sobrescribirlo.
+* Se agrega `.env.docker.example` como plantilla documental para Docker.
+
+### Validado
+
+* Prueba local usando el servicio real de conexion: la app construye la cadena con `encrypt=no`, `trust_server_certificate=yes` y `timeout=10`; el helper sigue fallando localmente con `OperationalError`, lo que confirma que el problema residual local es del ambiente y no de una segunda cadena escondida.
+* Prueba Docker usando el servicio real de conexion dentro de `web` con override temporal en memoria de `DB_PASSWORD`: `SELECT 1` responde `1`, confirmando que la misma logica central de la app conecta correctamente cuando Docker recibe credenciales compatibles.
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py app\\config.py app\\database\\conexion.py app\\rutas.py app\\servicios\\servicio_panel.py`: OK.
+* `git diff --check`: solo advertencias LF/CRLF en Windows; sin errores de diff.
+
+### Hallazgos
+
+* No existian conexiones duplicadas en el codigo; repositorios, panel y worker ya dependian de `obtener_conexion()`.
+* La contradiccion real era doble:
+  * local: falla del ambiente Windows/ODBC aun con cadena ODBC correcta;
+  * Docker: fallo de password por escape de `$` cuando se usa `.env` no preparado para contenedores.
+* El login bootstrap desde `.env` sigue sin validar conectividad SQL Server.
+
+### Reglas
+
+* No se modifico `.env` real.
+* No se ejecuto SQL correctivo.
+* No se modifico `database/release/`.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico la logica funcional del scheduler.
+* No se levanto `worker` continuo.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
+## 2026-06-30 - Fase 14F.1 diagnostico y correccion de advertencias de conexion en panel
+
+### Corregido
+
+* Se identifico que la advertencia de `/panel` no provenia de metricas parciales sino de una falla total de conexion SQL Server al cargar `metricas_panel`, `configuracion_scheduler` y `ejecuciones_recientes`.
+* `app/servicios/servicio_panel.py` deja de ocultar el origen real del fallo y ahora genera alertas tecnicas seguras por bloque afectado.
+* `app/rutas.py` deja de mostrar solo una advertencia generica y reutiliza el mensaje seguro construido por el servicio del panel.
+* `app/templates/panel.html` ahora muestra la seccion `Advertencias tecnicas del panel` cuando existen errores de lectura.
+* Se agrega logging seguro con formato `PANEL | origen=... | tipo=... | detalle=...` sin exponer passwords ni cadenas de conexion completas.
+* El detalle visible confirma cuando la conexion SQL Server no esta disponible y evita que el operador interprete los `0` como datos reales.
+
+### Validado
+
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py app\\rutas.py app\\servicios\\servicio_panel.py`: OK.
+* `git diff --check`: solo advertencias LF/CRLF en Windows; sin errores de diff.
+* Validacion local con `Flask test_client`: `/panel` responde `200`, mantiene la advertencia y ahora muestra detalle tecnico seguro por bloque.
+* Validacion `web` Docker: `docker compose build web`, `docker compose up -d web`, login y `/panel` responden `200`; la misma alerta segura queda visible.
+
+### Hallazgos
+
+* El login con usuario bootstrap desde `.env` no prueba conectividad SQL Server.
+* La causa tecnica reproducida en este ambiente es `OperationalError` ODBC `08001` con mensajes `Encryption not supported on the client` y `SSL Provider: No hay credenciales disponibles`, por lo que el problema actual es de conectividad/configuracion del ambiente y no de una consulta especifica del dashboard.
+* Se mantiene documentado que Docker Compose expande `$` en variables de entorno; si la password real contiene `$$`, el archivo usado por Docker puede requerir escape `$$$$`.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL correctivo.
+* No se modifico `database/release/`.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico la logica funcional del scheduler.
+* No se levanto `worker`.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
+## 2026-06-30 - Fase 14E operacion del worker como proceso separado
+
+### Implementado
+
+* Se crea `Dockerfile` para empaquetar la aplicacion Flask y el worker sobre la misma base Python.
+* Se crea `docker-compose.yml` con servicios separados `web` y `worker`.
+* `web` ejecuta `python run.py` y fuerza `APP_HOST=0.0.0.0` dentro del contenedor.
+* `worker` ejecuta `python scheduler_worker.py` como proceso independiente, sin exponer puertos.
+* Ambos servicios comparten volumenes de runtime para `logs/`, `logs_tareas/`, `logs_sistema/`, `scripts/` y `env_scripts/`.
+* Ambos servicios usan `restart: unless-stopped` e `init: true`.
+* Se crea `.dockerignore` para excluir secretos, caches, logs y volumenes de runtime del contexto de build.
+* La documentacion de operacion y despliegue queda alineada con el modelo `web` + `worker`.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se modifico `database/release/`.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico la logica funcional del scheduler.
+* No se modificaron permisos.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
 ## 2026-06-30 - Fase 14D.3 correccion de estados reales del programador segun heartbeat y detencion explicita
 
 ### Corregido

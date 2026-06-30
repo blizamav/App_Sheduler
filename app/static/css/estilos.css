@@ -1350,6 +1350,17 @@ tr:last-child td {
     color: var(--color-texto-suave);
 }
 
+.lista-alertas-panel {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding-left: 18px;
+}
+
+.lista-alertas-panel li {
+    line-height: 1.45;
+}
+
 .punto {
     display: inline-block;
     width: 10px;

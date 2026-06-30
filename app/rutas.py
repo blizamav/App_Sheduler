@@ -82,7 +82,11 @@ def login():
 def panel():
     panel_principal = obtener_panel_principal()
     if not panel_principal.get("datos_ok"):
-        flash("El panel cargo con advertencias. Revisa la conexion o las tablas de base de datos.", "advertencia")
+        flash(
+            panel_principal.get("mensaje_advertencia")
+            or "El panel cargo con advertencias. Revisa la conexion o las tablas de base de datos.",
+            "advertencia",
+        )
     return render_template("panel.html", panel=panel_principal)
 
 

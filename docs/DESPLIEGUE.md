@@ -21,11 +21,11 @@ No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque pued
 
 ## QA Ubuntu
 
-Pendiente de implementacion operativa. Debe ejecutarse con `.env` propio, SQL Server accesible, volumenes para scripts/env/logs y estrategia de arranque separada para web y worker.
+Implementacion base disponible desde Fase 14E con `Dockerfile` y `docker-compose.yml`. Debe ejecutarse con `.env` propio, SQL Server accesible y volumenes persistentes para scripts, env y logs.
 
 ## Produccion Ubuntu
 
-Pendiente de implementacion operativa. Debe usar Docker Compose preferentemente, o systemd como alternativa, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
+Implementacion base disponible desde Fase 14E con Docker Compose preferentemente, o systemd como alternativa documental, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
 
 ## Variables por ambiente
 
@@ -42,6 +42,9 @@ DB_DATABASE=APP_SCHEDULER_QA
 DB_USER=USUARIO_SQL
 DB_PASSWORD=PASSWORD_SQL
 DB_DRIVER=ODBC Driver 17 for SQL Server
+DB_ENCRYPT=no
+DB_TRUST_SERVER_CERTIFICATE=yes
+DB_TIMEOUT=10
 ```
 
 Pasos en Windows:
@@ -52,6 +55,7 @@ Pasos en Windows:
 4. Ejecutar la app: `python run.py`
 5. Iniciar sesion con el usuario inicial desde `.env`.
 6. Abrir `http://127.0.0.1:5000/diagnostico/bd`.
+7. Validar `http://127.0.0.1:5000/panel`: si aparece `Advertencias tecnicas del panel`, revisar el bloque informado antes de asumir que el problema es del dashboard.
 
 Errores comunes:
 
@@ -61,6 +65,17 @@ Errores comunes:
 * SQL Server Browser detenido cuando se usa instancia nombrada.
 * Usuario SQL sin permisos sobre `APP_SCHEDULER_QA`.
 * Problemas de cifrado/driver: revisar driver ODBC y configuracion SQL Server local.
+* Login correcto con usuario `.env`, pero panel con advertencias: el login bootstrap no valida SQL Server; usar `/diagnostico/bd` y la alerta tecnica de `/panel` para identificar si falla `metricas_panel`, `configuracion_scheduler` o `ejecuciones_recientes`.
+
+Normalizacion ODBC vigente:
+
+* La app construye la cadena SQL Server en un unico punto: `app/database/conexion.py`.
+* Parametros usados: `DRIVER`, `SERVER`, `DATABASE`, `UID`, `PWD`, `Encrypt`, `TrustServerCertificate` y `Connection Timeout`.
+* Defaults vigentes si no existen variables explicitas:
+  * `DB_ENCRYPT=no`
+  * `DB_TRUST_SERVER_CERTIFICATE=yes`
+  * `DB_TIMEOUT=10`
+* Los logs tecnicos muestran solo resumen seguro: driver, server, database, user, encrypt, trust_cert, timeout y tipo de error.
 
 La ruta de diagnostico no muestra credenciales y no esta disponible en `APP_ENV=PRODUCCION`.
 
@@ -156,7 +171,51 @@ Decision vigente:
 
 ## Docker
 
-Pendiente de implementacion. La recomendacion documental desde Fase 14A es Docker Compose con servicios separados `web` y `worker`.
+Fase 14E deja disponible:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+
+Servicios:
+
+- `web`: ejecuta `python run.py`
+- `worker`: ejecuta `python scheduler_worker.py`
+
+Comandos recomendados:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f web
+docker compose logs -f worker
+docker compose restart worker
+docker compose stop worker
+docker compose up -d worker
+docker compose down
+```
+
+Reglas:
+
+- no ejecutar `worker` dentro de Flask;
+- no escalar `worker` a mas de una replica;
+- mantener volumen compartido para `logs/worker_console.log`;
+- usar `.env` real por ambiente y no versionarlo.
+- si la password SQL contiene `$`, Docker Compose puede requerir escape para el archivo usado por contenedores; no cambiar `.env` a ciegas ni mezclar ese ajuste con el uso local sin documentarlo.
+
+Uso recomendado para separar local y Docker sin tocar `.env` real:
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+$env:DOCKER_ENV_FILE = ".env.docker"
+docker compose up -d web
+```
+
+Notas:
+
+* `docker-compose.yml` acepta `DOCKER_ENV_FILE` y, si no existe, sigue usando `.env`.
+* `.env.docker` no debe versionarse.
+* Si la password real contiene `$$`, en Docker puede requerir escape `$$$$` para que dentro del contenedor llegue `$$`.
 
 ## Roadmap operativo
 
@@ -170,8 +229,6 @@ Pendientes de Fase 13:
 
 Pendientes de Fase 14:
 
-* Evolucionar panel Logs a consola visual real.
-* Docker Compose o systemd operativo.
 * Retencion automatica.
 * Backups.
 * Exportaciones.

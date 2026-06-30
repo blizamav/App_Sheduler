@@ -28,6 +28,21 @@
     </div>
 </section>
 
+{% if panel.alertas %}
+<section class="contenedor">
+    <article class="alerta advertencia">
+        <strong>Advertencias tecnicas del panel</strong>
+        <ul class="lista-alertas-panel">
+            {% for alerta in panel.alertas %}
+                <li>
+                    <strong>{{ alerta.origen }}</strong>: {{ alerta.mensaje }}
+                </li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>
+{% endif %}
+
 <section class="metricas">
     <article class="card metrica">
         <span class="badge info">Tareas</span>

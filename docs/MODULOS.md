@@ -57,6 +57,9 @@
 * Fase 14D.1: claridad visual del monitor del programador, separacion entre estado de vista y estado real del worker, y panel lateral redimensionable.
 * Fase 14D.2: simplificacion del monitor del programador para mostrar solo eventos propios del worker/programador, con estados visuales reutilizables y sin mezclar ejecuciones manuales.
 * Fase 14D.3: correccion de estados reales del programador para distinguir `DETENIDO`, `ADVERTENCIA`, `SIN SENAL` y `NO DISPONIBLE` segun heartbeat real y detencion explicita.
+* Fase 14E: operacion del worker como proceso separado con `Dockerfile`, `docker-compose.yml`, volumenes compartidos de runtime y comandos documentados para `web` y `worker`.
+* Fase 14F.1: diagnostico seguro del panel principal, con alertas visibles por bloque fallido y logging tecnico controlado cuando SQL Server no responde.
+* Fase 14F.2: normalizacion segura de la cadena SQL Server ODBC con parametros explicitos `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`, resumen seguro de conexion y soporte opcional `DOCKER_ENV_FILE`.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -69,9 +72,7 @@ Pendiente critico inmediato:
 
 Pendiente operativo:
 
-* Scripts para levantar web y worker.
-* Worker como servicio.
-* Preparacion QA/produccion.
+* Scripts adicionales de automatizacion Windows/Linux.
 * Estrategia de backups.
 * Estrategia de retencion automatica.
 
@@ -95,7 +96,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 14D.3 a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, logging controlado del worker con buffer visual acotado y monitor lateral enfocado solo en eventos del programador con estados reales del worker. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible. Aun no existe despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 14E a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, logging controlado del worker con buffer visual acotado, monitor lateral enfocado solo en eventos del programador con estados reales del worker y despliegue base con `web` y `worker` separados en Docker Compose. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible.
 
 ## UI/UX general
 
@@ -122,6 +123,7 @@ Implementado en Fase 11A.1:
 * Ultimas ejecuciones con enlace a consola.
 * Accesos rapidos visibles segun permisos de la sesion.
 * Estado de heartbeat del worker integrado desde Fase 11B.
+* Fase 14F.1: cuando falla SQL Server, `/panel` deja trazabilidad visible por origen (`metricas_panel`, `configuracion_scheduler`, `ejecuciones_recientes`) y evita que los valores `0` se interpreten como datos reales.
 
 Estado desde Fase 11B:
 

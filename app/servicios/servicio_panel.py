@@ -1,3 +1,5 @@
+from flask import current_app
+
 from app.repositorios.repositorio_panel import (
     listar_ultimas_ejecuciones,
     obtener_configuracion_scheduler_panel,
@@ -10,12 +12,14 @@ from app.servicios.servicio_worker_heartbeat import clasificar_estado_worker, ob
 def obtener_panel_principal():
     datos_ok = True
     errores = []
+    alertas = []
 
     try:
         metricas = _normalizar_metricas(obtener_metricas_panel())
     except Exception as error:
         datos_ok = False
         errores.append(error.__class__.__name__)
+        alertas.append(_construir_alerta_panel("metricas_panel", error))
         metricas = _metricas_vacias()
 
     try:
@@ -23,6 +27,7 @@ def obtener_panel_principal():
     except Exception as error:
         datos_ok = False
         errores.append(error.__class__.__name__)
+        alertas.append(_construir_alerta_panel("configuracion_scheduler", error))
         configuracion = None
 
     try:
@@ -31,6 +36,7 @@ def obtener_panel_principal():
     except Exception as error:
         datos_ok = False
         errores.append(error.__class__.__name__)
+        alertas.append(_construir_alerta_panel("ejecuciones_recientes", error))
         ultima_ejecucion = None
         ultimas_ejecuciones = []
 
@@ -46,6 +52,8 @@ def obtener_panel_principal():
         "estado_general": _estado_general(datos_ok, scheduler, metricas, estado_worker),
         "datos_ok": datos_ok,
         "errores": errores,
+        "alertas": alertas,
+        "mensaje_advertencia": _mensaje_advertencia_panel(alertas),
     }
 
 
@@ -142,3 +150,44 @@ def _detalle_scheduler(scheduler):
     if not scheduler["permitir_ejecucion_automatica"]:
         return "Programador activo con ejecucion automatica deshabilitada."
     return "Programador activo con ejecucion automatica permitida."
+
+
+def _construir_alerta_panel(origen, error):
+    tipo = error.__class__.__name__
+    detalle = _detalle_error_seguro(error)
+    alerta = {
+        "origen": origen,
+        "tipo": tipo,
+        "detalle": detalle,
+        "mensaje": _mensaje_usuario_alerta(origen, tipo, detalle),
+    }
+    current_app.logger.warning(
+        "PANEL | origen=%s | tipo=%s | detalle=%s",
+        origen,
+        tipo,
+        detalle,
+    )
+    return alerta
+
+
+def _detalle_error_seguro(error):
+    mensaje = " ".join(str(error).split())
+    if not mensaje:
+        return "Sin detalle tecnico."
+    return mensaje[:220]
+
+
+def _mensaje_usuario_alerta(origen, tipo, detalle):
+    if tipo == "OperationalError":
+        return (
+            f"No se pudo leer {origen} porque la conexion SQL Server no esta disponible. "
+            f"Detalle tecnico: {detalle}"
+        )
+    return f"No se pudo leer {origen}. Detalle tecnico: {detalle}"
+
+
+def _mensaje_advertencia_panel(alertas):
+    if not alertas:
+        return None
+    primera = alertas[0]
+    return f"El panel cargo con advertencias. {primera['mensaje']}"

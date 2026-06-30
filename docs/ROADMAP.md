@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. Fase 14C agrega endpoints de solo lectura para monitoreo del worker. Fase 14D conecta el panel `Logs` a ese monitor sin convertir la app en terminal real. Fase 14D.2 simplifica el monitor para enfocarlo en eventos propios del programador, con estados visuales mas claros y sin mezclar ejecuciones manuales. Fase 14D.3 corrige los estados reales del programador distinguiendo detencion explicita, advertencia por atraso y ausencia critica de senal. No se implemento Docker ni systemd.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. Fase 14C agrega endpoints de solo lectura para monitoreo del worker. Fase 14D conecta el panel `Logs` a ese monitor sin convertir la app en terminal real. Fase 14D.2 simplifica el monitor para enfocarlo en eventos propios del programador, con estados visuales mas claros y sin mezclar ejecuciones manuales. Fase 14D.3 corrige los estados reales del programador distinguiendo detencion explicita, advertencia por atraso y ausencia critica de senal. Fase 14E deja preparada la operacion del worker como proceso separado mediante Docker Compose con servicios `web` y `worker`, manteniendo systemd solo como alternativa documental. Fase 14F.1 corrige el diagnostico del panel principal para exponer de forma segura cuando la advertencia proviene de conectividad SQL Server y no de metricas parciales. Fase 14F.2 normaliza la cadena ODBC y separa de forma segura el uso local de `.env` frente al uso Docker con `DOCKER_ENV_FILE`.
 
 ## Implementado
 
@@ -103,7 +103,9 @@ Estado: iniciada con base documental y fuente controlada de logs del worker. Inc
 * 14D.1 Claridad visual del monitor del programador y panel redimensionable. Implementado.
 * 14D.2 Simplificar monitor del programador con eventos y estados visuales claros. Implementado.
 * 14D.3 Correccion de estados reales del programador segun heartbeat y detencion explicita. Implementado.
-* 14E Docker Compose o systemd operativo. Pendiente.
+* 14E Operacion del worker como proceso separado. Implementado.
+* 14F.1 Diagnostico y correccion de advertencias de conexion/metricas en panel local y Docker. Implementado como trazabilidad segura; la resolucion final del error `08001` sigue dependiendo de configuracion/conectividad del ambiente.
+* 14F.2 Normalizacion segura de cadena SQL Server ODBC para local y Docker. Implementado; local sigue condicionado por conectividad real del ambiente y Docker por archivo env compatible con escape de `$`.
 * 14F Retencion, backups, exportaciones, notificaciones y reportes. Pendiente.
 
 ## Borrado Operativo Seguro
@@ -242,7 +244,6 @@ Pendiente critico inmediato:
 
 Pendiente operativo:
 
-* Scripts para levantar web y worker.
 * Worker como servicio.
 * Preparacion QA/produccion.
 * Endpoints de solo lectura para exponer `logs/worker_console.log` sin convertir la app en terminal real.

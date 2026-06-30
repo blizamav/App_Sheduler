@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14D.3 implementada corrigiendo los estados reales del programador segun heartbeat y detencion explicita, manteniendo el monitor visual de solo lectura. No se ejecuto SQL desde Codex y no se avanzo a Fase 14E.
+* Estado actual: Fase 14F.2 aplicada para normalizar la cadena ODBC de SQL Server y separar de forma segura el uso local de `.env` frente al uso Docker con `DOCKER_ENV_FILE`, manteniendo la trazabilidad segura del panel agregada en Fase 14F.1. No se ejecuto SQL correctivo desde Codex y no se avanzo a Fase 15.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14D.3 - Correccion de estados reales del programador segun heartbeat y detencion explicita.
+* Fase actual: Fase 14F.2 - Normalizacion segura de cadena SQL Server ODBC para local y Docker.
 * Ultima actualizacion: 2026-06-30
 
 ## 2. Decisiones tecnicas vigentes
@@ -32,7 +32,7 @@
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
 * Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1, limpieza parametrizable Fase 13A.1B y buffer visual limitado del worker Fase 14B.1.
-* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14E+ operacion avanzada del worker.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14F+ operacion avanzada del worker.
 
 ## 4. Reglas del proyecto
 
@@ -49,8 +49,38 @@
 * Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
 * Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
+* Pendiente 5: Validar `docker compose up -d --build` en un ambiente con Docker disponible y acceso real a SQL Server.
 
 ## 6. Historial de cambios
+
+### 2026-06-30 - Fase 14F.2 / Normalizacion ODBC y separacion segura local vs Docker
+
+* Archivos modificados: `app/config.py`, `app/database/conexion.py`, `.env.example`, `docker-compose.yml`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Archivos creados: `.env.docker.example`.
+* Objetivo: normalizar de forma centralizada la cadena SQL Server ODBC para que web, panel, repositorios y worker dependan de la misma logica y para separar de forma segura el archivo local `.env` del archivo especifico para Docker.
+* Diagnostico confirmado: la app no tenia una segunda cadena escondida ni faltaban `Encrypt=no` y `TrustServerCertificate=yes`; ambos ya existian, pero estaban hardcodeados y sin parametrizacion por entorno.
+* Que se hizo: `app/config.py` agrega `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`; `app/database/conexion.py` centraliza parametros ODBC, normaliza banderas `yes/no`, expone resumen seguro y registra errores SQL sin secretos.
+* Docker: `docker-compose.yml` ahora acepta `DOCKER_ENV_FILE` para no obligar a reutilizar el mismo `.env` local en contenedores; `.env.docker.example` documenta el formato separado.
+* Decision tecnica: no tocar `.env` real; la compatibilidad Docker con passwords que contienen `$` se resuelve con archivo dedicado o override temporal, no alterando la configuracion local.
+* Pruebas locales: el helper real de la app muestra resumen seguro `{driver, server, database, user, encrypt=no, trust_server_certificate=yes, timeout=10}` y sigue fallando con `OperationalError`; eso confirma que el problema restante local es de ambiente y no de cadena duplicada.
+* Pruebas Docker: el helper real de la app dentro de `web`, usando override temporal en memoria de `DB_PASSWORD`, responde `SELECT 1` con `CONEXION_APP_OK=1`; eso confirma que la logica centralizada conecta correctamente cuando Docker recibe credenciales compatibles.
+* Pruebas adicionales: `Flask test_client` mantiene el detalle seguro de Fase 14F.1 en `/panel`; `python -m py_compile ...` OK; `git diff --check` sin errores de diff; `docker compose build web` y validaciones de `web` ejecutadas; `docker compose down` al cierre.
+* Riesgos: el ambiente local Windows sigue fallando con `08001`; la correccion de esta fase no inventa cambios de red, driver o instancia. Docker seguira requiriendo un archivo de variables compatible con escape de `$` si la password lo necesita.
+* Estado final: no se levanto `worker` continuo. Los contenedores usados para validacion quedaron bajados al cierre.
+
+### 2026-06-30 - Fase 14F.1 / Diagnostico real de advertencias en `/panel`
+
+* Archivos modificados: `app/servicios/servicio_panel.py`, `app/rutas.py`, `app/templates/panel.html`, `app/static/css/estilos.css`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: identificar la causa exacta de la advertencia generica del panel y dejar trazabilidad util sin tocar `.env`, SQL ni reglas del scheduler.
+* Causa raiz encontrada: `/panel` no estaba leyendo metricas parciales; estaba fallando completamente la conexion SQL Server en `obtener_metricas_panel()`, `obtener_configuracion_scheduler_panel()` y `obtener_ultima_ejecucion()/listar_ultimas_ejecuciones()`.
+* Evidencia tecnica: reproduccion en app context y `Flask test_client` con `OperationalError` ODBC `08001`, incluyendo `Encryption not supported on the client` y `SSL Provider: No hay credenciales disponibles`.
+* Que se hizo: `servicio_panel.py` ahora construye alertas seguras por bloque (`metricas_panel`, `configuracion_scheduler`, `ejecuciones_recientes`), registra logging controlado `PANEL | origen=... | tipo=... | detalle=...`, y `rutas.py`/`panel.html` muestran el detalle seguro al operador.
+* Decision tomada: no ocultar la advertencia ni forzar `0` silenciosos como si fueran datos reales; mantener el fallo visible, acotado y trazable.
+* Hallazgo operativo: el login bootstrap desde `.env` puede funcionar aunque SQL Server este caido o inaccesible; por eso el login correcto no valida BD.
+* Hallazgo Docker: se mantiene documentado que Docker Compose expande `$`; si la password SQL contiene `$$`, el archivo usado por contenedores puede requerir escape `$$$$`. No se modifico `.env`.
+* Pruebas ejecutadas: reproduccion controlada de las cuatro lecturas del panel, `Flask test_client` sobre `/panel`, `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py app\\rutas.py app\\servicios\\servicio_panel.py`, `git diff --check`, `docker compose build web`, `docker compose up -d web`, `docker compose ps`, `docker compose logs --tail=80 web` y validacion HTTP/login `/panel` en Docker.
+* Riesgos: la advertencia seguira apareciendo mientras no se corrija la conectividad/configuracion real del ambiente SQL Server; la app ahora la explica mejor, pero no corrige `.env` ni red.
+* Estado final: `worker` no fue levantado. `web` Docker se uso solo para validacion controlada y debe bajarse al cierre de esta fase.
 
 ### 2026-06-30 - Fase 14D.1 / Claridad visual del monitor del programador y panel redimensionable
 
@@ -83,6 +113,18 @@
 * Resultado esperado: si el worker registra una detencion controlada, el monitor debe mostrar `DETENIDO` de inmediato; si el worker desaparece sin avisar, debe degradar a `ADVERTENCIA` y luego `SIN SENAL`.
 * Pruebas ejecutadas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py` y revision de codigo de la prioridad de estados en backend/frontend.
 * Reglas: No se modifico `.env`, no se ejecuto SQL, no se crearon tablas, no se modifico `database/release/`, no se modifico `scheduler_worker.py`, no se crearon endpoints nuevos, no se hizo commit ni push y no se avanzo a Fase 14E.
+
+### 2026-06-30 - Fase 14E / Operacion del worker como proceso separado
+
+* Archivos creados: `Dockerfile`, `docker-compose.yml`, `.dockerignore`.
+* Archivos modificados: `docs/OPERACION_WORKER.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Objetivo: dejar preparada la operacion separada de `web` y `worker` sin mover el worker dentro de Flask ni alterar la logica del scheduler.
+* Que se hizo: se define imagen unica con Python + `pyodbc` + ODBC Driver 17 para SQL Server, y un `docker-compose.yml` con dos servicios separados que comparten volumenes operativos y el mismo `.env`.
+* Runtime: `web` ejecuta `python run.py` con `APP_HOST=0.0.0.0`; `worker` ejecuta `python scheduler_worker.py`; ambos usan `restart: unless-stopped` e `init: true`.
+* Volumenes compartidos: `logs/`, `logs_tareas/`, `logs_sistema/`, `scripts/` y `env_scripts/` para que la app web pueda leer `logs/worker_console.log` escrito por el worker.
+* Decision operativa: se documenta Docker Compose como recomendacion principal para QA/Produccion; `systemd` queda solo como alternativa documental. Se explicita que no debe existir mas de un `worker` por ambiente.
+* Pruebas ejecutadas: revision estructural de `Dockerfile`, `docker-compose.yml`, `.dockerignore` y alineacion documental. La validacion con Docker queda pendiente porque depende de disponibilidad local del runtime Docker.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se modifico `database/release/`, no se crearon tablas, no se cambiaron reglas funcionales del scheduler ni permisos, no se hizo commit ni push y no se avanzo a Fase 15.
 
 ### 2026-06-30 - Fase 14D / Panel Logs conectado a monitor del worker
 

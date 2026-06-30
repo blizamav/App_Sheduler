@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env", override=False)
 
 
 VALORES_PLANTILLA = {
@@ -55,6 +55,9 @@ class Configuracion:
     DB_USER = os.getenv("DB_USER", "")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_DRIVER = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+    DB_ENCRYPT = os.getenv("DB_ENCRYPT", "no")
+    DB_TRUST_SERVER_CERTIFICATE = os.getenv("DB_TRUST_SERVER_CERTIFICATE", "yes")
+    DB_TIMEOUT = int(os.getenv("DB_TIMEOUT", "10"))
 
     USUARIO_ADMIN_DEFECTO = os.getenv("USUARIO_ADMIN_DEFECTO", "blizama")
     PASSWORD_ADMIN_DEFECTO = os.getenv("PASSWORD_ADMIN_DEFECTO", "")

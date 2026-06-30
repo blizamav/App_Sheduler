@@ -4,7 +4,7 @@
 
 Este documento define el diseno operativo del `scheduler_worker.py` y la consola visual de monitoreo futura dentro de la app.
 
-Estado vigente: Fase 14D.3 corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales y separa detencion explicita versus ausencia de senal. Siguen pendientes Docker, systemd y la operacion externa formal del proceso.
+Estado vigente: Fase 14E corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales, separa detencion explicita versus ausencia de senal y deja preparada la operacion separada con Docker Compose. Fase 14F.1 agrega trazabilidad segura en `/panel` para detectar cuando el problema real es conectividad SQL Server y no el worker. Fase 14F.2 normaliza la cadena ODBC en `app/database/conexion.py` con `Encrypt`, `TrustServerCertificate` y `Connection Timeout` explicitos. systemd sigue como alternativa documental.
 
 ## Estado actual validado
 
@@ -195,6 +195,58 @@ Alternativa:
 - QA/Produccion: worker separado del proceso web.
 - Preferencia: Docker Compose con servicios separados `web` y `worker`.
 - Alternativa: `systemd` si se despliega en Ubuntu sin Docker.
+
+## Docker Compose operativo
+
+Archivos incorporados en Fase 14E:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+
+Modelo operativo:
+
+- `web`: ejecuta `python run.py`
+- `worker`: ejecuta `python scheduler_worker.py`
+- ambos usan el mismo helper de conexion SQL
+- por defecto ambos leen `.env`, pero Docker puede apuntar a otro archivo mediante `DOCKER_ENV_FILE`
+- ambos comparten `logs/`, `logs_tareas/`, `logs_sistema/`, `scripts/` y `env_scripts/`
+
+Reglas:
+
+- no levantar el worker desde Flask;
+- no levantar dos workers en el mismo ambiente;
+- no usar replicas mayores a `1` para `worker`;
+- `logs/worker_console.log` debe quedar visible para `web` y escribible por `worker`.
+- si una variable sensible contiene `$`, Docker Compose puede requerir escape en el archivo usado por contenedores; documentar el ajuste por ambiente y no reutilizarlo automaticamente como configuracion local.
+- si se necesita escape distinto para Docker, usar `DOCKER_ENV_FILE` apuntando a un archivo separado basado en `.env.docker.example`.
+
+Comandos operativos recomendados:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f web
+docker compose logs -f worker
+docker compose restart worker
+docker compose stop worker
+docker compose up -d worker
+docker compose down
+```
+
+Detalle de runtime:
+
+- `web` fuerza `APP_HOST=0.0.0.0` dentro del contenedor para exponer Flask correctamente.
+- `worker` no publica puertos.
+- ambos servicios usan `restart: unless-stopped`.
+- ambos servicios usan `init: true` para manejo mas limpio de senales del proceso.
+
+Validacion minima esperada:
+
+- `docker compose up -d --build` levanta `web` y `worker` por separado.
+- `docker compose logs -f worker` muestra actividad del programador.
+- la app sigue leyendo `logs/worker_console.log` mediante el volumen compartido.
+- el panel `Logs` debe reflejar heartbeat, eventos y consola del worker separado.
 
 ## Arquitectura recomendada
 
