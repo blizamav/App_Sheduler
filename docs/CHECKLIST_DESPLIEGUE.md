@@ -1,0 +1,166 @@
+# Checklist de despliegue y validacion de ambiente
+
+## Proposito
+
+Este checklist ordena la instalacion limpia, configuracion y validacion de APP Scheduler en un ambiente nuevo.
+
+Objetivos:
+
+- Validar una instalacion SQL limpia.
+- Validar que el ambiente de aplicacion responde correctamente.
+- Evitar despliegues improvisados o cambios no trazados.
+
+## Precondiciones
+
+- SQL Server disponible.
+- Usuario SQL/Windows con permisos para crear la base destino.
+- SQL Server Management Studio instalado.
+- `Query > SQLCMD Mode` disponible y activado para ejecutar el release.
+- Python instalado.
+- Dependencias del proyecto instalables desde `requirements.txt`.
+- Repositorio actualizado.
+- Archivo `.env` preparado manualmente por ambiente.
+- Respaldo disponible antes de tocar bases con datos reales.
+
+No ejecutar sobre bases reales sin respaldo y aprobacion explicita.
+
+## Instalacion SQL limpia
+
+Fuente oficial:
+
+```text
+database/release/
+```
+
+Punto de entrada oficial:
+
+```text
+database/release/000_ejecutar_instalacion_completa.sql
+```
+
+Pasos:
+
+1. Abrir SQL Server Management Studio.
+2. Activar `Query > SQLCMD Mode`.
+3. Abrir `database/release/000_ejecutar_instalacion_completa.sql`.
+4. Configurar `DB_NAME` en el script maestro.
+5. Ejecutar el script maestro completo.
+6. Revisar la salida de `099_validacion_instalacion.sql`.
+
+Validaciones esperadas:
+
+- `base_actual = DB_NAME`.
+- `resultado = OK`.
+- Roles reales:
+  - `ADMIN = 37` permisos.
+  - `SUPER_ADMIN = 39` permisos.
+  - `TI = 31` permisos.
+  - `TERCERO = 7` permisos.
+- `OPERADOR = 0`.
+- Catalogos con nombres no nulos.
+- Configuracion inicial valida.
+- Tablas operativas vacias.
+- Sin rutas locales.
+- Sin secretos.
+
+`database/legacy_pre_release_13B/` es historico y no es fuente operativa para instalaciones nuevas.
+
+## Configuracion .env
+
+- Respaldar `.env` antes de cambiarlo.
+- Cambiar solo variables necesarias para el ambiente.
+- `DB_DATABASE` debe apuntar a la base instalada con `DB_NAME`.
+- No commitear `.env`.
+- No documentar secretos reales.
+- Validar variables de bootstrap admin.
+- Validar conexion SQL desde la app o ruta diagnostica permitida por ambiente.
+
+## Levantamiento de app
+
+Comandos base en Windows:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python run.py
+```
+
+Validar:
+
+- La app levanta sin error de conexion.
+- Login funciona.
+- Panel principal carga.
+
+## Validacion funcional minima
+
+- `/panel` carga.
+- Usuarios carga.
+- Tareas carga vacio.
+- Scripts carga vacio.
+- Ejecuciones carga vacio.
+- Scheduler/configuracion carga.
+- Scheduler/eventos carga vacio.
+- Papelera carga vacia.
+- Logs no presentan error critico.
+- No hay error 500.
+
+## Validacion scheduler
+
+- Scheduler debe quedar apagado o con ejecucion automatica deshabilitada por defecto.
+- Worker no debe arrancar automaticamente sin decision explicita.
+- Worker no debe ejecutarse dentro del proceso Flask.
+- En desarrollo local, levantar worker en terminal separada solo para prueba controlada.
+- En QA/Produccion, usar proceso separado para web y worker.
+- Worker no debe registrar ruido operativo.
+- Si se prueba worker, debe hacerse con tarea controlada.
+- No activar scheduler en produccion sin configuracion revisada.
+
+Referencia operativa:
+
+```text
+docs/OPERACION_WORKER.md
+```
+
+## Validacion SQL posterior a login
+
+Conteos esperados despues de levantar la app y probar login:
+
+- `usuarios` puede tener 1 registro si bootstrap creo admin.
+- `tareas = 0`.
+- `scripts = 0`.
+- `ejecuciones = 0`.
+- `scheduler_eventos = 0`, salvo prueba explicita.
+- `logs_sistema` y `auditoria_cambios` pueden tener registros minimos por login/bootstrap.
+
+## Criterio de aprobacion
+
+El ambiente queda aprobado solo si:
+
+- SQL instalado OK.
+- `099_validacion_instalacion.sql` OK.
+- App levanta.
+- Login OK.
+- Modulos base OK.
+- Sin error 500.
+- Sin datos operativos reales.
+- Sin secretos.
+- Scheduler seguro por defecto.
+
+## Rollback
+
+Si la validacion falla:
+
+1. Detener app.
+2. Restaurar `.env` original.
+3. Borrar solo base de prueba si corresponde.
+4. No borrar bases reales sin respaldo.
+5. Registrar hallazgos en `log_codex.md`.
+
+## Evidencia sugerida
+
+- Captura o salida de `099_validacion_instalacion.sql`.
+- Resultado de login.
+- Resultado de modulos base.
+- Conteos SQL principales.
+- `git status` limpio antes de cerrar despliegue.

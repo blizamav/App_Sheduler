@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-06-30 - Fase 14A diseno operativo worker y consola visual
+
+### Documentado
+
+* Se creo `docs/OPERACION_WORKER.md`.
+* Se formalizo que el worker debe ejecutarse separado de Flask.
+* Se compararon opciones: ejecucion manual, tarea programada Windows, NSSM, systemd y Docker Compose.
+* Se recomienda desarrollo local manual controlado y QA/Produccion con proceso separado, preferentemente Docker Compose con servicios `web` y `worker`.
+* Se documenta systemd como alternativa en Ubuntu sin Docker.
+* Se disena una consola visual futura del worker reutilizando el boton `Logs` y panel lateral derecho.
+* Se define que la consola debe mostrar salida equivalente a terminal, estado de vida por heartbeat, estado del scheduler y alertas operativas.
+* Se aclara que la fuente debe ser controlada, no una terminal del sistema operativo.
+* Se documentan riesgos de workers duplicados, controles existentes y controles recomendados.
+* Se actualizan `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md` y `log_codex.md`.
+
+### Reglas
+
+* No se implemento Docker.
+* No se implemento systemd.
+* No se crearon endpoints.
+* No se modifico `scheduler_worker.py`.
+* No se modifico backend, frontend ni scheduler.
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14B.
+
+## 2026-06-26 - Fase 13C checklist de despliegue y validacion
+
+### Implementado
+
+* Se creo `docs/CHECKLIST_DESPLIEGUE.md`.
+* El checklist documenta precondiciones, instalacion SQL limpia, configuracion `.env`, levantamiento de app, validacion funcional minima, validacion scheduler, validacion SQL posterior a login, criterio de aprobacion, rollback y evidencia sugerida.
+* Se refuerza que `database/release/` es la fuente oficial y `database/release/000_ejecutar_instalacion_completa.sql` el punto de entrada.
+* Se documentan los conteos esperados por rol: `ADMIN = 37`, `SUPER_ADMIN = 39`, `TI = 31`, `TERCERO = 7`, y `OPERADOR = 0`.
+* Se actualizan `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md` y `log_codex.md`.
+
+### Reglas
+
+* No se ejecuto SQL desde Codex.
+* No se conecto a SQL Server.
+* No se modifico `.env`.
+* No se modifico backend, frontend ni scheduler.
+* No se cambiaron scripts release validados.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14.
+
 ## 2026-06-26 - Fase 13B.2 limpieza controlada carpeta database
 
 ### Implementado

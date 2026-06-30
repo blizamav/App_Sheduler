@@ -21,11 +21,11 @@ No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque pued
 
 ## QA Ubuntu
 
-Pendiente para Fase 13. Debe ejecutarse con `.env` propio, SQL Server accesible, volumenes para scripts/env/logs y estrategia de arranque separada para web y worker.
+Pendiente de implementacion operativa. Debe ejecutarse con `.env` propio, SQL Server accesible, volumenes para scripts/env/logs y estrategia de arranque separada para web y worker.
 
 ## Produccion Ubuntu
 
-Pendiente para Fase 13. Debe usar Docker Compose o systemd, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
+Pendiente de implementacion operativa. Debe usar Docker Compose preferentemente, o systemd como alternativa, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
 
 ## Variables por ambiente
 
@@ -125,9 +125,36 @@ Recomendaciones:
 * No ejecutar sobre una base con datos reales sin respaldo.
 * Mantener SQLCMD Mode activo; si no esta activo, `:setvar` y `$(DB_NAME)` no funcionaran.
 
+## Checklist formal de despliegue
+
+Antes de instalar o validar un ambiente nuevo, usar:
+
+```text
+docs/CHECKLIST_DESPLIEGUE.md
+```
+
+El checklist centraliza precondiciones, instalacion SQL limpia, configuracion `.env`, levantamiento de app, validacion funcional minima, validacion scheduler, rollback y evidencia sugerida.
+
+## Operacion del worker
+
+El diseno operativo del worker queda documentado en:
+
+```text
+docs/OPERACION_WORKER.md
+```
+
+Decision vigente:
+
+* El worker no debe ejecutarse dentro del proceso Flask.
+* Desarrollo local: `python scheduler_worker.py` en proceso separado.
+* QA/Produccion: proceso worker separado del servicio web.
+* Preferencia: Docker Compose con servicios `web` y `worker`.
+* Alternativa: systemd en Ubuntu sin Docker.
+* La consola visual futura dentro de la app debe ser solo monitoreo controlado, no una terminal real.
+
 ## Docker
 
-Pendiente para Fase 13E. Alternativas previstas: Docker Compose o systemd, segun decision de despliegue.
+Pendiente de implementacion. La recomendacion documental desde Fase 14A es Docker Compose con servicios separados `web` y `worker`.
 
 ## Roadmap operativo
 
@@ -141,6 +168,9 @@ Pendientes de Fase 13:
 
 Pendientes de Fase 14:
 
+* Implementar fuente controlada de logs del worker.
+* Evolucionar panel Logs a consola visual real.
+* Docker Compose o systemd operativo.
 * Retencion automatica.
 * Backups.
 * Exportaciones.

@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 12A implementada. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14A documenta la operacion formal del worker y la consola visual futura de monitoreo. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -204,6 +204,42 @@ Reglas principales:
 * Desde Fase 11A puede monitorearse en `/scheduler/panel`, sin control operacional del proceso.
 * Desde Fase 11B registra heartbeat en `scheduler_worker_heartbeat`.
 
+## Operacion worker Fase 14A
+
+Decision arquitectonica: el worker no debe ejecutarse dentro del proceso Flask.
+
+Diseno correcto:
+
+```text
+Proceso web:    python run.py
+Proceso worker: python scheduler_worker.py
+```
+
+Motivos:
+
+* Evitar duplicidad por debug/reloader de Flask.
+* Separar caidas de web y worker.
+* Facilitar monitoreo y reinicio.
+* Mantener operacion profesional en QA/Produccion.
+
+Recomendacion operativa:
+
+* Desarrollo local: ejecucion manual controlada.
+* QA/Produccion: proceso worker separado.
+* Preferencia: Docker Compose con servicios `web` y `worker`.
+* Alternativa: `systemd` si se despliega directamente en Ubuntu sin Docker.
+
+La app web debe monitorear al worker mediante fuentes controladas:
+
+* `scheduler_worker_heartbeat` para estado de vida.
+* `configuracion_scheduler` para estado del scheduler.
+* `scheduler_eventos` para eventos importantes.
+* Salida operativa persistida futura para mostrar una consola visual equivalente a terminal.
+
+El panel lateral abierto desde el boton `Logs` podra evolucionar a una consola visual del worker. Esa consola no debe ser una terminal real: no debe ejecutar comandos, no debe acceder al Docker socket, no debe mostrar secretos y no debe iniciar/detener procesos en Fase 14A.
+
+Diseno detallado: `docs/OPERACION_WORKER.md`.
+
 ## Ejecucion segura de scripts
 
 Fase 4.3 define que la ejecucion futura debe aislar tres responsabilidades:
@@ -254,15 +290,15 @@ El usuario `blizama` no se crea automaticamente en base de datos.
 
 ## Roadmap arquitectonico
 
-Siguiente bloque recomendado: completar Fase 12B con ampliacion de cobertura y criterios de revision de auditoria.
+Siguiente bloque recomendado: implementar Fase 14B con fuente controlada de logs del worker y endpoints de solo lectura, manteniendo web y worker separados.
 
 Bloques posteriores:
 
 * Fase 12: Auditoria.
-* Fase 13: operacion y despliegue.
-* Fase 14: mantenimiento avanzado.
+* Fase 13: release, instalacion limpia y checklist de despliegue.
+* Fase 14: operacion avanzada del worker, monitoreo y servicios.
 
-La arquitectura ya evita rutas absolutas para facilitar portabilidad, pero Docker Compose, systemd y worker como servicio quedan pendientes para Fase 13.
+La arquitectura ya evita rutas absolutas para facilitar portabilidad. Docker Compose, systemd y worker como servicio quedan pendientes de implementacion posterior; Fase 14A solo deja el diseno operativo formal.
 
 ## Release SQL limpio
 

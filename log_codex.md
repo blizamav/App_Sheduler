@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 13B.2 implementada como parametrizacion del nombre de base del release SQL mediante SQLCMD `DB_NAME` y limpieza controlada de `database/`; `database/release/` queda como fuente oficial y los scripts antiguos quedan en `database/legacy_pre_release_13B/`. No se ejecuto SQL desde Codex y no se avanzo a Fase 13C ni Fase 14.
+* Estado actual: Fase 14A implementada documentalmente como diseno operativo del scheduler worker y consola visual futura de monitoreo. No se ejecuto SQL desde Codex y no se avanzo a Fase 14B.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 13B.2 - Parametrizacion del nombre de base en release SQL.
-* Ultima actualizacion: 2026-06-26
+* Fase actual: Fase 14A - Diseno operativo del scheduler worker y consola visual de monitoreo.
+* Ultima actualizacion: 2026-06-30
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -20,7 +20,7 @@
 * Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler; Fase 13A.1 evita persistir eventos ruidosos y agrega limpieza controlada; Fase 13A.1B agrega limpieza parametrizable con whitelist y previsualizacion.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
-* Docker/despliegue: Pendiente para Fase 13B y siguientes; Fase 13A deja release SQL limpio para instalacion desde cero.
+* Docker/despliegue: Release SQL limpio listo; Fase 14A recomienda Docker Compose con servicios separados `web` y `worker`, con systemd como alternativa documental.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
@@ -50,6 +50,28 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-30 - Fase 14A / Diseno operativo worker y consola visual
+
+* Archivo creado: `docs/OPERACION_WORKER.md`.
+* Archivos modificados: `docs/ARQUITECTURA.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Decision tecnica: el worker no debe ejecutarse dentro del proceso Flask; debe operar como proceso separado.
+* Recomendacion: desarrollo local con ejecucion manual controlada; QA/Produccion con proceso separado, preferentemente Docker Compose con servicios `web` y `worker`; systemd queda como alternativa Ubuntu sin Docker.
+* Consola visual: se disena evolucion futura del boton `Logs` y panel lateral derecho hacia una consola controlada del worker, con salida tipo terminal, estado de vida por heartbeat, estado scheduler y alertas.
+* Fuente de datos: salida operativa persistida y controlada, heartbeat desde `scheduler_worker_heartbeat`, configuracion desde `configuracion_scheduler`, eventos importantes desde `scheduler_eventos`, ejecuciones reales desde `ejecuciones` y `logs_tareas`.
+* Seguridad: la consola visual no debe ser terminal real, no debe ejecutar comandos, no debe mostrar secretos, no debe acceder al Docker socket y no debe iniciar/detener procesos en esta fase.
+* Riesgos: se documenta riesgo de workers duplicados, controles existentes y controles recomendados.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se modifico `scheduler_worker.py`, no se cambio backend/frontend/scheduler, no se crearon endpoints, no se implemento Docker/systemd, no se hizo commit ni push y no se avanzo a Fase 14B.
+
+### 2026-06-26 - Fase 13C / Checklist de despliegue y validacion
+
+* Archivo creado: `docs/CHECKLIST_DESPLIEGUE.md`.
+* Archivos modificados: `docs/DESPLIEGUE.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: dejar una guia formal para instalar, configurar y validar APP Scheduler en un ambiente nuevo sin improvisar.
+* Checklist: incluye precondiciones, instalacion SQL limpia, configuracion `.env`, levantamiento de app, validacion funcional minima, validacion scheduler, validacion SQL posterior a login, criterio de aprobacion, rollback y evidencia sugerida.
+* Fuente oficial: se refuerza `database/release/` y `database/release/000_ejecutar_instalacion_completa.sql` como entrada oficial.
+* Validaciones documentadas: SQLCMD Mode, `DB_NAME`, roles/permisos esperados, `OPERADOR = 0`, tablas operativas vacias, ausencia de secretos y scheduler seguro por defecto.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se conecto a SQL Server, no se toco backend/frontend/scheduler, no se modificaron scripts release validados, no se hizo commit ni push y no se avanzo a Fase 14.
 
 ### 2026-06-26 - Fase 13B.2 / Limpieza controlada database
 

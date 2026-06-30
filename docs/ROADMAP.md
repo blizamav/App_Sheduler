@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Codex no ejecuto SQL ni avanzo a Fase 13C o Fase 14.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. No se implemento Docker, systemd ni endpoints.
 
 ## Implementado
 
@@ -87,19 +87,19 @@ Estado: iniciada con consolidacion SQL limpia. El resto de operacion y despliegu
 * 13B.1 Auditoria integral del release SQL contra schema, seeds y usos backend. Implementada sin ejecutar SQL.
 * 13B.2 Parametrizacion del nombre de base en release SQL con SQLCMD `DB_NAME`. Implementada sin ejecutar SQL.
 * 13B.2 Limpieza controlada de `database/`: release oficial e historicos en legacy. Implementada sin ejecutar SQL.
-* 13C Preparacion produccion. Pendiente.
+* 13C Checklist de despliegue y validacion de ambiente. Implementado sin ejecutar SQL.
 * 13D Worker como servicio. Pendiente.
 * 13E Docker Compose o systemd. Pendiente.
 
-## Fase 14 - Mantenimiento Avanzado
+## Fase 14 - Operacion avanzada
 
-Estado: pendiente. Incluye automatizaciones de operacion continua y salidas de informacion.
+Estado: iniciada a nivel documental. Incluye operacion del worker, monitoreo, servicios, retencion y salidas de informacion.
 
-* 14A Retencion automatica. Pendiente.
-* 14B Backups. Pendiente.
-* 14C Exportaciones. Pendiente.
-* 14D Notificaciones. Pendiente.
-* 14E Reportes de operacion. Pendiente.
+* 14A Diseno operativo del scheduler worker y consola visual de monitoreo. Implementado documentalmente.
+* 14B Implementar fuente controlada de logs del worker y endpoints de solo lectura. Pendiente.
+* 14C Evolucionar panel Logs a consola visual real del worker. Pendiente.
+* 14D Docker Compose o systemd operativo. Pendiente.
+* 14E Retencion, backups, exportaciones, notificaciones y reportes. Pendiente.
 
 ## Borrado Operativo Seguro
 
