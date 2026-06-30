@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. No se implemento Docker, systemd ni endpoints.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. Fase 14C agrega endpoints de solo lectura para monitoreo del worker. No se implemento Docker ni systemd.
 
 ## Implementado
 
@@ -98,7 +98,7 @@ Estado: iniciada con base documental y fuente controlada de logs del worker. Inc
 * 14A Diseno operativo del scheduler worker y consola visual de monitoreo. Implementado documentalmente.
 * 14B Fuente controlada de logs del worker con archivo rotativo. Implementado y luego corregido.
 * 14B.1 Ajuste del logging del worker a buffer visual limitado en `logs/worker_console.log`. Implementado.
-* 14C Endpoints de solo lectura para exponer el buffer visual del worker. Pendiente.
+* 14C Endpoints de solo lectura para exponer el buffer visual del worker. Implementado.
 * 14D Evolucionar panel Logs a consola visual real del worker. Pendiente.
 * 14E Docker Compose o systemd operativo. Pendiente.
 * 14F Retencion, backups, exportaciones, notificaciones y reportes. Pendiente.

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-06-30 - Fase 14C API de monitoreo worker solo lectura
+
+### Implementado
+
+* Se registraron endpoints protegidos de solo lectura bajo `/api/worker`.
+* `GET /api/worker/estado` expone estado de vida, heartbeat, contadores y resumen textual del worker.
+* `GET /api/worker/consola` lee exclusivamente `logs/worker_console.log` y devuelve ultimas lineas sin exponer rutas ni secretos.
+* `GET /api/worker/monitor` consolida estado del worker, estado del scheduler, consola reciente, eventos relevantes, ejecuciones automaticas recientes y alertas operativas.
+* `GET /api/worker/eventos` devuelve eventos recientes del programador desde `scheduler_eventos`.
+* `GET /api/worker/ejecuciones` devuelve ejecuciones automaticas recientes desde `ejecuciones`.
+* Se creo `app/servicios/servicio_api_worker.py` para aislar serializacion, consolidacion de datos y alertas operativas.
+* `app/servicios/servicio_logging_worker.py` ahora permite leer el buffer visual con limite controlado entre `10` y `200` lineas.
+* La proteccion reutiliza `SCHEDULER_CONFIG_VER`; no se crearon permisos nuevos.
+
+### Validado
+
+* `python -m py_compile app\\__init__.py app\\rutas_scheduler.py app\\servicios\\servicio_api_worker.py app\\servicios\\servicio_logging_worker.py`: OK.
+* Cliente Flask local con sesion simulada: `/api/worker/estado`, `/api/worker/consola`, `/api/worker/monitor`, `/api/worker/eventos` y `/api/worker/ejecuciones` responden JSON con el contrato esperado.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se crearon migraciones ni seeds.
+* No se modifico frontend.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14D.
+
 ## 2026-06-30 - Fase 14B fuente controlada de logs del worker
 
 ### Implementado

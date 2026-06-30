@@ -114,6 +114,7 @@ Validar:
 - En QA/Produccion, usar proceso separado para web y worker.
 - Worker no debe registrar ruido operativo.
 - Si se levanta el worker, debe generar `logs/worker_console.log` como buffer visual local y mantener salida visible en terminal.
+- Si se levanta el worker y la sesion tiene permiso `SCHEDULER_CONFIG_VER`, `/api/worker/estado` y `/api/worker/consola` deben responder sin exponer secretos.
 - Si se prueba worker, debe hacerse con tarea controlada.
 - No activar scheduler en produccion sin configuracion revisada.
 

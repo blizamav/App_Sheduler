@@ -4,7 +4,7 @@
 
 Este documento define el diseno operativo del `scheduler_worker.py` y la consola visual de monitoreo futura dentro de la app.
 
-La fase es documental. No implementa Docker, systemd, endpoints, cambios frontend, cambios backend ni cambios en el worker.
+Estado vigente: Fase 14C implementa endpoints de solo lectura para monitoreo del worker. Siguen pendientes Docker, systemd y la evolucion visual del panel `Logs`.
 
 ## Estado actual validado
 
@@ -24,6 +24,36 @@ Validaciones previas:
 - Registra eventos importantes en `scheduler_eventos`.
 - Actualiza heartbeat en `scheduler_worker_heartbeat`.
 - Desde Fase 14B.1 escribe salida operativa tambien en `logs/worker_console.log` como buffer visual limitado.
+- Desde Fase 14C existen endpoints internos de solo lectura en `/api/worker/*` para consultar estado, consola, eventos y ejecuciones recientes.
+
+## Endpoints internos de monitoreo
+
+Rutas disponibles:
+
+- `GET /api/worker/estado`
+- `GET /api/worker/consola`
+- `GET /api/worker/monitor`
+- `GET /api/worker/eventos`
+- `GET /api/worker/ejecuciones`
+
+Reglas:
+
+- Requieren sesion autenticada con permiso `SCHEDULER_CONFIG_VER`.
+- No inician ni detienen el worker.
+- No ejecutan comandos.
+- No exponen rutas absolutas, passwords ni contenido de `.env`.
+- `GET /api/worker/consola` solo lee `logs/worker_console.log`.
+- `limit` en consola se acota entre `10` y `200`; por defecto responde `100` lineas.
+
+Respuesta controlada si la consola no existe:
+
+```json
+{
+  "archivo_disponible": false,
+  "lineas": [],
+  "mensaje": "Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue limpiado."
+}
+```
 
 ## Problema que resuelve
 

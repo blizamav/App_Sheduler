@@ -1,6 +1,13 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from app.seguridad import permiso_requerido
+from app.servicios.servicio_api_worker import (
+    obtener_consola_api_worker,
+    obtener_ejecuciones_api_worker,
+    obtener_estado_api_worker,
+    obtener_eventos_api_worker,
+    obtener_monitor_api_worker,
+)
 from app.servicios.servicio_configuracion_scheduler import (
     guardar_configuracion_scheduler,
     obtener_configuracion_scheduler,
@@ -17,6 +24,7 @@ from app.servicios.servicio_scheduler_eventos import (
 
 
 bp_scheduler = Blueprint("scheduler", __name__, url_prefix="/scheduler")
+bp_worker_api = Blueprint("worker_api", __name__, url_prefix="/api/worker")
 
 
 @bp_scheduler.route("/panel")
@@ -153,6 +161,89 @@ def configuracion():
 
     configuracion_actual = obtener_configuracion_scheduler(session.get("usuario"))
     return render_template("scheduler/configuracion.html", configuracion=configuracion_actual)
+
+
+@bp_worker_api.route("/estado")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def api_estado_worker():
+    try:
+        return jsonify(obtener_estado_api_worker())
+    except Exception:
+        return jsonify(
+            {
+                "worker_detectado": False,
+                "estado_vida": "ERROR",
+                "nombre_worker": None,
+                "ultimo_heartbeat": None,
+                "segundos_desde_ultimo_heartbeat": None,
+                "resumen_textual": "No fue posible obtener el estado del worker.",
+            }
+        ), 500
+
+
+@bp_worker_api.route("/consola")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def api_consola_worker():
+    try:
+        return jsonify(obtener_consola_api_worker(request.args.get("limit", 100)))
+    except Exception:
+        return jsonify(
+            {
+                "archivo_disponible": False,
+                "lineas": [],
+                "total_lineas_disponibles": 0,
+                "limite_archivo": 300,
+                "limite_respuesta": 100,
+                "mensaje": "No fue posible leer la consola del worker.",
+            }
+        ), 500
+
+
+@bp_worker_api.route("/monitor")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def api_monitor_worker():
+    try:
+        return jsonify(obtener_monitor_api_worker(limite_consola=request.args.get("limit", 100)))
+    except Exception:
+        return jsonify(
+            {
+                "estado_worker": {
+                    "worker_detectado": False,
+                    "estado_vida": "ERROR",
+                    "resumen_textual": "No fue posible construir el monitor del worker.",
+                },
+                "estado_scheduler": {},
+                "consola_reciente": {
+                    "archivo_disponible": False,
+                    "lineas": [],
+                    "total_lineas_disponibles": 0,
+                    "limite_archivo": 300,
+                    "limite_respuesta": 100,
+                    "mensaje": "No fue posible leer la consola del worker.",
+                },
+                "eventos_recientes": [],
+                "ejecuciones_recientes": [],
+                "alertas_operativas": [{"tipo": "api", "nivel": "error", "mensaje": "No fue posible construir el monitor del worker."}],
+            }
+        ), 500
+
+
+@bp_worker_api.route("/eventos")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def api_eventos_worker():
+    try:
+        return jsonify({"eventos": obtener_eventos_api_worker(request.args.get("limit", 10))})
+    except Exception:
+        return jsonify({"eventos": [], "mensaje": "No fue posible obtener eventos recientes del worker."}), 500
+
+
+@bp_worker_api.route("/ejecuciones")
+@permiso_requerido("SCHEDULER_CONFIG_VER")
+def api_ejecuciones_worker():
+    try:
+        return jsonify({"ejecuciones": obtener_ejecuciones_api_worker(request.args.get("limit", 10))})
+    except Exception:
+        return jsonify({"ejecuciones": [], "mensaje": "No fue posible obtener ejecuciones recientes del worker."}), 500
 
 
 def _puede_editar_scheduler():

@@ -116,7 +116,40 @@ def obtener_ruta_buffer_worker():
     return Path(__file__).resolve().parents[2] / "logs" / NOMBRE_ARCHIVO_BUFFER_WORKER
 
 
+def leer_buffer_worker(limite_lineas=100):
+    limite = _limite_respuesta_seguro(limite_lineas)
+    ruta = obtener_ruta_buffer_worker()
+    if not ruta.exists():
+        return {
+            "archivo_disponible": False,
+            "lineas": [],
+            "total_lineas_disponibles": 0,
+            "limite_archivo": MAX_LINEAS_BUFFER_WORKER,
+            "limite_respuesta": limite,
+            "mensaje": "Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue limpiado.",
+        }
+
+    lineas = ruta.read_text(encoding="utf-8").splitlines()
+    lineas_visibles = lineas[1:] if lineas and "Nueva sesion worker iniciada." in lineas[0] else lineas
+    return {
+        "archivo_disponible": True,
+        "lineas": lineas_visibles[-limite:],
+        "total_lineas_disponibles": len(lineas_visibles),
+        "limite_archivo": MAX_LINEAS_BUFFER_WORKER,
+        "limite_respuesta": limite,
+        "mensaje": "Consola del worker disponible.",
+    }
+
+
 def registrar_log_worker(mensaje, origen="WORKER", nivel="INFO"):
     logger = obtener_logger_worker()
     nivel_log = getattr(logging, str(nivel).upper(), logging.INFO)
     logger.log(nivel_log, mensaje, extra={"origen": origen})
+
+
+def _limite_respuesta_seguro(valor):
+    try:
+        limite = int(valor or 100)
+    except (TypeError, ValueError):
+        return 100
+    return max(10, min(200, limite))

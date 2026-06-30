@@ -52,6 +52,7 @@
 * Fase 13A.1: optimizacion de `scheduler_eventos` y limpieza controlada de eventos informativos antiguos.
 * Fase 13A.1B: limpieza parametrizable de eventos del scheduler con whitelist de categorias y previsualizacion.
 * Fase 14B.1: logging controlado del worker con `app/servicios/servicio_logging_worker.py`, salida simultanea a terminal y buffer visual `logs/worker_console.log`.
+* Fase 14C: API interna de monitoreo del worker con `/api/worker/estado`, `/api/worker/consola`, `/api/worker/monitor`, `/api/worker/eventos` y `/api/worker/ejecuciones`.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -67,7 +68,6 @@ Pendiente operativo:
 * Scripts para levantar web y worker.
 * Worker como servicio.
 * Preparacion QA/produccion.
-* Endpoints de solo lectura para exponer logs del worker en fase posterior.
 * Estrategia de backups.
 * Estrategia de retencion automatica.
 
@@ -212,6 +212,13 @@ Implementado en Fase 14B.1:
 * Handler de buffer acotado: persiste salida reciente en archivo unico, maximo 300 lineas y sin backups.
 * `servicio_scheduler_worker.py`: reemplaza `print()` por logging estructurado con origen `WORKER`, `CONFIG`, `HEARTBEAT`, `CICLO`, `SCHEDULER` y `EJECUCION`.
 * `servicio_worker_heartbeat.py`: registra lineas operativas de inicio/error/detencion del heartbeat sin usar `scheduler_eventos` para ruido normal ni escribir heartbeat cada ciclo en el buffer visual.
+
+Implementado en Fase 14C:
+
+* `app/servicios/servicio_api_worker.py`: consolida heartbeat, configuracion, eventos, ejecuciones recientes y alertas operativas en formato JSON seguro.
+* `app/rutas_scheduler.py`: expone endpoints internos `/api/worker/*` reutilizando permiso `SCHEDULER_CONFIG_VER`.
+* `/api/worker/consola`: lee solo el buffer visual `logs/worker_console.log`.
+* `/api/worker/monitor`: entrega vista consolidada para futura consola visual sin convertir la app en terminal real.
 
 Implementado en Fase 11D:
 

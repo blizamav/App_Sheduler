@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 14B.1 deja implementado el buffer visual limitado del worker. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14C deja implementado el buffer visual limitado del worker y la API interna de monitoreo de solo lectura. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -15,6 +15,7 @@ Estado actual: Fase 14B.1 deja implementado el buffer visual limitado del worker
 * Servicios: reglas de negocio para usuarios, mantenedores, tareas, scripts, ejecuciones, programador, feriados, paneles, eventos, borrado operativo y auditoria.
 * Worker: `scheduler_worker.py` como proceso separado para evaluacion automatica.
 * Logging worker: `app/servicios/servicio_logging_worker.py` para salida estructurada a terminal y buffer visual acotado.
+* API monitoreo worker: endpoints `/api/worker/*` protegidos, solo lectura y sin control operativo del proceso.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 
@@ -168,6 +169,13 @@ Fase 14B.1 agrega buffer visual limitado del worker:
 * `app/servicios/servicio_scheduler_worker.py`: usa logging estructurado en lugar de `print()`.
 * `app/servicios/servicio_worker_heartbeat.py`: agrega trazas operativas de heartbeat al mismo logger.
 * `logs/worker_console.log`: archivo local unico como buffer visual reciente para futura lectura segura.
+
+Fase 14C agrega API interna de monitoreo:
+
+* `app/servicios/servicio_api_worker.py`: capa de agregacion y serializacion segura para monitoreo del worker.
+* `app/rutas_scheduler.py`: registra `bp_worker_api` con rutas `/api/worker/estado`, `/api/worker/consola`, `/api/worker/monitor`, `/api/worker/eventos` y `/api/worker/ejecuciones`.
+* `GET /api/worker/consola`: usa exclusivamente `logs/worker_console.log` como fuente local.
+* `GET /api/worker/monitor`: consolida `scheduler_worker_heartbeat`, `configuracion_scheduler`, `scheduler_eventos`, `ejecuciones` y `logs/worker_console.log`.
 
 Formato vigente:
 

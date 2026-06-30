@@ -8,7 +8,7 @@ from app.rutas_papelera import bp_papelera
 from app.rutas import bp_principal
 from app.rutas_ejecuciones import bp_ejecuciones
 from app.rutas_scripts import bp_scripts
-from app.rutas_scheduler import bp_scheduler
+from app.rutas_scheduler import bp_scheduler, bp_worker_api
 from app.rutas_tareas import bp_tareas
 from app.rutas_usuarios import bp_usuarios
 
@@ -31,6 +31,7 @@ def crear_app():
     app.register_blueprint(bp_scripts)
     app.register_blueprint(bp_ejecuciones)
     app.register_blueprint(bp_scheduler)
+    app.register_blueprint(bp_worker_api)
     app.register_blueprint(bp_feriados)
     app.register_blueprint(bp_auditoria)
     return app

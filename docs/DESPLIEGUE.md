@@ -152,6 +152,7 @@ Decision vigente:
 * Alternativa: systemd en Ubuntu sin Docker.
 * La consola visual futura dentro de la app debe ser solo monitoreo controlado, no una terminal real.
 * Desde Fase 14B.1 la salida operativa del worker se persiste tambien en `logs/worker_console.log` como buffer visual limitado.
+* Desde Fase 14C existen endpoints internos de solo lectura bajo `/api/worker/*` para estado, consola, eventos y ejecuciones recientes.
 
 ## Docker
 
@@ -169,7 +170,6 @@ Pendientes de Fase 13:
 
 Pendientes de Fase 14:
 
-* Implementar endpoints de solo lectura para exponer la fuente controlada del worker.
 * Evolucionar panel Logs a consola visual real.
 * Docker Compose o systemd operativo.
 * Retencion automatica.
@@ -238,6 +238,20 @@ Validacion de una vuelta:
 ```powershell
 python scheduler_worker.py --once
 ```
+
+Validaciones API de monitoreo:
+
+```text
+GET /api/worker/estado
+GET /api/worker/consola
+GET /api/worker/monitor
+```
+
+Notas:
+
+* Requieren sesion autenticada con permiso `SCHEDULER_CONFIG_VER`.
+* No muestran secretos ni rutas absolutas.
+* `GET /api/worker/consola?limit=100` lee solo `logs/worker_console.log`.
 
 Validacion continua manual:
 
