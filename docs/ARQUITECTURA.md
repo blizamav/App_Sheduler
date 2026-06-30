@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 14C deja implementado el buffer visual limitado del worker y la API interna de monitoreo de solo lectura. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14D.3 deja implementado el buffer visual limitado del worker, la API interna de monitoreo de solo lectura y el panel lateral `Logs` conectado a esa API como monitor del programador enfocado en eventos propios, con clasificacion real de estados segun heartbeat y detencion explicita. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -16,6 +16,8 @@ Estado actual: Fase 14C deja implementado el buffer visual limitado del worker y
 * Worker: `scheduler_worker.py` como proceso separado para evaluacion automatica.
 * Logging worker: `app/servicios/servicio_logging_worker.py` para salida estructurada a terminal y buffer visual acotado.
 * API monitoreo worker: endpoints `/api/worker/*` protegidos, solo lectura y sin control operativo del proceso.
+* UI monitoreo worker: panel lateral `Logs` conectado a la API del worker con polling moderado mientras el panel esta abierto.
+* UX monitoreo worker: estado de vista separado del estado real del programador, consola como apoyo diagnostico y resize horizontal del panel en escritorio.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 
@@ -176,6 +178,12 @@ Fase 14C agrega API interna de monitoreo:
 * `app/rutas_scheduler.py`: registra `bp_worker_api` con rutas `/api/worker/estado`, `/api/worker/consola`, `/api/worker/monitor`, `/api/worker/eventos` y `/api/worker/ejecuciones`.
 * `GET /api/worker/consola`: usa exclusivamente `logs/worker_console.log` como fuente local.
 * `GET /api/worker/monitor`: consolida `scheduler_worker_heartbeat`, `configuracion_scheduler`, `scheduler_eventos`, `ejecuciones` y `logs/worker_console.log`.
+
+Fase 14D agrega visualizacion en la app:
+
+* `app/templates/base.html`: estructura del panel lateral del monitor del worker.
+* `app/static/js/app.js`: apertura/cierre del panel, fetch al monitor y auto-refresh cada `5` segundos mientras el panel esta visible.
+* `app/static/css/estilos.css`: presentacion visual segura del monitor como consola de solo lectura.
 
 Formato vigente:
 

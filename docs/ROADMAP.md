@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. Fase 14C agrega endpoints de solo lectura para monitoreo del worker. No se implemento Docker ni systemd.
+El proyecto incorpora Fase 13A como consolidacion SQL de release limpio y Fase 13A.1B como limpieza parametrizable de eventos del scheduler. Fase 13B.1 audita y corrige el release SQL para prueba manual de instalacion limpia; Fase 13B.2 parametriza el nombre de base con SQLCMD `DB_NAME` y ordena `database/` dejando `database/release/` como fuente oficial. Fase 13C agrega checklist formal de despliegue y validacion de ambiente. Fase 14A documenta la operacion del worker separado y la consola visual futura de monitoreo. Fase 14B.1 corrige el enfoque anterior y deja un buffer visual limitado del worker en archivo unico. Fase 14C agrega endpoints de solo lectura para monitoreo del worker. Fase 14D conecta el panel `Logs` a ese monitor sin convertir la app en terminal real. Fase 14D.2 simplifica el monitor para enfocarlo en eventos propios del programador, con estados visuales mas claros y sin mezclar ejecuciones manuales. Fase 14D.3 corrige los estados reales del programador distinguiendo detencion explicita, advertencia por atraso y ausencia critica de senal. No se implemento Docker ni systemd.
 
 ## Implementado
 
@@ -99,7 +99,10 @@ Estado: iniciada con base documental y fuente controlada de logs del worker. Inc
 * 14B Fuente controlada de logs del worker con archivo rotativo. Implementado y luego corregido.
 * 14B.1 Ajuste del logging del worker a buffer visual limitado en `logs/worker_console.log`. Implementado.
 * 14C Endpoints de solo lectura para exponer el buffer visual del worker. Implementado.
-* 14D Evolucionar panel Logs a consola visual real del worker. Pendiente.
+* 14D Evolucionar panel Logs a consola visual real del worker. Implementado.
+* 14D.1 Claridad visual del monitor del programador y panel redimensionable. Implementado.
+* 14D.2 Simplificar monitor del programador con eventos y estados visuales claros. Implementado.
+* 14D.3 Correccion de estados reales del programador segun heartbeat y detencion explicita. Implementado.
 * 14E Docker Compose o systemd operativo. Pendiente.
 * 14F Retencion, backups, exportaciones, notificaciones y reportes. Pendiente.
 

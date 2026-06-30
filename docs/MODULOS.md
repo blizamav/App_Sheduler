@@ -53,6 +53,10 @@
 * Fase 13A.1B: limpieza parametrizable de eventos del scheduler con whitelist de categorias y previsualizacion.
 * Fase 14B.1: logging controlado del worker con `app/servicios/servicio_logging_worker.py`, salida simultanea a terminal y buffer visual `logs/worker_console.log`.
 * Fase 14C: API interna de monitoreo del worker con `/api/worker/estado`, `/api/worker/consola`, `/api/worker/monitor`, `/api/worker/eventos` y `/api/worker/ejecuciones`.
+* Fase 14D: panel lateral `Logs` conectado a la API del worker, con estado operativo, alertas, consola reciente, eventos y ejecuciones recientes.
+* Fase 14D.1: claridad visual del monitor del programador, separacion entre estado de vista y estado real del worker, y panel lateral redimensionable.
+* Fase 14D.2: simplificacion del monitor del programador para mostrar solo eventos propios del worker/programador, con estados visuales reutilizables y sin mezclar ejecuciones manuales.
+* Fase 14D.3: correccion de estados reales del programador para distinguir `DETENIDO`, `ADVERTENCIA`, `SIN SENAL` y `NO DISPONIBLE` segun heartbeat real y detencion explicita.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -91,7 +95,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 ## Estado de implementacion
 
-La aplicacion esta en Fase 14B.1 a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria y logging controlado del worker con buffer visual acotado. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible; Fase 14B.1 no cambia la logica del scheduler ni crea endpoints. Aun no existe despliegue formal ni worker como servicio.
+La aplicacion esta en Fase 14D.3 a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, logging controlado del worker con buffer visual acotado y monitor lateral enfocado solo en eventos del programador con estados reales del worker. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible. Aun no existe despliegue formal ni worker como servicio.
 
 ## UI/UX general
 
@@ -219,6 +223,21 @@ Implementado en Fase 14C:
 * `app/rutas_scheduler.py`: expone endpoints internos `/api/worker/*` reutilizando permiso `SCHEDULER_CONFIG_VER`.
 * `/api/worker/consola`: lee solo el buffer visual `logs/worker_console.log`.
 * `/api/worker/monitor`: entrega vista consolidada para futura consola visual sin convertir la app en terminal real.
+
+Implementado en Fase 14D:
+
+* `app/templates/base.html`: panel lateral `Logs` reutilizado como monitor del worker.
+* `app/static/js/app.js`: polling moderado, renderizado de estado, renderizado de consola, selector de lineas y copiado seguro del registro visible.
+* `app/static/css/estilos.css`: estilos de dashboard operativo compacto y bloque visual tipo terminal.
+* Auto-refresh cada `5` segundos solo mientras el panel permanece abierto.
+* Sin acciones destructivas ni control operacional del proceso.
+
+Implementado en Fase 14D.1:
+
+* Estado de la vista sin ambiguedad: `Vista actualizada`, `Actualizando...`, `Actualizacion pausada`, `No se pudo actualizar`.
+* Estado principal del programador con lenguaje operativo y `Ultima senal` en lugar de `heartbeat`.
+* Reubicacion de la consola reciente como soporte diagnostico.
+* Resize horizontal del panel `Logs` con persistencia local en escritorio.
 
 Implementado en Fase 11D:
 

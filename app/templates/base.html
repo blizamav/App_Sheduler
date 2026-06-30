@@ -111,22 +111,118 @@
         </main>
 
         {% if session.get("usuario") %}
-        <aside class="panel-logs" id="panelLogs" aria-label="Panel lateral visual de logs">
+        <aside class="panel-logs" id="panelLogs" aria-label="Monitor lateral del programador" data-worker-monitor-panel data-monitor-url="{{ url_for('worker_api.api_monitor_worker') }}">
+            <div class="panel-logs-resize" data-panel-logs-resize aria-hidden="true" title="Redimensionar panel"></div>
             <div class="panel-logs-header">
                 <div>
-                    <p class="eyebrow">Vista preparada</p>
-                    <h2>Registro visual</h2>
+                    <p class="eyebrow">Solo lectura</p>
+                    <h2>Monitor del programador</h2>
+                    <p class="panel-logs-subtitulo">Estado del worker, eventos recientes y actividad del sistema.</p>
                 </div>
                 <button class="icon-btn" type="button" data-panel-logs-toggle aria-label="Cerrar panel de logs">x</button>
             </div>
-            <div class="terminal-visual">
-                <p><span>OK</span> Consola manual disponible por ejecucion.</p>
-                <p><span>OK</span> Configuracion del programador disponible.</p>
-                <p><span>OK</span> Feriados locales para programador.</p>
-                <p><span>OK</span> Sincronizacion Nager.Date controlada.</p>
-                <p><span>OK</span> Panel operativo del programador.</p>
-                <p><span>OK</span> Senal de vida del programador.</p>
+            <div class="panel-logs-toolbar">
+                <div class="panel-logs-toolbar-grupo">
+                    <button class="btn secundario compacto" type="button" data-worker-monitor-refresh>Actualizar</button>
+                    <button class="btn secundario compacto" type="button" data-worker-monitor-pause data-paused="0">Pausar</button>
+                    <button class="btn secundario compacto" type="button" data-worker-monitor-copy>Copiar</button>
+                </div>
+                <div class="panel-logs-toolbar-grupo">
+                    <label class="panel-logs-selectora">
+                        <span>Lineas</span>
+                        <select data-worker-monitor-limit>
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </label>
+                </div>
             </div>
+            <div class="panel-logs-estado">
+                <span class="badge info" data-worker-monitor-loading>Vista no actualizada</span>
+                <span class="panel-logs-actualizado" data-worker-monitor-updated>No actualizado</span>
+            </div>
+            <section class="panel-logs-seccion panel-logs-seccion-principal" data-monitor-estado-principal>
+                <div class="panel-logs-seccion-header">
+                    <div>
+                        <h3>Estado del programador</h3>
+                        <p class="panel-logs-ayuda">Representa la salud real del proceso worker, no el estado de la vista.</p>
+                    </div>
+                    <span class="badge info" data-programador-estado-badge>NO DISPONIBLE</span>
+                </div>
+                <strong class="panel-logs-estado-principal" data-programador-estado-texto>No hay informacion suficiente para determinar el estado del programador.</strong>
+                <p class="panel-logs-estado-detalle" data-programador-estado-detalle>Sin datos de monitoreo.</p>
+                <p class="panel-logs-estado-detalle secundario" data-programador-estado-extra>Detalle tecnico no disponible.</p>
+            </section>
+            <div class="panel-logs-grid" data-worker-monitor-status-cards>
+                <article class="panel-logs-mini" data-monitor-card="worker">
+                    <span>Worker</span>
+                    <strong data-worker-status-text>Sin datos</strong>
+                    <small data-worker-status-detail>Representa la identidad del proceso worker monitorizado.</small>
+                </article>
+                <article class="panel-logs-mini" data-monitor-card="scheduler">
+                    <span>Scheduler</span>
+                    <strong data-scheduler-status-text>Sin datos</strong>
+                    <small data-scheduler-status-detail>Representa la configuracion general del scheduler.</small>
+                </article>
+                <article class="panel-logs-mini" data-monitor-card="automatica">
+                    <span>Automatica</span>
+                    <strong data-automatica-status-text>Sin datos</strong>
+                    <small data-automatica-status-detail>Indica si se permite lanzar ejecuciones automaticas.</small>
+                </article>
+                <article class="panel-logs-mini" data-monitor-card="senal">
+                    <span>Ultima senal</span>
+                    <strong data-heartbeat-text>Sin registro</strong>
+                    <small data-heartbeat-detail>Ultima senal registrada por el proceso worker.</small>
+                </article>
+            </div>
+            <section class="panel-logs-seccion">
+                <div class="panel-logs-seccion-header">
+                    <h3>Alertas operativas</h3>
+                </div>
+                <div class="panel-logs-alertas" data-worker-monitor-alerts>
+                    <p class="estado-vacio">Sin alertas operativas.</p>
+                </div>
+            </section>
+            <section class="panel-logs-seccion">
+                <div class="panel-logs-seccion-header">
+                    <div>
+                        <h3>Actividad reciente del programador</h3>
+                        <p class="panel-logs-ayuda">Eventos registrados por el programador. Las ejecuciones manuales se revisan en el modulo Ejecuciones.</p>
+                    </div>
+                </div>
+                <div class="panel-logs-actividad-resumen">
+                    <article class="panel-logs-mini" data-monitor-card="actividad">
+                        <span>Ultimo evento</span>
+                        <strong data-worker-actividad-ejecucion>Sin actividad</strong>
+                        <small data-worker-actividad-ejecucion-detalle>Sin eventos recientes del programador.</small>
+                    </article>
+                    <article class="panel-logs-mini" data-monitor-card="eventos">
+                        <span>Eventos recientes</span>
+                        <strong data-worker-actividad-eventos>0</strong>
+                        <small data-worker-actividad-eventos-detalle>Sin eventos recientes del programador.</small>
+                    </article>
+                    <article class="panel-logs-mini" data-monitor-card="errores">
+                        <span>Errores recientes</span>
+                        <strong data-worker-actividad-errores>0</strong>
+                        <small data-worker-actividad-errores-detalle>Sin errores recientes del programador.</small>
+                    </article>
+                </div>
+                <div class="panel-logs-lista" data-worker-monitor-events>
+                    <p class="estado-vacio">Sin eventos recientes del programador.</p>
+                </div>
+            </section>
+            <section class="panel-logs-seccion">
+                <div class="panel-logs-seccion-header">
+                    <h3>Consola reciente</h3>
+                    <span class="badge info" data-worker-monitor-lines-badge>0 lineas</span>
+                </div>
+                <p class="panel-logs-ayuda">Salida reciente del proceso programador. Solo lectura.</p>
+                <pre class="terminal-visual" data-worker-monitor-console>Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue reiniciado.</pre>
+            </section>
+            <footer class="panel-logs-footer">
+                Fuente: API de monitoreo worker. Solo lectura.
+            </footer>
         </aside>
 
         <div class="modal-overlay" id="modalConfirmacion" aria-hidden="true">

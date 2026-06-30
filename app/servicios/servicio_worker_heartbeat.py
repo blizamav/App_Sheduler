@@ -129,45 +129,59 @@ def obtener_estado_worker(nombre_worker=None):
 def clasificar_estado_worker(heartbeat, configuracion_scheduler):
     if not heartbeat:
         return {
+            "codigo": "NO_DISPONIBLE",
             "texto": "Proceso programador no iniciado o sin registro.",
-            "badge": "inactivo",
+            "badge": "info",
             "detalle": "No existe senal de vida registrada.",
             "segundos_desde_heartbeat": None,
         }
 
     segundos = _segundos_desde(heartbeat.get("fecha_ultimo_heartbeat"))
     intervalo = _intervalo_seguro(configuracion_scheduler)
-    estado = heartbeat.get("estado")
+    estado = str(heartbeat.get("estado") or "").strip().upper()
 
     if estado == "ERROR":
         return {
+            "codigo": "ERROR",
             "texto": "Proceso programador en error.",
             "badge": "error",
             "detalle": heartbeat.get("ultimo_error") or "El proceso programador reporto error sin detalle.",
             "segundos_desde_heartbeat": segundos,
         }
+    if _es_estado_detencion_explicita(estado):
+        return {
+            "codigo": "DETENIDO",
+            "texto": "Proceso programador detenido.",
+            "badge": "inactivo",
+            "detalle": "El proceso programador fue detenido o finalizo su ejecucion.",
+            "segundos_desde_heartbeat": segundos,
+        }
     if segundos is None:
         return {
-            "texto": "Proceso programador sin senal reciente.",
-            "badge": "advertencia",
+            "codigo": "NO_DISPONIBLE",
+            "texto": "Proceso programador sin datos suficientes.",
+            "badge": "info",
             "detalle": "El registro no tiene fecha de ultima senal.",
             "segundos_desde_heartbeat": None,
         }
     if segundos > intervalo * 5:
         return {
-            "texto": "Proceso programador posiblemente detenido.",
+            "codigo": "SIN_SENAL",
+            "texto": "Proceso programador sin senal reciente.",
             "badge": "error",
             "detalle": "La ultima senal supera 5 intervalos de revision.",
             "segundos_desde_heartbeat": segundos,
         }
     if segundos > intervalo * 2:
         return {
+            "codigo": "ADVERTENCIA",
             "texto": "Proceso programador sin senal reciente.",
             "badge": "advertencia",
             "detalle": "La ultima senal supera 2 intervalos de revision.",
             "segundos_desde_heartbeat": segundos,
         }
     return {
+        "codigo": "ACTIVO",
         "texto": "Proceso programador activo.",
         "badge": "activo",
         "detalle": "Senal de vida dentro del margen esperado.",
@@ -216,3 +230,24 @@ def _segundos_desde(fecha):
         except ValueError:
             return None
     return max(0, int((datetime.now() - fecha).total_seconds()))
+
+
+def _es_estado_detencion_explicita(estado):
+    if not estado:
+        return False
+    estados_detenidos = {
+        "DETENIDO",
+        "DETENIDA",
+        "STOPPED",
+        "FINALIZADO",
+        "FINALIZADA",
+        "FINALIZADO_CONTROLADO",
+        "FINALIZADA_CONTROLADA",
+        "INTERRUMPIDO",
+        "INTERRUMPIDA",
+        "DETENIDO_MANUAL",
+        "DETENIDA_MANUAL",
+        "DETENIDO_MANUALMENTE",
+        "DETENIDA_MANUALMENTE",
+    }
+    return estado in estados_detenidos

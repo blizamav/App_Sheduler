@@ -4,7 +4,7 @@
 
 Este documento define el diseno operativo del `scheduler_worker.py` y la consola visual de monitoreo futura dentro de la app.
 
-Estado vigente: Fase 14C implementa endpoints de solo lectura para monitoreo del worker. Siguen pendientes Docker, systemd y la evolucion visual del panel `Logs`.
+Estado vigente: Fase 14D.3 corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales y separa detencion explicita versus ausencia de senal. Siguen pendientes Docker, systemd y la operacion externa formal del proceso.
 
 ## Estado actual validado
 
@@ -54,6 +54,42 @@ Respuesta controlada si la consola no existe:
   "mensaje": "Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue limpiado."
 }
 ```
+
+## Panel Logs de la app
+
+Desde Fase 14D el boton superior `Logs` deja de mostrar un registro estatico y pasa a consumir la API interna del worker.
+
+Desde Fase 14D.3:
+
+- el estado de la vista queda separado del estado real del programador;
+- desaparece el texto ambiguo `Conectado`;
+- la UI usa `Ultima senal` en vez de `heartbeat`;
+- la actividad reciente usa solo eventos del programador;
+- la lista independiente de `Ultimas ejecuciones` deja de mostrarse en el panel;
+- `DETENIDO` solo aparece cuando el worker dejo marca explicita en `scheduler_worker_heartbeat`;
+- `SIN SENAL` solo representa ausencia critica de heartbeat sin marca explicita de detencion;
+- la consola reciente queda como apoyo diagnostico;
+- el panel puede redimensionarse horizontalmente en escritorio.
+
+Comportamiento:
+
+- Abre el panel lateral derecho existente.
+- Consulta `GET /api/worker/monitor`.
+- Muestra estado del worker, estado del scheduler, alertas operativas, actividad reciente del programador y consola reciente.
+- Permite `Actualizar`, `Pausar/Reanudar` auto-refresh y `Copiar` el registro visible.
+- Permite elegir `50`, `100` o `200` lineas visibles, siempre dentro del limite ya controlado por la API.
+- Refresca cada `5` segundos solo mientras el panel esta abierto.
+- Al cerrar el panel, el polling se detiene.
+- En escritorio permite redimensionar el ancho arrastrando el borde izquierdo del panel.
+
+Reglas de seguridad:
+
+- Solo lectura.
+- No ejecuta comandos.
+- No inicia, detiene ni reinicia el worker.
+- No limpia logs.
+- No expone rutas absolutas ni `.env`.
+- No compite con el modulo `Ejecuciones` ni resume actividad manual de usuarios.
 
 ## Problema que resuelve
 

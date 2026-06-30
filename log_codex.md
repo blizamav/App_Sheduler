@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14C implementada con API interna de monitoreo worker solo lectura, reutilizando heartbeat, configuracion, eventos, ejecuciones y buffer visual local. No se ejecuto SQL desde Codex y no se avanzo a Fase 14D.
+* Estado actual: Fase 14D.3 implementada corrigiendo los estados reales del programador segun heartbeat y detencion explicita, manteniendo el monitor visual de solo lectura. No se ejecuto SQL desde Codex y no se avanzo a Fase 14E.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14C - API de monitoreo worker solo lectura.
+* Fase actual: Fase 14D.3 - Correccion de estados reales del programador segun heartbeat y detencion explicita.
 * Ultima actualizacion: 2026-06-30
 
 ## 2. Decisiones tecnicas vigentes
@@ -32,7 +32,7 @@
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `log_codex.md`.
 * Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1, limpieza parametrizable Fase 13A.1B y buffer visual limitado del worker Fase 14B.1.
-* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14D+ monitoreo visual/operacion avanzada del worker.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14E+ operacion avanzada del worker.
 
 ## 4. Reglas del proyecto
 
@@ -51,6 +51,50 @@
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 
 ## 6. Historial de cambios
+
+### 2026-06-30 - Fase 14D.1 / Claridad visual del monitor del programador y panel redimensionable
+
+* Archivos modificados: `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Objetivo: evitar la confusion entre estado de la vista y estado real del worker, y permitir mas espacio horizontal para la consola reciente.
+* Que se hizo: se elimina `Conectado`, se separa `Vista actualizada` del estado real del programador, se cambia `Ultimo heartbeat` por `Ultima senal`, se agrega resumen de actividad reciente y se deja la consola como apoyo diagnostico.
+* Resize: el panel lateral puede redimensionarse arrastrando el borde izquierdo en escritorio, con ancho persistido localmente y restauracion rapida por doble clic.
+* Decision UX: para worker sin senal ya no se sugiere `ERROR` por defecto; la UI usa `SIN SENAL` o `PAUSADO` segun contexto operativo.
+* Pruebas ejecutadas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`, verificacion de render de `base.html` con sesion simulada, `rg -n "C:\\Users\\SOEX"` sobre archivos modificados y `git diff --check`.
+* Limitacion: no se completo validacion visual autenticada del panel en navegador porque no se utilizaron credenciales locales ni se modifico `.env`.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se crearon tablas, no se modifico `database/release/`, no se modifico `scheduler_worker.py`, no se hizo commit ni push y no se avanzo a Fase 14E.
+
+### 2026-06-30 - Fase 14D.2 / Simplificar monitor del programador con eventos y estados visuales claros
+
+* Archivos modificados: `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Objetivo: dejar el panel `Logs` como monitor real del programador, sin competir con el modulo `Ejecuciones` ni mezclar actividad manual con actividad propia del worker.
+* Que se hizo: se elimina la seccion `Ultimas ejecuciones`, la actividad reciente pasa a usar solo `eventos_recientes`, se integra la lista de eventos en esa seccion y se aclara visualmente que las ejecuciones manuales se revisan en `Ejecuciones`.
+* Estados visuales: se agregan clases reutilizables `estado-ok`, `estado-advertencia`, `estado-error`, `estado-info` y `estado-neutral` para destacar estado principal, tarjetas secundarias, actividad y alertas.
+* Decision UX: el monitor queda orientado a responder si el programador esta vivo, si la configuracion permite operar, si hay alertas y que eventos propios del scheduler ocurrieron; las ejecuciones del sistema quedan fuera de este panel.
+* Pruebas ejecutadas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py` y verificacion textual de `base.html` sin la seccion `Ultimas ejecuciones`.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se crearon tablas, no se modifico `database/release/`, no se modifico `scheduler_worker.py`, no se crearon endpoints nuevos, no se hizo commit ni push y no se avanzo a Fase 14E.
+
+### 2026-06-30 - Fase 14D.3 / Correccion de estados reales del programador segun heartbeat y detencion explicita
+
+* Archivos modificados: `app/servicios/servicio_worker_heartbeat.py`, `app/servicios/servicio_api_worker.py`, `app/static/js/app.js`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Causa raiz: la clasificacion del worker deducia detencion por antiguedad del heartbeat y no priorizaba la marca explicita `DETENIDO` registrada por el propio worker.
+* Que se hizo: `clasificar_estado_worker(...)` ahora devuelve codigos reales `DETENIDO`, `ACTIVO`, `ADVERTENCIA`, `SIN_SENAL`, `NO_DISPONIBLE` y `ERROR`, con prioridad para detencion explicita antes de evaluar umbrales por tiempo.
+* API: `servicio_api_worker.py` ahora conserva el codigo real de estado, ajusta `estado_vida` y diferencia alertas entre `DETENIDO`, `SIN_SENAL` y `ERROR`.
+* Frontend: `app.js` deja de marcar `PAUSADO` como estado principal por configuracion del scheduler y muestra `DETENIDO` solo cuando la API lo entrega expresamente.
+* Resultado esperado: si el worker registra una detencion controlada, el monitor debe mostrar `DETENIDO` de inmediato; si el worker desaparece sin avisar, debe degradar a `ADVERTENCIA` y luego `SIN SENAL`.
+* Pruebas ejecutadas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py` y revision de codigo de la prioridad de estados en backend/frontend.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se crearon tablas, no se modifico `database/release/`, no se modifico `scheduler_worker.py`, no se crearon endpoints nuevos, no se hizo commit ni push y no se avanzo a Fase 14E.
+
+### 2026-06-30 - Fase 14D / Panel Logs conectado a monitor del worker
+
+* Archivos modificados: `app/templates/base.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/MODULOS.md`, `docs/ARQUITECTURA.md`, `log_codex.md`.
+* Objetivo: reemplazar el panel lateral estatico de `Logs` por un monitor visual real del worker, reutilizando la API de Fase 14C.
+* Que se hizo: el panel ahora consume `GET /api/worker/monitor`, muestra estado de vida del worker, estado del scheduler, alertas, consola reciente, eventos y ultimas ejecuciones.
+* Auto-refresh: se implementa polling cada `5` segundos solo mientras el panel esta abierto; al cerrar, el intervalo se limpia.
+* Acciones permitidas: `Actualizar`, `Pausar/Reanudar` auto-refresh, `Copiar` registro visible y selector de `50/100/200` lineas.
+* Seguridad: el panel sigue siendo solo lectura; no ejecuta comandos, no controla procesos, no limpia logs, no expone rutas absolutas ni secretos.
+* Pruebas ejecutadas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`, `rg -n "C:\\Users\\SOEX"` sobre archivos modificados, `git diff --check` y verificacion HTTP `200` de `http://127.0.0.1:5000/login`.
+* Limitacion: no se completo validacion visual autenticada del panel en navegador porque requiere una sesion valida; no se utilizaron credenciales locales ni se modifico `.env`.
+* Reglas: No se modifico `.env`, no se ejecuto SQL, no se crearon tablas, no se modifico `database/release/`, no se cambio la logica funcional del scheduler, no se hizo commit ni push y no se avanzo a Fase 14E.
 
 ### 2026-06-30 - Fase 14C / API de monitoreo worker solo lectura
 

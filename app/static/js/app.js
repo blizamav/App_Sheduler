@@ -6,6 +6,47 @@ document.addEventListener("DOMContentLoaded", () => {
     const cierresSidebar = document.querySelectorAll("[data-sidebar-cerrar]");
     const enlacesSidebar = document.querySelectorAll(".sidebar .nav-link");
     const botonesLogs = document.querySelectorAll("[data-panel-logs-toggle]");
+    const panelLogs = document.querySelector("[data-worker-monitor-panel]");
+    const monitorUrl = panelLogs?.dataset.monitorUrl || "";
+    const agarreResizePanelLogs = document.querySelector("[data-panel-logs-resize]");
+    const indicadorCargaMonitor = document.querySelector("[data-worker-monitor-loading]");
+    const actualizadoMonitor = document.querySelector("[data-worker-monitor-updated]");
+    const botonActualizarMonitor = document.querySelector("[data-worker-monitor-refresh]");
+    const botonPausaMonitor = document.querySelector("[data-worker-monitor-pause]");
+    const botonCopiarMonitor = document.querySelector("[data-worker-monitor-copy]");
+    const selectorLimiteMonitor = document.querySelector("[data-worker-monitor-limit]");
+    const workerStatusText = document.querySelector("[data-worker-status-text]");
+    const workerStatusDetail = document.querySelector("[data-worker-status-detail]");
+    const programadorEstadoBadge = document.querySelector("[data-programador-estado-badge]");
+    const programadorEstadoTexto = document.querySelector("[data-programador-estado-texto]");
+    const programadorEstadoDetalle = document.querySelector("[data-programador-estado-detalle]");
+    const programadorEstadoExtra = document.querySelector("[data-programador-estado-extra]");
+    const schedulerStatusText = document.querySelector("[data-scheduler-status-text]");
+    const schedulerStatusDetail = document.querySelector("[data-scheduler-status-detail]");
+    const automaticaStatusText = document.querySelector("[data-automatica-status-text]");
+    const automaticaStatusDetail = document.querySelector("[data-automatica-status-detail]");
+    const heartbeatText = document.querySelector("[data-heartbeat-text]");
+    const heartbeatDetail = document.querySelector("[data-heartbeat-detail]");
+    const estadoPrincipalMonitor = document.querySelector("[data-monitor-estado-principal]");
+    const tarjetasMonitor = {
+        worker: document.querySelector("[data-monitor-card='worker']"),
+        scheduler: document.querySelector("[data-monitor-card='scheduler']"),
+        automatica: document.querySelector("[data-monitor-card='automatica']"),
+        senal: document.querySelector("[data-monitor-card='senal']"),
+        actividad: document.querySelector("[data-monitor-card='actividad']"),
+        eventos: document.querySelector("[data-monitor-card='eventos']"),
+        errores: document.querySelector("[data-monitor-card='errores']"),
+    };
+    const actividadEjecucion = document.querySelector("[data-worker-actividad-ejecucion]");
+    const actividadEjecucionDetalle = document.querySelector("[data-worker-actividad-ejecucion-detalle]");
+    const actividadEventos = document.querySelector("[data-worker-actividad-eventos]");
+    const actividadEventosDetalle = document.querySelector("[data-worker-actividad-eventos-detalle]");
+    const actividadErrores = document.querySelector("[data-worker-actividad-errores]");
+    const actividadErroresDetalle = document.querySelector("[data-worker-actividad-errores-detalle]");
+    const alertasMonitor = document.querySelector("[data-worker-monitor-alerts]");
+    const consolaMonitor = document.querySelector("[data-worker-monitor-console]");
+    const badgeLineasMonitor = document.querySelector("[data-worker-monitor-lines-badge]");
+    const eventosMonitor = document.querySelector("[data-worker-monitor-events]");
     const alertas = document.querySelectorAll(".alerta");
     const confirmables = document.querySelectorAll(".requiere-confirmacion");
     const formulariosConfirmables = document.querySelectorAll(".requiere-confirmacion-form");
@@ -38,6 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const historialEventos = document.querySelector("[data-eventos-historial]");
     let formularioPendiente = null;
     let envioConfirmado = false;
+    let intervaloMonitorWorker = null;
+    let monitorWorkerCargando = false;
+    let monitorWorkerPausado = false;
 
     const esVistaCompacta = () => window.matchMedia("(max-width: 960px)").matches;
     const cerrarSidebarCompacto = () => cuerpo.classList.remove("sidebar-abierto");
@@ -79,13 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("keydown", (evento) => {
         if (evento.key === "Escape") {
             cerrarSidebarCompacto();
+            if (cuerpo.classList.contains("panel-logs-abierto")) {
+                cerrarPanelLogsWorker();
+            }
         }
-    });
-
-    botonesLogs.forEach((boton) => {
-        boton.addEventListener("click", () => {
-            cuerpo.classList.toggle("panel-logs-abierto");
-        });
     });
 
     togglesPanelEnv.forEach((boton) => {
@@ -100,6 +141,577 @@ document.addEventListener("DOMContentLoaded", () => {
             alerta.classList.add("alerta-saliendo");
         }, 4500);
     });
+
+    const obtenerLimiteMonitor = () => {
+        const valor = Number(selectorLimiteMonitor?.value || 100);
+        return [50, 100, 200].includes(valor) ? valor : 100;
+    };
+
+    const esPanelLogsRedimensionable = () => !window.matchMedia("(max-width: 960px)").matches;
+
+    const anchoPanelLogsSeguro = (valor) => {
+        const minimo = 420;
+        const maximo = Math.floor(window.innerWidth * 0.85);
+        return Math.max(minimo, Math.min(maximo, Number(valor) || 540));
+    };
+
+    const aplicarAnchoPanelLogs = (valor, persistir = true) => {
+        if (!panelLogs || !esPanelLogsRedimensionable()) {
+            panelLogs?.style.removeProperty("--panel-logs-width");
+            return;
+        }
+        const ancho = anchoPanelLogsSeguro(valor);
+        panelLogs.style.setProperty("--panel-logs-width", `${ancho}px`);
+        if (persistir) {
+            localStorage.setItem("appSchedulerPanelLogsWidth", String(ancho));
+        }
+    };
+
+    const restaurarAnchoPanelLogs = () => {
+        const guardado = Number(localStorage.getItem("appSchedulerPanelLogsWidth") || 540);
+        aplicarAnchoPanelLogs(guardado, false);
+    };
+
+    const formatearTiempoMonitor = (segundos) => {
+        if (segundos === null || segundos === undefined || Number.isNaN(Number(segundos))) {
+            return "No disponible";
+        }
+        const total = Math.max(0, Number(segundos));
+        if (total < 60) {
+            return `${total} segundos`;
+        }
+        const minutos = Math.floor(total / 60);
+        const resto = total % 60;
+        if (minutos < 60) {
+            return resto ? `${minutos} min ${resto} s` : `${minutos} min`;
+        }
+        const horas = Math.floor(minutos / 60);
+        const minutosResto = minutos % 60;
+        return minutosResto ? `${horas} h ${minutosResto} min` : `${horas} h`;
+    };
+
+    const obtenerEstadoProgramador = (monitor) => {
+        const estadoWorker = monitor?.estado_worker || {};
+        const estadoVida = estadoWorker.estado_vida || "NO_DISPONIBLE";
+
+        if (estadoVida === "ERROR") {
+            return {
+                badge: "error",
+                titulo: "ERROR",
+                mensaje: "Ocurrio un error al consultar el monitor.",
+                detalle: estadoWorker.ultimo_error || "El monitor reporto un error real del proceso programador.",
+            };
+        }
+        if (estadoVida === "DETENIDO") {
+            return {
+                badge: "inactivo",
+                titulo: "DETENIDO",
+                mensaje: "El proceso programador fue detenido o finalizo su ejecucion.",
+                detalle: estadoWorker.resumen_textual || "El worker reporto una detencion explicita.",
+            };
+        }
+        if (estadoVida === "NO_DISPONIBLE") {
+            return {
+                badge: "info",
+                titulo: "NO DISPONIBLE",
+                mensaje: "No hay informacion suficiente para determinar el estado del programador.",
+                detalle: estadoWorker.resumen_textual || "El monitor aun no dispone de datos suficientes.",
+            };
+        }
+        if (estadoVida === "ADVERTENCIA") {
+            return {
+                badge: "advertencia",
+                titulo: "ADVERTENCIA",
+                mensaje: "La ultima senal esta atrasada. Revisar continuidad del programador.",
+                detalle: estadoWorker.resumen_textual || "La ultima senal supera el margen esperado.",
+            };
+        }
+        if (estadoVida === "ACTIVO") {
+            return {
+                badge: "activo",
+                titulo: "OPERATIVO",
+                mensaje: "El programador esta enviando senal correctamente.",
+                detalle: estadoWorker.resumen_textual || "Senal de vida dentro del margen esperado.",
+            };
+        }
+        if (estadoVida === "SIN_SENAL") {
+            return {
+                badge: "error",
+                titulo: "SIN SENAL",
+                mensaje: "No se recibe senal reciente del proceso programador.",
+                detalle: estadoWorker.resumen_textual || "No hay senal reciente del programador.",
+            };
+        }
+        return {
+            badge: "info",
+            titulo: "NO DISPONIBLE",
+            mensaje: "No hay informacion suficiente para determinar el estado del programador.",
+            detalle: "El monitor aun no dispone de datos suficientes.",
+        };
+    };
+
+    const nivelBadgeMonitor = (nivel) => {
+        const niveles = {
+            ACTIVO: "activo",
+            ADVERTENCIA: "advertencia",
+            ERROR: "error",
+            DETENIDO: "inactivo",
+            SIN_SENAL: "error",
+            NO_DISPONIBLE: "info",
+            INACTIVO: "inactivo",
+            DESCONOCIDO: "info",
+            OPERATIVO: "activo",
+            PAUSADO: "advertencia",
+            "SIN SENAL": "error",
+            EJECUTAR: "activo",
+            EJECUCION: "activo",
+            EXITOSA: "activo",
+            OMITIR: "advertencia",
+            FERIADO: "advertencia",
+            DESHABILITADA: "advertencia",
+            APAGADO: "advertencia",
+            INFO: "info",
+            CONFIGURACION: "info",
+            EVENTO: "info",
+            activo: "activo",
+            advertencia: "advertencia",
+            error: "error",
+            inactivo: "inactivo",
+            info: "info",
+            success: "activo",
+            warning: "advertencia",
+            paused: "advertencia",
+        };
+        return niveles[nivel] || "info";
+    };
+
+    const obtenerNivelEventoMonitor = (evento = {}) => {
+        const decision = (evento.decision || "").toUpperCase();
+        const motivo = (evento.motivo || "").toUpperCase();
+        const tipoEvento = (evento.tipo_evento || "").toUpperCase();
+
+        if (decision === "ERROR" || motivo === "ERROR" || tipoEvento === "ERROR") {
+            return "ERROR";
+        }
+        if (decision === "OMITIR" || motivo === "FERIADO" || tipoEvento === "FERIADO") {
+            return "ADVERTENCIA";
+        }
+        if (decision === "EJECUTAR") {
+            return "ACTIVO";
+        }
+        return decision || tipoEvento || "INFO";
+    };
+
+    const clasesEstadoPanel = ["estado-ok", "estado-advertencia", "estado-error", "estado-info", "estado-neutral"];
+
+    const nivelVisualPanel = (nivel) => {
+        const badge = nivelBadgeMonitor(nivel);
+        const equivalencias = {
+            activo: "estado-ok",
+            advertencia: "estado-advertencia",
+            error: "estado-error",
+            info: "estado-info",
+            inactivo: "estado-neutral",
+        };
+        return equivalencias[badge] || "estado-neutral";
+    };
+
+    const aplicarEstadoVisualPanel = (elemento, nivel) => {
+        if (!elemento) {
+            return;
+        }
+        elemento.classList.remove(...clasesEstadoPanel);
+        elemento.classList.add(nivelVisualPanel(nivel));
+    };
+
+    const actualizarIndicadorMonitor = (texto, tipo = "info") => {
+        if (!indicadorCargaMonitor) {
+            return;
+        }
+        indicadorCargaMonitor.className = `badge ${nivelBadgeMonitor(tipo)}`;
+        indicadorCargaMonitor.textContent = texto;
+    };
+
+    const renderizarAlertasMonitor = (alertasOperativas = []) => {
+        if (!alertasMonitor) {
+            return;
+        }
+        alertasMonitor.replaceChildren();
+        if (!alertasOperativas.length) {
+            const vacio = document.createElement("p");
+            vacio.className = "estado-vacio";
+            vacio.textContent = "Sin alertas operativas.";
+            alertasMonitor.appendChild(vacio);
+            return;
+        }
+        alertasOperativas.forEach((alerta) => {
+            const item = document.createElement("div");
+            item.className = `alerta ${nivelBadgeMonitor(alerta.nivel)} ${nivelVisualPanel(alerta.nivel)}`;
+            const mensaje = alerta.mensaje || "Alerta operativa sin detalle.";
+            item.textContent = mensaje.replace(/^[^:]+:\s/, "");
+            alertasMonitor.appendChild(item);
+        });
+    };
+
+    const renderizarListaMonitor = (contenedor, items, tipo) => {
+        if (!contenedor) {
+            return;
+        }
+        contenedor.replaceChildren();
+        if (!items || !items.length) {
+            const vacio = document.createElement("p");
+            vacio.className = "estado-vacio";
+            vacio.textContent = tipo === "eventos"
+                ? "Sin eventos recientes del programador."
+                : "Sin ejecuciones recientes.";
+            contenedor.appendChild(vacio);
+            return;
+        }
+
+        items.forEach((item) => {
+            const fila = document.createElement("article");
+            fila.className = "panel-logs-item";
+
+            const encabezado = document.createElement("div");
+            encabezado.className = "panel-logs-item-head";
+
+            const nombre = document.createElement("strong");
+            nombre.textContent = tipo === "eventos"
+                ? (item.nombre_tarea || item.tipo_evento || "Evento")
+                : (item.nombre_tarea || `Ejecucion ${item.id_ejecucion || "-"}`);
+
+            const badge = document.createElement("span");
+            const estado = tipo === "eventos"
+                ? (item.decision || item.tipo_evento || "INFO")
+                : (item.estado_ejecucion || "SIN_ESTADO");
+            const nivelItem = tipo === "eventos"
+                ? obtenerNivelEventoMonitor(item)
+                : item.estado_ejecucion;
+            if (tipo === "eventos") {
+                aplicarEstadoVisualPanel(fila, nivelItem);
+            }
+            badge.className = `badge ${nivelBadgeMonitor(nivelItem)}`;
+            badge.textContent = estado;
+            encabezado.append(nombre, badge);
+
+            const meta = document.createElement("p");
+            meta.className = "panel-logs-item-meta";
+            meta.textContent = tipo === "eventos"
+                ? [item.fecha_evento || "Sin fecha", item.motivo || "Sin motivo", item.nombre_worker || "Sin worker"].join(" | ")
+                : [item.fecha_hora_inicio || "Sin inicio", item.nombre_worker || "Sin worker", item.codigo_salida ?? "-"].join(" | ");
+
+            const detalle = document.createElement("p");
+            detalle.className = "panel-logs-item-detail";
+            detalle.textContent = tipo === "eventos"
+                ? (item.detalle || "Sin detalle.")
+                : (item.mensaje_error || item.clave_programacion || "Sin detalle adicional.");
+
+            fila.append(encabezado, meta, detalle);
+            contenedor.appendChild(fila);
+        });
+    };
+
+    const renderizarEstadoMonitor = (monitor) => {
+        const estadoWorker = monitor?.estado_worker || {};
+        const estadoScheduler = monitor?.estado_scheduler || {};
+        const estadoProgramador = obtenerEstadoProgramador(monitor);
+
+        if (programadorEstadoBadge) {
+            programadorEstadoBadge.className = `badge ${estadoProgramador.badge}`;
+            programadorEstadoBadge.textContent = estadoProgramador.titulo;
+        }
+        aplicarEstadoVisualPanel(estadoPrincipalMonitor, estadoProgramador.badge);
+        if (programadorEstadoTexto) {
+            programadorEstadoTexto.textContent = estadoProgramador.mensaje;
+        }
+        if (programadorEstadoDetalle) {
+            programadorEstadoDetalle.textContent = estadoProgramador.detalle;
+        }
+        if (programadorEstadoExtra) {
+            programadorEstadoExtra.textContent = estadoWorker.nombre_worker
+                ? `Detalle: ${estadoWorker.nombre_worker}`
+                : "Detalle tecnico no disponible.";
+        }
+
+        if (workerStatusText) {
+            workerStatusText.textContent = estadoWorker.nombre_worker || "No disponible";
+        }
+        if (workerStatusDetail) {
+            workerStatusDetail.textContent = "Representa la identidad del proceso worker monitorizado.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.worker, estadoWorker.estado_vida || "NO_DISPONIBLE");
+        if (schedulerStatusText) {
+            schedulerStatusText.textContent = estadoScheduler.scheduler_activo ? "ACTIVO" : "APAGADO";
+        }
+        if (schedulerStatusDetail) {
+            schedulerStatusDetail.textContent = estadoScheduler.scheduler_activo
+                ? "La configuracion permite operar el programador."
+                : "El programador esta deshabilitado por configuracion.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.scheduler, estadoScheduler.scheduler_activo ? "activo" : "advertencia");
+        if (automaticaStatusText) {
+            automaticaStatusText.textContent = estadoScheduler.permitir_ejecucion_automatica ? "HABILITADA" : "DESHABILITADA";
+        }
+        if (automaticaStatusDetail) {
+            automaticaStatusDetail.textContent = estadoScheduler.permitir_ejecucion_automatica
+                ? "Se permite lanzar ejecuciones automaticas si el programador esta operativo."
+                : "No se lanzaran ejecuciones automaticas aunque el programador este operativo.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.automatica, estadoScheduler.permitir_ejecucion_automatica ? "activo" : "advertencia");
+        if (heartbeatText) {
+            heartbeatText.textContent = estadoWorker.ultimo_heartbeat || "Sin registro";
+        }
+        if (heartbeatDetail) {
+            heartbeatDetail.textContent = estadoWorker.estado_vida === "DETENIDO"
+                ? "El worker reporto una detencion explicita."
+                : estadoWorker.ultimo_heartbeat
+                ? `Hace ${formatearTiempoMonitor(estadoWorker.segundos_desde_ultimo_heartbeat)}`
+                : "El programador aun no ha emitido senales.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.senal, estadoWorker.estado_vida || "NO_DISPONIBLE");
+    };
+
+    const renderizarActividadMonitor = (monitor) => {
+        const eventos = monitor?.eventos_recientes || [];
+        const resumenEventos = monitor?.resumen_eventos || {};
+        const ultimoEvento = eventos[0];
+        const totalErrores = Number(resumenEventos.errores_programador || 0);
+
+        if (actividadEjecucion) {
+            actividadEjecucion.textContent = ultimoEvento
+                ? (ultimoEvento.decision || ultimoEvento.tipo_evento || "EVENTO")
+                : "Sin actividad";
+        }
+        if (actividadEjecucionDetalle) {
+            actividadEjecucionDetalle.textContent = ultimoEvento
+                ? `${ultimoEvento.nombre_tarea || "Sin tarea"} | ${ultimoEvento.fecha_evento || "Sin fecha"}`
+                : "Sin eventos recientes del programador.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.actividad, ultimoEvento ? obtenerNivelEventoMonitor(ultimoEvento) : "info");
+        if (actividadEventos) {
+            actividadEventos.textContent = String(eventos.length);
+        }
+        if (actividadEventosDetalle) {
+            actividadEventosDetalle.textContent = eventos.length
+                ? "Eventos propios del programador visibles en este panel."
+                : "Sin eventos recientes del programador.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.eventos, eventos.length ? "activo" : "info");
+        if (actividadErrores) {
+            actividadErrores.textContent = String(totalErrores);
+        }
+        if (actividadErroresDetalle) {
+            actividadErroresDetalle.textContent = totalErrores > 0
+                ? "Se detectaron errores recientes del programador."
+                : "Sin errores recientes del programador.";
+        }
+        aplicarEstadoVisualPanel(tarjetasMonitor.errores, totalErrores > 0 ? "error" : "activo");
+    };
+
+    const renderizarConsolaMonitor = (consolaReciente = {}) => {
+        const lineas = Array.isArray(consolaReciente.lineas) ? consolaReciente.lineas : [];
+        if (badgeLineasMonitor) {
+            badgeLineasMonitor.textContent = `${lineas.length} lineas`;
+            badgeLineasMonitor.className = `badge ${consolaReciente.archivo_disponible ? "info" : "inactivo"}`;
+        }
+        if (consolaMonitor) {
+            consolaMonitor.textContent = lineas.length
+                ? lineas.join("\n")
+                : (consolaReciente.mensaje || "Consola del worker no disponible.");
+            consolaMonitor.scrollTop = consolaMonitor.scrollHeight;
+        }
+    };
+
+    const renderizarMonitorWorker = (monitor) => {
+        renderizarEstadoMonitor(monitor);
+        renderizarAlertasMonitor(monitor?.alertas_operativas || []);
+        renderizarActividadMonitor(monitor);
+        renderizarConsolaMonitor(monitor?.consola_reciente || {});
+        renderizarListaMonitor(eventosMonitor, monitor?.eventos_recientes || [], "eventos");
+        if (actualizadoMonitor) {
+            actualizadoMonitor.textContent = `Actualizado ${new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+        }
+    };
+
+    const cargarMonitorWorker = async (forzarToast = false) => {
+        if (!panelLogs || !monitorUrl || monitorWorkerCargando) {
+            return;
+        }
+        monitorWorkerCargando = true;
+        actualizarIndicadorMonitor("Actualizando...", "info");
+        try {
+            const respuesta = await fetch(`${monitorUrl}?limit=${encodeURIComponent(obtenerLimiteMonitor())}`, {
+                headers: {
+                    Accept: "application/json",
+                    "X-Requested-With": "fetch",
+                },
+            });
+
+            if (!respuesta.ok) {
+                const mensaje = respuesta.status === 403
+                    ? "No tienes permisos para ver el monitor del worker."
+                    : "No fue posible cargar el monitor del worker.";
+                actualizarIndicadorMonitor("No se pudo actualizar", "error");
+                renderizarAlertasMonitor([{ nivel: "error", mensaje }]);
+                if (consolaMonitor) {
+                    consolaMonitor.textContent = mensaje;
+                }
+                if (forzarToast) {
+                    mostrarToast(mensaje, "error");
+                }
+                return;
+            }
+
+            const datos = await respuesta.json();
+            renderizarMonitorWorker(datos);
+            actualizarIndicadorMonitor("Vista actualizada", "info");
+            if (forzarToast) {
+                mostrarToast("Monitor del worker actualizado.", "info");
+            }
+        } catch (error) {
+            const mensaje = "No fue posible consultar la API de monitoreo del worker.";
+            actualizarIndicadorMonitor("No se pudo actualizar", "error");
+            renderizarAlertasMonitor([{ nivel: "error", mensaje }]);
+            if (consolaMonitor) {
+                consolaMonitor.textContent = mensaje;
+            }
+            if (forzarToast) {
+                mostrarToast(mensaje, "error");
+            }
+        } finally {
+            monitorWorkerCargando = false;
+        }
+    };
+
+    const detenerAutoRefreshWorker = () => {
+        if (intervaloMonitorWorker) {
+            clearInterval(intervaloMonitorWorker);
+            intervaloMonitorWorker = null;
+        }
+        monitorWorkerPausado = true;
+        if (botonPausaMonitor) {
+            botonPausaMonitor.dataset.paused = "1";
+            botonPausaMonitor.textContent = "Reanudar";
+        }
+        actualizarIndicadorMonitor("Actualizacion pausada", "advertencia");
+    };
+
+    const iniciarAutoRefreshWorker = () => {
+        if (!panelLogs || intervaloMonitorWorker) {
+            return;
+        }
+        monitorWorkerPausado = false;
+        if (botonPausaMonitor) {
+            botonPausaMonitor.dataset.paused = "0";
+            botonPausaMonitor.textContent = "Pausar";
+        }
+        intervaloMonitorWorker = setInterval(() => {
+            if (cuerpo.classList.contains("panel-logs-abierto")) {
+                cargarMonitorWorker(false);
+            }
+        }, 5000);
+    };
+
+    const abrirPanelLogsWorker = () => {
+        cuerpo.classList.add("panel-logs-abierto");
+        restaurarAnchoPanelLogs();
+        cargarMonitorWorker(false);
+        iniciarAutoRefreshWorker();
+    };
+
+    const cerrarPanelLogsWorker = () => {
+        cuerpo.classList.remove("panel-logs-abierto");
+        detenerAutoRefreshWorker();
+    };
+
+    botonesLogs.forEach((boton) => {
+        boton.addEventListener("click", () => {
+            if (cuerpo.classList.contains("panel-logs-abierto")) {
+                cerrarPanelLogsWorker();
+                return;
+            }
+            abrirPanelLogsWorker();
+        });
+    });
+
+    botonActualizarMonitor?.addEventListener("click", () => cargarMonitorWorker(true));
+
+    botonPausaMonitor?.addEventListener("click", () => {
+        if (intervaloMonitorWorker) {
+            detenerAutoRefreshWorker();
+            mostrarToast("Auto-refresh del monitor pausado.", "info");
+            return;
+        }
+        iniciarAutoRefreshWorker();
+        cargarMonitorWorker(false);
+        mostrarToast("Auto-refresh del monitor reanudado.", "info");
+    });
+
+    selectorLimiteMonitor?.addEventListener("change", () => {
+        if (cuerpo.classList.contains("panel-logs-abierto")) {
+            cargarMonitorWorker(false);
+        }
+    });
+
+    botonCopiarMonitor?.addEventListener("click", async () => {
+        const texto = consolaMonitor?.textContent?.trim() || "";
+        if (!texto) {
+            mostrarToast("No hay registro visible para copiar.", "warning");
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(texto);
+            mostrarToast("Registro visible copiado.", "success");
+        } catch (error) {
+            mostrarToast("No fue posible copiar el registro visible.", "error");
+        }
+    });
+
+    if (agarreResizePanelLogs && panelLogs) {
+        let arrastrando = false;
+
+        const moverPanelLogs = (evento) => {
+            if (!arrastrando || !esPanelLogsRedimensionable()) {
+                return;
+            }
+            const ancho = window.innerWidth - evento.clientX;
+            aplicarAnchoPanelLogs(ancho);
+        };
+
+        const detenerResizePanelLogs = () => {
+            if (!arrastrando) {
+                return;
+            }
+            arrastrando = false;
+            cuerpo.classList.remove("panel-logs-redimensionando");
+            document.removeEventListener("mousemove", moverPanelLogs);
+            document.removeEventListener("mouseup", detenerResizePanelLogs);
+        };
+
+        agarreResizePanelLogs.addEventListener("mousedown", (evento) => {
+            if (!esPanelLogsRedimensionable()) {
+                return;
+            }
+            arrastrando = true;
+            cuerpo.classList.add("panel-logs-redimensionando");
+            document.addEventListener("mousemove", moverPanelLogs);
+            document.addEventListener("mouseup", detenerResizePanelLogs);
+            evento.preventDefault();
+        });
+
+        agarreResizePanelLogs.addEventListener("dblclick", () => {
+            localStorage.removeItem("appSchedulerPanelLogsWidth");
+            aplicarAnchoPanelLogs(540, false);
+        });
+
+        window.addEventListener("resize", () => {
+            if (esPanelLogsRedimensionable()) {
+                restaurarAnchoPanelLogs();
+            } else {
+                panelLogs.style.removeProperty("--panel-logs-width");
+            }
+        });
+    }
 
     const abrirModalConfirmacion = (configuracion, formulario = null) => {
         if (!modalConfirmacion) {

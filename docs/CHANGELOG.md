@@ -1,5 +1,119 @@
 # Changelog
 
+## 2026-06-30 - Fase 14D.3 correccion de estados reales del programador segun heartbeat y detencion explicita
+
+### Corregido
+
+* La clasificacion base del worker deja de interpretar automaticamente la falta de senal critica como `DETENIDO`.
+* `DETENIDO` ahora solo se muestra cuando el heartbeat reporta una detencion explicita.
+* `SIN SENAL` ahora representa ausencia critica de heartbeat sin marca explicita de detencion.
+* `NO DISPONIBLE` pasa a representar falta real de datos suficientes, en vez de reutilizar `SIN SENAL`.
+* El estado principal del monitor deja de derivarse de la configuracion del scheduler y vuelve a depender del estado real del worker.
+* La tarjeta `Ultima senal` ahora informa explicitamente cuando la detencion fue reportada por el worker.
+
+### Validado
+
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`: OK.
+* Revisión de codigo: `clasificar_estado_worker(...)` ahora prioriza `DETENIDO` explicito antes de evaluar antiguedad del heartbeat.
+* Revisión de codigo: `obtenerEstadoProgramador(...)` ahora muestra `DETENIDO` solo cuando la API entrega ese estado y usa `SIN SENAL` solo para ausencia critica real.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico `database/release/`.
+* No se modifico `scheduler_worker.py`.
+* No se crearon endpoints nuevos.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14E.
+
+## 2026-06-30 - Fase 14D.2 simplificar monitor del programador con eventos y estados visuales claros
+
+### Corregido
+
+* El panel `Logs` deja de mostrar la seccion independiente `Ultimas ejecuciones`.
+* `Actividad reciente` ahora representa solo eventos del programador y aclara que las ejecuciones manuales se revisan en el modulo `Ejecuciones`.
+* La lista de eventos queda integrada en la seccion de actividad reciente para evitar duplicidad visual.
+* Se agregan estados visuales reutilizables `estado-ok`, `estado-advertencia`, `estado-error`, `estado-info` y `estado-neutral`.
+* El encabezado del monitor deja de hablar de `ejecuciones recientes` y pasa a hablar de `eventos recientes`.
+* Las tarjetas de estado y actividad reciben color operativo coherente segun disponibilidad o severidad.
+
+### Validado
+
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`: OK.
+* `base.html` sigue exponiendo `Monitor del programador` y ya no contiene la seccion `Ultimas ejecuciones`.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico `database/release/`.
+* No se modifico `scheduler_worker.py`.
+* No se crearon endpoints nuevos.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14E.
+
+## 2026-06-30 - Fase 14D.1 claridad visual del monitor del programador y panel redimensionable
+
+### Corregido
+
+* Se elimina el texto ambiguo `Conectado` del panel `Logs`.
+* El estado de la vista ahora usa textos `Vista actualizada`, `Actualizando...`, `Actualizacion pausada` y `No se pudo actualizar`.
+* El estado principal del monitor pasa a representar explicitamente la salud del programador con estados `OPERATIVO`, `SIN SENAL`, `ADVERTENCIA`, `PAUSADO`, `NO DISPONIBLE` y `ERROR`.
+* La UI deja de mostrar `Ultimo heartbeat` y pasa a usar `Ultima senal`.
+* La consola reciente queda reubicada como apoyo diagnostico, no como bloque principal del panel.
+* Se agrega resumen de `Actividad reciente` con ejecuciones, eventos y errores recientes.
+* El panel lateral se puede redimensionar arrastrando el borde izquierdo en escritorio.
+* El ancho del panel se conserva localmente y puede restaurarse con doble clic en el borde de resize.
+
+### Validado
+
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`: OK.
+* `base.html` carga correctamente en Jinja con sesion simulada y contiene `Monitor del programador` y `/api/worker/monitor`.
+* `rg -n "C:\\Users\\SOEX"` sobre archivos modificados: sin coincidencias.
+* `git diff --check`: sin errores de diff; solo advertencias LF/CRLF en Windows.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico `database/release/`.
+* No se modifico `scheduler_worker.py`.
+* No se modificaron endpoints backend.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14E.
+
+## 2026-06-30 - Fase 14D panel Logs conectado a monitor del worker
+
+### Implementado
+
+* El boton superior `Logs` ahora abre un panel lateral conectado al monitor real del worker.
+* El panel consume principalmente `GET /api/worker/monitor` y usa su respuesta para mostrar estado de vida del worker, estado del scheduler, alertas operativas, consola reciente, ultimas ejecuciones y eventos recientes.
+* `app/templates/base.html` reemplaza el contenido estatico de `Registro visual` por una consola visual segura de solo lectura.
+* `app/static/js/app.js` agrega apertura/cierre controlado del panel, carga de monitor, renderizado de estado, renderizado de consola, copiado de registro visible y auto-refresh moderado cada `5` segundos solo mientras el panel esta abierto.
+* `app/static/css/estilos.css` agrega estilo operativo para tarjetas compactas, alertas, lista de eventos/ejecuciones y bloque tipo terminal dentro del panel lateral.
+* Se mantiene selector seguro de lineas visibles `50 / 100 / 200`, limitado por la API existente.
+
+### Validado
+
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_logging_worker.py app\\servicios\\servicio_scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\__init__.py app\\rutas_scheduler.py`: OK.
+* `rg -n "C:\\Users\\SOEX"` sobre archivos modificados: sin coincidencias.
+* `git diff --check`: sin errores de diff; solo advertencias de fin de linea LF/CRLF en Windows.
+* `http://127.0.0.1:5000/login`: responde `200` al levantar Flask localmente.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se ejecuto SQL.
+* No se crearon tablas, migraciones ni seeds.
+* No se modifico `database/release/`.
+* No se modifico la logica funcional del scheduler.
+* No se hizo commit ni push.
+* No se avanzo a Fase 14E.
+
 ## 2026-06-30 - Fase 14C API de monitoreo worker solo lectura
 
 ### Implementado

@@ -104,24 +104,28 @@ def _resumen_textual_scheduler(configuracion):
 
 
 def _normalizar_estado_vida(estado_worker):
+    codigo = (estado_worker or {}).get("codigo")
+    if codigo:
+        return codigo
     badge = (estado_worker or {}).get("badge")
     equivalencias = {
+        "inactivo": "DETENIDO",
         "activo": "ACTIVO",
         "advertencia": "ADVERTENCIA",
         "error": "ERROR",
-        "inactivo": "INACTIVO",
+        "info": "NO_DISPONIBLE",
     }
-    return equivalencias.get(badge, "DESCONOCIDO")
+    return equivalencias.get(badge, "NO_DISPONIBLE")
 
 
 def _construir_alertas_operativas(estado_worker, resumen_eventos, configuracion, feriados, eventos):
     alertas = []
     estado_vida = estado_worker.get("estado_vida")
-    if estado_vida in {"ERROR", "ADVERTENCIA", "INACTIVO"}:
+    if estado_vida in {"ERROR", "ADVERTENCIA", "SIN_SENAL", "DETENIDO"}:
         alertas.append(
             {
                 "tipo": "worker",
-                "nivel": "error" if estado_vida == "ERROR" else "advertencia",
+                "nivel": "error" if estado_vida in {"ERROR", "SIN_SENAL"} else "advertencia",
                 "mensaje": estado_worker.get("resumen_textual"),
             }
         )
