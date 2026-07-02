@@ -8,6 +8,8 @@ La evidencia no se guarda como archivo JSON fisico persistente y no se almacena 
 
 Esta fase es documental. No implementa capturador, envio Graph, UI, migraciones ni cambios funcionales.
 
+El modelo minimo de datos propuesto para Fase 15B queda documentado en `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+
 ## Decision aceptada
 
 * La evidencia se emite por `stdout`.
@@ -201,6 +203,13 @@ Destinatario futuro recomendado: `alertas.reportes@soex.cl`, configurable por am
 ## Persistencia minima permitida
 
 No guardar el JSON completo.
+
+Fase 15B recomienda que la persistencia minima se separe en:
+
+* configuracion por tarea;
+* destinatarios por configuracion;
+* evidencia por ejecucion;
+* intentos de envio por Graph o alerta interna.
 
 Datos minimos sugeridos para fases posteriores:
 

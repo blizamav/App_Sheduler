@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15A.1 formalizada documentalmente como contrato de evidencia por `stdout`; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
+* Estado actual: Fase 15B documentada como modelo minimo de datos para evidencias y notificaciones; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15A.1 - Formalizacion del contrato de evidencia por stdout.
+* Fase actual: Fase 15B - Modelo de datos minimo para evidencias y notificaciones.
 * Ultima actualizacion: 2026-07-02
 
 ## 2. Decisiones tecnicas vigentes
@@ -27,6 +27,7 @@
 * Matriz de variables: `.env` es el archivo real para local y ejecucion fuera de Docker; `.env.docker` es opcional y recomendado para contenedores cuando se requiere separar escapes o valores; las plantillas oficiales versionadas son `.env.example` y `.env.docker.example`.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
 * Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
+* Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -55,6 +56,21 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-02 - Fase 15B / Modelo minimo de evidencias y notificaciones
+
+* Archivos modificados: `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Archivo creado: `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* Objetivo: proponer el modelo minimo de datos para configurar evidencia por tarea, destinatarios, trazabilidad minima de evidencia, intentos de envio Graph, alertas internas y reintentos futuros.
+* Diagnostico: el modelo actual ya relaciona `tareas`, `scripts`, `scripts_versiones` y `ejecuciones`; cada ejecucion guarda `id_tarea`, `id_script` e `id_version`, por lo que la evidencia debe colgar de `ejecuciones`.
+* Decision recomendada: configurar `Enviar evidencia` por `tarea`; no por version ni programacion en V1. La version exacta queda trazada por `ejecuciones.id_version`.
+* Tablas futuras propuestas: `notificaciones_config_tarea`, `notificaciones_destinatarios`, `evidencias_ejecucion`, `notificaciones_envios`.
+* Configuracion global: usar `configuracion_sistema` para parametros no sensibles en V1; secretos Graph quedan fuera de BD y deben venir por variables de entorno.
+* Seguridad: no guardar `CLIENT_SECRET`, tokens, passwords, cadenas de conexion, JSON completo, cuerpo completo del correo, respuesta Graph completa ni contenido de `.env` de scripts.
+* Reintentos: futuros intentos se registrarian como nuevas filas en `notificaciones_envios` con `es_reintento`, `id_envio_origen` e `intento`.
+* Alertas internas: se modelan como envios de tipo `ALERTA_INTERNA`, incluso si no hay evidencia valida.
+* Pruebas realizadas: revision documental, `git diff --check` y `git status --short` al cierre.
+* Estado final: fase documental cerrada sin cambios en codigo, SQL, Docker, `.env`, `.env.docker` ni `database/release/`.
 
 ### 2026-07-02 - Fase 15A.1 / Contrato de evidencia por stdout
 

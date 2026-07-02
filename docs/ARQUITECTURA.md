@@ -4,7 +4,7 @@
 
 APP Scheduler es una aplicacion Flask modular con fabrica `crear_app()`, configuracion centralizada, rutas por Blueprint, capa de repositorios, capa de servicios y proceso worker separado para ejecucion automatica.
 
-Estado actual: Fase 14E deja implementado el buffer visual limitado del worker, la API interna de monitoreo de solo lectura y el panel lateral `Logs` conectado a esa API como monitor del programador enfocado en eventos propios, con clasificacion real de estados segun heartbeat y detencion explicita. Fase 14F.1 agrega diagnostico seguro en `/panel` para distinguir advertencias reales de conectividad SQL Server versus ausencia legitima de datos. Fase 14F.2 normaliza la construccion ODBC en `app/database/conexion.py` y deja `Encrypt`, `TrustServerCertificate` y `Connection Timeout` parametrizados por configuracion. Fase 15A.1 formaliza documentalmente el contrato futuro de evidencia por `stdout`, sin implementarlo todavia. Ademas queda preparado el despliegue con procesos separados `web` y `worker` mediante Docker Compose. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
+Estado actual: Fase 14E deja implementado el buffer visual limitado del worker, la API interna de monitoreo de solo lectura y el panel lateral `Logs` conectado a esa API como monitor del programador enfocado en eventos propios, con clasificacion real de estados segun heartbeat y detencion explicita. Fase 14F.1 agrega diagnostico seguro en `/panel` para distinguir advertencias reales de conectividad SQL Server versus ausencia legitima de datos. Fase 14F.2 normaliza la construccion ODBC en `app/database/conexion.py` y deja `Encrypt`, `TrustServerCertificate` y `Connection Timeout` parametrizados por configuracion. Fase 15A.1 formaliza documentalmente el contrato futuro de evidencia por `stdout`, sin implementarlo todavia. Fase 15B define documentalmente el modelo minimo de datos para configuracion de evidencias, destinatarios, evidencia validada e intentos de envio. Ademas queda preparado el despliegue con procesos separados `web` y `worker` mediante Docker Compose. El roadmap formal desde esta reorganizacion queda en `docs/ROADMAP.md`.
 
 ## Capas del sistema
 
@@ -21,7 +21,7 @@ Estado actual: Fase 14E deja implementado el buffer visual limitado del worker, 
 * Runtime separado: `docker-compose.yml` define `web` y `worker` como procesos distintos sobre la misma base de codigo y compartiendo volumenes operativos.
 * Trazabilidad operativa: `logs_sistema`, `logs_tareas`, `ejecuciones`, `scheduler_worker_heartbeat` y `scheduler_eventos`.
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
-* Evidencia futura: contrato documental en `docs/CONTRATO_EVIDENCIA_STDOUT.md`; la evidencia se emitira por `stdout` entre delimitadores, no como JSON fisico persistente ni como JSON completo en BD.
+* Evidencia futura: contrato documental en `docs/CONTRATO_EVIDENCIA_STDOUT.md`; modelo minimo en `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`; la evidencia se emitira por `stdout` entre delimitadores, no como JSON fisico persistente ni como JSON completo en BD.
 
 ## Flujo de datos inicial
 
@@ -106,6 +106,8 @@ Fase 8 agrega capa de ejecucion manual:
 La ejecucion manual usa `subprocess` sin `shell=True`, registra PID y captura stdout/stderr hacia archivo. La consola se actualiza por polling HTTP cada 3 segundos.
 
 Fase 15A.1 deja definido que la futura evidencia para reportes no usara archivos JSON persistentes. El script debera imprimir un bloque JSON por `stdout` entre `###APP_SCHEDULER_EVIDENCIA_INICIO###` y `###APP_SCHEDULER_EVIDENCIA_FIN###`. El capturador, validador y envio por Microsoft Graph quedan pendientes para fases posteriores.
+
+Fase 15B recomienda configurar evidencia por `tarea`, relacionar la traza capturada con `ejecuciones`, registrar intentos en `notificaciones_envios` y dejar secretos Graph exclusivamente en variables de entorno.
 
 Control de ejecuciones huerfanas:
 

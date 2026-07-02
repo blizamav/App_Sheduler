@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-02 - Fase 15B modelo minimo de evidencias y notificaciones
+
+### Documentado
+
+* Se crea `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* Se define que la configuracion de `Enviar evidencia` se recomienda por `tarea`.
+* Se descarta override por `programacion` en V1.
+* Se define que la evidencia capturada debe relacionarse con `ejecuciones`.
+* Se proponen tablas futuras: `notificaciones_config_tarea`, `notificaciones_destinatarios`, `evidencias_ejecucion` y `notificaciones_envios`.
+* Se recomienda usar `configuracion_sistema` para parametros globales no sensibles y variables de entorno para secretos Graph.
+* Se documentan estados, PK/FK, indices, unicidad, CHECK constraints, reintentos, alertas internas y datos que no deben guardarse.
+* Se actualizan referencias en arquitectura, modulos, roadmap, contrato de evidencia y bitacora tecnica.
+
+### Reglas
+
+* No se modifico codigo Python, HTML, CSS ni JavaScript.
+* No se modifico `docker-compose.yml`.
+* No se modifico `.env` ni `.env.docker`.
+* No se ejecuto SQL.
+* No se crearon migraciones ni seeds.
+* No se toco `database/release/`.
+* No se implemento Microsoft Graph.
+* No se implemento UI.
+* No se implemento capturador de stdout.
+* No se hizo commit ni push.
+
 ## 2026-07-02 - Fase 15A.1 contrato de evidencia por stdout
 
 ### Documentado

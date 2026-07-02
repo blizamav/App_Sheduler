@@ -61,6 +61,7 @@
 * Fase 14F.1: diagnostico seguro del panel principal, con alertas visibles por bloque fallido y logging tecnico controlado cuando SQL Server no responde.
 * Fase 14F.2: normalizacion segura de la cadena SQL Server ODBC con parametros explicitos `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`, resumen seguro de conexion y soporte opcional `DOCKER_ENV_FILE`.
 * Fase 15A.1: contrato documental de evidencia por `stdout`, con delimitadores oficiales, validacion estatica requerida y regla de no guardar JSON fisico persistente ni JSON completo en BD.
+* Fase 15B: modelo documental minimo para evidencias y notificaciones, separando configuracion por tarea, destinatarios, evidencia por ejecucion e intentos de envio Graph.
 * Correccion UX de disponibilidad de ejecucion en `/tareas`: estado `Ejecutable` o `No ejecutable` con motivo visible y diagnostico manual de scripts/versiones.
 
 ## Modulos pendientes
@@ -83,7 +84,7 @@ Pendiente mejora:
 * Notificaciones.
 * Reportes.
 * Dashboard avanzado.
-* Fase 15B+: modelo de datos, capturador de evidencia por `stdout`, integracion Graph, UI de configuracion, alertas internas y validacion QA.
+* Fase 15C+: capturador de evidencia por `stdout`, integracion Graph, UI de configuracion, alertas internas y validacion QA.
 
 ## Definicion Fase 4.3
 
@@ -100,7 +101,7 @@ Antes de implementar tareas, scripts y scheduler se definio:
 
 La aplicacion esta en Fase 14E a nivel operativo del worker: usuarios, roles, permisos, mantenedores base, tareas, scripts versionados, `.env` por script, ejecucion manual con cierre garantizado, consola sincronizada sin recarga completa, detencion manual, configuracion scheduler, worker automatico separado, historial de ejecuciones, calendario local de feriados, sincronizacion controlada desde Nager.Date, panel operativo del scheduler, panel principal general con metricas reales, heartbeat del worker, modernizacion visual general, rediseno visual profundo del shell, correccion visual premium del app shell, eventos operativos del programador, resumen inteligente, vista filtrable de eventos, control de ejecuciones huerfanas, borrado operativo seguro con snapshots, papelera operativa con eliminacion permanente individual y masiva segura, desacople historico para eliminacion permanente real, revision post-borrado, disponibilidad visible de ejecucion manual en `/tareas`, auditoria base, reglas reforzadas de jerarquia de roles, validacion transversal de duplicados, cobertura ampliada de auditoria, logging controlado del worker con buffer visual acotado, monitor lateral enfocado solo en eventos del programador con estados reales del worker y despliegue base con `web` y `worker` separados en Docker Compose. La validacion real de `scheduler_worker.py` sigue condicionada al entorno con SQL Server accesible.
 
-Fase 15A.1 solo agrega definicion documental del modulo futuro de evidencias y reportes por Microsoft Graph. No hay capturador, tablas, UI ni envio implementados en esta fase.
+Fase 15A.1 solo agrega definicion documental del contrato de evidencias y reportes por Microsoft Graph. Fase 15B agrega el modelo documental minimo. No hay capturador, tablas fisicas, UI ni envio implementados en estas fases.
 
 ## UI/UX general
 
