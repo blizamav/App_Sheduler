@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14F.5 validada para Docker usando `.env.docker` oficial en `web` y `worker`. Se confirma conectividad SQL, login y `/panel`, correccion de zona horaria del heartbeat en Docker y detencion controlada `ACTIVO -> DETENIDO`; queda pendiente corregir manualmente `APP_SECRET_KEY` en `.env.docker`.
+* Estado actual: Fase 14G validada como checklist final QA Docker/local. Docker queda homologado con `.env.docker`, `web`, `worker`, monitor `ACTIVO -> DETENIDO` y cierre limpio; el host local Windows sigue pendiente por `08001`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14F.5 - Correccion de zona horaria en heartbeat Docker/monitor.
+* Fase actual: Fase 14G - Checklist final de validacion QA Docker/local.
 * Ultima actualizacion: 2026-07-02
 
 ## 2. Decisiones tecnicas vigentes
@@ -50,9 +50,8 @@
 * Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
 * Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
-* Pendiente 5: Validar `docker compose up -d --build` en un ambiente con Docker disponible y acceso real a SQL Server.
-* Pendiente 6: Corregir manualmente `APP_SECRET_KEY` en `.env.docker` real para evitar seguir operando con valor de plantilla o vacio en Docker.
-* Pendiente 7: Corregir manualmente `APP_SECRET_KEY` en `.env.docker` real para evitar operar con valor de plantilla o vacio.
+* Pendiente 5: Resolver conectividad ODBC del host local Windows para eliminar el `08001` al usar `.env`.
+* Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
 
@@ -126,6 +125,34 @@
 * Pruebas tecnicas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\servicios\\servicio_scheduler_worker.py`: OK. `git diff --check`: sin errores de diff, solo advertencias CRLF del entorno Windows.
 * Decisiones: se mantiene la convencion actual del proyecto basada en hora local de SQL Server; no se migra a UTC global en esta fase. Docker debe alinearse a `ZONA_HORARIA`, no reinterpretar timestamps locales de la base.
 * Cierre: no se modifico `.env`, no se modifico `.env.docker`, no se ejecuto SQL correctivo, no se tocaron `database/release/`, no se hizo commit/push y no se avanzo a Fase 15.
+
+### 2026-07-02 - Fase 14G / Checklist final de validacion QA Docker/local
+
+* Archivos modificados: `docs/CHECKLIST_DESPLIEGUE.md`, `docs/DESPLIEGUE.md`, `docs/OPERACION_WORKER.md`, `docs/VARIABLES_ENTORNO.md`, `docs/CHANGELOG.md`, `docs/ROADMAP.md`, `log_codex.md`.
+* Objetivo: ejecutar una validacion final y documentada del flujo Git/local/Docker antes de Fase 15, sin tocar `.env`, `.env.docker`, SQL ni logica funcional.
+* Estado Git inicial: `git status --short` limpio; no aparecieron `.env`, `.env.docker`, `logs/` ni `*.log`.
+* Ignorados confirmados: `git check-ignore -v .env` y `.env.docker` OK. Archivos presentes: `.env`, `.env.docker`, `.env.example`, `.env.docker.example`.
+* Validacion local:
+  * El arranque HTTP local no se pudo automatizar desde esta sesion PowerShell por un fallo del host al crear procesos en segundo plano (`Start-Process` con conflicto `Path/PATH`), no por Flask.
+  * Se valido localmente con `crear_app()` + `test_client()` usando `.env`: `login` OK, `/panel` OK, boton `Logs` visible.
+  * Resultado local real: persiste `08001` y `Advertencias tecnicas del panel`; no aparece `18456`.
+  * Decision: el host local Windows no queda homologado en esta fase.
+* Validacion Docker con `$env:DOCKER_ENV_FILE='.env.docker'`:
+  * `docker compose config --services`: `web`, `worker`.
+  * Variables seguras: `APP_SECRET_KEY_CONFIGURADA=True`, `DB_SERVER_PLACEHOLDER=False`, `DB_USER_CONFIGURADO=True`, `DB_PASSWORD_LEN=13`, `DB_ENCRYPT=no`, `DB_TRUST_SERVER_CERTIFICATE=yes`, `DB_TIMEOUT=10`, `ZONA_HORARIA=America/Santiago`, `TZ=America/Santiago`.
+  * Usuario SQL dedicado esperado: `DB_USER_DEDICADO_ESPERADO=True`.
+  * Helper real: `CONEXION_APP_OK=1`.
+  * Web Docker: `login` OK, `/panel` OK, sin `08001`, sin `18456`, sin placeholder y con boton `Logs` visible.
+  * Worker Docker: inicio OK, `Senal de vida iniciada`, `Configuracion cargada`, `Resumen de ciclo`, sin `08001`, sin `18456`, sin `Traceback`.
+  * Buffer `logs/worker_console.log`: salida reciente correcta y sin secretos.
+  * Monitor con worker corriendo: `ACTIVO`, senal reciente y `America/Santiago`.
+  * `docker compose stop worker`: OK.
+  * Monitor posterior: `DETENIDO`.
+  * Evidencia de buffer/logs: `Worker detenido por interrupcion.` y `Senal de vida marcada como detenida.`
+  * Cierre final: `docker compose down` y `docker compose ps` sin contenedores activos.
+* Pruebas tecnicas: `git diff --check` sin errores de diff.
+* Conclusion: Docker QA queda homologado como flujo operativo validado; local Windows sigue pendiente por conectividad ODBC del host.
+* Reglas: no se modifico `.env`, no se modifico `.env.docker`, no se expusieron secretos, no se ejecuto SQL, no se toco `database/release/`, no se hizo commit/push y no se avanzo a Fase 15.
 
 ### 2026-06-30 - Fase 14F.1 / Diagnostico real de advertencias en `/panel`
 

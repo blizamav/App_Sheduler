@@ -60,6 +60,13 @@ Consideraciones:
 * Desde Fase 14F.5, `docker-compose.yml` inyecta `TZ` desde `ZONA_HORARIA` para alinear hora de contenedor, logs y monitor del worker con la zona operativa.
 * Convencion vigente: el proyecto sigue operando con hora local de SQL Server; Docker no debe reinterpretarla como UTC en el monitor.
 
+Validacion final Fase 14G:
+
+* Docker QA queda validado como flujo operativo real del proyecto.
+* `DOCKER_ENV_FILE=.env.docker` pasa a ser uso obligatorio para la validacion contenedorizada.
+* `web` y `worker` validaron conexion SQL, login, `/panel`, monitor `ACTIVO`, detencion `DETENIDO` y cierre limpio.
+* El host local Windows sigue presentando `08001` en este ambiente al leer SQL Server desde `.env`; por lo tanto, local no queda homologado como entorno operativo final mientras no se resuelva esa conectividad ODBC del host.
+
 ## Configuracion SQL Server local
 
 Variables minimas para conexion Flask-SQL Server:

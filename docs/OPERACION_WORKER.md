@@ -267,6 +267,17 @@ Validacion real Fase 14F.5:
 - `GET /api/worker/monitor` posterior: `DETENIDO`.
 - `scheduler_worker.py` registra `SIGTERM` y `SIGINT` como detencion controlada para no degradar a timeout cuando Docker detiene el contenedor.
 
+Validacion final Fase 14G:
+
+- Se repite validacion completa usando `$env:DOCKER_ENV_FILE='.env.docker'`.
+- `web` valida login y `/panel` sin `08001`, sin `18456` y sin placeholder visible.
+- `worker` valida inicio continuo, heartbeat, configuracion y resumen de ciclo sin traceback.
+- `logs/worker_console.log` confirma buffer visual reciente correcto.
+- El monitor del panel `Logs` queda validado operativamente en:
+  - `ACTIVO` con worker corriendo;
+  - `DETENIDO` despues de `docker compose stop worker`.
+- `docker compose down` deja el stack sin contenedores activos.
+
 ## Arquitectura recomendada
 
 ```text

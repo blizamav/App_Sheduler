@@ -143,8 +143,31 @@ Confirmado:
 
 Hallazgo real:
 
-* `.env.docker` sigue entregando `APP_SECRET_KEY` como valor de plantilla o vacio. No impidio la prueba tecnica, pero debe corregirse manualmente en el archivo real del ambiente.
+* Ese hallazgo quedo corregido posteriormente en el ambiente real: durante la validacion final Fase 14G `APP_SECRET_KEY_CONFIGURADA=True`.
+* Se mantiene la regla de no exponer el valor ni versionarlo.
 
 Regla aplicada:
 
 * `worker` no se levanto en esta fase porque la instruccion vigente exigia autorizacion adicional del usuario despues de validar conexion y web.
+
+## Validacion real Fase 14G
+
+Confirmado en Docker usando:
+
+```powershell
+$env:DOCKER_ENV_FILE=".env.docker"
+```
+
+Resultado:
+
+* `docker compose config --services` devuelve `web` y `worker`.
+* `APP_SECRET_KEY_CONFIGURADA=True`.
+* `DB_SERVER_PLACEHOLDER=False`.
+* `DB_USER_CONFIGURADO=True`.
+* `DB_PASSWORD_LEN > 0`.
+* `DB_ENCRYPT=no`.
+* `DB_TRUST_SERVER_CERTIFICATE=yes`.
+* `DB_TIMEOUT=10`.
+* `ZONA_HORARIA=America/Santiago`.
+* `TZ=America/Santiago`.
+* Usuario SQL dedicado esperado configurado sin exponer su valor real en la documentacion operativa.

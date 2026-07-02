@@ -190,3 +190,28 @@ Si la validacion falla:
 - Resultado de modulos base.
 - Conteos SQL principales.
 - `git status` limpio antes de cerrar despliegue.
+
+## Validacion real Fase 14G
+
+Resultado consolidado de la validacion final local/Docker/QA:
+
+- `git status --short`: limpio al inicio; sin `.env`, `.env.docker`, `logs/` ni `*.log`.
+- `git check-ignore -v .env` y `.env.docker`: ambos ignorados por Git.
+- Existen `.env`, `.env.docker`, `.env.example` y `.env.docker.example`.
+- Validacion local:
+  - `crear_app()` + `test_client()` confirman `login` y `/panel` en flujo local.
+  - El host local sigue mostrando `08001` en `/panel`, con advertencia tecnica trazable por conectividad/cifrado ODBC del ambiente Windows.
+  - Por esa razon, el ambiente local no queda homologado como entorno operativo final en esta fase.
+- Validacion Docker con `$env:DOCKER_ENV_FILE='.env.docker'`:
+  - `docker compose config --services`: `web`, `worker`.
+  - Variables seguras: `APP_SECRET_KEY_CONFIGURADA=True`, `DB_SERVER_PLACEHOLDER=False`, `DB_USER_CONFIGURADO=True`, `DB_PASSWORD_LEN>0`, `DB_ENCRYPT=no`, `DB_TRUST_SERVER_CERTIFICATE=yes`, `DB_TIMEOUT=10`, `ZONA_HORARIA=America/Santiago`, `TZ=America/Santiago`.
+  - Usuario SQL dedicado esperado configurado: `DB_USER_DEDICADO_ESPERADO=True`.
+  - Helper real: `CONEXION_APP_OK=1`.
+  - `web`: login OK, `/panel` OK, sin `08001`, sin `18456`, sin placeholder y con boton `Logs` visible.
+  - `worker`: inicio OK, heartbeat OK, configuracion cargada, resumen de ciclo, sin `08001`, sin `18456`, sin `Traceback`.
+  - `logs/worker_console.log`: buffer reciente correcto y sin secretos.
+  - Monitor con worker corriendo: `ACTIVO`, senal reciente y zona `America/Santiago`.
+  - `docker compose stop worker`: OK.
+  - Monitor posterior: `DETENIDO`, sin falso `SIN_SENAL`.
+  - Buffer y logs: `Worker detenido por interrupcion.` y `Senal de vida marcada como detenida.`
+  - Cierre final: `docker compose down` y `docker compose ps` sin contenedores activos.

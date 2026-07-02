@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-07-02 - Fase 14G checklist final de validacion QA Docker/local
+
+### Validado
+
+* `git status --short` limpio al inicio; sin `.env`, `.env.docker`, `logs/` ni `*.log`.
+* `git check-ignore -v .env` y `.env.docker`: ambos ignorados correctamente.
+* Existen `.env`, `.env.docker`, `.env.example` y `.env.docker.example`.
+* Validacion local con `crear_app()` + `test_client()`:
+  * `login` OK;
+  * `/panel` OK;
+  * boton `Logs` visible;
+  * el host local sigue mostrando `08001` y `Advertencias tecnicas del panel`, sin `18456`.
+* Validacion Docker con `$env:DOCKER_ENV_FILE='.env.docker'`:
+  * `docker compose config --services`: `web`, `worker`.
+  * Variables seguras: `APP_SECRET_KEY_CONFIGURADA=True`, `DB_SERVER_PLACEHOLDER=False`, `DB_USER_CONFIGURADO=True`, `DB_PASSWORD_LEN > 0`, `DB_ENCRYPT=no`, `DB_TRUST_SERVER_CERTIFICATE=yes`, `DB_TIMEOUT=10`, `ZONA_HORARIA=America/Santiago`, `TZ=America/Santiago`.
+  * Usuario SQL dedicado esperado configurado: `DB_USER_DEDICADO_ESPERADO=True`.
+  * Helper real: `CONEXION_APP_OK=1`.
+  * `web`: login OK, `/panel` OK, sin `08001`, sin `18456`, sin placeholder visible.
+  * `worker`: inicio OK, heartbeat OK, configuracion cargada, resumen de ciclo y sin traceback.
+  * `logs/worker_console.log`: salida reciente correcta, sin `08001`, `18456`, `Traceback` ni placeholder.
+  * Monitor con worker corriendo: `ACTIVO`.
+  * `docker compose stop worker`: OK.
+  * Monitor posterior: `DETENIDO`.
+  * Buffer y logs: `Worker detenido por interrupcion.` y `Senal de vida marcada como detenida.`
+  * Cierre: `docker compose down` y `docker compose ps` sin contenedores activos.
+
+### Conclusion
+
+* Docker QA queda homologado como flujo operativo validado para este proyecto.
+* El host local Windows no queda homologado en esta fase porque sigue fallando contra SQL Server con `08001` desde `.env`.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se modifico `.env.docker`.
+* No se ejecuto SQL.
+* No se toco `database/release/`.
+* No se modifico logica funcional de scheduler ni permisos.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
 ## 2026-07-02 - Fase 14F.5 correccion de zona horaria y detencion controlada en monitor Docker
 
 ### Corregido
