@@ -31,6 +31,19 @@ Implementacion base disponible desde Fase 14E con Docker Compose preferentemente
 
 Cada ambiente debe tener su propio `.env`; nunca debe versionarse ni sobrescribirse automaticamente. `.env.example` es solo plantilla.
 
+Mapa oficial de archivos:
+
+* Local Windows: `.env`
+* QA/Produccion sin Docker: `.env`
+* Docker local/QA/Produccion: `.env.docker` recomendado mediante `DOCKER_ENV_FILE`
+* Plantillas versionadas: `.env.example` y `.env.docker.example`
+
+Referencia detallada de variables:
+
+```text
+docs/VARIABLES_ENTORNO.md
+```
+
 ## Configuracion SQL Server local
 
 Variables minimas para conexion Flask-SQL Server:

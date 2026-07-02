@@ -2,6 +2,9 @@
 .env
 .env.*
 !.env.example
+!.env.docker.example
+!.env.qa.example
+!.env.prod.example
 
 # Entornos Python
 venv/

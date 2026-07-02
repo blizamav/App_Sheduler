@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-02 - Fase 14F.3 ordenamiento de variables de entorno y limpieza residual
+
+### Corregido
+
+* `.gitignore` ahora permite versionar plantillas `*.example` de entorno y sigue bloqueando archivos reales `.env*`.
+* Se detecto que `.env.docker.example` estaba siendo ignorado por la regla general `.env.*`; queda corregido.
+* Se elimina el residual local `.env.prueba`, ya que no estaba referenciado por codigo ni documentacion.
+* Se crea `docs/VARIABLES_ENTORNO.md` como inventario oficial de archivos `.env*`, variables vigentes, criticidad, uso por ambiente y reglas de manejo.
+* `docs/DESPLIEGUE.md` ahora referencia la matriz oficial de archivos y uso de `DOCKER_ENV_FILE`.
+
+### Validado
+
+* Inventario real en raiz: `.env`, `.env.docker`, `.env.docker.example`, `.env.example`.
+* `app/config.py` sigue cargando solo `BASE_DIR/.env` con `override=False`.
+* `docker-compose.yml` sigue usando `env_file: ${DOCKER_ENV_FILE:-.env}` para `web` y `worker`.
+* No se expusieron secretos ni se modifico `.env` real.
+
+### Reglas
+
+* No se ejecuto SQL.
+* No se modifico `.env`.
+* No se hicieron cambios funcionales en scheduler, backend ni frontend.
+* No se avanzo a Fase 15.
+
 ## 2026-06-30 - Fase 14F.2 normalizacion segura de cadena SQL Server ODBC
 
 ### Corregido
