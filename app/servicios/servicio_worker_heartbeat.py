@@ -1,6 +1,7 @@
 import os
 import socket
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from flask import current_app
 
@@ -224,12 +225,44 @@ def _intervalo_seguro(configuracion):
 def _segundos_desde(fecha):
     if not fecha:
         return None
+    fecha_normalizada = _normalizar_fecha_monitor(fecha)
+    if not fecha_normalizada:
+        return None
+    ahora = datetime.now(_obtener_zona_monitor())
+    return max(0, int((ahora - fecha_normalizada).total_seconds()))
+
+
+def formatear_fecha_monitor(fecha):
+    fecha_normalizada = _normalizar_fecha_monitor(fecha)
+    if not fecha_normalizada:
+        return None
+    return fecha_normalizada.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def obtener_zona_horaria_monitor():
+    return str(_obtener_zona_monitor())
+
+
+def _normalizar_fecha_monitor(fecha):
     if isinstance(fecha, str):
         try:
             fecha = datetime.fromisoformat(fecha)
         except ValueError:
             return None
-    return max(0, int((datetime.now() - fecha).total_seconds()))
+    if not isinstance(fecha, datetime):
+        return None
+    zona = _obtener_zona_monitor()
+    if fecha.tzinfo is None:
+        return fecha.replace(tzinfo=zona)
+    return fecha.astimezone(zona)
+
+
+def _obtener_zona_monitor():
+    nombre_zona = str(current_app.config.get("ZONA_HORARIA") or "America/Santiago").strip() or "America/Santiago"
+    try:
+        return ZoneInfo(nombre_zona)
+    except Exception:
+        return ZoneInfo("America/Santiago")
 
 
 def _es_estado_detencion_explicita(estado):

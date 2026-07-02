@@ -459,7 +459,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         aplicarEstadoVisualPanel(tarjetasMonitor.automatica, estadoScheduler.permitir_ejecucion_automatica ? "activo" : "advertencia");
         if (heartbeatText) {
-            heartbeatText.textContent = estadoWorker.ultimo_heartbeat || "Sin registro";
+            heartbeatText.textContent = estadoWorker.ultimo_heartbeat_local || estadoWorker.ultimo_heartbeat || "Sin registro";
         }
         if (heartbeatDetail) {
             heartbeatDetail.textContent = estadoWorker.estado_vida === "DETENIDO"

@@ -7,7 +7,12 @@ from app.repositorios.repositorio_panel_scheduler import (
 )
 from app.servicios.servicio_logging_worker import leer_buffer_worker
 from app.servicios.servicio_scheduler_eventos import obtener_eventos_relevantes, obtener_resumen_inteligente_eventos
-from app.servicios.servicio_worker_heartbeat import clasificar_estado_worker, obtener_estado_worker
+from app.servicios.servicio_worker_heartbeat import (
+    clasificar_estado_worker,
+    formatear_fecha_monitor,
+    obtener_estado_worker,
+    obtener_zona_horaria_monitor,
+)
 
 
 def obtener_estado_api_worker():
@@ -19,10 +24,11 @@ def obtener_estado_api_worker():
         "worker_detectado": bool(heartbeat),
         "estado_vida": _normalizar_estado_vida(estado_worker),
         "nombre_worker": _valor(heartbeat, "nombre_worker") or nombre_worker,
-        "ultimo_heartbeat": _serializar_valor(_valor(heartbeat, "fecha_ultimo_heartbeat")),
+        "ultimo_heartbeat": formatear_fecha_monitor(_valor(heartbeat, "fecha_ultimo_heartbeat")),
+        "ultimo_heartbeat_local": formatear_fecha_monitor(_valor(heartbeat, "fecha_ultimo_heartbeat")),
         "segundos_desde_ultimo_heartbeat": estado_worker.get("segundos_desde_heartbeat"),
-        "fecha_inicio": _serializar_valor(_valor(heartbeat, "fecha_inicio")),
-        "ultimo_ciclo": _serializar_valor(_valor(heartbeat, "fecha_ultimo_ciclo")),
+        "fecha_inicio": formatear_fecha_monitor(_valor(heartbeat, "fecha_inicio")),
+        "ultimo_ciclo": formatear_fecha_monitor(_valor(heartbeat, "fecha_ultimo_ciclo")),
         "resultado_ultimo_ciclo": _valor(heartbeat, "resultado_ultimo_ciclo"),
         "ciclos_ejecutados": int(_valor(heartbeat, "ciclos_ejecutados") or 0),
         "tareas_evaluadas_ultimo_ciclo": int(_valor(heartbeat, "tareas_evaluadas_ultimo_ciclo") or 0),
@@ -32,6 +38,7 @@ def obtener_estado_api_worker():
         "pid_proceso": _valor(heartbeat, "pid_proceso"),
         "host": _valor(heartbeat, "host"),
         "version_app": _valor(heartbeat, "version_app"),
+        "zona_horaria": obtener_zona_horaria_monitor(),
         "scheduler": _estado_scheduler(configuracion),
         "resumen_textual": _resumen_textual_worker(heartbeat, estado_worker, configuracion),
     }

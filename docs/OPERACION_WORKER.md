@@ -4,7 +4,7 @@
 
 Este documento define el diseno operativo del `scheduler_worker.py` y la consola visual de monitoreo futura dentro de la app.
 
-Estado vigente: Fase 14E corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales, separa detencion explicita versus ausencia de senal y deja preparada la operacion separada con Docker Compose. Fase 14F.1 agrega trazabilidad segura en `/panel` para detectar cuando el problema real es conectividad SQL Server y no el worker. Fase 14F.2 normaliza la cadena ODBC en `app/database/conexion.py` con `Encrypt`, `TrustServerCertificate` y `Connection Timeout` explicitos. systemd sigue como alternativa documental.
+Estado vigente: Fase 14E corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales, separa detencion explicita versus ausencia de senal y deja preparada la operacion separada con Docker Compose. Fase 14F.1 agrega trazabilidad segura en `/panel` para detectar cuando el problema real es conectividad SQL Server y no el worker. Fase 14F.2 normaliza la cadena ODBC en `app/database/conexion.py` con `Encrypt`, `TrustServerCertificate` y `Connection Timeout` explicitos. Fase 14F.5 corrige el desfase horario Docker/SQL Server en el monitor y hace que `docker compose stop worker` deje una marca explicita `DETENIDO`. systemd sigue como alternativa documental.
 
 ## Estado actual validado
 
@@ -247,6 +247,25 @@ Validacion minima esperada:
 - `docker compose logs -f worker` muestra actividad del programador.
 - la app sigue leyendo `logs/worker_console.log` mediante el volumen compartido.
 - el panel `Logs` debe reflejar heartbeat, eventos y consola del worker separado.
+
+Validacion real Fase 14F.4 antes de tocar `worker`:
+
+- `DOCKER_ENV_FILE=.env.docker` quedo validado como flujo oficial.
+- `web` conecto correctamente a SQL Server con el helper real de la app.
+- login y `/panel` quedaron validados en Docker.
+- `worker` no se levanto en esa fase porque la regla exigia autorizacion adicional despues de confirmar conexion y web.
+
+Validacion real Fase 14F.5:
+
+- `DOCKER_ENV_FILE=.env.docker` se uso explicitamente para `web` y `worker`.
+- Se confirmo que el problema `SIN_SENAL` no era caida real del worker, sino comparacion entre heartbeat SQL en hora local y contenedor Docker en UTC.
+- `docker-compose.yml` ahora inyecta `TZ` desde `ZONA_HORARIA` para ambos servicios.
+- `app/servicios/servicio_worker_heartbeat.py` interpreta fechas del heartbeat segun `ZONA_HORARIA`, no segun la zona implicita del contenedor.
+- `docker compose up -d --build web worker`: OK.
+- `GET /api/worker/monitor`: `ACTIVO` con `zona_horaria=America/Santiago`.
+- `docker compose stop worker`: OK.
+- `GET /api/worker/monitor` posterior: `DETENIDO`.
+- `scheduler_worker.py` registra `SIGTERM` y `SIGINT` como detencion controlada para no degradar a timeout cuando Docker detiene el contenedor.
 
 ## Arquitectura recomendada
 

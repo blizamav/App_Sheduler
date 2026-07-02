@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14F.3 aplicada para ordenar los archivos de entorno, corregir `.gitignore`, documentar la matriz oficial de variables y eliminar residuos locales no usados, manteniendo intactos `.env` real, SQL Server y la logica operativa existente.
+* Estado actual: Fase 14F.5 validada para Docker usando `.env.docker` oficial en `web` y `worker`. Se confirma conectividad SQL, login y `/panel`, correccion de zona horaria del heartbeat en Docker y detencion controlada `ACTIVO -> DETENIDO`; queda pendiente corregir manualmente `APP_SECRET_KEY` en `.env.docker`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14F.3 - Ordenamiento de variables de entorno y limpieza de archivos residuales.
+* Fase actual: Fase 14F.5 - Correccion de zona horaria en heartbeat Docker/monitor.
 * Ultima actualizacion: 2026-07-02
 
 ## 2. Decisiones tecnicas vigentes
@@ -51,6 +51,8 @@
 * Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
 * Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
 * Pendiente 5: Validar `docker compose up -d --build` en un ambiente con Docker disponible y acceso real a SQL Server.
+* Pendiente 6: Corregir manualmente `APP_SECRET_KEY` en `.env.docker` real para evitar seguir operando con valor de plantilla o vacio en Docker.
+* Pendiente 7: Corregir manualmente `APP_SECRET_KEY` en `.env.docker` real para evitar operar con valor de plantilla o vacio.
 
 ## 6. Historial de cambios
 
@@ -82,6 +84,48 @@
 * Pruebas a ejecutar: `git check-ignore -v` sobre archivos `.env*`, `python -m py_compile` de modulos de configuracion y conexion, `docker compose config --services` y `git diff --check`.
 * Riesgos: si en el futuro se agregan nuevos archivos reales por ambiente (`.env.qa`, `.env.prod`), deben permanecer ignorados y documentados sin cambiar la regla de no versionar secretos.
 * Reglas: no se modifico `.env` real, no se ejecuto SQL, no se hicieron cambios funcionales y no se avanzo a Fase 15.
+
+### 2026-07-02 - Fase 14F.4 / Validacion Docker con `.env.docker` oficial
+
+* Archivos modificados: `docs/VARIABLES_ENTORNO.md`, `docs/DESPLIEGUE.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `docs/OPERACION_WORKER.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: validar Docker Compose usando exclusivamente `.env.docker` via `DOCKER_ENV_FILE`, sin volver a mezclarlo con `.env` local.
+* Precondiciones confirmadas: `git status --short` limpio respecto de `.env`, `.env.docker`, `logs/` y `*.log`; `.env.docker` existe y sigue ignorado; `.env.docker.example` sigue versionable.
+* Docker Compose: con `$env:DOCKER_ENV_FILE='.env.docker'`, `docker compose config --services` devolvio `web` y `worker`.
+* Variables seguras dentro del contenedor: `DB_SERVER` no llego como placeholder, `DB_USER` llego configurado, `DB_PASSWORD` llego con longitud valida y dos caracteres `$`, `DB_ENCRYPT=no`, `DB_TRUST_SERVER_CERTIFICATE=yes`, `DB_TIMEOUT=10`.
+* Hallazgo relevante: `APP_SECRET_KEY` en `.env.docker` sigue con valor de plantilla o vacio. La app lo reporta como advertencia, pero no impidio la conexion real ni el login bootstrap.
+* Helper real: `docker compose run --rm web ... obtener_conexion()` respondio `CONEXION_APP_OK=1`.
+* Web Docker: `docker compose up -d web` levanto correctamente; `docker compose ps` mostro `web` en `Up`; `docker compose logs --tail=100 web` mostro solo la advertencia de `APP_SECRET_KEY` y el arranque normal de Flask.
+* Login y panel: prueba HTTP ejecutada desde dentro del contenedor usando las variables ya cargadas por Docker; `LOGIN_OK=True`, `PANEL_AUTENTICADO=True`, `PANEL_SQL_WARNING=False`.
+* Decision operativa: no levantar `worker` en esta fase porque la instruccion vigente exigia autorizacion adicional del usuario despues de validar helper y web.
+* Cierre: `docker compose down` ejecutado; no quedaron servicios activos.
+* Reglas: no se modifico `.env`, no se modifico `.env.docker`, no se ejecuto SQL, no se tocaron `database/release/`, tablas, migraciones ni seeds, no se hizo commit/push y no se avanzo a Fase 15.
+
+### 2026-07-02 - Fase 14F.5 / Correccion de zona horaria en heartbeat Docker/monitor
+
+* Archivos modificados: `app/servicios/servicio_worker_heartbeat.py`, `app/servicios/servicio_api_worker.py`, `app/static/js/app.js`, `scheduler_worker.py`, `docker-compose.yml`, `docs/OPERACION_WORKER.md`, `docs/DESPLIEGUE.md`, `docs/VARIABLES_ENTORNO.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: corregir el falso `SIN_SENAL` del monitor Docker cuando SQL Server guardaba heartbeat en hora local y el contenedor comparaba contra UTC.
+* Causa raiz confirmada: `scheduler_worker_heartbeat.fecha_ultimo_heartbeat` llegaba desde SQL Server en hora local (`GETDATE()`), mientras el contenedor Docker estaba en `UTC`; la resta ingenua generaba diferencias cercanas a 4 horas. Adicionalmente, `docker compose stop worker` enviaba `SIGTERM`, pero el worker continuo solo registraba detencion en `KeyboardInterrupt`.
+* Que se hizo:
+  * `servicio_worker_heartbeat.py` normaliza fechas segun `ZONA_HORARIA` usando `zoneinfo`.
+  * `servicio_api_worker.py` expone tiempos ya serializados en hora local operativa y agrega `zona_horaria`.
+  * `app.js` prioriza `ultimo_heartbeat_local`.
+  * `docker-compose.yml` inyecta `TZ=${ZONA_HORARIA:-America/Santiago}` en `web` y `worker`.
+  * `scheduler_worker.py` registra `SIGTERM`/`SIGINT` como detencion controlada y termina limpio al recibir `KeyboardInterrupt`.
+* Validaciones previas de diagnostico:
+  * contenedor `worker` antes del ajuste: `UTC`;
+  * SQL Server: `GETDATE()` en hora local y `GETUTCDATE()` cuatro horas adelante;
+  * monitor previo llego a reportar `SIN_SENAL` con `segundos_desde_ultimo_heartbeat` ~`14400`.
+* Validaciones finales con `$env:DOCKER_ENV_FILE='.env.docker'`:
+  * `docker compose up -d --build web worker`: OK.
+  * `docker compose ps`: `web` y `worker` en `Up`.
+  * `docker compose exec worker date`: hora local `-04`.
+  * Login interno y `/api/worker/monitor`: `estado_vida=ACTIVO`, `zona_horaria=America/Santiago`, `segundos` dentro de margen normal.
+  * `docker compose stop worker`: OK.
+  * Log del worker: `Worker detenido por interrupcion.` y `Senal de vida marcada como detenida.`
+  * Monitor posterior: `estado_vida=DETENIDO`.
+* Pruebas tecnicas: `python -m py_compile scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\servicios\\servicio_scheduler_worker.py`: OK. `git diff --check`: sin errores de diff, solo advertencias CRLF del entorno Windows.
+* Decisiones: se mantiene la convencion actual del proyecto basada en hora local de SQL Server; no se migra a UTC global en esta fase. Docker debe alinearse a `ZONA_HORARIA`, no reinterpretar timestamps locales de la base.
+* Cierre: no se modifico `.env`, no se modifico `.env.docker`, no se ejecuto SQL correctivo, no se tocaron `database/release/`, no se hizo commit/push y no se avanzo a Fase 15.
 
 ### 2026-06-30 - Fase 14F.1 / Diagnostico real de advertencias en `/panel`
 

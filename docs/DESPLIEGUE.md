@@ -44,6 +44,22 @@ Referencia detallada de variables:
 docs/VARIABLES_ENTORNO.md
 ```
 
+## Docker Compose con archivo dedicado
+
+Para contenedores, el flujo oficial es usar un archivo real separado y explicitarlo en la sesion antes de levantar servicios:
+
+```powershell
+$env:DOCKER_ENV_FILE=".env.docker"
+docker compose up -d --build web worker
+```
+
+Consideraciones:
+
+* Si no se define `DOCKER_ENV_FILE`, `docker-compose.yml` cae a `.env`.
+* Si la password SQL contiene `$`, Docker puede requerir escape distinto al flujo local; por eso `.env.docker` debe mantenerse separado de `.env`.
+* Desde Fase 14F.5, `docker-compose.yml` inyecta `TZ` desde `ZONA_HORARIA` para alinear hora de contenedor, logs y monitor del worker con la zona operativa.
+* Convencion vigente: el proyecto sigue operando con hora local de SQL Server; Docker no debe reinterpretarla como UTC en el monitor.
+
 ## Configuracion SQL Server local
 
 Variables minimas para conexion Flask-SQL Server:
@@ -229,6 +245,8 @@ Notas:
 * `docker-compose.yml` acepta `DOCKER_ENV_FILE` y, si no existe, sigue usando `.env`.
 * `.env.docker` no debe versionarse.
 * Si la password real contiene `$$`, en Docker puede requerir escape `$$$$` para que dentro del contenedor llegue `$$`.
+* Fase 14F.4 valido el flujo correcto con `$env:DOCKER_ENV_FILE=".env.docker"`: helper SQL real OK, `web` OK, login OK y `/panel` OK.
+* Hallazgo de esa validacion: `APP_SECRET_KEY` en `.env.docker` sigue con valor de plantilla o vacio; debe corregirse manualmente en el archivo real antes de uso sostenido.
 
 ## Roadmap operativo
 

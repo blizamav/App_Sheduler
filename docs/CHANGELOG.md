@@ -1,5 +1,80 @@
 # Changelog
 
+## 2026-07-02 - Fase 14F.5 correccion de zona horaria y detencion controlada en monitor Docker
+
+### Corregido
+
+* Se confirma la causa del falso `SIN_SENAL` en Docker: SQL Server persistia `fecha_ultimo_heartbeat` en hora local, mientras el contenedor comparaba con `datetime.now()` en UTC.
+* `app/servicios/servicio_worker_heartbeat.py` ahora normaliza fechas del heartbeat usando `ZONA_HORARIA` y `zoneinfo`, evitando diferencias falsas de ~4 horas en el monitor.
+* `app/servicios/servicio_api_worker.py` expone `ultimo_heartbeat_local`, `fecha_inicio`, `ultimo_ciclo` y `zona_horaria` ya serializados en la zona operativa.
+* `app/static/js/app.js` prioriza `ultimo_heartbeat_local` al pintar `Ultima senal`.
+* `docker-compose.yml` agrega `TZ: ${ZONA_HORARIA:-America/Santiago}` para `web` y `worker`, alineando hora del contenedor, logs y monitor.
+* `scheduler_worker.py` registra `SIGTERM` y `SIGINT` como detencion controlada; `docker compose stop worker` ahora deja `DETENIDO` en `scheduler_worker_heartbeat` en vez de degradar luego a timeout.
+
+### Validado
+
+* Diagnostico previo confirmado dentro de Docker:
+  * `worker` estaba en `UTC`.
+  * SQL Server devolvia `GETDATE()` en hora local y `GETUTCDATE()` cuatro horas adelante.
+  * El monitor llego a mostrar `SIN_SENAL` con `segundos_desde_ultimo_heartbeat` cercano a `14400`.
+* Validacion operativa con `$env:DOCKER_ENV_FILE='.env.docker'`:
+  * `docker compose up -d --build web worker`: OK.
+  * `docker compose ps`: `web` y `worker` en `Up`.
+  * `docker compose exec worker date`: hora local `-04`.
+  * Login interno y `GET /api/worker/monitor`: `estado_vida=ACTIVO`, `zona_horaria=America/Santiago`, `segundos_desde_ultimo_heartbeat` dentro de margen normal.
+  * `docker compose stop worker`: OK.
+  * Monitor posterior: `estado_vida=DETENIDO`.
+  * Log del worker: `Worker detenido por interrupcion.` y `Senal de vida marcada como detenida.`
+* `python -m py_compile scheduler_worker.py app\\servicios\\servicio_worker_heartbeat.py app\\servicios\\servicio_api_worker.py app\\servicios\\servicio_scheduler_worker.py`: OK.
+* `git diff --check`: sin errores de diff; solo advertencias CRLF del entorno Windows.
+
+### Reglas
+
+* No se modifico `.env`.
+* No se modifico `.env.docker`.
+* No se ejecuto SQL correctivo.
+* No se tocaron `database/release/`, migraciones ni seeds.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
+## 2026-07-02 - Fase 14F.4 validacion Docker con `.env.docker` oficial
+
+### Validado
+
+* `git status --short` no mostro `.env`, `.env.docker`, `logs/` ni `*.log`.
+* `.env.docker` existe localmente y sigue ignorado por Git.
+* `.env.docker.example` sigue versionable.
+* `DOCKER_ENV_FILE=.env.docker` carga correctamente `web` y `worker` en `docker compose config --services`.
+* Validacion segura de variables dentro de Docker:
+  * `DB_SERVER` no llega como placeholder.
+  * `DB_USER` llega configurado.
+  * `DB_PASSWORD` llega con longitud valida y conserva dos caracteres `$`.
+  * `DB_ENCRYPT=no`, `DB_TRUST_SERVER_CERTIFICATE=yes` y `DB_TIMEOUT=10`.
+* Helper real de la app dentro de Docker:
+  * `obtener_conexion()` respondio `CONEXION_APP_OK=1`.
+* Web Docker:
+  * `docker compose up -d web`: OK.
+  * login validado desde dentro del contenedor contra `http://127.0.0.1:5000/login`: OK.
+  * `/panel`: OK.
+  * sin advertencia `Advertencias tecnicas del panel`.
+  * sin placeholder `SERVIDOR_O_INSTANCIA` visible.
+
+### Hallazgos
+
+* `APP_SECRET_KEY` en `.env.docker` sigue con valor de plantilla o vacio. La app lo advierte en logs, pero no impidio la validacion tecnica de conexion, login ni panel.
+* `worker` no se levanto en esta fase porque la regla vigente exigia autorizacion adicional del usuario despues de validar conexion y web.
+
+### Cierre
+
+* `docker compose down`: ejecutado al finalizar.
+* No quedaron contenedores activos.
+* No se modifico `.env`.
+* No se modifico `.env.docker`.
+* No se ejecuto SQL.
+* No se tocaron `database/release/`, tablas, migraciones ni seeds.
+* No se hizo commit ni push.
+* No se avanzo a Fase 15.
+
 ## 2026-07-02 - Fase 14F.3 ordenamiento de variables de entorno y limpieza residual
 
 ### Corregido

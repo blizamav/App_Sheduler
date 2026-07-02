@@ -139,6 +139,8 @@ Si Docker requiere un archivo distinto por escape de password:
 - usar `DOCKER_ENV_FILE=.env.docker`;
 - no sobrescribir `.env` local;
 - no versionar `.env.docker`.
+- validar que `APP_SECRET_KEY` no siga en valor de plantilla;
+- validar helper real con `obtener_conexion()` antes de levantar `worker`.
 
 Referencia operativa:
 
