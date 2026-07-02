@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 14G validada como checklist final QA Docker/local. Docker queda homologado con `.env.docker`, `web`, `worker`, monitor `ACTIVO -> DETENIDO` y cierre limpio; el host local Windows sigue pendiente por `08001`.
+* Estado actual: Fase 15A.1 formalizada documentalmente como contrato de evidencia por `stdout`; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 14G - Checklist final de validacion QA Docker/local.
+* Fase actual: Fase 15A.1 - Formalizacion del contrato de evidencia por stdout.
 * Ultima actualizacion: 2026-07-02
 
 ## 2. Decisiones tecnicas vigentes
@@ -26,6 +26,7 @@
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
 * Matriz de variables: `.env` es el archivo real para local y ejecucion fuera de Docker; `.env.docker` es opcional y recomendado para contenedores cuando se requiere separar escapes o valores; las plantillas oficiales versionadas son `.env.example` y `.env.docker.example`.
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
+* Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -33,7 +34,7 @@
 * Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
 * Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.env.docker.example`, `.gitignore`, `README.md`, `log_codex.md`.
 * Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1, limpieza parametrizable Fase 13A.1B y buffer visual limitado del worker Fase 14B.1.
-* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue y Fase 14F+ operacion avanzada del worker.
+* Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue, Fase 14F+ operacion avanzada del worker y Fase 15B+ modelo/captura/envio de evidencias.
 
 ## 4. Reglas del proyecto
 
@@ -54,6 +55,20 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-02 - Fase 15A.1 / Contrato de evidencia por stdout
+
+* Archivos modificados: `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/OPERACION_WORKER.md`, `docs/VARIABLES_ENTORNO.md`, `docs/CHECKLIST_DESPLIEGUE.md`, `log_codex.md`.
+* Archivo creado: `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* Objetivo: formalizar el contrato de evidencia estructurada para scripts sin implementar aun Microsoft Graph, capturador de stdout, UI, SQL ni cambios funcionales.
+* Decision principal: la evidencia sera una variable estructurada emitida por `stdout` entre `###APP_SCHEDULER_EVIDENCIA_INICIO###` y `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+* Validacion estatica futura: antes de permitir `Enviar evidencia`, la app debera validar `APP_SCHEDULER_EVIDENCIA = True`, `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"` y ambos delimitadores oficiales dentro del archivo de la version activa.
+* Decision de persistencia: no crear JSON fisico persistente y no guardar el JSON completo en BD; solo se permitira trazabilidad minima en fases posteriores.
+* Regla operativa futura: si la opcion esta activa pero el bloque no aparece o el JSON es invalido, se genera alerta interna y no se envia correo al cliente.
+* Seguridad: no documentar secretos Graph, no modificar `.env`, no exponer tokens ni connection strings, y no permitir envio a cliente si la validacion falla.
+* Pruebas realizadas: revision documental y validaciones de estado/diff al cierre de la fase.
+* Riesgos: el contrato aun no esta implementado; Fase 15B+ debe definir modelo, capturador, validador, servicio Graph, alertas y pruebas QA.
+* Estado final: fase documental cerrada sin cambios en codigo, SQL, Docker, `.env`, `.env.docker` ni `database/release/`.
 
 ### 2026-06-30 - Fase 14F.2 / Normalizacion ODBC y separacion segura local vs Docker
 

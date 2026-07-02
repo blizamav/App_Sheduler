@@ -110,6 +110,22 @@ Validar:
 - Logs no presentan error critico.
 - No hay error 500.
 
+## Validacion futura de evidencias
+
+Fase 15A.1 solo documenta el contrato de evidencia por `stdout`; no habilita envio de correos ni Microsoft Graph.
+
+Cuando se implemente el modulo, validar:
+
+- Script con `APP_SCHEDULER_EVIDENCIA = True`.
+- Script con `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`.
+- Delimitador `###APP_SCHEDULER_EVIDENCIA_INICIO###`.
+- Delimitador `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+- Bloque JSON valido en `stdout`.
+- Si falta el bloque con evidencia activa, se genera alerta interna y no correo al cliente.
+- No existe JSON fisico persistente de evidencia.
+- No se guarda el JSON completo en BD.
+- No se exponen secretos en logs, consola ni correo.
+
 ## Validacion scheduler
 
 - Scheduler debe quedar apagado o con ejecucion automatica deshabilitada por defecto.

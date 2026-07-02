@@ -6,6 +6,8 @@ Este documento define el diseno operativo del `scheduler_worker.py` y la consola
 
 Estado vigente: Fase 14E corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales, separa detencion explicita versus ausencia de senal y deja preparada la operacion separada con Docker Compose. Fase 14F.1 agrega trazabilidad segura en `/panel` para detectar cuando el problema real es conectividad SQL Server y no el worker. Fase 14F.2 normaliza la cadena ODBC en `app/database/conexion.py` con `Encrypt`, `TrustServerCertificate` y `Connection Timeout` explicitos. Fase 14F.5 corrige el desfase horario Docker/SQL Server en el monitor y hace que `docker compose stop worker` deje una marca explicita `DETENIDO`. systemd sigue como alternativa documental.
 
+Fase 15A.1 agrega solo el contrato documental de evidencia por `stdout`. El worker y el servicio de ejecuciones aun no capturan ni interpretan bloques de evidencia; esa integracion queda pendiente para fases posteriores.
+
 ## Estado actual validado
 
 El worker automatico ya existe como proceso separado:
@@ -25,6 +27,7 @@ Validaciones previas:
 - Actualiza heartbeat en `scheduler_worker_heartbeat`.
 - Desde Fase 14B.1 escribe salida operativa tambien en `logs/worker_console.log` como buffer visual limitado.
 - Desde Fase 14C existen endpoints internos de solo lectura en `/api/worker/*` para consultar estado, consola, eventos y ejecuciones recientes.
+- Desde Fase 15A.1 queda documentado que una futura evidencia de reporte se capturara desde `stdout` entre delimitadores oficiales, sin crear JSON persistente y sin guardar el JSON completo en BD.
 
 ## Endpoints internos de monitoreo
 
@@ -103,6 +106,23 @@ El worker evalua programaciones y lanza ejecuciones automaticas sin depender de 
 - No debe exponer `.env`.
 - No debe registrar ciclos normales como ruido masivo en `scheduler_eventos`.
 - No debe sustituir auditoria funcional.
+- No debe enviar evidencias al cliente si el contrato futuro falla, si el bloque no aparece o si el proceso termina con error.
+
+## Evidencia futura por stdout
+
+Referencia oficial:
+
+```text
+docs/CONTRATO_EVIDENCIA_STDOUT.md
+```
+
+Reglas vigentes de diseno:
+
+- La evidencia se emitira por `stdout`.
+- El bloque debera estar entre `###APP_SCHEDULER_EVIDENCIA_INICIO###` y `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+- Antes de activar `Enviar evidencia`, la app debera validar estaticamente el script.
+- Si la opcion esta activa y el bloque no aparece en ejecucion, corresponde alerta interna y no correo al cliente.
+- La captura real, parseo JSON, validacion, Graph y alertas internas aun no estan implementados.
 
 ## Por que no debe ejecutarse dentro de Flask
 

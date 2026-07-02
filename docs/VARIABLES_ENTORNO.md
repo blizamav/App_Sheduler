@@ -80,6 +80,19 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 | `MAX_ENV_SIZE_KB` | No | No | Tamano maximo de archivo `.env` por version. | `100` |
 | `ZONA_HORARIA` | No | No | Zona horaria operativa. | `America/Santiago` |
 
+### Evidencias y Microsoft Graph futuras
+
+Estas variables quedan documentadas como candidatas para fases posteriores. No estan activas en Fase 15A.1 y no deben agregarse con secretos reales a plantillas ni documentacion hasta que se implemente el modulo correspondiente.
+
+| Variable | Obligatoria | Secreta | Uso futuro | Estado |
+|---|---|---|---|---|
+| `GRAPH_TENANT_ID` | Pendiente | Si | Tenant Microsoft Entra ID para Graph. | No implementada |
+| `GRAPH_CLIENT_ID` | Pendiente | Si | App registration para envio de correos. | No implementada |
+| `GRAPH_CLIENT_SECRET` | Pendiente | Si | Secreto de aplicacion Graph. | No implementada |
+| `GRAPH_SEND_MAIL_USER` | Pendiente | Si | Buzon emisor autorizado. | No implementada |
+| `GRAPH_MAIL_ENABLED` | Pendiente | No | Bandera operativa para habilitar envio real. | No implementada |
+| `ALERTAS_DESTINATARIOS_DEFAULT` | Pendiente | Si | Destinatarios internos ante fallos de evidencia. | No implementada |
+
 ## Como se cargan hoy
 
 * `app/config.py` ejecuta `load_dotenv(BASE_DIR / ".env", override=False)`.

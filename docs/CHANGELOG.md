@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-02 - Fase 15A.1 contrato de evidencia por stdout
+
+### Documentado
+
+* Se crea `docs/CONTRATO_EVIDENCIA_STDOUT.md` como contrato oficial para evidencias emitidas por scripts.
+* Se formaliza que la evidencia no sera un JSON fisico persistente.
+* Se formaliza que la evidencia completa no se guardara en base de datos.
+* Se define que el script debe declarar `APP_SCHEDULER_EVIDENCIA = True` y `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`.
+* Se definen delimitadores oficiales:
+  * `###APP_SCHEDULER_EVIDENCIA_INICIO###`
+  * `###APP_SCHEDULER_EVIDENCIA_FIN###`
+* Se documenta validacion estatica obligatoria antes de permitir activar `Enviar evidencia`.
+* Se documenta captura futura desde `stdout`, parseo JSON, validacion y uso posterior para envio por Microsoft Graph.
+* Se documenta que si la opcion esta activa pero el bloque no aparece en ejecucion, corresponde alerta interna y no correo al cliente.
+* Se actualizan referencias en arquitectura, modulos, roadmap, operacion del worker, variables de entorno, checklist de despliegue y bitacora tecnica.
+
+### Reglas
+
+* No se modifico codigo Python, HTML, CSS ni JavaScript.
+* No se modifico `docker-compose.yml`.
+* No se modifico `.env` ni `.env.docker`.
+* No se ejecuto SQL.
+* No se crearon migraciones ni seeds.
+* No se toco `database/release/`.
+* No se implemento Microsoft Graph.
+* No se implemento capturador de stdout.
+* No se hizo commit ni push.
+
 ## 2026-07-02 - Fase 14G checklist final de validacion QA Docker/local
 
 ### Validado
