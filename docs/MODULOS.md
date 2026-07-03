@@ -489,6 +489,28 @@ No implementado en Fase 15E:
 * No se captura `stdout`.
 * No se valida estaticamente el script compatible con evidencia.
 
+## Modulo Mail Automatico Graph
+
+Implementado en Fase 15F:
+
+* `/configuracion/mail-graph`: pantalla administrativa minima para origen global de correo automatico.
+* `/api/configuracion/mail-graph`: API JSON para consultar y guardar configuracion global no sensible.
+* Tabla propuesta en migracion incremental `020_crear_configuracion_mail_graph.sql`.
+* Configura `activo`, `tenant_id`, `client_id`, `graph_scope`, `send_mail_user`, `save_to_sent_items` y destinatarios globales de alerta.
+* Muestra estado `Client Secret configurado: Si/No`, sin revelar el valor.
+* Reutiliza permisos administrativos `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` en esta fase para evitar seed nuevo.
+* Cierre validado: migracion 020 ejecutada manualmente en `APP_SCHEDULER_QA` y pantalla `/configuracion/mail-graph` cargando correctamente con configuracion inicial inactiva.
+* Ajuste Fase 15F: la configuracion global se actualiza sobre la misma fila; no se acumula una fila nueva por cada guardado.
+* Diagnostico preparado: `database/diagnostics/005_diagnostico_configuracion_mail_graph.sql` revisa filas existentes y deja propuesta segura de consolidacion sin ejecutar cambios destructivos.
+
+No implementado en Fase 15F:
+
+* No se envia correo real.
+* No se obtiene token Graph.
+* No se usa MSAL.
+* No se hace llamada externa a Microsoft Graph.
+* No se guarda `GRAPH_CLIENT_SECRET`, tokens ni passwords en base de datos.
+
 ## Mantenedores base
 
 Implementado en Fase 5:

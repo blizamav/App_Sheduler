@@ -261,8 +261,10 @@ Distinciones obligatorias:
 
 Pendiente critico inmediato:
 
+* Fase 15F.1: ejecutar manualmente `database/migrations/021_consolidar_configuracion_mail_graph_qa.sql` en `APP_SCHEDULER_QA` y validar que quede solo `id_config_mail = 3` con `clave_configuracion = MAIL_GRAPH`.
 * Fase posterior a 15E: validar estaticamente scripts compatibles con evidencia antes de permitir envio real.
 * Fase posterior a 15E: capturar bloque de evidencia desde `stdout`, parsear JSON y registrar resultado minimo.
+* Fase posterior a 15F: integrar servicio Graph real solo despues de validar/capturar evidencia. La configuracion global Mail Graph ya fue implementada y validada con migracion 020 ejecutada en `APP_SCHEDULER_QA`.
 * Fase 12C Auditoria extendida.
 
 Pendiente operativo:
@@ -282,4 +284,4 @@ Pendiente mejora:
 
 ## Proxima Fase Recomendada
 
-La proxima fase recomendada del bloque de evidencias es implementar validacion estatica y captura controlada de evidencia `stdout`, antes de Microsoft Graph y envio real de correos.
+La proxima fase recomendada del bloque de evidencias es implementar validacion estatica y captura controlada de evidencia `stdout`. La configuracion global Mail Graph ya queda preparada, pero el envio real debe esperar.

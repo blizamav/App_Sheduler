@@ -69,3 +69,13 @@ class Configuracion:
     MAX_SCRIPT_SIZE_MB = int(os.getenv("MAX_SCRIPT_SIZE_MB", "5"))
     MAX_ENV_SIZE_KB = int(os.getenv("MAX_ENV_SIZE_KB", "100"))
     ZONA_HORARIA = os.getenv("ZONA_HORARIA", "America/Santiago")
+
+    GRAPH_CLIENT_SECRET = os.getenv("GRAPH_CLIENT_SECRET", "")
+    GRAPH_SECRET_CONFIG_MODE = os.getenv("GRAPH_SECRET_CONFIG_MODE", "ENV")
+    GRAPH_TENANT_ID = os.getenv("GRAPH_TENANT_ID", "")
+    GRAPH_CLIENT_ID = os.getenv("GRAPH_CLIENT_ID", "")
+    GRAPH_SCOPE = os.getenv("GRAPH_SCOPE", "https://graph.microsoft.com/.default")
+    GRAPH_SEND_MAIL_USER = os.getenv("GRAPH_SEND_MAIL_USER", "")
+    GRAPH_MAIL_ENABLED = os.getenv("GRAPH_MAIL_ENABLED", "false").lower() in {"1", "true", "yes", "si"}
+    GRAPH_SAVE_TO_SENT_ITEMS = os.getenv("GRAPH_SAVE_TO_SENT_ITEMS", "true").lower() in {"1", "true", "yes", "si"}
+    GRAPH_ALERTAS_DEFAULT = os.getenv("GRAPH_ALERTAS_DEFAULT", "")

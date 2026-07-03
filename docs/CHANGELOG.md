@@ -1,5 +1,114 @@
 # Changelog
 
+## 2026-07-03 - Fase 15F.1 consolidacion configuracion Mail Graph QA
+
+### Creado
+
+* `database/migrations/021_consolidar_configuracion_mail_graph_qa.sql`.
+
+### Objetivo
+
+* Corregir `APP_SCHEDULER_QA` porque la migracion 020 fue ejecutada antes del ajuste que evita crear una fila por cada guardado.
+* Conservar `id_config_mail = 3` como configuracion global valida.
+* Eliminar de forma controlada solo las filas `id_config_mail IN (1, 2, 4)` generadas por el bug de formulario.
+* Agregar `clave_configuracion = MAIL_GRAPH` e indice unico para impedir duplicacion futura.
+
+### Seguridad
+
+* La migracion valida que exista `dbo.configuracion_mail_graph`.
+* La migracion valida que exista `id_config_mail = 3`.
+* La migracion valida que `id_config_mail = 3` tenga `send_mail_user = bpm@soex.cl`.
+* No elimina ninguna fila fuera de `1, 2, 4`.
+* No guarda secretos, tokens ni credenciales Graph.
+
+### Reglas
+
+* SQL no ejecutado por Codex.
+* No se modifico `database/release/`.
+* No se modifico `.env` ni `.env.docker`.
+* No se implemento Graph.
+* No se enviaron correos.
+* No se hizo commit ni push.
+
+## 2026-07-03 - Ajuste Fase 15F configuracion Mail Graph unica
+
+### Corregido
+
+* `app/repositorios/repositorio_mail_graph.py`: el guardado deja de insertar una nueva fila por cada cambio y ahora actualiza la configuracion global existente.
+* `app/servicios/servicio_mail_graph.py`: conserva auditoria/logs sobre el mismo `id_config_mail`.
+* `database/migrations/020_crear_configuracion_mail_graph.sql`: se ajusta para instalaciones futuras agregando clave global unica `MAIL_GRAPH`.
+
+### Creado
+
+* `database/diagnostics/005_diagnostico_configuracion_mail_graph.sql`: diagnostico solo lectura y propuesta comentada para consolidar filas existentes, sin ejecutar `DELETE/UPDATE`.
+
+### Regla cerrada
+
+* En V1 debe existir una sola configuracion global Mail Graph.
+* Si no existe configuracion, se crea una fila inicial.
+* Si ya existe, la UI/API actualiza esa misma fila.
+* No se implementa borrado desde UI.
+* No se ejecutaron SQL destructivos ni se limpiaron filas existentes.
+
+## 2026-07-03 - Fase 15F configuracion global Mail Automatico Graph
+
+### Creado
+
+* `database/migrations/020_crear_configuracion_mail_graph.sql`.
+* `app/repositorios/repositorio_mail_graph.py`.
+* `app/servicios/servicio_mail_graph.py`.
+* `app/rutas_configuracion.py`.
+* `app/templates/configuracion/mail_graph.html`.
+
+### Modificado
+
+* `app/__init__.py`: registra `bp_configuracion` y `bp_configuracion_api`.
+* `app/templates/base.html`: agrega acceso `Mail Automatico`.
+* `app/config.py`: declara variables Graph desde entorno.
+* `.env.example`.
+* `.env.docker.example`.
+* `app/static/css/estilos.css`.
+* `docs/ARQUITECTURA.md`.
+* `docs/MODULOS.md`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/VARIABLES_ENTORNO.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Implementado
+
+* UI `/configuracion/mail-graph`.
+* API `GET/POST/PUT /api/configuracion/mail-graph`.
+* Configuracion global no sensible: activo, tenant, client, scope, buzon remitente, guardar enviados y alertas globales.
+* Estado visible `Client Secret configurado: Si/No`.
+* Rechazo de `client_secret` en payload.
+* Rechazo de activacion si `GRAPH_CLIENT_SECRET` no esta configurado en entorno.
+* Validacion de campos obligatorios al activar, email remitente, scope Graph y destinatarios globales.
+
+### Cierre validado
+
+* La migracion `database/migrations/020_crear_configuracion_mail_graph.sql` fue ejecutada manualmente en `APP_SCHEDULER_QA`.
+* La pantalla `/configuracion/mail-graph` carga correctamente despues de ejecutar la migracion.
+* La pantalla muestra estado inicial inactivo, secret no configurado, origen `ENV`, scope `https://graph.microsoft.com/.default`, buzon remitente vacio, guardar enviados activo y usuario `sistema`.
+* Antes de ejecutar la migracion, la pantalla mostraba error controlado indicando migracion 020 pendiente.
+* Se confirma que `configuracion_mail_graph` existe y el backend/UI leen la configuracion global.
+* Se confirma separacion: origen global del correo, destinatarios por tarea y contenido futuro desde evidencia `stdout`.
+
+### Reglas
+
+* No se guarda `GRAPH_CLIENT_SECRET` en base de datos.
+* No se devuelve `GRAPH_CLIENT_SECRET` por API.
+* No se implemento `sendMail`.
+* No se enviaron correos.
+* No se hizo llamada externa.
+* No se implemento capturador `stdout`.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+* No se hizo commit ni push.
+
 ## 2026-07-03 - Fase 15E UI minima notificaciones por tarea
 
 ### Modificado

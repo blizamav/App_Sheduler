@@ -1235,6 +1235,23 @@ textarea {
     gap: 10px;
 }
 
+.lista-operativa {
+    display: grid;
+    gap: 12px;
+}
+
+.lista-operativa div {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px;
+    align-items: center;
+}
+
+.lista-operativa small {
+    grid-column: 2;
+    color: var(--color-texto-suave);
+}
+
 .notificaciones-tarea {
     margin-top: 18px;
 }

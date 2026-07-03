@@ -2,6 +2,7 @@ from flask import Flask
 
 from app.config import Configuracion, validar_configuracion_critica
 from app.rutas_auditoria import bp_auditoria
+from app.rutas_configuracion import bp_configuracion, bp_configuracion_api
 from app.rutas_feriados import bp_feriados
 from app.rutas_mantenedores import bp_mantenedores
 from app.rutas_papelera import bp_papelera
@@ -27,6 +28,8 @@ def crear_app():
     app.register_blueprint(bp_usuarios)
     app.register_blueprint(bp_mantenedores)
     app.register_blueprint(bp_papelera)
+    app.register_blueprint(bp_configuracion)
+    app.register_blueprint(bp_configuracion_api)
     app.register_blueprint(bp_tareas)
     app.register_blueprint(bp_tareas_api)
     app.register_blueprint(bp_scripts)

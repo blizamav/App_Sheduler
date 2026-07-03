@@ -337,6 +337,7 @@ Resultado esperado: alerta interna y sin correo al cliente.
 * Fase 15C: migracion SQL de soporte para notificaciones/evidencias.
 * Fase 15D: backend/API de configuracion de notificaciones por tarea.
 * Fase 15E: UI minima de configuracion de notificaciones por tarea.
+* Fase 15F: configuracion global del origen de correo Mail Automatico Graph, sin envio real.
 * Fase posterior: validador estatico del script compatible.
 * Fase posterior: capturador de bloque `stdout` y parseo JSON.
 * Fase posterior: servicio Microsoft Graph.

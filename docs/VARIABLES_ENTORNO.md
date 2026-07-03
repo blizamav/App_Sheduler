@@ -80,18 +80,23 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 | `MAX_ENV_SIZE_KB` | No | No | Tamano maximo de archivo `.env` por version. | `100` |
 | `ZONA_HORARIA` | No | No | Zona horaria operativa. | `America/Santiago` |
 
-### Evidencias y Microsoft Graph futuras
+### Mail Automatico Graph
 
-Estas variables quedan documentadas como candidatas para fases posteriores. No estan activas en Fase 15A.1 y no deben agregarse con secretos reales a plantillas ni documentacion hasta que se implemente el modulo correspondiente.
+Fase 15F agrega configuracion global Mail Automatico Graph. Los valores no sensibles se administran desde la UI y base de datos; el `GRAPH_CLIENT_SECRET` debe venir siempre desde entorno.
 
-| Variable | Obligatoria | Secreta | Uso futuro | Estado |
+La migracion 020 ya fue ejecutada manualmente en `APP_SCHEDULER_QA`. Con `GRAPH_CLIENT_SECRET` vacio, la pantalla `/configuracion/mail-graph` debe mostrar `Secret: No configurado` y mantener el servicio inactivo por defecto. La app no muestra ni devuelve el valor real del secret.
+
+| Variable | Obligatoria | Secreta | Uso | Estado |
 |---|---|---|---|---|
-| `GRAPH_TENANT_ID` | Pendiente | Si | Tenant Microsoft Entra ID para Graph. | No implementada |
-| `GRAPH_CLIENT_ID` | Pendiente | Si | App registration para envio de correos. | No implementada |
-| `GRAPH_CLIENT_SECRET` | Pendiente | Si | Secreto de aplicacion Graph. | No implementada |
-| `GRAPH_SEND_MAIL_USER` | Pendiente | Si | Buzon emisor autorizado. | No implementada |
-| `GRAPH_MAIL_ENABLED` | Pendiente | No | Bandera operativa para habilitar envio real. | No implementada |
-| `ALERTAS_DESTINATARIOS_DEFAULT` | Pendiente | Si | Destinatarios internos ante fallos de evidencia. | No implementada |
+| `GRAPH_CLIENT_SECRET` | Si para activar Mail Graph | Si | Secreto de aplicacion Graph. Nunca se guarda en BD ni se muestra por UI/API. | Implementada como lectura de entorno |
+| `GRAPH_SECRET_CONFIG_MODE` | No | No | Origen del secret. V1 soporta `ENV`. | Implementada |
+| `GRAPH_TENANT_ID` | No | No | Fallback documental para Tenant ID si se requiere inicializar por entorno. La UI/BD es fuente principal no sensible. | Plantilla |
+| `GRAPH_CLIENT_ID` | No | No | Fallback documental para Client ID si se requiere inicializar por entorno. La UI/BD es fuente principal no sensible. | Plantilla |
+| `GRAPH_SCOPE` | No | No | Scope por defecto sugerido. | Plantilla |
+| `GRAPH_SEND_MAIL_USER` | No | No | Fallback documental para buzon remitente. La UI/BD es fuente principal no sensible. | Plantilla |
+| `GRAPH_MAIL_ENABLED` | No | No | Bandera documental para despliegues; activar envio real queda pendiente. | Plantilla |
+| `GRAPH_SAVE_TO_SENT_ITEMS` | No | No | Default sugerido para guardar copia en enviados. | Plantilla |
+| `GRAPH_ALERTAS_DEFAULT` | No | No | Default sugerido para alertas globales. | Plantilla |
 
 ## Como se cargan hoy
 

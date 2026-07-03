@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15E agrega UI minima para configurar notificaciones por tarea usando el backend/API de Fase 15D, sin Graph, sin envio de correos y sin capturador de `stdout`.
+* Estado actual: Fase 15F agrega configuracion global Mail Automatico Graph, sin envio real, sin llamadas externas y sin capturador de `stdout`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15E - UI minima configuracion notificaciones por tarea.
+* Fase actual: Fase 15F - Configuracion global Mail Automatico Graph.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -30,6 +30,7 @@
 * Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
 * Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
 * UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; no valida aun el script compatible.
+* Mail Automatico Graph: origen global del correo en `/configuracion/mail-graph`; `GRAPH_CLIENT_SECRET` queda solo por entorno y no se expone por UI/API.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -58,6 +59,55 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15F.1 / Consolidacion configuracion Mail Graph QA
+
+* Archivos creados: `database/migrations/021_consolidar_configuracion_mail_graph_qa.sql`.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/ROADMAP.md`, `log_codex.md`.
+* Problema real reportado: `configuracion_mail_graph` tenia 4 filas en `APP_SCHEDULER_QA` por el bug de guardado previo.
+* Decision del usuario: conservar `id_config_mail = 3`; filas `1`, `2` y `4` son incompletas o tienen error de tipeo.
+* Migracion creada: `021_consolidar_configuracion_mail_graph_qa.sql` valida tabla, valida fila 3, valida `send_mail_user = bpm@soex.cl`, elimina solo `id_config_mail IN (1, 2, 4)`, agrega `clave_configuracion = MAIL_GRAPH` y crea indice unico.
+* Seguridad: no se ejecutaron SQL, no se borraron filas desde Codex, no se toco `database/release/`, no se modifico `.env` ni `.env.docker`.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se hicieron llamadas externas, no se hizo commit ni push.
+* Proximos pasos: ejecutar manualmente 021 en SSMS y validar que exista una sola fila global.
+
+### 2026-07-03 - Ajuste Fase 15F / Configuracion Mail Graph unica
+
+* Archivos creados: `database/diagnostics/005_diagnostico_configuracion_mail_graph.sql`.
+* Archivos modificados: `app/repositorios/repositorio_mail_graph.py`, `app/servicios/servicio_mail_graph.py`, `database/migrations/020_crear_configuracion_mail_graph.sql`, `docs/CHANGELOG.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `log_codex.md`.
+* Problema detectado: cada guardado desde `/configuracion/mail-graph` insertaba una nueva fila en `configuracion_mail_graph`.
+* Causa raiz: `guardar_configuracion_mail_graph()` desactivaba la fila activa e insertaba una nueva configuracion, patron incorrecto para una configuracion global unica.
+* Correccion aplicada: el repositorio ahora actualiza el `id_config_mail` existente; solo se crea fila inicial si no existe configuracion.
+* Ajuste SQL para futuro: la migracion 020 incorpora `clave_configuracion = MAIL_GRAPH` e indice unico para instalaciones limpias futuras.
+* Diagnostico preparado: `005_diagnostico_configuracion_mail_graph.sql` permite revisar filas existentes y contiene una propuesta comentada con `ROLLBACK` para consolidar una sola fila, sin ejecutar cambios.
+* Alcance excluido: no se ejecuto SQL, no se borraron filas, no se modifico `.env`, no se implemento Graph, no se enviaron correos, no se hizo commit ni push.
+* Proximos pasos: ejecutar primero la seccion de diagnostico solo lectura y aprobar explicitamente cualquier consolidacion de filas existentes.
+
+### 2026-07-03 - Fase 15F / Cierre documental post migracion 020
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/ROADMAP.md`, `docs/MODULOS.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/VARIABLES_ENTORNO.md`, `log_codex.md`.
+* Objetivo: cerrar documentalmente Fase 15F luego de la ejecucion manual de la migracion 020.
+* Validacion reportada: `database/migrations/020_crear_configuracion_mail_graph.sql` fue ejecutada manualmente en `APP_SCHEDULER_QA`.
+* Validacion UI reportada: `/configuracion/mail-graph` carga correctamente y ya no muestra error de migracion pendiente.
+* Estado inicial observado: servicio inactivo, secret no configurado, origen `ENV`, scope `https://graph.microsoft.com/.default`, buzon remitente vacio, guardar enviados activo y usuario `sistema`.
+* Decisiones cerradas: origen de correo global en Mail Automatico Graph, destinatarios de evidencia por tarea, alertas con global u override por tarea, contenido futuro desde `stdout`, `CLIENT_SECRET` solo por entorno.
+* Alcance excluido: no se implemento Graph `sendMail`, no se enviaron correos, no hubo llamadas externas, no se uso MSAL ni `requests.post`, no se capturo `stdout`, no se modifico worker, no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Proximos pasos: implementar validacion estatica y captura controlada de evidencia `stdout` antes del envio real por Microsoft Graph.
+
+### 2026-07-03 - Fase 15F / Configuracion global Mail Automatico Graph
+
+* Archivos creados: `database/migrations/020_crear_configuracion_mail_graph.sql`, `app/repositorios/repositorio_mail_graph.py`, `app/servicios/servicio_mail_graph.py`, `app/rutas_configuracion.py`, `app/templates/configuracion/mail_graph.html`.
+* Archivos modificados: `app/__init__.py`, `app/templates/base.html`, `app/config.py`, `.env.example`, `.env.docker.example`, `app/static/css/estilos.css`, `docs/ARQUITECTURA.md`, `docs/MODULOS.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/VARIABLES_ENTORNO.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: implementar configuracion global de origen de correo automatico Microsoft Graph, separada de destinatarios por tarea y contenido por `stdout`.
+* Decision: crear tabla especifica `configuracion_mail_graph` en vez de usar `configuracion_sistema`, porque requiere campos tipados, validaciones y estado operativo propio.
+* Rutas creadas: `/configuracion/mail-graph` y `GET/POST/PUT /api/configuracion/mail-graph`.
+* Permisos: se reutilizan `SCHEDULER_CONFIG_VER` y `SCHEDULER_CONFIG_EDITAR` por ser configuracion administrativa global; no se creo seed nuevo.
+* Validaciones: campos obligatorios al activar, formato email para remitente, scope Microsoft Graph, destinatarios globales y rechazo de `client_secret` en payload.
+* Seguridad: `GRAPH_CLIENT_SECRET` se lee solo desde entorno; la API devuelve solo `client_secret_configurado`.
+* Pruebas recomendadas: ejecutar manualmente migracion 020 en SSMS, abrir `/configuracion/mail-graph`, guardar inactivo, validar errores al activar sin datos o sin secret y confirmar que API no devuelve secretos.
+* Alcance excluido: no se implemento Graph `sendMail`, no se enviaron correos, no se llamo a Microsoft, no se capturo `stdout`, no se modifico worker, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Proximos pasos: validar/capturar evidencia `stdout` antes de integrar envio real Graph.
 
 ### 2026-07-03 - Fase 15E / UI minima configuracion notificaciones por tarea
 

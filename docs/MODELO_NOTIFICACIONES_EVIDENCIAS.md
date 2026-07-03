@@ -526,6 +526,73 @@ Limitaciones vigentes:
 * no valida estaticamente todavia que el script declare soporte de evidencia;
 * no muestra ni solicita secretos Graph.
 
+## Configuracion global Mail Automatico Graph
+
+Fase 15F separa origen, destino y contenido:
+
+* origen del correo: configuracion global `Mail Automatico / Microsoft Graph`;
+* destinatarios de evidencia: configuracion por tarea;
+* destinatarios de alerta global: configuracion global Mail Graph;
+* contenido/evidencia: bloque emitido por `stdout` del script en fase posterior.
+
+Decision de modelo: se crea tabla especifica `configuracion_mail_graph` mediante la migracion incremental `database/migrations/020_crear_configuracion_mail_graph.sql`.
+
+Se eligio tabla especifica en vez de `configuracion_sistema` porque Mail Graph requiere campos tipados, validaciones propias, estado operativo, usuario de actualizacion y regla explicita de secret por entorno.
+
+Estado de cierre Fase 15F:
+
+* la migracion 020 fue ejecutada manualmente en `APP_SCHEDULER_QA`;
+* la tabla `configuracion_mail_graph` quedo disponible;
+* `/configuracion/mail-graph` carga correctamente;
+* la configuracion inicial queda inactiva por defecto;
+* `client_secret_origen` queda en `ENV`;
+* `client_secret_configurado` muestra `No configurado` cuando falta `GRAPH_CLIENT_SECRET`;
+* no se enviaron correos ni se hicieron llamadas externas.
+
+Ajuste posterior Fase 15F:
+
+* la configuracion Mail Graph es global unica del sistema;
+* cada guardado desde `/configuracion/mail-graph` debe actualizar la fila existente;
+* no debe insertar una fila nueva por cada cambio de formulario;
+* para instalaciones futuras, la migracion 020 incluye `clave_configuracion = MAIL_GRAPH` e indice unico;
+* para ambientes ya ejecutados, se preparo `database/diagnostics/005_diagnostico_configuracion_mail_graph.sql` con consultas de diagnostico y propuesta comentada de consolidacion;
+* no se borra ni actualiza ninguna fila existente sin autorizacion explicita.
+
+Fase 15F.1 define una migracion incremental correctiva para `APP_SCHEDULER_QA`:
+
+* archivo: `database/migrations/021_consolidar_configuracion_mail_graph_qa.sql`;
+* conserva `id_config_mail = 3`;
+* elimina solo `id_config_mail IN (1, 2, 4)`;
+* valida que exista la tabla y que exista la fila 3;
+* valida que la fila 3 tenga `send_mail_user = bpm@soex.cl`;
+* agrega `clave_configuracion = MAIL_GRAPH` si falta;
+* crea `UX_config_mail_graph_clave` para impedir multiples configuraciones globales;
+* no debe ejecutarse sobre otro ambiente sin revisar IDs reales.
+
+Campos principales:
+
+* `activo`.
+* `tenant_id`.
+* `client_id`.
+* `graph_scope`.
+* `send_mail_user`.
+* `save_to_sent_items`.
+* `alertas_destinatarios_default`.
+* `client_secret_origen`.
+* `fecha_creacion`.
+* `fecha_actualizacion`.
+* `usuario_actualizacion`.
+
+Reglas de seguridad:
+
+* `GRAPH_CLIENT_SECRET` vive solo en `.env`, `.env.docker` o variables del servidor;
+* no se guarda `client_secret` en SQL Server;
+* no se guardan `access_token`, `refresh_token`, passwords ni connection strings;
+* la API solo expone `client_secret_configurado: true/false`;
+* si llega `client_secret` por payload, se rechaza con error controlado;
+* activar Mail Graph exige `GRAPH_CLIENT_SECRET` configurado en entorno;
+* Fase 15F no envia correos, no obtiene tokens y no llama a Microsoft Graph.
+
 Implementacion futura pendiente:
 
 * `app/repositorios/repositorio_evidencias.py`

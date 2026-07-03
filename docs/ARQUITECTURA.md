@@ -23,6 +23,7 @@ Estado actual: Fase 14E deja implementado el buffer visual limitado del worker, 
 * Auditoria: `auditoria_cambios`, servicio central `registrar_auditoria(...)` y modulo `/auditoria` implementados desde Fase 12A.
 * Evidencia futura: contrato documental en `docs/CONTRATO_EVIDENCIA_STDOUT.md`; modelo minimo en `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`; la evidencia se emitira por `stdout` entre delimitadores, no como JSON fisico persistente ni como JSON completo en BD.
 * Notificaciones: `app/repositorios/repositorio_notificaciones.py`, `app/servicios/servicio_notificaciones.py` y API `/api/tareas/<id_tarea>/notificaciones` para configuracion por tarea.
+* Mail Automatico Graph: `app/repositorios/repositorio_mail_graph.py`, `app/servicios/servicio_mail_graph.py`, `app/rutas_configuracion.py`, UI `/configuracion/mail-graph` y API `/api/configuracion/mail-graph` para configuracion global no sensible.
 
 ## Flujo de datos inicial
 
@@ -111,6 +112,8 @@ Fase 15A.1 deja definido que la futura evidencia para reportes no usara archivos
 Fase 15B recomienda configurar evidencia por `tarea`, relacionar la traza capturada con `ejecuciones`, registrar intentos en `notificaciones_envios` y dejar secretos Graph exclusivamente en variables de entorno.
 
 Fase 15D implementa solo el backend de configuracion: consultar, guardar y desactivar configuracion de notificaciones por tarea. No modifica el worker, no envia correos y no captura `stdout`.
+
+Fase 15F agrega configuracion global Mail Automatico Graph. El origen del correo queda en `configuracion_mail_graph`; los destinatarios de evidencia siguen por tarea y el contenido sigue pendiente desde `stdout`. `GRAPH_CLIENT_SECRET` vive solo en entorno y la app solo muestra si esta configurado. No se implementa `sendMail`, MSAL ni llamadas externas.
 
 Control de ejecuciones huerfanas:
 

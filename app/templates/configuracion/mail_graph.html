@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mail Automatico Graph - APP Scheduler{% endblock %}
+{% block encabezado %}Mail Automatico Graph{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida">
+    <div>
+        <p class="eyebrow">Configuracion</p>
+        <h2>Mail Automatico / Microsoft Graph</h2>
+        <p>Define el origen global del correo automatico. Los destinatarios de evidencia siguen configurandose por tarea.</p>
+    </div>
+    {% if configuracion %}
+    <span class="badge {{ 'activo' if configuracion.activo else 'inactivo' }}">{{ "Activo" if configuracion.activo else "Inactivo" }}</span>
+    {% endif %}
+</section>
+
+<section class="mensajes">
+    <div class="alerta info">
+        Esta pantalla solo configura la conexion futura. El envio real por Microsoft Graph se implementara en una fase posterior.
+    </div>
+    <div class="alerta advertencia">
+        El Client Secret no se guarda en la base de datos ni se muestra en pantalla. Debe configurarse mediante variables de entorno.
+    </div>
+</section>
+
+{% if configuracion %}
+<section class="panel-grid">
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Resumen</p>
+                <h3>Estado de configuracion</h3>
+            </div>
+            <span class="badge info">Global</span>
+        </div>
+        <div class="detalle-grid">
+            <div><strong>Servicio</strong><span>{{ "Activo" if configuracion.activo else "Inactivo" }}</span></div>
+            <div><strong>Secret</strong><span>{{ "Configurado" if configuracion.client_secret_configurado else "No configurado" }}</span></div>
+            <div><strong>Origen secret</strong><span>{{ configuracion.client_secret_origen }}</span></div>
+            <div><strong>Buzon remitente</strong><span>{{ configuracion.send_mail_user or "-" }}</span></div>
+            <div><strong>Scope</strong><span>{{ configuracion.graph_scope }}</span></div>
+            <div><strong>Guardar enviados</strong><span>{{ "Si" if configuracion.save_to_sent_items else "No" }}</span></div>
+            <div><strong>Actualizado</strong><span>{{ configuracion.fecha_actualizacion or "-" }}</span></div>
+            <div><strong>Usuario</strong><span>{{ configuracion.usuario_actualizacion or "-" }}</span></div>
+        </div>
+    </article>
+
+    <article class="bloque">
+        <div class="bloque-header">
+            <div>
+                <p class="eyebrow">Separacion</p>
+                <h3>Origen, destino y contenido</h3>
+            </div>
+        </div>
+        <div class="lista-operativa">
+            <div><span class="punto activo"></span><strong>Origen</strong><small>Modulo global Mail Graph.</small></div>
+            <div><span class="punto info"></span><strong>Destinatarios</strong><small>Configuracion por tarea y alerta global.</small></div>
+            <div><span class="punto advertencia"></span><strong>Contenido</strong><small>Bloque de evidencia stdout en fase posterior.</small></div>
+        </div>
+    </article>
+</section>
+
+<section class="bloque">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Edicion</p>
+            <h3>Parametros no sensibles</h3>
+        </div>
+    </div>
+    <form
+        method="post"
+        class="formulario-admin requiere-confirmacion-form"
+        data-confirm-summary="scheduler"
+        data-confirm-title="Guardar Mail Automatico"
+        data-confirm-message="Estas a punto de modificar la configuracion global de Mail Automatico Graph."
+        data-confirm-ok="Si, guardar configuracion"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="warning"
+    >
+        <label class="checkline">
+            <input name="activo" type="checkbox" value="1" data-label="Mail Automatico activo" data-original="{{ '1' if configuracion.activo else '0' }}" {% if configuracion.activo %}checked{% endif %}>
+            Mail Automatico activo
+        </label>
+        <label class="checkline">
+            <input name="save_to_sent_items" type="checkbox" value="1" data-label="Guardar enviados" data-original="{{ '1' if configuracion.save_to_sent_items else '0' }}" {% if configuracion.save_to_sent_items %}checked{% endif %}>
+            Guardar copia en enviados
+        </label>
+
+        <div class="grid-formulario">
+            <div class="campo">
+                <label for="tenant_id">Tenant ID</label>
+                <input id="tenant_id" name="tenant_id" maxlength="100" value="{{ configuracion.tenant_id or '' }}" data-label="Tenant ID" data-original="{{ configuracion.tenant_id or '' }}">
+            </div>
+            <div class="campo">
+                <label for="client_id">Client ID</label>
+                <input id="client_id" name="client_id" maxlength="100" value="{{ configuracion.client_id or '' }}" data-label="Client ID" data-original="{{ configuracion.client_id or '' }}">
+            </div>
+            <div class="campo">
+                <label for="graph_scope">Scope Graph</label>
+                <input id="graph_scope" name="graph_scope" maxlength="255" value="{{ configuracion.graph_scope or 'https://graph.microsoft.com/.default' }}" data-label="Scope Graph" data-original="{{ configuracion.graph_scope or 'https://graph.microsoft.com/.default' }}">
+            </div>
+            <div class="campo">
+                <label for="send_mail_user">Buzon remitente</label>
+                <input id="send_mail_user" name="send_mail_user" type="email" maxlength="255" value="{{ configuracion.send_mail_user or '' }}" data-label="Buzon remitente" data-original="{{ configuracion.send_mail_user or '' }}">
+            </div>
+        </div>
+
+        <div class="campo">
+            <label for="alertas_destinatarios_default">Destinatarios alerta global</label>
+            <textarea id="alertas_destinatarios_default" name="alertas_destinatarios_default" maxlength="1000" rows="3" data-label="Alertas globales" data-original="{{ configuracion.alertas_destinatarios_default or '' }}">{{ configuracion.alertas_destinatarios_default or '' }}</textarea>
+            <p class="texto-ayuda">Separar multiples correos con punto y coma, coma o salto de linea.</p>
+        </div>
+
+        <div class="detalle-grid">
+            <div><strong>Estado Client Secret</strong><span>{{ "Configurado" if configuracion.client_secret_configurado else "No configurado" }}</span></div>
+            <div><strong>Origen Client Secret</strong><span>ENV</span></div>
+        </div>
+
+        <button class="btn primario" type="submit">Guardar configuracion</button>
+    </form>
+</section>
+{% endif %}
+{% endblock %}
