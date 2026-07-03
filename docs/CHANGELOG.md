@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-07-02 - Fase 15C migraciones SQL para notificaciones y evidencias
+
+### Creado
+
+* `database/migrations/019_crear_notificaciones_evidencias.sql`.
+
+### Incluye
+
+* Tabla `notificaciones_config_tarea`.
+* Tabla `notificaciones_destinatarios`.
+* Tabla `evidencias_ejecucion`.
+* Tabla `notificaciones_envios`.
+* FK hacia `tareas(id_tarea)`.
+* FK hacia `ejecuciones(id_ejecucion)`, usando `bigint` para calzar con el esquema final.
+* FK nullable hacia `evidencias_ejecucion(id_evidencia)`.
+* FK self-reference `notificaciones_envios(id_envio_origen)` para reintento futuro.
+* CHECK constraints para plantillas, tipos de destinatario, canales, estados de evidencia, estados de envio, tipo de envio, cantidades, intento y status HTTP Graph.
+* Indice unico filtrado para impedir mas de una configuracion activa por tarea.
+* Indice unico filtrado para impedir mas de un envio exitoso de tipo `EVIDENCIA_CLIENTE` por ejecucion.
+* Indices operativos para configuracion, destinatarios, evidencias y envios.
+
+### Documentado
+
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md` registra la migracion creada y su alcance.
+* `docs/ROADMAP.md` actualiza Fase 15C como migracion SQL versionada sin ejecutar.
+* `log_codex.md` registra decisiones, archivos y validaciones.
+
+### Reglas
+
+* No se ejecuto SQL.
+* No se modifico `database/release/`.
+* No se modifico codigo Python, HTML, CSS ni JavaScript.
+* No se modifico `.env` ni `.env.docker`.
+* No se implemento Graph.
+* No se implemento UI.
+* No se implemento capturador de stdout.
+* No se hizo commit ni push.
+
 ## 2026-07-02 - Fase 15B modelo minimo de evidencias y notificaciones
 
 ### Documentado

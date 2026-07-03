@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15B documentada como modelo minimo de datos para evidencias y notificaciones; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
+* Estado actual: Fase 15C crea migracion SQL versionada para notificaciones y evidencias, sin ejecutar SQL; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15B - Modelo de datos minimo para evidencias y notificaciones.
+* Fase actual: Fase 15C - Migraciones SQL para notificaciones y evidencias.
 * Ultima actualizacion: 2026-07-02
 
 ## 2. Decisiones tecnicas vigentes
@@ -56,6 +56,20 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-02 - Fase 15C / Migraciones SQL para notificaciones y evidencias
+
+* Archivos creados: `database/migrations/019_crear_notificaciones_evidencias.sql`.
+* Archivos modificados: `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: crear script SQL versionado para soportar configuracion de evidencia por tarea, destinatarios, trazabilidad minima de evidencia e intentos de envio.
+* Diagnostico: la carpeta `database/migrations/` no existia en raiz porque el historico incremental fue movido a `database/legacy_pre_release_13B/`; se recrea para la nueva migracion sin tocar `database/release/`.
+* Tablas creadas por la migracion: `notificaciones_config_tarea`, `notificaciones_destinatarios`, `evidencias_ejecucion`, `notificaciones_envios`.
+* Decision tecnica: `id_ejecucion`, `id_evidencia` e `id_envio` usan `bigint` para calzar con `ejecuciones.id_ejecucion` del schema final.
+* Restricciones: CHECK para plantilla, tipos, canales, estados, cantidades, intentos y status HTTP; FK a `tareas`, `ejecuciones`, `evidencias_ejecucion` y self-reference para reintentos.
+* Indices: configuracion activa por tarea, destinatarios activos, busquedas por estado/fecha y envio exitoso cliente unico por ejecucion.
+* Seguridad: la migracion no guarda JSON completo, no guarda cuerpo completo de correo, no guarda secretos Graph, tokens, passwords ni cadenas de conexion.
+* Pruebas realizadas: `git diff --check`, `git status --short` y filtro de estado para confirmar que no aparecen `.env`, `.env.docker`, `logs/`, `*.log` ni `database/release/`.
+* Estado final: SQL no ejecutado; no se modifico codigo, UI, Docker, `.env`, `.env.docker` ni `database/release/`; no se hizo commit/push.
 
 ### 2026-07-02 - Fase 15B / Modelo minimo de evidencias y notificaciones
 

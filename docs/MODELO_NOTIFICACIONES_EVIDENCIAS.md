@@ -423,16 +423,34 @@ Reglas:
 
 ## Migraciones futuras sugeridas
 
-En una fase posterior se podria crear:
+Fase 15C crea la migracion incremental:
 
 * `database/migrations/019_crear_notificaciones_evidencias.sql`
-  * tablas `notificaciones_config_tarea`, `notificaciones_destinatarios`, `evidencias_ejecucion`, `notificaciones_envios`;
-  * constraints, indices y defaults;
-  * permisos nuevos.
+
+Tablas incluidas:
+
+* `notificaciones_config_tarea`
+* `notificaciones_destinatarios`
+* `evidencias_ejecucion`
+* `notificaciones_envios`
+
+Incluye:
+
+* PK/FK hacia `tareas` y `ejecuciones`.
+* FK nullable de `notificaciones_envios.id_evidencia`.
+* FK self-reference `notificaciones_envios.id_envio_origen` para reintentos futuros.
+* CHECK constraints para estados, tipos, canales, cantidades e HTTP status.
+* Indices operativos.
+* Indice unico filtrado para impedir mas de un envio exitoso de tipo `EVIDENCIA_CLIENTE` por ejecucion.
+
+No se ejecuto SQL en Fase 15C y no se modifico `database/release/`.
+
+Permisos futuros sugeridos:
+
 * `database/seeds/011_permisos_notificaciones.sql`
   * permisos para ver/editar configuracion, ver evidencias, reintentar envios y administrar destinatarios.
 
-No crear estas migraciones en Fase 15B.
+No crear seeds en Fase 15C.
 
 ## Archivos que se tocarian en fases posteriores
 
