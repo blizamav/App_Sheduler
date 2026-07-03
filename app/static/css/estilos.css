@@ -1290,6 +1290,30 @@ textarea {
     flex-wrap: wrap;
 }
 
+.ayuda-evidencia {
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    background: #f8fbff;
+    padding: 12px 14px;
+}
+
+.ayuda-evidencia summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--color-primario);
+}
+
+.ayuda-evidencia pre {
+    overflow-x: auto;
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #e5eefb;
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
 .lista-simple {
     margin: 8px 0 0;
     padding-left: 18px;

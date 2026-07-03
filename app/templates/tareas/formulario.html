@@ -173,8 +173,29 @@
         </div>
 
         <div class="alerta info alerta-inline">
-            En una fase posterior, la app validara que el script declare soporte de evidencia antes de permitir activar este envio.
+            La app valida que el script declare soporte de evidencia antes de permitir activar este envio.
         </div>
+
+        <details class="ayuda-evidencia">
+            <summary>Ver estructura requerida</summary>
+            <p>Para que APP Scheduler pueda capturar evidencia, los delimitadores deben imprimirse durante la ejecucion del script. No basta con dejarlos como comentarios.</p>
+            <pre><code>APP_SCHEDULER_EVIDENCIA = True
+APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"
+
+evidencia_scheduler = {
+    "version_contrato": "1.0",
+    "estado": "EXITOSO",
+    "tipo_evidencia": "PROCESO",
+    "titulo": "Proceso finalizado",
+    "resumen": [],
+    "problemas": []
+}
+
+print("###APP_SCHEDULER_EVIDENCIA_INICIO###")
+print(json.dumps(evidencia_scheduler, ensure_ascii=False))
+print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre>
+            <p class="texto-ayuda">La validacion es estatica: acepta strings reales del codigo y no considera delimitadores escritos solo en comentarios. La captura ocurre desde stdout.</p>
+        </details>
 
         <div class="alerta advertencia alerta-inline" data-evidencia-soporte-panel>
             <div class="notificaciones-soporte-header">
@@ -214,6 +235,8 @@
                 Usar alerta global
             </label>
         </div>
+
+        <p class="texto-ayuda">Canales de destinatarios: TO es destinatario principal, CC es copia visible y BCC es copia oculta.</p>
 
         <div class="notificaciones-grid">
             <article class="notificaciones-destinatarios" data-destinatarios-grupo="EVIDENCIA">

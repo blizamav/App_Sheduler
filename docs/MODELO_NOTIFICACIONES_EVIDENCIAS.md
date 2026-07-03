@@ -604,6 +604,64 @@ Endpoint informativo:
 
 * `GET /api/tareas/<id_tarea>/evidencia/validar-soporte`.
 
+## Captura controlada de evidencia stdout
+
+Fase 15H captura el bloque de evidencia durante la ejecucion real del script, sin enviar correos y sin llamar a Microsoft Graph.
+
+Flujo:
+
+* `servicio_ejecuciones.py` ejecuta el proceso Python como antes;
+* stdout/stderr se sigue leyendo desde el proceso;
+* cada linea real emitida por el script se escribe completa en el log visible de ejecucion;
+* si aparece `###APP_SCHEDULER_EVIDENCIA_INICIO###`, se acumula una copia del bloque internamente para validacion;
+* al detectar `###APP_SCHEDULER_EVIDENCIA_FIN###`, se marca como capturado sin ocultarlo de la consola;
+* al finalizar el proceso y conocer `exit_code`, se procesa la evidencia;
+* si la tarea tiene `enviar_evidencia` activo, se registra una fila en `evidencias_ejecucion`;
+* si la tarea no requiere evidencia, no se registra evidencia.
+
+Politica de logs visibles desde Fase 15H.3:
+
+* La consola/log de ejecucion de la app muestra stdout/stderr completo para diagnostico TI.
+* El bloque JSON de evidencia no se reemplaza por marcadores en el log visible.
+* La omision del JSON bruto aplica solo al futuro cuerpo de correo/notificacion, que debera construirse desde la evidencia parseada.
+* La base de datos conserva solo trazabilidad minima, hash y contadores; no guarda el JSON completo.
+
+Estados usados:
+
+* `NO_EMITIDA`: la tarea requeria evidencia pero no aparecio bloque.
+* `INVALIDA`: delimitador incompleto, JSON invalido o estructura minima invalida.
+* `ERROR_DECLARADO`: el JSON declara estado distinto de `EXITOSO`, tiene problemas o el proceso finalizo con codigo distinto de 0.
+* `ADJUNTO_FALTANTE`: hay adjuntos obligatorios no disponibles o con ruta no permitida.
+* `VALIDADA`: contrato correcto, estado `EXITOSO`, sin problemas y proceso con codigo 0.
+
+Persistencia minima:
+
+* `id_ejecucion`;
+* `estado_evidencia`;
+* `version_contrato`;
+* `tipo_evidencia`;
+* `titulo`;
+* `asunto_sugerido`;
+* `hash_evidencia`;
+* cantidades de resumen, adjuntos y problemas;
+* banderas de bloque y delimitadores;
+* error controlado.
+
+No se guarda:
+
+* JSON completo;
+* cuerpo completo de correo;
+* secretos;
+* tokens;
+* contenido del script.
+
+Adjuntos en Fase 15H:
+
+* `adjuntos` debe ser lista si viene;
+* adjuntos opcionales no bloquean;
+* adjuntos obligatorios deben existir y tener ruta segura bajo el directorio del proyecto;
+* no se envia ningun adjunto en esta fase.
+
 Campos principales:
 
 * `activo`.

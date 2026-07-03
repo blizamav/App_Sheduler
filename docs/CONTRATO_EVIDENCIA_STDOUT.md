@@ -125,8 +125,27 @@ Reglas:
 
 1. Debe existir `APP_SCHEDULER_EVIDENCIA = True`.
 2. Debe existir `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`.
-3. Debe existir el literal `###APP_SCHEDULER_EVIDENCIA_INICIO###`.
-4. Debe existir el literal `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+3. Debe existir el literal `###APP_SCHEDULER_EVIDENCIA_INICIO###` como string real del codigo.
+4. Debe existir el literal `###APP_SCHEDULER_EVIDENCIA_FIN###` como string real del codigo.
+5. Los delimitadores escritos solo como comentarios no son validos.
+
+La validacion estatica no ejecuta el script, no usa `exec`, no usa `eval` y no importa el archivo. Para evitar falsos positivos, los delimitadores se revisan como strings reales del codigo mediante lectura estatica. Esto permite constantes o helpers, por ejemplo:
+
+```python
+DELIM_INICIO = "###APP_SCHEDULER_EVIDENCIA_INICIO###"
+DELIM_FIN = "###APP_SCHEDULER_EVIDENCIA_FIN###"
+
+print(DELIM_INICIO)
+print(json.dumps(evidencia_scheduler, ensure_ascii=False))
+print(DELIM_FIN)
+```
+
+Este caso no es valido porque los delimitadores no se imprimen ni existen como strings ejecutables del codigo:
+
+```python
+# ###APP_SCHEDULER_EVIDENCIA_INICIO###
+# ###APP_SCHEDULER_EVIDENCIA_FIN###
+```
 
 Si falla una regla, la app debe bloquear la activacion y mostrar un mensaje controlado:
 
@@ -136,7 +155,15 @@ No se puede activar el envio de evidencia para este script. El archivo no cumple
 
 ## Captura en ejecucion
 
-El capturador futuro debe leer `stdout` linea por linea sin romper el log existente.
+El capturador debe leer `stdout` linea por linea sin romper el log existente.
+
+Regla operativa definitiva desde Fase 15H.3:
+
+* El log visible de ejecucion debe mostrar stdout/stderr completo.
+* El bloque de evidencia debe seguir viendose en consola/log operativo con sus delimitadores y JSON impreso.
+* No se deben reemplazar esas lineas por marcadores en el log visible.
+* La omision del JSON bruto aplica solo al futuro cuerpo de correo/notificacion.
+* La base de datos sigue sin guardar el JSON completo; solo registra hash y trazabilidad minima.
 
 Estado recomendado:
 
@@ -339,7 +366,7 @@ Resultado esperado: alerta interna y sin correo al cliente.
 * Fase 15E: UI minima de configuracion de notificaciones por tarea.
 * Fase 15F: configuracion global del origen de correo Mail Automatico Graph, sin envio real.
 * Fase 15G: validador estatico del script compatible.
-* Fase posterior: capturador de bloque `stdout` y parseo JSON.
+* Fase 15H: capturador de bloque `stdout`, parseo JSON y registro minimo en `evidencias_ejecucion`.
 * Fase posterior: servicio Microsoft Graph.
 * Fase posterior: integracion con worker y ejecuciones.
 * Fase posterior: alertas internas, adjuntos, reintentos y trazabilidad.

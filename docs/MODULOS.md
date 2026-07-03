@@ -525,9 +525,17 @@ Validaciones:
 
 * declaracion `APP_SCHEDULER_EVIDENCIA = True`;
 * version `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`;
-* delimitador de inicio;
-* delimitador de fin;
+* delimitador de inicio como string real del codigo;
+* delimitador de fin como string real del codigo;
 * ruta `.py` segura bajo `RUTA_BASE_SCRIPTS`.
+
+Ajustado en Fase 15H.2:
+
+* La validacion estatica ignora delimitadores escritos solo como comentarios.
+* Se aceptan delimitadores en `print(...)`, constantes string o helpers, siempre que existan como strings reales del codigo.
+* No se ejecuta, importa, evalua ni interpreta dinamicamente el script.
+* La UI aclara que los delimitadores deben imprimirse durante la ejecucion para que la captura por `stdout` funcione.
+* La ayuda de destinatarios aclara el significado operativo de `TO`, `CC` y `BCC`.
 
 No implementado en Fase 15G:
 
@@ -536,6 +544,27 @@ No implementado en Fase 15G:
 * No se captura `stdout`.
 * No se envia correo.
 * No se implementa Graph.
+
+Implementado en Fase 15H:
+
+* Captura controlada del bloque de evidencia emitido por `stdout` durante la ejecucion.
+* Parseo JSON y validacion de contrato minimo.
+* Registro minimo en `dbo.evidencias_ejecucion` mediante upsert por `id_ejecucion`.
+* Hash SHA-256 de evidencia normalizada, sin guardar JSON completo.
+* Integracion comun para ejecucion manual y automatica desde `servicio_ejecuciones.py`.
+
+Ajustado en Fase 15H.3:
+
+* El log visible de ejecucion conserva stdout/stderr completo, incluyendo delimitadores y JSON emitido por el script.
+* La captura de evidencia toma una copia en memoria para validar y persistir solo hash/trazabilidad minima.
+* La omision del JSON bruto queda reservada para el futuro correo/notificacion, no para la consola operativa.
+
+No implementado en Fase 15H:
+
+* No se envia correo.
+* No se llama Microsoft Graph.
+* No se implementa alerta interna por correo.
+* No se modifica `scheduler_worker.py`.
 
 ## Mantenedores base
 

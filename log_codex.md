@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15G agrega validacion estatica de scripts compatibles con evidencia stdout, sin envio real, sin llamadas externas y sin capturador de `stdout`.
+* Estado actual: Fase 15H.3 corrige la politica de logs visibles de evidencia stdout, sin envio real ni llamadas externas.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15G - Validacion estatica evidencia stdout.
+* Fase actual: Fase 15H.3 - Correccion politica de logs visibles.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -31,6 +31,9 @@
 * Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
 * UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; desde Fase 15G muestra validacion estatica del script compatible.
 * Evidencia stdout: Fase 15G valida estaticamente el script activo antes de permitir `Enviar evidencia`; no ejecuta ni importa scripts.
+* Captura evidencia: Fase 15H captura el bloque stdout en ejecucion y registra solo trazabilidad minima/hash.
+* Validacion evidencia: Fase 15H.2 exige que los delimitadores existan como strings reales del codigo; los delimitadores escritos solo como comentarios no son validos.
+* Logs visibles evidencia: Fase 15H.3 define que la consola/log operativo muestra stdout/stderr completo, incluyendo delimitadores y JSON emitido; la omision aplica solo al futuro correo/notificacion.
 * Mail Automatico Graph: origen global del correo en `/configuracion/mail-graph`; `GRAPH_CLIENT_SECRET` queda solo por entorno y no se expone por UI/API.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
@@ -60,6 +63,48 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15H.3 / Correccion politica de logs visibles
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_ejecuciones.py`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: `_ejecutar_en_segundo_plano()` reemplazaba el bloque de evidencia por marcadores `[BLOQUE_EVIDENCIA_STDOUT_OMITIDO_EN_LOG]` y `[BLOQUE_EVIDENCIA_STDOUT_CAPTURADO]`.
+* Que se hizo: el loop de `proceso.stdout` ahora escribe siempre la linea real en el log visible y, en paralelo, acumula una copia en memoria para procesar evidencia.
+* Decision operativa: la consola/log de ejecucion debe mostrar stdout/stderr completo para diagnostico TI, incluyendo delimitadores y JSON impreso por el script.
+* Persistencia: `evidencias_ejecucion` sigue guardando solo estado, contrato, tipo, titulo, hash, contadores, flags y error controlado; no guarda JSON completo.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se modifico worker ni `scheduler_worker.py`, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+
+### 2026-07-03 - Fase 15H.2 / Mejora validacion y ayuda de evidencia
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_evidencias.py`, `app/templates/tareas/formulario.html`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: la validacion estatica podia marcar compatible un script que tenia los delimitadores oficiales solo como comentarios.
+* Que se hizo: la validacion de delimitadores ahora revisa tokens string reales del codigo mediante lectura estatica, sin ejecutar, importar, usar `exec` ni `eval`.
+* Regla documentada: los delimitadores deben imprimirse durante la ejecucion o existir como strings reales usados por el codigo; comentarios no son suficientes.
+* UI: el acordeon `Ver estructura requerida` aclara que los delimitadores se deben imprimir por `stdout` y se agrega ayuda para canales `TO`, `CC` y `BCC`.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se modifico worker ni `scheduler_worker.py`, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+
+### 2026-07-03 - Fase 15H.1 / Ayuda minima para scripts con evidencia
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/tareas/formulario.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Que se hizo: se agrego un acordeon `Ver estructura requerida` dentro de `Notificaciones y evidencia`.
+* Contenido: declaracion `APP_SCHEDULER_EVIDENCIA = True`, version `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`, delimitadores oficiales y JSON minimo de ejemplo.
+* Decision: mantener ayuda breve y colapsable para no saturar la pantalla de edicion de tarea.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se modifico worker, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+
+### 2026-07-03 - Fase 15H / Captura controlada evidencia stdout
+
+* Archivos creados: `app/repositorios/repositorio_evidencias.py`.
+* Archivos modificados: `app/servicios/servicio_evidencias.py`, `app/servicios/servicio_ejecuciones.py`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: ejecucion manual y automatica comparten `_ejecutar_en_segundo_plano()` en `servicio_ejecuciones.py`; stdout/stderr combinado se lee linea a linea desde `proceso.stdout`.
+* Que se hizo: se capturan lineas entre delimitadores de evidencia, se parsea JSON, se valida contrato minimo, se calcula hash y se registra en `evidencias_ejecucion`.
+* Persistencia: upsert por `id_ejecucion`, sin guardar JSON completo ni cuerpo de correo.
+* Estados usados: `NO_EMITIDA`, `INVALIDA`, `ERROR_DECLARADO`, `ADJUNTO_FALTANTE`, `VALIDADA`.
+* Logs: politica corregida en Fase 15H.3; el log visible conserva stdout/stderr completo y no reemplaza el bloque por marcadores.
+* Adjuntos: se valida estructura lista; adjuntos obligatorios deben existir con ruta segura bajo el proyecto; no se envian adjuntos.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se implemento alerta interna por correo, no se modifico `scheduler_worker.py`, no se crearon migraciones, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Proximos pasos: implementar preparacion/envio Graph y alertas internas solo cuando se autorice.
 
 ### 2026-07-03 - Fase 15G / Validacion estatica evidencia stdout
 

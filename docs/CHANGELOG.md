@@ -1,5 +1,100 @@
 # Changelog
 
+## 2026-07-03 - Fase 15H.3 correccion politica de logs visibles
+
+### Modificado
+
+* `app/servicios/servicio_ejecuciones.py`: el loop de stdout vuelve a escribir siempre la linea real del script en el log visible y captura una copia interna para evidencia.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/MODULOS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* El log visible de ejecucion muestra stdout/stderr completo, incluyendo delimitadores y JSON de evidencia.
+* Ya no se reemplaza el bloque por marcadores `[BLOQUE_EVIDENCIA_STDOUT_*]`.
+* La evidencia sigue procesandose y registrandose como trazabilidad minima/hash, sin guardar JSON completo en BD.
+* La omision del JSON bruto queda reservada para el futuro correo/notificacion, no para la consola operativa.
+* No se implemento Graph.
+* No se enviaron correos.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15H.2 mejora validacion y ayuda de evidencia
+
+### Modificado
+
+* `app/servicios/servicio_evidencias.py`: la validacion estatica de delimitadores ahora usa strings reales del codigo y no considera comentarios.
+* `app/templates/tareas/formulario.html`: mejora la ayuda de estructura requerida y aclara que los delimitadores deben imprimirse durante la ejecucion.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/MODULOS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Se aceptan delimitadores en `print(...)`, constantes string o helpers.
+* Se rechaza el caso donde los delimitadores estan solo como comentarios.
+* Se aclara el uso de canales `TO`, `CC` y `BCC` en destinatarios.
+* No se implemento Graph.
+* No se enviaron correos.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15H.1 ayuda minima scripts con evidencia
+
+### Modificado
+
+* `app/templates/tareas/formulario.html`: agrega acordeon `Ver estructura requerida` en el bloque `Notificaciones y evidencia`.
+* `app/static/css/estilos.css`: agrega estilos minimos para la ayuda.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Ayuda visual con declaracion `APP_SCHEDULER_EVIDENCIA`, version `1.0`, delimitadores y JSON minimo.
+* No se implemento Graph.
+* No se enviaron correos.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se creo migracion ni se ejecuto SQL.
+
+## 2026-07-03 - Fase 15H captura controlada evidencia stdout
+
+### Creado
+
+* `app/repositorios/repositorio_evidencias.py`.
+
+### Modificado
+
+* `app/servicios/servicio_evidencias.py`: agrega extraccion, parseo, validacion, hash y construccion de registro minimo.
+* `app/servicios/servicio_ejecuciones.py`: integra captura del bloque stdout en el cierre comun de ejecucion manual y automatica.
+* Documentacion y `log_codex.md`.
+
+### Implementado
+
+* Captura de bloque entre `###APP_SCHEDULER_EVIDENCIA_INICIO###` y `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+* Parseo JSON controlado.
+* Validacion de contrato minimo.
+* Upsert por `id_ejecucion` en `dbo.evidencias_ejecucion`.
+* Hash SHA-256 del bloque normalizado.
+* Conteo de resumen, adjuntos y problemas.
+* Estados: `NO_EMITIDA`, `INVALIDA`, `ERROR_DECLARADO`, `ADJUNTO_FALTANTE`, `VALIDADA`.
+* Politica corregida en Fase 15H.3: el log visible conserva stdout/stderr completo; no se usan marcadores para ocultar el bloque.
+
+### Reglas
+
+* No se guarda JSON completo.
+* No se guarda cuerpo completo de correo.
+* No se envia correo.
+* No se llama Microsoft Graph.
+* No se implementa alerta interna por correo.
+* No se modifica `scheduler_worker.py`.
+* No se crean migraciones ni se ejecuta SQL DDL.
+
 ## 2026-07-03 - Fase 15G validacion estatica evidencia stdout
 
 ### Creado

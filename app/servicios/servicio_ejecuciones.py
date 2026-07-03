@@ -22,6 +22,11 @@ from app.repositorios.repositorio_ejecuciones import (
 )
 from app.servicios.servicio_archivos import normalizar_segmento, resolver_ruta_segura
 from app.servicios.servicio_env_scripts import cargar_env_version
+from app.servicios.servicio_evidencias import (
+    DELIMITADOR_FIN,
+    DELIMITADOR_INICIO,
+    procesar_evidencia_ejecucion,
+)
 from app.servicios.servicio_logs_ejecucion import (
     escribir_linea_log,
     escribir_lineas_log,
@@ -363,6 +368,7 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
     with app.app_context():
         proceso = None
         monitor_fallo = False
+        stdout_evidencia = []
         try:
             entorno = cargar_env_version(contexto["ruta_env_relativa"]) if contexto.get("requiere_env") else None
             if contexto.get("requiere_env"):
@@ -381,9 +387,41 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
             _escribir_log(ruta_fisica_log, [f"PID proceso: {proceso.pid}", "Salida del proceso:"])
 
             if proceso.stdout:
+                capturando_evidencia = False
                 for linea in proceso.stdout:
+                    texto_linea = str(linea).rstrip("\r\n")
+                    if not capturando_evidencia and DELIMITADOR_INICIO in texto_linea:
+                        stdout_evidencia.append(texto_linea)
+                        capturando_evidencia = True
+                        if DELIMITADOR_FIN in texto_linea:
+                            capturando_evidencia = False
+                    elif capturando_evidencia:
+                        stdout_evidencia.append(texto_linea)
+                        if DELIMITADOR_FIN in texto_linea:
+                            capturando_evidencia = False
                     escribir_linea_log(ruta_fisica_log, normalizar_linea_script(linea), "INFO")
             codigo = proceso.wait()
+            try:
+                resultado_evidencia = procesar_evidencia_ejecucion(id_ejecucion, contexto["id_tarea"], codigo, stdout_evidencia)
+                if resultado_evidencia:
+                    _escribir_log(
+                        ruta_fisica_log,
+                        [
+                            (
+                                f"Evidencia stdout procesada: {resultado_evidencia.get('estado_evidencia')}",
+                                "INFO" if resultado_evidencia.get("estado_evidencia") == "VALIDADA" else "WARNING",
+                            )
+                        ],
+                    )
+            except Exception as error_evidencia:
+                registrar_log_sistema(
+                    "EVIDENCIA_STDOUT_PROCESO_ERROR",
+                    "EVIDENCIAS",
+                    "Error controlado al procesar evidencia stdout.",
+                    usuario=usuario,
+                    valor_nuevo=error_evidencia.__class__.__name__,
+                    nivel="ERROR",
+                )
             if not _ejecucion_sigue_en_curso(id_ejecucion):
                 return
             estado = "EXITOSA" if codigo == 0 else "ERROR"
