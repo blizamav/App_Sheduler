@@ -480,12 +480,26 @@ No crear seeds en Fase 15C.
 
 ## Archivos que se tocarian en fases posteriores
 
-Implementacion futura probable:
+Implementacion iniciada en Fase 15D:
 
 * `app/repositorios/repositorio_notificaciones.py`
+* `app/servicios/servicio_notificaciones.py`
+* `app/rutas_tareas.py`
+* `app/__init__.py`
+
+Endpoints backend creados:
+
+* `GET /api/tareas/<id_tarea>/notificaciones`
+* `POST /api/tareas/<id_tarea>/notificaciones`
+* `PUT /api/tareas/<id_tarea>/notificaciones`
+* `POST /api/tareas/<id_tarea>/notificaciones/desactivar`
+
+La Fase 15D permite consultar, crear/actualizar y desactivar configuracion de notificaciones por tarea. Valida email basico, destinatarios requeridos, tipos, canales y evita duplicados activos al reemplazar destinatarios. No envia correos, no captura `stdout`, no valida delimitadores del script y no implementa Graph.
+
+Implementacion futura pendiente:
+
 * `app/repositorios/repositorio_evidencias.py`
 * `app/servicios/servicio_evidencias.py`
-* `app/servicios/servicio_notificaciones.py`
 * `app/servicios/servicio_graph.py`
 * `app/servicios/servicio_ejecuciones.py`
 * `app/servicios/servicio_scheduler_worker.py`

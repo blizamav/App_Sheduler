@@ -10,6 +10,8 @@ Esta fase es documental. No implementa capturador, envio Graph, UI, migraciones 
 
 El modelo minimo de datos propuesto para Fase 15B queda documentado en `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
 
+Desde Fase 15D existe backend minimo para configurar notificaciones por tarea. Esta configuracion no ejecuta validacion estatica del script todavia y no envia correos.
+
 ## Decision aceptada
 
 * La evidencia se emite por `stdout`.
@@ -116,6 +118,8 @@ Proceso finalizado
 ## Validacion estatica antes de activar Enviar evidencia
 
 Antes de permitir activar `Enviar evidencia`, la app debera revisar el archivo de la version activa sin ejecutarlo.
+
+Estado actual: pendiente para fase posterior. Fase 15D solo guarda configuracion y destinatarios.
 
 Reglas:
 

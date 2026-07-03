@@ -1,6 +1,11 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from app.seguridad import permiso_requerido
+from app.servicios.servicio_notificaciones import (
+    desactivar_config_notificacion_tarea,
+    guardar_config_notificacion_tarea,
+    obtener_config_notificacion_tarea,
+)
 from app.servicios.servicio_tareas import (
     actualizar_tarea_admin,
     cambiar_estado_tarea_admin,
@@ -13,6 +18,7 @@ from app.servicios.servicio_tareas import (
 
 
 bp_tareas = Blueprint("tareas", __name__, url_prefix="/tareas")
+bp_tareas_api = Blueprint("tareas_api", __name__, url_prefix="/api/tareas")
 
 
 def _filtros_request():
@@ -136,3 +142,49 @@ def eliminar(id_tarea):
         ok, mensaje = False, "No fue posible eliminar la tarea."
     flash(mensaje, "success" if ok else "error")
     return redirect(url_for("tareas.listado"))
+
+
+@bp_tareas_api.route("/<int:id_tarea>/notificaciones", methods=["GET"])
+@permiso_requerido("TAREAS_VER")
+def api_obtener_notificaciones(id_tarea):
+    try:
+        ok, mensaje, config = obtener_config_notificacion_tarea(id_tarea)
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible obtener la configuracion de notificaciones."}), 500
+    estado = 200 if ok else 404
+    return jsonify({"ok": ok, "mensaje": mensaje, "config": config}), estado
+
+
+@bp_tareas_api.route("/<int:id_tarea>/notificaciones", methods=["POST", "PUT"])
+@permiso_requerido("TAREAS_EDITAR")
+def api_guardar_notificaciones(id_tarea):
+    datos = request.get_json(silent=True) or {}
+    try:
+        ok, mensajes, config = guardar_config_notificacion_tarea(
+            id_tarea,
+            datos,
+            datos.get("destinatarios") or [],
+            session.get("usuario"),
+        )
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible guardar la configuracion de notificaciones."}), 500
+
+    estado = 200 if ok else 400
+    return jsonify(
+        {
+            "ok": ok,
+            "mensaje": mensajes[0] if mensajes else "",
+            "mensajes": mensajes,
+            "config": config,
+        }
+    ), estado
+
+
+@bp_tareas_api.route("/<int:id_tarea>/notificaciones/desactivar", methods=["POST"])
+@permiso_requerido("TAREAS_EDITAR")
+def api_desactivar_notificaciones(id_tarea):
+    try:
+        ok, mensaje = desactivar_config_notificacion_tarea(id_tarea, session.get("usuario"))
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible desactivar la configuracion de notificaciones."}), 500
+    return jsonify({"ok": ok, "mensaje": mensaje}), 200 if ok else 404

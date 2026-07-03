@@ -1,5 +1,62 @@
 # Changelog
 
+## 2026-07-03 - Fase 15D backend configuracion notificaciones por tarea
+
+### Creado
+
+* `app/repositorios/repositorio_notificaciones.py`.
+* `app/servicios/servicio_notificaciones.py`.
+
+### Modificado
+
+* `app/rutas_tareas.py`: agrega API JSON de notificaciones por tarea.
+* `app/__init__.py`: registra `bp_tareas_api`.
+* `docs/ARQUITECTURA.md`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Implementado
+
+* `GET /api/tareas/<id_tarea>/notificaciones`.
+* `POST /api/tareas/<id_tarea>/notificaciones`.
+* `PUT /api/tareas/<id_tarea>/notificaciones`.
+* `POST /api/tareas/<id_tarea>/notificaciones/desactivar`.
+* Consulta de configuracion activa o respuesta default controlada.
+* Creacion/actualizacion de configuracion activa por tarea.
+* Reemplazo controlado de destinatarios activos.
+* Desactivacion de configuracion.
+* Validacion de email basico.
+* Validacion de plantilla `STDOUT_V1`.
+* Validacion de tipo `EVIDENCIA` / `ALERTA`.
+* Validacion de canal `TO` / `CC` / `BCC`.
+* Regla: si `enviar_evidencia = true`, debe existir destinatario `EVIDENCIA` canal `TO`.
+* Regla: si `alerta_error_activa = true` y `usar_alerta_global = false`, debe existir destinatario `ALERTA` canal `TO`.
+* Guardado transaccional con `commit` y `rollback`.
+
+### Validado
+
+* `python -m py_compile` sobre modulos tocados y modulos base indicados: OK.
+* Validaciones puras del servicio: email valido/invalido, falta de destinatario evidencia, configuracion valida, falta de alerta local y deduplicacion.
+* Rutas Flask registradas en `url_map`.
+
+### Reglas
+
+* No se implemento Microsoft Graph.
+* No se enviaron correos.
+* No se implemento capturador de `stdout`.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se implemento UI completa.
+* No se crearon migraciones.
+* No se ejecuto SQL DDL.
+* No se modifico `database/release/`.
+* No se modifico `.env`.
+* No se modifico `.env.docker`.
+* No se hizo commit ni push.
+
 ## 2026-07-03 - Fase 15C.2 ejecucion controlada de migracion 019
 
 ### Ejecutado Manualmente

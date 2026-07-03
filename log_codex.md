@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15C.2 cierra la ejecucion controlada de la migracion 019 en `APP_SCHEDULER_QA`; Docker web/worker fueron validados post migracion.
+* Estado actual: Fase 15D implementa backend minimo de configuracion de notificaciones por tarea, sin Graph, sin envio de correos y sin capturador de `stdout`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15C.2 - Ejecucion controlada de migracion 019 en APP_SCHEDULER_QA.
+* Fase actual: Fase 15D - Backend configuracion notificaciones por tarea.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -28,6 +28,7 @@
 * Versiones de scripts: No existe eliminacion fisica desde la app en primera version; se gestionan por estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA`.
 * Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
 * Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
+* Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -56,6 +57,19 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15D / Backend configuracion notificaciones por tarea
+
+* Archivos creados: `app/repositorios/repositorio_notificaciones.py`, `app/servicios/servicio_notificaciones.py`.
+* Archivos modificados: `app/rutas_tareas.py`, `app/__init__.py`, `docs/ARQUITECTURA.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: implementar backend minimo para consultar, crear/actualizar, desactivar y validar configuracion de notificaciones por tarea.
+* Rutas creadas: `GET/POST/PUT /api/tareas/<id_tarea>/notificaciones` y `POST /api/tareas/<id_tarea>/notificaciones/desactivar`.
+* Servicio creado: `servicio_notificaciones.py` con normalizacion, validacion de emails, destinatarios, flags y reglas minimas.
+* Repositorio creado: `repositorio_notificaciones.py` con consultas parametrizadas y guardado transaccional con `commit`/`rollback`.
+* Validaciones implementadas: tarea existente, plantilla `STDOUT_V1`, tipos `EVIDENCIA/ALERTA`, canales `TO/CC/BCC`, email basico, destinatario `EVIDENCIA TO` obligatorio cuando `enviar_evidencia = true`, destinatario `ALERTA TO` obligatorio cuando alerta local esta activa sin alerta global.
+* Seguridad: no se guardan secretos Graph, tokens, passwords, cadenas de conexion, JSON completo ni cuerpo completo de correo.
+* Pruebas realizadas: `python -m py_compile` OK; validaciones puras del servicio OK; rutas registradas en Flask `url_map`; `git diff --check` y `git status --short` al cierre.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se implemento capturador `stdout`, no se modifico worker, no se creo UI completa, no se crearon migraciones ni se ejecuto SQL DDL.
 
 ### 2026-07-03 - Fase 15C.2 / Ejecucion controlada de migracion 019 en APP_SCHEDULER_QA
 
