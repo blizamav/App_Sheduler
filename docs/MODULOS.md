@@ -511,6 +511,32 @@ No implementado en Fase 15F:
 * No se hace llamada externa a Microsoft Graph.
 * No se guarda `GRAPH_CLIENT_SECRET`, tokens ni passwords en base de datos.
 
+## Modulo de evidencias stdout
+
+Implementado en Fase 15G:
+
+* Servicio `app/servicios/servicio_evidencias.py`.
+* Validacion estatica de script activo por tarea.
+* Endpoint `GET /api/tareas/<id>/evidencia/validar-soporte`.
+* Integracion con configuracion de notificaciones para bloquear `enviar_evidencia=true` si el script no cumple contrato.
+* Integracion visual en `/tareas/<id>/editar` dentro del bloque `Notificaciones y evidencia`.
+
+Validaciones:
+
+* declaracion `APP_SCHEDULER_EVIDENCIA = True`;
+* version `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`;
+* delimitador de inicio;
+* delimitador de fin;
+* ruta `.py` segura bajo `RUTA_BASE_SCRIPTS`.
+
+No implementado en Fase 15G:
+
+* No se ejecutan scripts.
+* No se importan scripts.
+* No se captura `stdout`.
+* No se envia correo.
+* No se implementa Graph.
+
 ## Mantenedores base
 
 Implementado en Fase 5:

@@ -569,6 +569,41 @@ Fase 15F.1 define una migracion incremental correctiva para `APP_SCHEDULER_QA`:
 * crea `UX_config_mail_graph_clave` para impedir multiples configuraciones globales;
 * no debe ejecutarse sobre otro ambiente sin revisar IDs reales.
 
+## Validacion estatica de soporte de evidencia
+
+Fase 15G agrega validacion estatica del script asociado a una tarea antes de permitir activar `Enviar evidencia`.
+
+Relacion real usada por la validacion:
+
+* `tareas.id_tarea`;
+* `scripts.id_tarea`;
+* `scripts.id_version_activa`;
+* `scripts_versiones.id_version`;
+* `scripts_versiones.ruta_relativa`.
+
+La ruta se resuelve internamente desde base de datos y se valida contra `RUTA_BASE_SCRIPTS`. El frontend no envia rutas.
+
+Contrato minimo requerido en el archivo `.py` activo:
+
+* `APP_SCHEDULER_EVIDENCIA = True`;
+* `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"` o `'1.0'`;
+* `###APP_SCHEDULER_EVIDENCIA_INICIO###`;
+* `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+
+Reglas de seguridad:
+
+* no se ejecuta el script;
+* no se importa el script;
+* no se usa `exec`, `eval` ni `importlib`;
+* no se muestra el contenido del script;
+* no se exponen rutas fisicas en UI;
+* si `enviar_evidencia = false`, no se bloquea el guardado por falta de soporte;
+* si `enviar_evidencia = true`, el backend rechaza el guardado cuando el contrato no se cumple.
+
+Endpoint informativo:
+
+* `GET /api/tareas/<id_tarea>/evidencia/validar-soporte`.
+
 Campos principales:
 
 * `activo`.

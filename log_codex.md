@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15F agrega configuracion global Mail Automatico Graph, sin envio real, sin llamadas externas y sin capturador de `stdout`.
+* Estado actual: Fase 15G agrega validacion estatica de scripts compatibles con evidencia stdout, sin envio real, sin llamadas externas y sin capturador de `stdout`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15F - Configuracion global Mail Automatico Graph.
+* Fase actual: Fase 15G - Validacion estatica evidencia stdout.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -29,7 +29,8 @@
 * Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
 * Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
 * Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
-* UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; no valida aun el script compatible.
+* UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; desde Fase 15G muestra validacion estatica del script compatible.
+* Evidencia stdout: Fase 15G valida estaticamente el script activo antes de permitir `Enviar evidencia`; no ejecuta ni importa scripts.
 * Mail Automatico Graph: origen global del correo en `/configuracion/mail-graph`; `GRAPH_CLIENT_SECRET` queda solo por entorno y no se expone por UI/API.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
@@ -59,6 +60,20 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15G / Validacion estatica evidencia stdout
+
+* Archivos creados: `app/servicios/servicio_evidencias.py`.
+* Archivos modificados: `app/servicios/servicio_notificaciones.py`, `app/rutas_tareas.py`, `app/templates/tareas/formulario.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: la tarea se relaciona con `scripts`, la version activa esta en `scripts.id_version_activa` y la ruta real del archivo activo esta en `scripts_versiones.ruta_relativa`.
+* Que se hizo: se creo validacion estatica por lectura segura del archivo `.py` activo bajo `RUTA_BASE_SCRIPTS`.
+* Validaciones implementadas: `APP_SCHEDULER_EVIDENCIA = True`, `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"`, delimitador inicio y delimitador fin.
+* Endpoint creado: `GET /api/tareas/<id_tarea>/evidencia/validar-soporte`.
+* Integracion backend: `servicio_notificaciones.py` rechaza `enviar_evidencia=true` cuando el script activo no cumple el contrato stdout.
+* Integracion UI: `/tareas/<id>/editar` muestra estado de compatibilidad y bloquea activacion/guardado incompatible.
+* Seguridad: no se ejecuta el script, no se importa, no se usa `exec`, `eval` ni `importlib`, no se muestra contenido del script y no se aceptan rutas desde frontend.
+* Alcance excluido: no se implemento captura `stdout`, no se implemento Graph, no se enviaron correos, no se modifico worker, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Proximos pasos: implementar captura controlada del bloque `stdout` durante ejecucion y parseo JSON, cuando se autorice.
 
 ### 2026-07-03 - Fase 15F.1 / Consolidacion configuracion Mail Graph QA
 

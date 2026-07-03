@@ -1282,6 +1282,20 @@ textarea {
     margin: 2px 0 0;
 }
 
+.notificaciones-soporte-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lista-simple {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: var(--color-texto-suave);
+}
+
 .notificaciones-destinatarios-atenuado {
     opacity: 0.72;
 }

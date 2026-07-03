@@ -6,6 +6,7 @@ from app.servicios.servicio_notificaciones import (
     guardar_config_notificacion_tarea,
     obtener_config_notificacion_tarea,
 )
+from app.servicios.servicio_evidencias import validar_soporte_evidencia_script_por_tarea
 from app.servicios.servicio_tareas import (
     actualizar_tarea_admin,
     cambiar_estado_tarea_admin,
@@ -188,3 +189,13 @@ def api_desactivar_notificaciones(id_tarea):
     except Exception:
         return jsonify({"ok": False, "mensaje": "No fue posible desactivar la configuracion de notificaciones."}), 500
     return jsonify({"ok": ok, "mensaje": mensaje}), 200 if ok else 404
+
+
+@bp_tareas_api.route("/<int:id_tarea>/evidencia/validar-soporte", methods=["GET"])
+@permiso_requerido("TAREAS_VER")
+def api_validar_soporte_evidencia(id_tarea):
+    try:
+        resultado = validar_soporte_evidencia_script_por_tarea(id_tarea)
+        return jsonify({"ok": True, **resultado})
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible validar el soporte de evidencia del script."}), 500

@@ -163,6 +163,7 @@
     data-url-obtener="{{ url_for('tareas_api.api_obtener_notificaciones', id_tarea=registro.id_tarea) }}"
     data-url-guardar="{{ url_for('tareas_api.api_guardar_notificaciones', id_tarea=registro.id_tarea) }}"
     data-url-desactivar="{{ url_for('tareas_api.api_desactivar_notificaciones', id_tarea=registro.id_tarea) }}"
+    data-url-validar-evidencia="{{ url_for('tareas_api.api_validar_soporte_evidencia', id_tarea=registro.id_tarea) }}"
 >
     <div class="seccion-formulario">
         <div>
@@ -173,6 +174,14 @@
 
         <div class="alerta info alerta-inline">
             En una fase posterior, la app validara que el script declare soporte de evidencia antes de permitir activar este envio.
+        </div>
+
+        <div class="alerta advertencia alerta-inline" data-evidencia-soporte-panel>
+            <div class="notificaciones-soporte-header">
+                <strong data-evidencia-soporte-texto>Validando soporte de evidencia stdout...</strong>
+                <span class="badge info" data-evidencia-soporte-badge>Validando</span>
+            </div>
+            <ul class="lista-simple" data-evidencia-soporte-errores></ul>
         </div>
 
         <div class="form-grid">

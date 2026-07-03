@@ -8,6 +8,7 @@ from app.repositorios.repositorio_notificaciones import (
     obtener_tarea_notificaciones,
     reemplazar_destinatarios_config as reemplazar_destinatarios_config_repo,
 )
+from app.servicios.servicio_evidencias import validar_soporte_evidencia_script_por_tarea
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 
 
@@ -39,6 +40,13 @@ def guardar_config_notificacion_tarea(id_tarea, datos_config, destinatarios=None
     datos = _normalizar_config(entrada)
     destinatarios_norm = normalizar_lista_destinatarios(destinatarios or entrada.get("destinatarios") or [])
     errores = validar_configuracion_notificacion(datos, destinatarios_norm)
+    if datos.get("enviar_evidencia"):
+        soporte = validar_soporte_evidencia_script_por_tarea(id_tarea)
+        if not soporte.get("soporta_evidencia"):
+            errores.append(
+                "No se puede activar Enviar evidencia. El script asociado no contiene la declaracion y delimitadores requeridos por el contrato stdout."
+            )
+            errores.extend(soporte.get("errores") or [])
     if errores:
         registrar_log_sistema(
             "NOTIFICACIONES_VALIDACION_ERROR",

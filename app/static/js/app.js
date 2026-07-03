@@ -1662,6 +1662,49 @@ document.addEventListener("DOMContentLoaded", () => {
         return respuesta.json();
     };
 
+    const renderizarSoporteEvidencia = (panel, datos = {}) => {
+        panel.dataset.evidenciaSoportada = datos.soporta_evidencia ? "1" : "0";
+        const contenedor = panel.querySelector("[data-evidencia-soporte-panel]");
+        const texto = panel.querySelector("[data-evidencia-soporte-texto]");
+        const badge = panel.querySelector("[data-evidencia-soporte-badge]");
+        const lista = panel.querySelector("[data-evidencia-soporte-errores]");
+        if (!contenedor || !texto || !badge || !lista) {
+            return;
+        }
+        lista.replaceChildren();
+        contenedor.classList.toggle("info", Boolean(datos.soporta_evidencia));
+        contenedor.classList.toggle("advertencia", !datos.soporta_evidencia);
+        badge.className = `badge ${datos.soporta_evidencia ? "activo" : "advertencia"}`;
+        badge.textContent = datos.soporta_evidencia ? "Compatible" : "No compatible";
+        texto.textContent = datos.soporta_evidencia
+            ? "Script compatible con evidencia stdout."
+            : "El script actual no declara soporte de evidencia.";
+        (datos.errores || []).forEach((error) => {
+            const item = document.createElement("li");
+            item.textContent = error;
+            lista.appendChild(item);
+        });
+    };
+
+    const validarSoporteEvidenciaUi = async (panel) => {
+        if (!panel.dataset.urlValidarEvidencia) {
+            return;
+        }
+        try {
+            const respuesta = await fetch(panel.dataset.urlValidarEvidencia, { headers: { Accept: "application/json" } });
+            const datos = await leerRespuestaJsonNotificaciones(respuesta);
+            if (!respuesta.ok || !datos.ok) {
+                throw new Error(datos.mensaje || "No fue posible validar evidencia.");
+            }
+            renderizarSoporteEvidencia(panel, datos);
+        } catch (error) {
+            renderizarSoporteEvidencia(panel, {
+                soporta_evidencia: false,
+                errores: ["No fue posible validar el soporte de evidencia del script."],
+            });
+        }
+    };
+
     const inicializarNotificacionesTarea = (panel) => {
         if (!panel) {
             return;
@@ -1679,6 +1722,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         panel.querySelector("[data-notif-campo='usar_alerta_global']")?.addEventListener("change", () => {
             actualizarEstadoAlertaNotificaciones(panel);
+        });
+
+        panel.querySelector("[data-notif-campo='enviar_evidencia']")?.addEventListener("change", (evento) => {
+            if (evento.target.checked && panel.dataset.evidenciaSoportada === "0") {
+                evento.target.checked = false;
+                mostrarToast("No se puede activar Enviar evidencia. El script asociado no contiene la declaracion y delimitadores requeridos por el contrato stdout.", "warning");
+            }
         });
 
         const setEstado = (mensaje) => {
@@ -1708,6 +1758,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const errores = validarPayloadNotificaciones(payload);
             if (errores.length) {
                 mostrarToast(errores[0], "warning");
+                return;
+            }
+            if (payload.enviar_evidencia && panel.dataset.evidenciaSoportada !== "1") {
+                mostrarToast("No se puede activar Enviar evidencia. El script asociado no contiene la declaracion y delimitadores requeridos por el contrato stdout.", "warning");
                 return;
             }
             botonGuardar.disabled = true;
@@ -1759,6 +1813,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         cargar();
+        validarSoporteEvidenciaUi(panel);
     };
 
     const limpiarValidezTarea = (formulario) => {

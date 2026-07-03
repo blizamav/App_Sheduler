@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-07-03 - Fase 15G validacion estatica evidencia stdout
+
+### Creado
+
+* `app/servicios/servicio_evidencias.py`.
+
+### Modificado
+
+* `app/servicios/servicio_notificaciones.py`: bloquea `enviar_evidencia=true` si el script activo no cumple contrato stdout.
+* `app/rutas_tareas.py`: agrega endpoint informativo de validacion.
+* `app/templates/tareas/formulario.html`: muestra estado de compatibilidad en la seccion Notificaciones y evidencia.
+* `app/static/js/app.js`: consulta soporte de evidencia, muestra errores y bloquea activacion/guardado incompatible.
+* `app/static/css/estilos.css`: estilos minimos para el estado de soporte.
+* Documentacion y `log_codex.md`.
+
+### Endpoint
+
+* `GET /api/tareas/<id_tarea>/evidencia/validar-soporte`.
+
+### Validaciones
+
+* `APP_SCHEDULER_EVIDENCIA = True`.
+* `APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"` o `'1.0'`.
+* `###APP_SCHEDULER_EVIDENCIA_INICIO###`.
+* `###APP_SCHEDULER_EVIDENCIA_FIN###`.
+* Archivo `.py` existente, version activa real y ruta dentro de `RUTA_BASE_SCRIPTS`.
+
+### Reglas
+
+* Validacion estatica por lectura de archivo.
+* No se ejecuta el script.
+* No se importa el script.
+* No se usa `exec`, `eval` ni `importlib`.
+* No se captura `stdout` todavia.
+* No se implemento Graph.
+* No se enviaron correos.
+* No se crearon migraciones ni se ejecuto SQL.
+
 ## 2026-07-03 - Fase 15F.1 consolidacion configuracion Mail Graph QA
 
 ### Creado
