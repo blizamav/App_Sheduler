@@ -42,7 +42,7 @@
             <div><strong>Tenant ID</strong><span>************</span></div>
             <div><strong>Client ID</strong><span>************</span></div>
             <div><strong>Scope</strong><span>************</span></div>
-            <div><strong>Guardar enviados</strong><span>{{ "Si" if configuracion.save_to_sent_items else "No" }}</span></div>
+            <div><strong>Copia en enviados</strong><span>{{ "Si" if configuracion.save_to_sent_items else "No" }}</span></div>
             <div><strong>Actualizado</strong><span>{{ configuracion.fecha_actualizacion or "-" }}</span></div>
             <div><strong>Usuario</strong><span>{{ configuracion.usuario_actualizacion or "-" }}</span></div>
         </div>
@@ -85,9 +85,10 @@
             Mail Automatico activo
         </label>
         <label class="checkline">
-            <input name="save_to_sent_items" type="checkbox" value="1" data-label="Guardar enviados" data-original="{{ '1' if configuracion.save_to_sent_items else '0' }}" {% if configuracion.save_to_sent_items %}checked{% endif %}>
-            Guardar copia en enviados
+            <input name="save_to_sent_items" type="checkbox" value="1" data-label="Guardar copia en enviados del buzon remitente" data-original="{{ '1' if configuracion.save_to_sent_items else '0' }}" {% if configuracion.save_to_sent_items %}checked{% endif %}>
+            Guardar copia en enviados del buzon remitente
         </label>
+        <p class="texto-ayuda">Si esta activo, los correos enviados por APP Scheduler quedaran registrados en la carpeta Enviados del buzon {{ configuracion.send_mail_user or "remitente configurado" }}.</p>
 
         <div class="alerta advertencia alerta-inline" data-mail-graph-sensible-panel data-reveal-url="{{ url_for('configuracion_api.api_revelar_mail_graph_sensible') }}" data-auto-hide-ms="20000">
             <strong>Parametros Graph sensibles</strong>

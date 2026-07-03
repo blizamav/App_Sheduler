@@ -627,6 +627,14 @@ Ajustado en Fase 15J.4:
 * Guardar antes del vencimiento mantiene el flujo normal; al recargar la pantalla, los campos vuelven a quedar ocultos.
 * `CLIENT_SECRET` sigue sin mostrarse ni aceptarse por UI/API.
 
+Ajustado en Fase 15J.5:
+
+* El checkbox de Mail Graph se muestra como `Guardar copia en enviados del buzon remitente`.
+* La ayuda explica que, al activarlo, los correos enviados por APP Scheduler quedan en la carpeta Enviados del buzon remitente configurado.
+* En la configuracion de notificaciones por tarea, los canales se muestran como `Para`, `Copia` y `Copia oculta`.
+* Los valores internos se mantienen como `TO`, `CC` y `BCC` para persistencia y Microsoft Graph.
+* La columna de destinatarios se muestra como `Destino` para mejorar claridad de negocio/TI.
+
 No implementado en Fase 15J:
 
 * Adjuntos reales.

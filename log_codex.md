@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15J.4 auto oculta parametros sensibles Mail Graph despues de revelarlos temporalmente, sin tocar envios.
+* Estado actual: Fase 15J.5 aclara textos UI de correos y destinatarios, sin tocar envios.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15J.4 - Auto ocultar campos sensibles Mail Graph.
+* Fase actual: Fase 15J.5 - Claridad UI correos y destinatarios.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -38,7 +38,7 @@
 * Envio evidencia Graph: Fase 15I envia solo evidencia `VALIDADA` con `exit_code = 0`, destinatario `EVIDENCIA TO`, Mail Graph activo y sin envio exitoso previo. No guarda token, secret, JSON completo ni cuerpo HTML.
 * Alertas internas Graph: Fase 15J envia `ALERTA_INTERNA` cuando una ejecucion termina en `ERROR`; usa destinatarios de tarea o globales, registra intento y no cambia el estado tecnico.
 * Correo alerta interna: Fase 15J.1 no muestra rutas fisicas ni relativas del servidor; el log se referencia desde APP Scheduler, modulo Ejecuciones, por ID de ejecucion.
-* Seguridad Mail Graph: Fase 15J.2 restringe menu, rutas web y API de Mail Automatico a `SUPER_ADMIN` o administrador inicial `.env`; Fase 15J.3 mantiene Tenant ID, Client ID y Scope ocultos/deshabilitados por defecto y los revela solo tras modal de confirmacion y endpoint protegido; Fase 15J.4 auto oculta esos campos luego de 20 segundos.
+* Seguridad Mail Graph: Fase 15J.2 restringe menu, rutas web y API de Mail Automatico a `SUPER_ADMIN` o administrador inicial `.env`; Fase 15J.3 mantiene Tenant ID, Client ID y Scope ocultos/deshabilitados por defecto y los revela solo tras modal de confirmacion y endpoint protegido; Fase 15J.4 auto oculta esos campos luego de 20 segundos; Fase 15J.5 mejora textos visibles de correos/destinatarios sin cambiar valores internos.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -67,6 +67,17 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15J.5 / Claridad UI correos y destinatarios
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/configuracion/mail_graph.html`, `app/templates/tareas/formulario.html`, `app/static/js/app.js`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: el texto `Guardar copia en enviados` no indicaba claramente que aplica al buzon remitente y los canales `TO`, `CC`, `BCC` resultaban tecnicos para usuarios de negocio/TI.
+* Que se hizo: se cambio el texto a `Guardar copia en enviados del buzon remitente` y se agrego ayuda sobre la carpeta Enviados del buzon configurado.
+* Destinatarios: los selectores muestran `Para`, `Copia` y `Copia oculta`; la columna se muestra como `Destino`.
+* Persistencia: los valores internos siguen siendo `TO`, `CC` y `BCC` para base de datos y Microsoft Graph.
+* Alcance: no se modifico envio de evidencia cliente ni alerta interna; no se modifico worker ni `scheduler_worker.py`; no se crearon migraciones; no se ejecuto SQL; no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Pruebas recomendadas: abrir `/configuracion/mail-graph`, verificar texto del checkbox y ayuda; abrir edicion de tarea y validar selectores de destinatarios con etiquetas en espanol, guardando sin cambiar los valores internos.
 
 ### 2026-07-03 - Fase 15J.4 / Auto ocultar campos sensibles Mail Graph
 

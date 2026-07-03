@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-03 - Fase 15J.5 claridad UI correos y destinatarios
+
+### Modificado
+
+* `app/templates/configuracion/mail_graph.html`: aclara que la copia en enviados corresponde al buzon remitente.
+* `app/templates/tareas/formulario.html`: cambia ayudas y columnas de destinatarios a lenguaje en espanol.
+* `app/static/js/app.js`: muestra canales como `Para`, `Copia` y `Copia oculta`, manteniendo valores internos `TO`, `CC` y `BCC`.
+* `docs/MODULOS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* El checkbox ahora dice `Guardar copia en enviados del buzon remitente`.
+* La ayuda indica que los correos quedan en la carpeta Enviados del buzon remitente configurado.
+* La UI de destinatarios ya no muestra `TO`, `CC` y `BCC` como texto principal para usuarios.
+* Internamente se mantienen `TO`, `CC` y `BCC` para base de datos y Microsoft Graph.
+* No se modifico envio de evidencia cliente ni alerta interna.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
 ## 2026-07-03 - Fase 15J.4 auto ocultar campos sensibles Mail Graph
 
 ### Modificado

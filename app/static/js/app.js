@@ -1652,10 +1652,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const crearSelectCanalNotificacion = (valor = "TO") => {
         const select = document.createElement("select");
         select.dataset.destinatarioCampo = "canal";
+        const etiquetasCanal = {
+            TO: "Para",
+            CC: "Copia",
+            BCC: "Copia oculta",
+        };
         ["TO", "CC", "BCC"].forEach((canal) => {
             const opcion = document.createElement("option");
             opcion.value = canal;
-            opcion.textContent = canal;
+            opcion.textContent = etiquetasCanal[canal];
             opcion.selected = canal === valor;
             select.appendChild(opcion);
         });
@@ -1731,10 +1736,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         if (payload.enviar_evidencia && !tieneDestinatarioTo(payload.destinatarios, "EVIDENCIA")) {
-            errores.push("Para enviar evidencia agrega al menos un destinatario EVIDENCIA en canal TO.");
+            errores.push("Para enviar evidencia agrega al menos un destinatario de evidencia en Para.");
         }
         if (payload.alerta_error_activa && !payload.usar_alerta_global && !tieneDestinatarioTo(payload.destinatarios, "ALERTA")) {
-            errores.push("Si no usas alerta global agrega al menos un destinatario ALERTA en canal TO.");
+            errores.push("Si no usas alerta global agrega al menos un destinatario de alerta en Para.");
         }
         return [...new Set(errores)];
     };
