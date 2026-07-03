@@ -77,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formularioVerificarEjecucion = document.querySelector("[data-ejecucion-verificar-form]");
     const formularioLimpiezaEventos = document.querySelector("[data-limpieza-eventos-form]");
     const historialEventos = document.querySelector("[data-eventos-historial]");
+    const panelNotificacionesTarea = document.querySelector("[data-notificaciones-tarea]");
     let formularioPendiente = null;
     let envioConfirmado = false;
     let intervaloMonitorWorker = null;
@@ -1512,6 +1513,254 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(cerrarToast, 3200);
     };
 
+    const emailBasicoValido = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || "").trim());
+
+    const crearSelectCanalNotificacion = (valor = "TO") => {
+        const select = document.createElement("select");
+        select.dataset.destinatarioCampo = "canal";
+        ["TO", "CC", "BCC"].forEach((canal) => {
+            const opcion = document.createElement("option");
+            opcion.value = canal;
+            opcion.textContent = canal;
+            opcion.selected = canal === valor;
+            select.appendChild(opcion);
+        });
+        return select;
+    };
+
+    const crearFilaDestinatario = (tipo, datos = {}) => {
+        const fila = document.createElement("tr");
+        fila.dataset.tipoDestinatario = tipo;
+
+        const celdaEmail = document.createElement("td");
+        const email = document.createElement("input");
+        email.type = "email";
+        email.placeholder = "correo@empresa.cl";
+        email.value = datos.email || "";
+        email.dataset.destinatarioCampo = "email";
+        celdaEmail.appendChild(email);
+
+        const celdaNombre = document.createElement("td");
+        const nombre = document.createElement("input");
+        nombre.type = "text";
+        nombre.placeholder = "Opcional";
+        nombre.value = datos.nombre || "";
+        nombre.dataset.destinatarioCampo = "nombre";
+        celdaNombre.appendChild(nombre);
+
+        const celdaCanal = document.createElement("td");
+        celdaCanal.appendChild(crearSelectCanalNotificacion(datos.canal || "TO"));
+
+        const celdaAcciones = document.createElement("td");
+        const quitar = document.createElement("button");
+        quitar.type = "button";
+        quitar.className = "btn secundario compacto";
+        quitar.textContent = "Quitar";
+        quitar.addEventListener("click", () => fila.remove());
+        celdaAcciones.appendChild(quitar);
+
+        fila.append(celdaEmail, celdaNombre, celdaCanal, celdaAcciones);
+        return fila;
+    };
+
+    const destinatariosNotificaciones = (panel, tipo) =>
+        Array.from(panel.querySelectorAll(`[data-destinatarios-lista='${tipo}'] tr`)).map((fila) => ({
+            tipo_destinatario: tipo,
+            canal: fila.querySelector("[data-destinatario-campo='canal']")?.value || "TO",
+            email: normalizarTexto(fila.querySelector("[data-destinatario-campo='email']")?.value || "").toLowerCase(),
+            nombre: normalizarTexto(fila.querySelector("[data-destinatario-campo='nombre']")?.value || "") || null,
+        })).filter((item) => item.email || item.nombre);
+
+    const obtenerPayloadNotificaciones = (panel) => ({
+        enviar_evidencia: Boolean(panel.querySelector("[data-notif-campo='enviar_evidencia']")?.checked),
+        plantilla_evidencia: "STDOUT_V1",
+        asunto_personalizado: normalizarTexto(panel.querySelector("[data-notif-campo='asunto_personalizado']")?.value || "") || null,
+        usar_asunto_sugerido_script: Boolean(panel.querySelector("[data-notif-campo='usar_asunto_sugerido_script']")?.checked),
+        adjuntar_archivos_declarados: Boolean(panel.querySelector("[data-notif-campo='adjuntar_archivos_declarados']")?.checked),
+        adjuntar_log_tecnico: Boolean(panel.querySelector("[data-notif-campo='adjuntar_log_tecnico']")?.checked),
+        alerta_error_activa: Boolean(panel.querySelector("[data-notif-campo='alerta_error_activa']")?.checked),
+        usar_alerta_global: Boolean(panel.querySelector("[data-notif-campo='usar_alerta_global']")?.checked),
+        destinatarios: [
+            ...destinatariosNotificaciones(panel, "EVIDENCIA"),
+            ...destinatariosNotificaciones(panel, "ALERTA"),
+        ],
+    });
+
+    const tieneDestinatarioTo = (destinatarios, tipo) =>
+        destinatarios.some((item) => item.tipo_destinatario === tipo && item.canal === "TO" && emailBasicoValido(item.email));
+
+    const validarPayloadNotificaciones = (payload) => {
+        const errores = [];
+        payload.destinatarios.forEach((item) => {
+            if (!item.email || !emailBasicoValido(item.email)) {
+                errores.push("Ingresa emails validos para los destinatarios.");
+            }
+        });
+        if (payload.enviar_evidencia && !tieneDestinatarioTo(payload.destinatarios, "EVIDENCIA")) {
+            errores.push("Para enviar evidencia agrega al menos un destinatario EVIDENCIA en canal TO.");
+        }
+        if (payload.alerta_error_activa && !payload.usar_alerta_global && !tieneDestinatarioTo(payload.destinatarios, "ALERTA")) {
+            errores.push("Si no usas alerta global agrega al menos un destinatario ALERTA en canal TO.");
+        }
+        return [...new Set(errores)];
+    };
+
+    const limpiarDestinatariosNotificaciones = (panel) => {
+        panel.querySelectorAll("[data-destinatarios-lista]").forEach((lista) => lista.replaceChildren());
+    };
+
+    const renderizarConfigNotificaciones = (panel, config = {}) => {
+        const defaults = {
+            enviar_evidencia: false,
+            usar_asunto_sugerido_script: true,
+            asunto_personalizado: "",
+            adjuntar_archivos_declarados: true,
+            adjuntar_log_tecnico: false,
+            alerta_error_activa: true,
+            usar_alerta_global: true,
+            destinatarios: [],
+        };
+        const datos = { ...defaults, ...config };
+        Object.entries(datos).forEach(([clave, valor]) => {
+            const campo = panel.querySelector(`[data-notif-campo='${clave}']`);
+            if (!campo) {
+                return;
+            }
+            if (campo.type === "checkbox") {
+                campo.checked = Boolean(valor);
+            } else {
+                campo.value = valor || "";
+            }
+        });
+
+        limpiarDestinatariosNotificaciones(panel);
+        (datos.destinatarios || []).forEach((destinatario) => {
+            const tipo = destinatario.tipo_destinatario === "ALERTA" ? "ALERTA" : "EVIDENCIA";
+            panel.querySelector(`[data-destinatarios-lista='${tipo}']`)?.appendChild(crearFilaDestinatario(tipo, destinatario));
+        });
+        actualizarEstadoAlertaNotificaciones(panel);
+    };
+
+    const actualizarEstadoAlertaNotificaciones = (panel) => {
+        const usarGlobal = Boolean(panel.querySelector("[data-notif-campo='usar_alerta_global']")?.checked);
+        const grupoAlerta = panel.querySelector("[data-destinatarios-grupo='ALERTA']");
+        grupoAlerta?.classList.toggle("notificaciones-destinatarios-atenuado", usarGlobal);
+    };
+
+    const mensajeErroresApi = (datos) => {
+        if (Array.isArray(datos?.errores) && datos.errores.length) {
+            return datos.errores.join(" ");
+        }
+        return datos?.mensaje || "No fue posible completar la accion.";
+    };
+
+    const leerRespuestaJsonNotificaciones = async (respuesta) => {
+        const contentType = respuesta.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+            return { ok: false, mensaje: "La sesion puede haber expirado o la API no respondio JSON." };
+        }
+        return respuesta.json();
+    };
+
+    const inicializarNotificacionesTarea = (panel) => {
+        if (!panel) {
+            return;
+        }
+        const estado = panel.querySelector("[data-notificaciones-estado]");
+        const botonGuardar = panel.querySelector("[data-notificaciones-guardar]");
+        const botonDesactivar = panel.querySelector("[data-notificaciones-desactivar]");
+
+        panel.querySelectorAll("[data-agregar-destinatario]").forEach((boton) => {
+            boton.addEventListener("click", () => {
+                const tipo = boton.dataset.agregarDestinatario;
+                panel.querySelector(`[data-destinatarios-lista='${tipo}']`)?.appendChild(crearFilaDestinatario(tipo));
+            });
+        });
+
+        panel.querySelector("[data-notif-campo='usar_alerta_global']")?.addEventListener("change", () => {
+            actualizarEstadoAlertaNotificaciones(panel);
+        });
+
+        const setEstado = (mensaje) => {
+            if (estado) {
+                estado.textContent = mensaje;
+            }
+        };
+
+        const cargar = async () => {
+            setEstado("Cargando configuracion...");
+            try {
+                const respuesta = await fetch(panel.dataset.urlObtener, { headers: { Accept: "application/json" } });
+                const datos = await leerRespuestaJsonNotificaciones(respuesta);
+                if (!respuesta.ok || !datos.ok) {
+                    throw new Error(mensajeErroresApi(datos));
+                }
+                renderizarConfigNotificaciones(panel, datos.config);
+                setEstado("Configuracion cargada.");
+            } catch (error) {
+                setEstado("No fue posible cargar la configuracion.");
+                mostrarToast(error.message || "No fue posible cargar notificaciones.", "error");
+            }
+        };
+
+        botonGuardar?.addEventListener("click", async () => {
+            const payload = obtenerPayloadNotificaciones(panel);
+            const errores = validarPayloadNotificaciones(payload);
+            if (errores.length) {
+                mostrarToast(errores[0], "warning");
+                return;
+            }
+            botonGuardar.disabled = true;
+            try {
+                const respuesta = await fetch(panel.dataset.urlGuardar, {
+                    method: "PUT",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "fetch",
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const datos = await leerRespuestaJsonNotificaciones(respuesta);
+                if (!respuesta.ok || !datos.ok) {
+                    throw new Error(mensajeErroresApi(datos));
+                }
+                renderizarConfigNotificaciones(panel, datos.config);
+                setEstado("Configuracion guardada.");
+                mostrarToast("Configuracion de notificaciones guardada.", "success");
+            } catch (error) {
+                mostrarToast(error.message || "No fue posible guardar notificaciones.", "error");
+            } finally {
+                botonGuardar.disabled = false;
+            }
+        });
+
+        botonDesactivar?.addEventListener("click", async () => {
+            botonDesactivar.disabled = true;
+            try {
+                const respuesta = await fetch(panel.dataset.urlDesactivar, {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json",
+                        "X-Requested-With": "fetch",
+                    },
+                });
+                const datos = await leerRespuestaJsonNotificaciones(respuesta);
+                if (!respuesta.ok || !datos.ok) {
+                    throw new Error(mensajeErroresApi(datos));
+                }
+                await cargar();
+                mostrarToast("Configuracion de notificaciones desactivada.", "success");
+            } catch (error) {
+                mostrarToast(error.message || "No fue posible desactivar notificaciones.", "error");
+            } finally {
+                botonDesactivar.disabled = false;
+            }
+        });
+
+        cargar();
+    };
+
     const limpiarValidezTarea = (formulario) => {
         formulario.querySelectorAll("input, select, textarea").forEach((campo) => campo.setCustomValidity(""));
     };
@@ -1713,4 +1962,6 @@ document.addEventListener("DOMContentLoaded", () => {
             selector.addEventListener("change", () => actualizarProgramacion(formulario));
         });
     });
+
+    inicializarNotificacionesTarea(panelNotificacionesTarea);
 });

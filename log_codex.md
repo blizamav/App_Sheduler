@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15D implementa backend minimo de configuracion de notificaciones por tarea, sin Graph, sin envio de correos y sin capturador de `stdout`.
+* Estado actual: Fase 15E agrega UI minima para configurar notificaciones por tarea usando el backend/API de Fase 15D, sin Graph, sin envio de correos y sin capturador de `stdout`.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15D - Backend configuracion notificaciones por tarea.
+* Fase actual: Fase 15E - UI minima configuracion notificaciones por tarea.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -29,6 +29,7 @@
 * Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
 * Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
 * Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
+* UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; no valida aun el script compatible.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -57,6 +58,19 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15E / UI minima configuracion notificaciones por tarea
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/tareas/formulario.html`, `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/MODULOS.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Objetivo: agregar una interfaz minima para configurar notificaciones por tarea usando el backend/API de Fase 15D.
+* Que se hizo: se agrego el bloque `Notificaciones y evidencia` en edicion de tarea, con flags de evidencia/alerta, asunto personalizado, adjuntos, log tecnico, destinatarios `EVIDENCIA` y `ALERTA`, canales `TO/CC/BCC`, guardado y desactivacion por API.
+* Validaciones frontend: email basico, destinatario `EVIDENCIA TO` obligatorio si se activa evidencia y destinatario `ALERTA TO` obligatorio si alerta interna esta activa sin alerta global.
+* Decisiones tomadas: mantener la configuracion separada del formulario principal de tarea para no alterar programacion ni confirmaciones existentes; mostrar nota de validacion estatica futura del script.
+* Pruebas recomendadas: abrir `/tareas/<id>/editar`, guardar sin evidencia, validar error sin `EVIDENCIA TO`, guardar con destinatario valido, recargar, validar alerta local sin `ALERTA TO` y desactivar configuracion.
+* Riesgos: la UI depende de permisos y sesion activa; la autoridad final de validacion sigue siendo el backend.
+* Alcance excluido: no se implemento Graph, no se enviaron correos, no se capturo `stdout`, no se implemento validacion estatica real, no se modifico worker, no se creo ni ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Proximos pasos: implementar validacion estatica de script compatible y captura controlada del bloque de evidencia `stdout` cuando se autorice.
 
 ### 2026-07-03 - Fase 15D / Backend configuracion notificaciones por tarea
 

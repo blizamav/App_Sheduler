@@ -261,6 +261,8 @@ Distinciones obligatorias:
 
 Pendiente critico inmediato:
 
+* Fase posterior a 15E: validar estaticamente scripts compatibles con evidencia antes de permitir envio real.
+* Fase posterior a 15E: capturar bloque de evidencia desde `stdout`, parsear JSON y registrar resultado minimo.
 * Fase 12C Auditoria extendida.
 
 Pendiente operativo:
@@ -280,4 +282,4 @@ Pendiente mejora:
 
 ## Proxima Fase Recomendada
 
-La proxima fase recomendada es Fase 12C: trazabilidad extendida de Auditoria, solo cuando se autorice explicitamente.
+La proxima fase recomendada del bloque de evidencias es implementar validacion estatica y captura controlada de evidencia `stdout`, antes de Microsoft Graph y envio real de correos.

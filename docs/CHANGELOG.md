@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-07-03 - Fase 15E UI minima notificaciones por tarea
+
+### Modificado
+
+* `app/templates/tareas/formulario.html`: agrega bloque `Notificaciones y evidencia` en edicion de tarea.
+* `app/static/js/app.js`: agrega carga, guardado, desactivacion y validacion frontend minima usando la API existente.
+* `app/static/css/estilos.css`: agrega estilos compactos para destinatarios y layout responsive.
+* `docs/MODULOS.md`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Implementado
+
+* UI minima en `/tareas/<id>/editar` para configurar evidencia y alertas internas por tarea.
+* Consulta inicial mediante `GET /api/tareas/<id_tarea>/notificaciones`.
+* Guardado mediante `PUT /api/tareas/<id_tarea>/notificaciones`.
+* Desactivacion mediante `POST /api/tareas/<id_tarea>/notificaciones/desactivar`.
+* Destinatarios editables para `EVIDENCIA` y `ALERTA` con canales `TO`, `CC` y `BCC`.
+* Validacion frontend de email basico, `EVIDENCIA TO` cuando evidencia esta activa y `ALERTA TO` cuando alerta local esta activa sin alerta global.
+* Nota visual indicando que la validacion estatica del script se implementara despues.
+
+### Reglas
+
+* No se implemento Microsoft Graph.
+* No se enviaron correos.
+* No se implemento capturador de `stdout`.
+* No se implemento validacion estatica real del script.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL DDL.
+* No se modifico `database/release/`, `.env` ni `.env.docker`.
+* No se hizo commit ni push.
+
 ## 2026-07-03 - Fase 15D backend configuracion notificaciones por tarea
 
 ### Creado

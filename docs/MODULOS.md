@@ -473,6 +473,7 @@ Implementado en Fase 6:
 * Fase 6.1: validacion frontend previa para evitar confirmar programaciones incompletas.
 * Fase 6.2: deteccion de cambios reales antes de guardar ediciones.
 * Fase 6.2: si no hay cambios, no se envia formulario desde frontend y el backend evita `UPDATE` como respaldo.
+* Fase 15E: `/tareas/<id>/editar` incluye bloque minimo `Notificaciones y evidencia` para configurar envio futuro de evidencia, asunto, adjuntos, alerta interna y destinatarios `EVIDENCIA`/`ALERTA` mediante la API JSON creada en Fase 15D.
 
 No implementado en Fase 6:
 
@@ -480,6 +481,13 @@ No implementado en Fase 6:
 * No existe scheduler real.
 * No existe carga/versionamiento funcional de scripts.
 * No existe API de feriados.
+
+No implementado en Fase 15E:
+
+* No se envia correo real.
+* No se implementa Microsoft Graph.
+* No se captura `stdout`.
+* No se valida estaticamente el script compatible con evidencia.
 
 ## Mantenedores base
 

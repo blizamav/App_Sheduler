@@ -1235,6 +1235,58 @@ textarea {
     gap: 10px;
 }
 
+.notificaciones-tarea {
+    margin-top: 18px;
+}
+
+.notificaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.notificaciones-destinatarios {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
+.notificaciones-destinatarios-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.notificaciones-destinatarios h4 {
+    margin: 2px 0 0;
+}
+
+.notificaciones-destinatarios-atenuado {
+    opacity: 0.72;
+}
+
+.tabla-compacta {
+    overflow-x: auto;
+}
+
+.tabla-compacta table {
+    min-width: 620px;
+}
+
+.tabla-compacta th,
+.tabla-compacta td {
+    padding: 9px 10px;
+}
+
+.tabla-compacta input,
+.tabla-compacta select {
+    min-height: 36px;
+}
+
 .checkline {
     display: inline-flex;
     align-items: center;
@@ -2162,6 +2214,7 @@ tr:last-child td {
     .compacto-grid,
     .auditoria-resumen-grid,
     .auditoria-valores,
+    .notificaciones-grid,
     .formulario-filtros,
     .formulario-filtros.tareas-filtros,
     .dias-grid {

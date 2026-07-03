@@ -334,10 +334,11 @@ Resultado esperado: alerta interna y sin correo al cliente.
 ## Fases futuras
 
 * Fase 15B: modelo de datos minimo para evidencias y notificaciones.
-* Fase 15C: validador estatico y capturador de stdout.
-* Fase 15D: servicio Microsoft Graph.
-* Fase 15E: UI de configuracion de evidencia por tarea.
-* Fase 15F: integracion con worker y ejecuciones.
-* Fase 15G: alertas internas.
-* Fase 15H: adjuntos, reintentos y trazabilidad.
-* Fase 15I: validacion QA end-to-end.
+* Fase 15C: migracion SQL de soporte para notificaciones/evidencias.
+* Fase 15D: backend/API de configuracion de notificaciones por tarea.
+* Fase 15E: UI minima de configuracion de notificaciones por tarea.
+* Fase posterior: validador estatico del script compatible.
+* Fase posterior: capturador de bloque `stdout` y parseo JSON.
+* Fase posterior: servicio Microsoft Graph.
+* Fase posterior: integracion con worker y ejecuciones.
+* Fase posterior: alertas internas, adjuntos, reintentos y trazabilidad.

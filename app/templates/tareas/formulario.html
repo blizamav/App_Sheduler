@@ -154,4 +154,113 @@
         </div>
     </form>
 </section>
+
+{% if modo == "editar" %}
+<section
+    class="bloque notificaciones-tarea"
+    data-notificaciones-tarea
+    data-tarea-id="{{ registro.id_tarea }}"
+    data-url-obtener="{{ url_for('tareas_api.api_obtener_notificaciones', id_tarea=registro.id_tarea) }}"
+    data-url-guardar="{{ url_for('tareas_api.api_guardar_notificaciones', id_tarea=registro.id_tarea) }}"
+    data-url-desactivar="{{ url_for('tareas_api.api_desactivar_notificaciones', id_tarea=registro.id_tarea) }}"
+>
+    <div class="seccion-formulario">
+        <div>
+            <p class="eyebrow">Fase 15E</p>
+            <h3>Notificaciones y evidencia</h3>
+            <p class="texto-secundario">Configura si esta tarea enviara evidencia al finalizar correctamente. El envio real por Microsoft Graph se implementara en una fase posterior.</p>
+        </div>
+
+        <div class="alerta info alerta-inline">
+            En una fase posterior, la app validara que el script declare soporte de evidencia antes de permitir activar este envio.
+        </div>
+
+        <div class="form-grid">
+            <label class="checkline campo-full">
+                <input type="checkbox" data-notif-campo="enviar_evidencia">
+                Enviar evidencia al finalizar correctamente
+            </label>
+            <label class="checkline">
+                <input type="checkbox" data-notif-campo="usar_asunto_sugerido_script">
+                Usar asunto sugerido por el script
+            </label>
+            <div class="campo">
+                <label>Asunto personalizado</label>
+                <input type="text" maxlength="255" data-notif-campo="asunto_personalizado" placeholder="Opcional">
+            </div>
+            <label class="checkline">
+                <input type="checkbox" data-notif-campo="adjuntar_archivos_declarados">
+                Adjuntar archivos declarados
+            </label>
+            <label class="checkline">
+                <input type="checkbox" data-notif-campo="adjuntar_log_tecnico">
+                Adjuntar log tecnico
+            </label>
+            <label class="checkline">
+                <input type="checkbox" data-notif-campo="alerta_error_activa">
+                Enviar alerta interna si falla
+            </label>
+            <label class="checkline">
+                <input type="checkbox" data-notif-campo="usar_alerta_global">
+                Usar alerta global
+            </label>
+        </div>
+
+        <div class="notificaciones-grid">
+            <article class="notificaciones-destinatarios" data-destinatarios-grupo="EVIDENCIA">
+                <div class="notificaciones-destinatarios-header">
+                    <div>
+                        <p class="eyebrow">Destinatarios evidencia</p>
+                        <h4>Cliente o responsables</h4>
+                    </div>
+                    <button class="btn secundario compacto" type="button" data-agregar-destinatario="EVIDENCIA">Agregar</button>
+                </div>
+                <div class="tabla-base tabla-compacta">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Nombre</th>
+                                <th>Canal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody data-destinatarios-lista="EVIDENCIA"></tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="notificaciones-destinatarios" data-destinatarios-grupo="ALERTA">
+                <div class="notificaciones-destinatarios-header">
+                    <div>
+                        <p class="eyebrow">Destinatarios alerta</p>
+                        <h4>Equipo interno</h4>
+                    </div>
+                    <button class="btn secundario compacto" type="button" data-agregar-destinatario="ALERTA">Agregar</button>
+                </div>
+                <p class="texto-ayuda">Se exige TO solo cuando alerta interna esta activa y no se usa alerta global.</p>
+                <div class="tabla-base tabla-compacta">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Nombre</th>
+                                <th>Canal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody data-destinatarios-lista="ALERTA"></tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+
+        <div class="acciones-formulario">
+            <button class="btn primario" type="button" data-notificaciones-guardar>Guardar configuracion</button>
+            <button class="btn secundario" type="button" data-notificaciones-desactivar>Desactivar configuracion</button>
+            <span class="texto-ayuda" data-notificaciones-estado>Cargando configuracion...</span>
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

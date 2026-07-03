@@ -496,6 +496,36 @@ Endpoints backend creados:
 
 La Fase 15D permite consultar, crear/actualizar y desactivar configuracion de notificaciones por tarea. Valida email basico, destinatarios requeridos, tipos, canales y evita duplicados activos al reemplazar destinatarios. No envia correos, no captura `stdout`, no valida delimitadores del script y no implementa Graph.
 
+## UI minima por tarea
+
+Fase 15E agrega una interfaz minima en `/tareas/<id>/editar` para administrar la configuracion creada en Fase 15D.
+
+Campos disponibles:
+
+* `enviar_evidencia`.
+* `usar_asunto_sugerido_script`.
+* `asunto_personalizado`.
+* `adjuntar_archivos_declarados`.
+* `adjuntar_log_tecnico`.
+* `alerta_error_activa`.
+* `usar_alerta_global`.
+* destinatarios `EVIDENCIA` y `ALERTA` con canal `TO`, `CC` o `BCC`.
+
+Reglas aplicadas en UI:
+
+* si `enviar_evidencia` esta activo, debe existir al menos un destinatario `EVIDENCIA` con canal `TO`;
+* si `alerta_error_activa` esta activo y `usar_alerta_global` esta desactivado, debe existir al menos un destinatario `ALERTA` con canal `TO`;
+* se valida email basico en frontend y el backend mantiene la autoridad final;
+* se permite guardar configuracion sin destinatarios cuando el envio de evidencia esta apagado y la alerta usa configuracion global.
+
+Limitaciones vigentes:
+
+* la UI no envia correos;
+* no implementa Microsoft Graph;
+* no captura ni parsea `stdout`;
+* no valida estaticamente todavia que el script declare soporte de evidencia;
+* no muestra ni solicita secretos Graph.
+
 Implementacion futura pendiente:
 
 * `app/repositorios/repositorio_evidencias.py`
