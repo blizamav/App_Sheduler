@@ -113,20 +113,21 @@ Estado: iniciada con base documental y fuente controlada de logs del worker. Inc
 
 ## Fase 15 - Evidencias y reportes
 
-Estado: iniciada con documentacion, migracion incremental 019 ejecutada en `APP_SCHEDULER_QA` y backend minimo de configuracion por tarea. No hay UI completa, Graph activo ni capturador de `stdout`.
+Estado: avanzada hasta envio real de evidencia cliente y alertas internas por Microsoft Graph. La evidencia se valida/captura desde `stdout`, se registra trazabilidad minima y se envia solo cuando queda `VALIDADA`; las alertas internas se envian ante fallas tecnicas. Adjuntos reales y reintentos siguen pendientes.
 
 * 15A Diseno base de evidencias y envio por Microsoft Graph. Documental.
 * 15A.1 Formalizacion del contrato de evidencia por stdout. Implementado documentalmente.
 * 15B Modelo de datos minimo para evidencias y notificaciones. Implementado documentalmente.
 * 15C Migraciones SQL para notificaciones y evidencias. Implementado como script versionado.
 * 15C.2 Ejecucion controlada de migracion 019 en `APP_SCHEDULER_QA`. Ejecutada y validada manualmente.
-* 15D Backend configuracion notificaciones por tarea. Implementado sin Graph, sin UI completa y sin capturador stdout.
-* 15E UI de configuracion de evidencia por tarea. Pendiente.
-* 15F Validador estatico de scripts y capturador de stdout. Pendiente.
-* 15G Servicio Microsoft Graph para envio de correos. Pendiente.
-* 15H Integracion con ejecuciones manuales y worker automatico. Pendiente.
-* 15I Alertas internas ante fallos de evidencia. Pendiente.
-* 15J Adjuntos, reintentos y trazabilidad operativa. Pendiente.
+* 15D Backend configuracion notificaciones por tarea. Implementado.
+* 15E UI de configuracion de evidencia por tarea. Implementado.
+* 15F Configuracion global Mail Graph. Implementado.
+* 15G Validador estatico de scripts compatibles con evidencia. Implementado.
+* 15H Captura, parseo y validacion de evidencia stdout. Implementado.
+* 15I Envio real de evidencia cliente por Microsoft Graph. Implementado sin adjuntos.
+* 15J Alertas internas por falla de ejecucion. Implementado sin adjuntos ni reintentos.
+* 15J.1 Adjuntos, reintentos y trazabilidad operativa. Pendiente.
 * 15K Validacion QA end-to-end. Pendiente.
 
 ## Borrado Operativo Seguro

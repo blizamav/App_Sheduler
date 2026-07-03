@@ -662,6 +662,71 @@ Adjuntos en Fase 15H:
 * adjuntos obligatorios deben existir y tener ruta segura bajo el directorio del proyecto;
 * no se envia ningun adjunto en esta fase.
 
+## Envio real de evidencia por Microsoft Graph
+
+Fase 15I implementa el primer envio real de evidencia cliente por Microsoft Graph `sendMail`.
+
+Condiciones obligatorias:
+
+* ejecucion con `exit_code = 0`;
+* configuracion de tarea con `enviar_evidencia = 1`;
+* evidencia capturada y validada con `estado_evidencia = VALIDADA`;
+* al menos un destinatario `EVIDENCIA` canal `TO`;
+* configuracion global Mail Graph activa y completa;
+* `GRAPH_CLIENT_SECRET` disponible en entorno;
+* inexistencia de envio exitoso previo para la misma ejecucion y `tipo_envio = EVIDENCIA_CLIENTE`.
+
+Origen y seguridad:
+
+* `tenant_id`, `client_id`, `graph_scope`, `send_mail_user` y `save_to_sent_items` salen de `configuracion_mail_graph`.
+* `GRAPH_CLIENT_SECRET` sale solo desde entorno y no se guarda en SQL Server.
+* El `access_token` se usa solo en memoria durante la solicitud y no se guarda.
+* El cuerpo HTML se construye desde la evidencia parseada y no se persiste.
+* `notificaciones_envios` guarda solo metadatos: destinatarios, asunto, estado, codigo Graph, request id y error controlado.
+
+Estados registrados:
+
+* `ENVIADO`: Graph acepta `sendMail`.
+* `FALLIDO`: token no obtenido, timeout, excepcion controlada o Graph responde error.
+* `OMITIDO`: falta una condicion operativa, por ejemplo Graph inactivo, sin destinatario TO, secret no configurado o envio exitoso ya existente.
+
+Pendiente posterior:
+
+* Alertas internas por correo.
+* Reintentos manuales/automaticos.
+* Adjuntos reales bajo politica segura cerrada.
+
+## Alertas internas por falla de ejecucion
+
+Fase 15J implementa el envio de alertas internas por Microsoft Graph cuando una ejecucion termina con falla tecnica.
+
+Condiciones:
+
+* estado final `ERROR` o codigo de salida distinto de `0`;
+* Mail Graph activo y completo;
+* `GRAPH_CLIENT_SECRET` disponible en entorno;
+* al menos un destinatario `TO` de alerta;
+* inexistencia de alerta `ENVIADO` previa para la misma ejecucion.
+
+Destinatarios:
+
+* Si `alerta_error_activa = 1` y `usar_alerta_global = 0`, se usan destinatarios de la tarea con `tipo_destinatario = ALERTA`.
+* Si `usar_alerta_global = 1`, se usa `alertas_destinatarios_default` desde `configuracion_mail_graph` como lista `TO`.
+* Si no hay destinatarios, se registra `OMITIDO`.
+
+Contenido:
+
+* Asunto: `[APP Scheduler] Fallo tarea: {nombre_tarea}`.
+* HTML con tarea, script, version, origen, estado final, codigo de salida, id de ejecucion, mensaje de error y referencia al log.
+* El campo `Log` no muestra rutas fisicas ni relativas del servidor; indica revisar APP Scheduler, modulo Ejecuciones, usando el id de ejecucion.
+* No incluye cuerpo completo del log, secretos, tokens, `.env`, JSON completo, rutas internas ni adjuntos.
+
+Persistencia:
+
+* Se registra en `notificaciones_envios` con `tipo_envio = ALERTA_INTERNA`.
+* Estados: `ENVIADO`, `FALLIDO` u `OMITIDO`.
+* No se guarda cuerpo HTML completo ni token.
+
 Campos principales:
 
 * `activo`.

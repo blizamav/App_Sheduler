@@ -297,12 +297,15 @@ def procesar_evidencia_ejecucion(id_ejecucion, id_tarea, exit_code, stdout_captu
         evidencia = parsear_evidencia_stdout(texto_bloque)
         validacion = validar_contrato_evidencia(evidencia, exit_code)
     except Exception as error:
+        evidencia = None
         validacion = {
             "estado_evidencia": "INVALIDA",
             "errores": [f"JSON de evidencia invalido: {error.__class__.__name__}."],
         }
     registro = construir_registro_evidencia(id_ejecucion, extraccion, validacion, texto_bloque)
     registro["id_evidencia"] = registrar_evidencia_ejecucion(registro)
+    registro["evidencia_parseada"] = evidencia if registro.get("estado_evidencia") == "VALIDADA" else None
+    registro["config_notificacion"] = config
     return registro
 
 

@@ -566,6 +566,45 @@ No implementado en Fase 15H:
 * No se implementa alerta interna por correo.
 * No se modifica `scheduler_worker.py`.
 
+Implementado en Fase 15I:
+
+* Envio real de evidencia cliente por Microsoft Graph `sendMail`.
+* Obtencion de token con client credentials usando `tenant_id`, `client_id` y `graph_scope` desde configuracion Mail Graph.
+* Uso de `GRAPH_CLIENT_SECRET` exclusivamente desde entorno.
+* Remitente global `send_mail_user` desde Mail Graph.
+* Destinatarios `EVIDENCIA` por tarea, separados en `TO`, `CC` y `BCC`.
+* Construccion de asunto y cuerpo HTML desde evidencia parseada, sin incluir JSON bruto.
+* Registro de intentos en `dbo.notificaciones_envios`.
+* Control anti duplicado para no reenviar si ya existe `ENVIADO` para la misma ejecucion.
+
+No implementado en Fase 15I:
+
+* Alertas internas por correo.
+* Reintentos automaticos.
+* Adjuntos reales.
+* Persistencia de token, secret, JSON completo o cuerpo HTML completo.
+
+Implementado en Fase 15J:
+
+* Envio de alerta interna por Microsoft Graph cuando una ejecucion termina en `ERROR` o con codigo de salida distinto de `0`.
+* Seleccion de destinatarios de alerta por tarea cuando `usar_alerta_global = false`.
+* Seleccion de destinatarios globales desde `configuracion_mail_graph.alertas_destinatarios_default` cuando `usar_alerta_global = true`.
+* Registro de intentos en `dbo.notificaciones_envios` con `tipo_envio = ALERTA_INTERNA`.
+* Anti duplicado para no reenviar una alerta ya enviada de la misma ejecucion.
+* La falla de alerta no modifica el estado tecnico de la ejecucion.
+
+Ajustado en Fase 15J.1:
+
+* El correo de alerta ya no muestra rutas fisicas ni relativas del servidor.
+* El campo `Log` indica revisar APP Scheduler, modulo Ejecuciones, con el ID de ejecucion.
+* `Fecha/hora inicio` se informa desde el monitor de ejecucion.
+
+No implementado en Fase 15J:
+
+* Adjuntos reales.
+* Reintentos automaticos.
+* Persistencia de cuerpo HTML, token, secret, log completo o JSON completo.
+
 ## Mantenedores base
 
 Implementado en Fase 5:

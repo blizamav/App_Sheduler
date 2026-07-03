@@ -1,5 +1,81 @@
 # Changelog
 
+## 2026-07-03 - Fase 15J.1 ajuste correo alerta interna
+
+### Modificado
+
+* `app/servicios/servicio_mail_graph.py`: el campo `Log` del correo de alerta ya no muestra rutas fisicas ni relativas del servidor.
+* `app/servicios/servicio_ejecuciones.py`: se informa `Fecha/hora inicio` al construir el contexto de alerta.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/MODULOS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* El correo indica: `Disponible en APP Scheduler, modulo Ejecuciones, ID ejecucion {id}`.
+* Se mantiene fecha/hora termino, estado final, codigo de salida e ID ejecucion.
+* No se modifico el envio de evidencia cliente.
+* No se implementaron adjuntos ni reintentos.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15J alertas internas por falla de ejecucion
+
+### Modificado
+
+* `app/servicios/servicio_mail_graph.py`: agrega envio de `ALERTA_INTERNA` por Microsoft Graph, cuerpo HTML controlado y seleccion de destinatarios por tarea o global.
+* `app/servicios/servicio_ejecuciones.py`: integra alerta interna cuando la ejecucion termina en `ERROR`, sin cambiar el estado tecnico.
+* `app/repositorios/repositorio_notificaciones_envios.py`: generaliza anti duplicado y registro para `EVIDENCIA_CLIENTE` y `ALERTA_INTERNA`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Si la ejecucion falla, no se envia evidencia cliente y se intenta alerta interna.
+* Destinatarios de alerta: por tarea cuando `usar_alerta_global = false`; globales desde Mail Graph cuando `usar_alerta_global = true`.
+* Se registra `ENVIADO`, `FALLIDO` u `OMITIDO` en `notificaciones_envios`.
+* No se guarda token, secret, cuerpo HTML completo, log completo ni JSON completo.
+* No se implementaron adjuntos reales ni reintentos.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15I envio real de evidencia por Microsoft Graph
+
+### Creado
+
+* `app/repositorios/repositorio_notificaciones_envios.py`: consulta anti duplicado y registro controlado de intentos en `dbo.notificaciones_envios`.
+
+### Modificado
+
+* `app/servicios/servicio_mail_graph.py`: agrega client credentials, `sendMail`, construccion de asunto/HTML y registro `ENVIADO`/`FALLIDO`/`OMITIDO`.
+* `app/servicios/servicio_evidencias.py`: retorna la evidencia parseada solo en memoria cuando queda `VALIDADA`.
+* `app/servicios/servicio_ejecuciones.py`: intenta envio Graph despues de procesar evidencia validada sin alterar el estado tecnico de ejecucion.
+* `docs/CONTRATO_EVIDENCIA_STDOUT.md`.
+* `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* El envio se realiza solo con `exit_code = 0`, `enviar_evidencia = true`, evidencia `VALIDADA`, destinatario `EVIDENCIA TO`, Mail Graph activo, `GRAPH_CLIENT_SECRET` en entorno y sin envio exitoso previo.
+* El remitente sale de configuracion global Mail Graph.
+* El secret sale solo desde variable de entorno.
+* Los destinatarios salen de la configuracion de la tarea.
+* No se guarda token, secret, JSON completo ni cuerpo HTML completo.
+* No se implementaron adjuntos reales.
+* No se implementaron alertas internas por correo.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
 ## 2026-07-03 - Fase 15H.3 correccion politica de logs visibles
 
 ### Modificado

@@ -215,6 +215,19 @@ Solo se envia correo al cliente cuando:
 * Los adjuntos obligatorios declarados existen y pasan validacion.
 * Microsoft Graph responde correctamente.
 
+Implementado en Fase 15I:
+
+* El envio usa Microsoft Graph `sendMail` mediante client credentials.
+* El remitente se obtiene desde la configuracion global Mail Graph (`send_mail_user`).
+* `GRAPH_CLIENT_SECRET` se lee exclusivamente desde entorno.
+* Los destinatarios `TO`, `CC` y `BCC` se obtienen desde la configuracion de notificaciones de la tarea, tipo `EVIDENCIA`.
+* El asunto se decide en este orden: `asunto_sugerido` del script si la tarea lo permite, `asunto_personalizado`, titulo de evidencia y asunto generico.
+* El cuerpo HTML se construye desde la evidencia parseada; no incluye JSON bruto.
+* El resultado se registra en `notificaciones_envios` como `ENVIADO`, `FALLIDO` u `OMITIDO`.
+* No se guarda token, secret, cuerpo HTML completo ni JSON completo.
+* No se envian adjuntos reales todavia.
+* No se implementan alertas internas por correo todavia.
+
 ## Regla de alerta interna
 
 Se debe generar alerta interna cuando:

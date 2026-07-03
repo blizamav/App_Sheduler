@@ -27,6 +27,9 @@ from app.servicios.servicio_evidencias import (
     DELIMITADOR_INICIO,
     procesar_evidencia_ejecucion,
 )
+from app.servicios.servicio_mail_graph import enviar_evidencia_cliente_graph
+from app.servicios.servicio_mail_graph import enviar_alerta_interna_graph
+from app.servicios.servicio_notificaciones import obtener_config_notificacion_tarea
 from app.servicios.servicio_logs_ejecucion import (
     escribir_linea_log,
     escribir_lineas_log,
@@ -369,6 +372,8 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
         proceso = None
         monitor_fallo = False
         stdout_evidencia = []
+        resultado_evidencia = None
+        fecha_hora_inicio_alerta = datetime.now()
         try:
             entorno = cargar_env_version(contexto["ruta_env_relativa"]) if contexto.get("requiere_env") else None
             if contexto.get("requiere_env"):
@@ -413,6 +418,18 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
                             )
                         ],
                     )
+                    if codigo == 0 and resultado_evidencia.get("estado_evidencia") == "VALIDADA":
+                        resultado_envio = enviar_evidencia_cliente_graph(
+                            id_ejecucion,
+                            contexto["id_tarea"],
+                            resultado_evidencia,
+                            resultado_evidencia.get("evidencia_parseada") or {},
+                            resultado_evidencia.get("config_notificacion") or {},
+                            codigo,
+                        )
+                        if resultado_envio:
+                            nivel_envio = "INFO" if resultado_envio.get("estado_envio") == "ENVIADO" else "WARNING"
+                            _escribir_log(ruta_fisica_log, [(resultado_envio.get("mensaje_log"), nivel_envio)])
             except Exception as error_evidencia:
                 registrar_log_sistema(
                     "EVIDENCIA_STDOUT_PROCESO_ERROR",
@@ -436,6 +453,28 @@ def _ejecutar_en_segundo_plano(app, id_ejecucion, contexto, ruta_fisica_log, usu
                     f"Fecha/hora termino: {datetime.now():%Y-%m-%d %H:%M:%S}",
                 ],
             )
+            if estado == "ERROR":
+                config_alerta = (resultado_evidencia or {}).get("config_notificacion") or _obtener_config_notificacion_alerta(contexto["id_tarea"])
+                contexto_alerta = dict(contexto)
+                contexto_alerta.update(
+                    {
+                        "origen_ejecucion": origen,
+                        "fecha_hora_inicio_alerta": f"{fecha_hora_inicio_alerta:%Y-%m-%d %H:%M:%S}",
+                        "fecha_hora_termino_alerta": f"{datetime.now():%Y-%m-%d %H:%M:%S}",
+                    }
+                )
+                resultado_alerta = enviar_alerta_interna_graph(
+                    id_ejecucion,
+                    contexto_alerta,
+                    estado,
+                    codigo,
+                    mensaje_error,
+                    config_alerta,
+                    resultado_evidencia,
+                )
+                if resultado_alerta:
+                    nivel_alerta = "INFO" if resultado_alerta.get("estado_envio") == "ENVIADO" else "WARNING"
+                    _escribir_log(ruta_fisica_log, [(resultado_alerta.get("mensaje_log"), nivel_alerta)])
             prefijo = "EJECUCION_AUTOMATICA" if origen == "AUTOMATICA" else "EJECUCION"
             registrar_log_sistema(
                 f"{prefijo}_FINALIZADA_EXITOSA" if estado == "EXITOSA" else f"{prefijo}_FINALIZADA_ERROR",
@@ -551,6 +590,14 @@ def _ruta_log_desde_ejecucion(ejecucion):
     if not ruta:
         return None
     return (BASE_DIR / Path(ruta)).resolve()
+
+
+def _obtener_config_notificacion_alerta(id_tarea):
+    try:
+        ok, _, config = obtener_config_notificacion_tarea(id_tarea)
+        return config if ok else None
+    except Exception:
+        return None
 
 
 def _normalizar_filtros_ejecuciones(parametros):

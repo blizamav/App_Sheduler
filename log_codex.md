@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15H.3 corrige la politica de logs visibles de evidencia stdout, sin envio real ni llamadas externas.
+* Estado actual: Fase 15J.1 ajusta correo de alerta interna para no mostrar rutas fisicas y corregir fecha/hora inicio.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15H.3 - Correccion politica de logs visibles.
+* Fase actual: Fase 15J.1 - Ajuste correo alerta interna.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -35,6 +35,9 @@
 * Validacion evidencia: Fase 15H.2 exige que los delimitadores existan como strings reales del codigo; los delimitadores escritos solo como comentarios no son validos.
 * Logs visibles evidencia: Fase 15H.3 define que la consola/log operativo muestra stdout/stderr completo, incluyendo delimitadores y JSON emitido; la omision aplica solo al futuro correo/notificacion.
 * Mail Automatico Graph: origen global del correo en `/configuracion/mail-graph`; `GRAPH_CLIENT_SECRET` queda solo por entorno y no se expone por UI/API.
+* Envio evidencia Graph: Fase 15I envia solo evidencia `VALIDADA` con `exit_code = 0`, destinatario `EVIDENCIA TO`, Mail Graph activo y sin envio exitoso previo. No guarda token, secret, JSON completo ni cuerpo HTML.
+* Alertas internas Graph: Fase 15J envia `ALERTA_INTERNA` cuando una ejecucion termina en `ERROR`; usa destinatarios de tarea o globales, registra intento y no cambia el estado tecnico.
+* Correo alerta interna: Fase 15J.1 no muestra rutas fisicas ni relativas del servidor; el log se referencia desde APP Scheduler, modulo Ejecuciones, por ID de ejecucion.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -63,6 +66,38 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15J.1 / Ajuste correo alerta interna
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_mail_graph.py`, `app/servicios/servicio_ejecuciones.py`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: el correo de alerta mostraba una ruta de log del servidor y `Fecha/hora inicio` llegaba vacia.
+* Causa: el HTML usaba `ruta_relativa_log_alerta`/`nombre_archivo_log_alerta`; el contexto de alerta no cargaba `fecha_hora_inicio_alerta`.
+* Que se hizo: `Log` ahora muestra `Disponible en APP Scheduler, modulo Ejecuciones, ID ejecucion {id}` y el monitor carga `fecha_hora_inicio_alerta`.
+* Alcance excluido: no se modifico el envio de evidencia cliente, no se implementaron adjuntos ni reintentos, no se modifico worker ni `scheduler_worker.py`, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`; no se hizo commit ni push.
+
+### 2026-07-03 - Fase 15J / Alertas internas por falla de ejecucion
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/servicios/servicio_mail_graph.py`, `app/servicios/servicio_ejecuciones.py`, `app/repositorios/repositorio_notificaciones_envios.py`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: Fase 15I cubria evidencia cliente cuando la ejecucion era exitosa; faltaba notificar al equipo TI cuando la ejecucion fallaba.
+* Que se hizo: se agrego envio `ALERTA_INTERNA` por Microsoft Graph cuando la ejecucion termina en `ERROR` o con codigo de salida distinto de `0`.
+* Destinatarios: si `usar_alerta_global = false`, se usan destinatarios `ALERTA` de la tarea; si `usar_alerta_global = true`, se usa `alertas_destinatarios_default` de Mail Graph como `TO`.
+* Persistencia: se registra `ENVIADO`, `FALLIDO` u `OMITIDO` en `notificaciones_envios`; no se guarda cuerpo HTML, token, secret, log completo ni JSON completo.
+* Anti duplicado: antes de enviar alerta se valida que no exista `ALERTA_INTERNA` `ENVIADO` para la misma ejecucion.
+* Alcance excluido: no se implementaron adjuntos reales ni reintentos; no se modifico worker ni `scheduler_worker.py`; no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`; no se hizo commit ni push.
+
+### 2026-07-03 - Fase 15I / Envio real de evidencia por Microsoft Graph
+
+* Archivos creados: `app/repositorios/repositorio_notificaciones_envios.py`.
+* Archivos modificados: `app/servicios/servicio_mail_graph.py`, `app/servicios/servicio_evidencias.py`, `app/servicios/servicio_ejecuciones.py`, `docs/CONTRATO_EVIDENCIA_STDOUT.md`, `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: ya existian configuracion Mail Graph, destinatarios por tarea, evidencia validada y tabla `notificaciones_envios`; faltaba orquestar token, `sendMail`, anti duplicado y registro de resultado.
+* Que se hizo: se implemento envio `EVIDENCIA_CLIENTE` por Microsoft Graph `sendMail` despues de procesar evidencia `VALIDADA`.
+* Configuracion: `tenant_id`, `client_id`, `graph_scope`, `send_mail_user` y `save_to_sent_items` salen de `configuracion_mail_graph`; `GRAPH_CLIENT_SECRET` sale solo desde entorno.
+* Destinatarios: se leen desde la configuracion de notificaciones de la tarea, tipo `EVIDENCIA`, canales `TO`, `CC` y `BCC`; se exige al menos un `TO`.
+* Persistencia: se registra `ENVIADO`, `FALLIDO` u `OMITIDO` en `notificaciones_envios`; no se guarda token, secret, JSON completo ni cuerpo HTML completo.
+* Anti duplicado: antes de enviar se revisa si ya existe `ENVIADO` para la misma ejecucion y `EVIDENCIA_CLIENTE`.
+* Alcance excluido: no se implementaron adjuntos reales, alertas internas ni reintentos; no se modifico worker ni `scheduler_worker.py`; no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`; no se hizo commit ni push.
 
 ### 2026-07-03 - Fase 15H.3 / Correccion politica de logs visibles
 
