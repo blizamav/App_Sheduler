@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15J.1 ajusta correo de alerta interna para no mostrar rutas fisicas y corregir fecha/hora inicio.
+* Estado actual: Fase 15J.4 auto oculta parametros sensibles Mail Graph despues de revelarlos temporalmente, sin tocar envios.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15J.1 - Ajuste correo alerta interna.
+* Fase actual: Fase 15J.4 - Auto ocultar campos sensibles Mail Graph.
 * Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
@@ -38,6 +38,7 @@
 * Envio evidencia Graph: Fase 15I envia solo evidencia `VALIDADA` con `exit_code = 0`, destinatario `EVIDENCIA TO`, Mail Graph activo y sin envio exitoso previo. No guarda token, secret, JSON completo ni cuerpo HTML.
 * Alertas internas Graph: Fase 15J envia `ALERTA_INTERNA` cuando una ejecucion termina en `ERROR`; usa destinatarios de tarea o globales, registra intento y no cambia el estado tecnico.
 * Correo alerta interna: Fase 15J.1 no muestra rutas fisicas ni relativas del servidor; el log se referencia desde APP Scheduler, modulo Ejecuciones, por ID de ejecucion.
+* Seguridad Mail Graph: Fase 15J.2 restringe menu, rutas web y API de Mail Automatico a `SUPER_ADMIN` o administrador inicial `.env`; Fase 15J.3 mantiene Tenant ID, Client ID y Scope ocultos/deshabilitados por defecto y los revela solo tras modal de confirmacion y endpoint protegido; Fase 15J.4 auto oculta esos campos luego de 20 segundos.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
 
 ## 3. Estructura actual del proyecto
@@ -66,6 +67,43 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15J.4 / Auto ocultar campos sensibles Mail Graph
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/configuracion/mail_graph.html`, `app/static/js/app.js`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: tras confirmar el revelado sensible de Mail Graph, Tenant ID, Client ID y Scope Graph quedaban visibles indefinidamente hasta navegar o recargar.
+* Que se hizo: se agrego temporizador de 20 segundos para ocultar automaticamente campos sensibles despues de revelarlos.
+* UI: al vencer el tiempo, se limpian los valores visibles, se deshabilitan los campos, se deja disponible nuevamente el boton y se muestra mensaje de ocultamiento automatico; mientras estan visibles, el usuario puede ocultarlos manualmente con `Ocultar ahora`.
+* Guardado: si el usuario guarda antes del vencimiento, el formulario se envia normalmente; despues de la recarga, los campos vuelven a quedar ocultos por defecto.
+* Seguridad: `CLIENT_SECRET` sigue sin mostrarse ni aceptarse por UI/API; usuarios no autorizados siguen bloqueados por la proteccion de Fase 15J.2.
+* Alcance: no se modifico envio de evidencia cliente ni alerta interna; no se modifico backend Graph salvo la UI ya protegida; no se modifico worker ni `scheduler_worker.py`; no se crearon migraciones; no se ejecuto SQL; no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Pruebas recomendadas: revelar parametros sensibles como `SUPER_ADMIN`, esperar 20 segundos y verificar que se limpien/deshabiliten; repetir revelado; guardar antes de expirar y confirmar que la pantalla recargada vuelve a ocultar los campos.
+
+### 2026-07-03 - Fase 15J.3 / Enmascarar campos sensibles Mail Graph
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/rutas_configuracion.py`, `app/templates/configuracion/mail_graph.html`, `app/static/js/app.js`, `app/servicios/servicio_mail_graph.py`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: Tenant ID, Client ID y Scope Graph estaban enmascarados visualmente, pero no existia flujo explicito de revelado/edicion con confirmacion y la API de guardado podia devolver la configuracion real.
+* Que se hizo: se agrego boton `Ver / editar configuracion sensible`, modal corporativo de confirmacion y endpoint POST protegido para revelar valores solo a perfiles autorizados.
+* UI: al cancelar, los campos siguen ocultos/deshabilitados; al confirmar, se cargan valores reales y se habilita edicion.
+* API: la consulta general y la respuesta de guardado devuelven Tenant ID, Client ID y Scope enmascarados como `************`.
+* Trazabilidad: logs y auditoria de cambios de Mail Graph registran esos campos enmascarados.
+* Seguridad: `CLIENT_SECRET` no se muestra ni se acepta por UI/API; permanece exclusivamente por variables de entorno.
+* Alcance: no se modifico envio de evidencia cliente ni alerta interna; no se modifico worker ni `scheduler_worker.py`; no se crearon migraciones; no se ejecuto SQL; no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Pruebas recomendadas: ingresar como `SUPER_ADMIN`, abrir `/configuracion/mail-graph`, verificar campos ocultos/deshabilitados, cancelar modal y confirmar que siguen ocultos, luego confirmar revelado y validar que se habilita edicion sin exponer `CLIENT_SECRET`.
+
+### 2026-07-03 - Fase 15J.2 / Seguridad y ajuste UI Mail Graph
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/rutas_configuracion.py`, `app/templates/base.html`, `app/templates/configuracion/mail_graph.html`, `docs/MODULOS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: Mail Graph usaba permisos genericos `SCHEDULER_CONFIG_*`, por lo que perfiles no superadmin podian ver el modulo y consultar datos administrativos Graph.
+* Que se hizo: se agrego control backend especifico para `SUPER_ADMIN`/`SUPER_ADMIN_ENV`, se oculto el menu para perfiles menores y se protegieron API/web con 403 controlado.
+* UI: se reemplazaron textos obsoletos que indicaban envio futuro; ahora la pantalla indica que administra la configuracion global usada para evidencias y alertas.
+* Enmascaramiento: `Tenant ID`, `Client ID` y `Scope Graph` se muestran como `************`; `Buzon remitente` queda visible.
+* Guardado: si Tenant ID, Client ID o Scope se dejan en blanco en el formulario, se conserva el valor actual.
+* Seguridad: usuarios no autorizados no reciben `tenant_id`, `client_id`, `graph_scope`, `send_mail_user` ni estado administrativo por API.
+* Alcance excluido: no se modifico envio de evidencia cliente ni alerta interna, no se guardo ni mostro `CLIENT_SECRET`, no se modifico worker ni `scheduler_worker.py`, no se creo migracion, no se ejecuto SQL, no se modifico `.env`, `.env.docker` ni `database/release/`; no se hizo commit ni push.
 
 ### 2026-07-03 - Fase 15J.1 / Ajuste correo alerta interna
 

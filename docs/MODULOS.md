@@ -599,6 +599,34 @@ Ajustado en Fase 15J.1:
 * El campo `Log` indica revisar APP Scheduler, modulo Ejecuciones, con el ID de ejecucion.
 * `Fecha/hora inicio` se informa desde el monitor de ejecucion.
 
+Ajustado en Fase 15J.2:
+
+* El modulo `Mail Automatico / Microsoft Graph` queda restringido a `SUPER_ADMIN` o administrador inicial desde `.env`.
+* Las rutas web y API de Mail Graph bloquean accesos no autorizados en backend.
+* El menu lateral oculta Mail Automatico para perfiles TI, OPERADOR u otros no superadmin.
+* Tenant ID, Client ID y Scope Graph se muestran enmascarados como `************`; el buzon remitente queda visible.
+* Si esos campos se dejan en blanco al guardar, se conserva el valor actual para evitar sobrescritura accidental.
+* Los textos de UI se actualizan para reflejar que el envio real de evidencias y alertas ya esta implementado.
+
+Ajustado en Fase 15J.3:
+
+* Tenant ID, Client ID y Scope Graph permanecen ocultos y deshabilitados por defecto en `/configuracion/mail-graph`.
+* La accion `Ver / editar configuracion sensible` exige confirmacion en modal corporativo antes de revelar valores reales.
+* Si el usuario cancela, los campos siguen enmascarados y no se habilita edicion.
+* La API general devuelve esos campos enmascarados; solo el endpoint especifico POST de revelado entrega valores reales a perfiles autorizados.
+* Logs y auditoria de cambios de configuracion Mail Graph registran esos campos como `************`.
+* `CLIENT_SECRET` no se muestra ni se acepta por UI/API; permanece exclusivamente en variables de entorno.
+
+Ajustado en Fase 15J.4:
+
+* Los campos Tenant ID, Client ID y Scope Graph se revelan solo temporalmente tras confirmacion.
+* El tiempo de exposicion configurado es de 20 segundos.
+* Al vencer el tiempo, la UI limpia los valores visibles, deshabilita los campos y muestra aviso de ocultamiento automatico.
+* Mientras estan visibles, el usuario puede ocultarlos manualmente con `Ocultar ahora`.
+* Si el usuario necesita continuar editando, debe volver a confirmar la accion sensible.
+* Guardar antes del vencimiento mantiene el flujo normal; al recargar la pantalla, los campos vuelven a quedar ocultos.
+* `CLIENT_SECRET` sigue sin mostrarse ni aceptarse por UI/API.
+
 No implementado en Fase 15J:
 
 * Adjuntos reales.

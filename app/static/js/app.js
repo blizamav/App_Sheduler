@@ -78,7 +78,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const formularioLimpiezaEventos = document.querySelector("[data-limpieza-eventos-form]");
     const historialEventos = document.querySelector("[data-eventos-historial]");
     const panelNotificacionesTarea = document.querySelector("[data-notificaciones-tarea]");
+    const panelMailGraphSensible = document.querySelector("[data-mail-graph-sensible-panel]");
+    const botonMailGraphRevelar = document.querySelector("[data-mail-graph-revelar]");
+    const botonMailGraphOcultar = document.querySelector("[data-mail-graph-ocultar]");
+    const estadoMailGraphSensible = document.querySelector("[data-mail-graph-sensible-estado]");
+    const camposMailGraphSensibles = document.querySelectorAll("[data-mail-graph-sensitive]");
     let formularioPendiente = null;
+    let accionConfirmadaPendiente = null;
+    let temporizadorMailGraphSensible = null;
+    let intervaloMailGraphSensible = null;
     let envioConfirmado = false;
     let intervaloMonitorWorker = null;
     let monitorWorkerCargando = false;
@@ -721,6 +729,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         formularioPendiente = formulario || configuracion.closest?.("form") || null;
         const dataset = configuracion.dataset || configuracion;
+        accionConfirmadaPendiente = configuracion.onConfirm || null;
         modalConfirmar.disabled = false;
         const tipo = dataset.confirmType || "info";
         modalConfirmacion.dataset.tipo = tipo;
@@ -768,6 +777,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modalConfirmacion.setAttribute("aria-hidden", "true");
         cuerpo.classList.remove("modal-abierto");
         formularioPendiente = null;
+        accionConfirmadaPendiente = null;
         modalConfirmar.disabled = false;
         if (modalResumen) {
             modalResumen.replaceChildren();
@@ -997,7 +1007,131 @@ document.addEventListener("DOMContentLoaded", () => {
                 formulario.requestSubmit();
                 return;
             }
+            const accion = accionConfirmadaPendiente;
+            if (accion) {
+                cerrarModalConfirmacion();
+                accion();
+                return;
+            }
             cerrarModalConfirmacion();
+        });
+    }
+
+    const tiempoAutoOcultarMailGraph = () => {
+        const valor = Number(panelMailGraphSensible?.dataset.autoHideMs || 20000);
+        return valor > 0 ? valor : 20000;
+    };
+
+    const detenerTemporizadoresMailGraph = () => {
+        if (temporizadorMailGraphSensible) {
+            clearTimeout(temporizadorMailGraphSensible);
+            temporizadorMailGraphSensible = null;
+        }
+        if (intervaloMailGraphSensible) {
+            clearInterval(intervaloMailGraphSensible);
+            intervaloMailGraphSensible = null;
+        }
+    };
+
+    const ocultarMailGraphSensible = (mensaje = "Campos sensibles ocultados automaticamente por seguridad.") => {
+        detenerTemporizadoresMailGraph();
+        camposMailGraphSensibles.forEach((campo) => {
+            campo.value = "";
+            campo.dataset.original = "";
+            campo.disabled = true;
+        });
+        if (botonMailGraphRevelar) {
+            botonMailGraphRevelar.disabled = false;
+        }
+        botonMailGraphOcultar?.classList.add("oculto");
+        if (estadoMailGraphSensible) {
+            estadoMailGraphSensible.textContent = mensaje;
+        }
+    };
+
+    const iniciarAutoOcultamientoMailGraph = () => {
+        detenerTemporizadoresMailGraph();
+        const duracion = tiempoAutoOcultarMailGraph();
+        const inicio = Date.now();
+        const actualizarMensaje = () => {
+            const restante = Math.max(0, Math.ceil((duracion - (Date.now() - inicio)) / 1000));
+            if (estadoMailGraphSensible) {
+                estadoMailGraphSensible.textContent = `Campos sensibles visibles temporalmente. Se ocultaran en ${restante} segundos.`;
+            }
+        };
+
+        actualizarMensaje();
+        intervaloMailGraphSensible = setInterval(actualizarMensaje, 1000);
+        temporizadorMailGraphSensible = setTimeout(() => {
+            ocultarMailGraphSensible("Los campos sensibles fueron ocultados automaticamente por seguridad. Si necesita continuar editando, vuelva a confirmar.");
+        }, duracion);
+    };
+
+    const revelarMailGraphSensible = async () => {
+        const url = panelMailGraphSensible?.dataset.revealUrl;
+        if (!url) {
+            return;
+        }
+
+        if (estadoMailGraphSensible) {
+            estadoMailGraphSensible.textContent = "Cargando parametros sensibles...";
+        }
+        if (botonMailGraphRevelar) {
+            botonMailGraphRevelar.disabled = true;
+        }
+
+        try {
+            const respuesta = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                },
+            });
+            const datos = await respuesta.json();
+            if (!respuesta.ok || !datos.ok) {
+                throw new Error(datos.mensaje || "No fue posible revelar parametros sensibles.");
+            }
+
+            camposMailGraphSensibles.forEach((campo) => {
+                const clave = campo.dataset.mailGraphSensitive;
+                campo.disabled = false;
+                campo.value = datos.config?.[clave] || "";
+                campo.dataset.original = campo.value;
+            });
+            if (estadoMailGraphSensible) {
+                estadoMailGraphSensible.textContent = "Parametros sensibles visibles temporalmente.";
+            }
+            botonMailGraphOcultar?.classList.remove("oculto");
+            iniciarAutoOcultamientoMailGraph();
+        } catch (error) {
+            detenerTemporizadoresMailGraph();
+            if (estadoMailGraphSensible) {
+                estadoMailGraphSensible.textContent = "No fue posible revelar parametros sensibles.";
+            }
+            if (botonMailGraphRevelar) {
+                botonMailGraphRevelar.disabled = false;
+            }
+        }
+    };
+
+    if (botonMailGraphRevelar) {
+        botonMailGraphRevelar.addEventListener("click", () => {
+            abrirModalConfirmacion({
+                dataset: {
+                    confirmTitle: "Mostrar parametros sensibles",
+                    confirmMessage: "Esta a punto de mostrar parametros sensibles de Microsoft Graph. Solo continue si necesita revisar o modificar esta configuracion.",
+                    confirmOk: "Mostrar / editar",
+                    confirmCancel: "Cancelar",
+                    confirmType: "warning",
+                },
+                onConfirm: revelarMailGraphSensible,
+            });
+        });
+    }
+
+    if (botonMailGraphOcultar) {
+        botonMailGraphOcultar.addEventListener("click", () => {
+            ocultarMailGraphSensible("Campos sensibles ocultados manualmente por seguridad.");
         });
     }
 

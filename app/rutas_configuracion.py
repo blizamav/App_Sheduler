@@ -1,6 +1,7 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from functools import wraps
 
-from app.seguridad import permiso_requerido
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, session, url_for
+
 from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_mail_graph import (
@@ -13,34 +14,46 @@ bp_configuracion = Blueprint("configuracion", __name__, url_prefix="/configuraci
 bp_configuracion_api = Blueprint("configuracion_api", __name__, url_prefix="/api/configuracion")
 
 
-def _puede_editar_configuracion():
-    permisos = session.get("permisos", [])
-    return bool(session.get("es_admin_env") or "*" in permisos or "SCHEDULER_CONFIG_EDITAR" in permisos)
+def _es_super_admin_mail_graph():
+    roles = session.get("roles", [])
+    return bool(session.get("es_admin_env") or "SUPER_ADMIN" in roles or "SUPER_ADMIN_ENV" in roles)
 
 
-@bp_configuracion.route("/mail-graph", methods=["GET", "POST"])
-@permiso_requerido("SCHEDULER_CONFIG_VER")
-def mail_graph():
-    if request.method == "POST":
-        if not _puede_editar_configuracion():
+def super_admin_mail_graph_requerido(vista):
+    @wraps(vista)
+    def wrapper(*args, **kwargs):
+        if not session.get("usuario"):
+            return redirect(url_for("principal.login"))
+        if not _es_super_admin_mail_graph():
             registrar_log_sistema(
-                "MAIL_GRAPH_EDICION_BLOQUEADA",
+                "MAIL_GRAPH_ACCESO_BLOQUEADO",
                 "MAIL_GRAPH",
-                "Intento bloqueado de editar configuracion Mail Graph sin permiso.",
+                "Intento bloqueado de acceso a configuracion sensible Mail Graph.",
                 usuario=session.get("usuario"),
                 nivel="WARNING",
             )
             registrar_auditoria(
                 "BLOQUEO_PERMISO",
                 "configuracion_mail_graph",
-                descripcion="Intento bloqueado de editar configuracion Mail Graph sin permiso.",
-                valores_despues={"permiso_requerido": "SCHEDULER_CONFIG_EDITAR"},
+                descripcion="Intento bloqueado de acceso a configuracion sensible Mail Graph.",
+                valores_despues={"rol_requerido": "SUPER_ADMIN", "ruta": request.path},
                 resultado="BLOQUEADO",
                 modulo="SEGURIDAD",
                 usuario=session.get("usuario"),
             )
-            flash("No tienes permisos para editar Mail Automatico.", "error")
-            return redirect(url_for("configuracion.mail_graph"))
+            if request.path.startswith("/api/"):
+                return jsonify({"ok": False, "mensaje": "No tienes permisos para acceder a Mail Automatico."}), 403
+            flash("No tienes permisos para acceder a Mail Automatico.", "error")
+            return abort(403)
+        return vista(*args, **kwargs)
+
+    return wrapper
+
+
+@bp_configuracion.route("/mail-graph", methods=["GET", "POST"])
+@super_admin_mail_graph_requerido
+def mail_graph():
+    if request.method == "POST":
         try:
             ok, mensajes, _ = guardar_mail_graph_config(request.form, session.get("usuario"))
         except Exception as error:
@@ -67,19 +80,36 @@ def mail_graph():
 
 
 @bp_configuracion_api.route("/mail-graph", methods=["GET"])
-@permiso_requerido("SCHEDULER_CONFIG_VER")
+@super_admin_mail_graph_requerido
 def api_obtener_mail_graph():
     try:
-        return jsonify({"ok": True, "config": obtener_mail_graph_config(session.get("usuario"))})
+        return jsonify({"ok": True, "config": _config_mail_graph_segura(obtener_mail_graph_config(session.get("usuario")))})
     except Exception:
         return jsonify({"ok": False, "mensaje": "No fue posible obtener la configuracion Mail Graph."}), 500
 
 
+@bp_configuracion_api.route("/mail-graph/sensible", methods=["POST"])
+@super_admin_mail_graph_requerido
+def api_revelar_mail_graph_sensible():
+    try:
+        config = obtener_mail_graph_config(session.get("usuario"))
+        return jsonify(
+            {
+                "ok": True,
+                "config": {
+                    "tenant_id": config.get("tenant_id"),
+                    "client_id": config.get("client_id"),
+                    "graph_scope": config.get("graph_scope"),
+                },
+            }
+        )
+    except Exception:
+        return jsonify({"ok": False, "mensaje": "No fue posible revelar la configuracion sensible Mail Graph."}), 500
+
+
 @bp_configuracion_api.route("/mail-graph", methods=["POST", "PUT"])
-@permiso_requerido("SCHEDULER_CONFIG_VER")
+@super_admin_mail_graph_requerido
 def api_guardar_mail_graph():
-    if not _puede_editar_configuracion():
-        return jsonify({"ok": False, "mensaje": "No tienes permisos para editar Mail Automatico."}), 403
     datos = request.get_json(silent=True) or request.form or {}
     try:
         ok, mensajes, config = guardar_mail_graph_config(datos, session.get("usuario"))
@@ -91,6 +121,14 @@ def api_guardar_mail_graph():
             "ok": ok,
             "mensaje": mensajes[0] if mensajes else "",
             "errores": [] if ok else mensajes,
-            "config": config,
+            "config": _config_mail_graph_segura(config),
         }
     ), estado
+
+
+def _config_mail_graph_segura(config):
+    seguro = dict(config or {})
+    for campo in ("tenant_id", "client_id", "graph_scope"):
+        if seguro.get(campo):
+            seguro[campo] = "************"
+    return seguro

@@ -8,7 +8,7 @@
     <div>
         <p class="eyebrow">Configuracion</p>
         <h2>Mail Automatico / Microsoft Graph</h2>
-        <p>Define el origen global del correo automatico. Los destinatarios de evidencia siguen configurandose por tarea.</p>
+        <p>Administra la configuracion global utilizada por APP Scheduler para enviar evidencias y alertas mediante Microsoft Graph.</p>
     </div>
     {% if configuracion %}
     <span class="badge {{ 'activo' if configuracion.activo else 'inactivo' }}">{{ "Activo" if configuracion.activo else "Inactivo" }}</span>
@@ -17,7 +17,7 @@
 
 <section class="mensajes">
     <div class="alerta info">
-        Esta pantalla solo configura la conexion futura. El envio real por Microsoft Graph se implementara en una fase posterior.
+        Esta pantalla administra la configuracion global utilizada por APP Scheduler para enviar evidencias y alertas mediante Microsoft Graph.
     </div>
     <div class="alerta advertencia">
         El Client Secret no se guarda en la base de datos ni se muestra en pantalla. Debe configurarse mediante variables de entorno.
@@ -39,7 +39,9 @@
             <div><strong>Secret</strong><span>{{ "Configurado" if configuracion.client_secret_configurado else "No configurado" }}</span></div>
             <div><strong>Origen secret</strong><span>{{ configuracion.client_secret_origen }}</span></div>
             <div><strong>Buzon remitente</strong><span>{{ configuracion.send_mail_user or "-" }}</span></div>
-            <div><strong>Scope</strong><span>{{ configuracion.graph_scope }}</span></div>
+            <div><strong>Tenant ID</strong><span>************</span></div>
+            <div><strong>Client ID</strong><span>************</span></div>
+            <div><strong>Scope</strong><span>************</span></div>
             <div><strong>Guardar enviados</strong><span>{{ "Si" if configuracion.save_to_sent_items else "No" }}</span></div>
             <div><strong>Actualizado</strong><span>{{ configuracion.fecha_actualizacion or "-" }}</span></div>
             <div><strong>Usuario</strong><span>{{ configuracion.usuario_actualizacion or "-" }}</span></div>
@@ -56,7 +58,7 @@
         <div class="lista-operativa">
             <div><span class="punto activo"></span><strong>Origen</strong><small>Modulo global Mail Graph.</small></div>
             <div><span class="punto info"></span><strong>Destinatarios</strong><small>Configuracion por tarea y alerta global.</small></div>
-            <div><span class="punto advertencia"></span><strong>Contenido</strong><small>Bloque de evidencia stdout en fase posterior.</small></div>
+            <div><span class="punto advertencia"></span><strong>Contenido</strong><small>Evidencias y alertas generadas desde las ejecuciones de APP Scheduler.</small></div>
         </div>
     </article>
 </section>
@@ -87,18 +89,41 @@
             Guardar copia en enviados
         </label>
 
+        <div class="alerta advertencia alerta-inline" data-mail-graph-sensible-panel data-reveal-url="{{ url_for('configuracion_api.api_revelar_mail_graph_sensible') }}" data-auto-hide-ms="20000">
+            <strong>Parametros Graph sensibles</strong>
+            <p>Por seguridad, Tenant ID, Client ID y Scope Graph se muestran ocultos por defecto.</p>
+            <button
+                class="btn secundario compacto"
+                type="button"
+                data-mail-graph-revelar
+            >
+                Ver / editar configuracion sensible
+            </button>
+            <button
+                class="btn secundario compacto oculto"
+                type="button"
+                data-mail-graph-ocultar
+            >
+                Ocultar ahora
+            </button>
+            <span class="texto-ayuda" data-mail-graph-sensible-estado></span>
+        </div>
+
         <div class="grid-formulario">
             <div class="campo">
                 <label for="tenant_id">Tenant ID</label>
-                <input id="tenant_id" name="tenant_id" maxlength="100" value="{{ configuracion.tenant_id or '' }}" data-label="Tenant ID" data-original="{{ configuracion.tenant_id or '' }}">
+                <input id="tenant_id" name="tenant_id" maxlength="100" value="" placeholder="************" autocomplete="off" data-label="Tenant ID" data-original="" data-mail-graph-sensitive="tenant_id" disabled>
+                <p class="texto-ayuda">Oculto por defecto. Dejar en blanco conserva el valor actual.</p>
             </div>
             <div class="campo">
                 <label for="client_id">Client ID</label>
-                <input id="client_id" name="client_id" maxlength="100" value="{{ configuracion.client_id or '' }}" data-label="Client ID" data-original="{{ configuracion.client_id or '' }}">
+                <input id="client_id" name="client_id" maxlength="100" value="" placeholder="************" autocomplete="off" data-label="Client ID" data-original="" data-mail-graph-sensitive="client_id" disabled>
+                <p class="texto-ayuda">Oculto por defecto. Dejar en blanco conserva el valor actual.</p>
             </div>
             <div class="campo">
                 <label for="graph_scope">Scope Graph</label>
-                <input id="graph_scope" name="graph_scope" maxlength="255" value="{{ configuracion.graph_scope or 'https://graph.microsoft.com/.default' }}" data-label="Scope Graph" data-original="{{ configuracion.graph_scope or 'https://graph.microsoft.com/.default' }}">
+                <input id="graph_scope" name="graph_scope" maxlength="255" value="" placeholder="************" autocomplete="off" data-label="Scope Graph" data-original="" data-mail-graph-sensitive="graph_scope" disabled>
+                <p class="texto-ayuda">Oculto por defecto. Dejar en blanco conserva el valor actual.</p>
             </div>
             <div class="campo">
                 <label for="send_mail_user">Buzon remitente</label>

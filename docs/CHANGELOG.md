@@ -1,5 +1,77 @@
 # Changelog
 
+## 2026-07-03 - Fase 15J.4 auto ocultar campos sensibles Mail Graph
+
+### Modificado
+
+* `app/templates/configuracion/mail_graph.html`: define auto ocultamiento de parametros sensibles Mail Graph en 20 segundos.
+* `app/static/js/app.js`: agrega temporizador, limpieza de valores visibles y bloqueo automatico de Tenant ID, Client ID y Scope Graph.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Al cargar la pantalla, Tenant ID, Client ID y Scope Graph siguen ocultos y deshabilitados.
+* Tras confirmar el modal, los valores reales se revelan temporalmente y quedan editables.
+* Luego de 20 segundos, los campos se limpian, se deshabilitan y se muestra aviso de ocultamiento automatico.
+* Mientras los campos estan visibles, el usuario puede ocultarlos antes con `Ocultar ahora`.
+* Si el usuario cancela el modal, no se revela ningun valor.
+* Si el usuario guarda antes del vencimiento, el formulario se envia normalmente y la recarga vuelve a ocultar los campos.
+* `CLIENT_SECRET` sigue sin mostrarse ni aceptarse por UI/API.
+* No se modifico envio de evidencia cliente ni alerta interna.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15J.3 enmascarar campos sensibles Mail Graph
+
+### Modificado
+
+* `app/templates/configuracion/mail_graph.html`: mantiene Tenant ID, Client ID y Scope Graph ocultos y deshabilitados por defecto.
+* `app/static/js/app.js`: agrega modal corporativo de confirmacion para mostrar/editar parametros sensibles y carga controlada desde endpoint protegido.
+* `app/rutas_configuracion.py`: mantiene la API general enmascarada y agrega endpoint especifico para revelar solo a perfiles autorizados.
+* `app/servicios/servicio_mail_graph.py`: enmascara Tenant ID, Client ID y Scope Graph en logs/auditoria de cambios.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* `Tenant ID`, `Client ID` y `Scope Graph` no se muestran ni se editan hasta confirmar: `Ver / editar configuracion sensible`.
+* Al cancelar, los campos permanecen ocultos y deshabilitados.
+* Al confirmar, se consultan los valores reales desde endpoint POST protegido y se habilita la edicion.
+* `CLIENT_SECRET` sigue sin mostrarse nunca; permanece exclusivamente por entorno.
+* No se modifico envio de evidencia cliente ni alerta interna.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-03 - Fase 15J.2 seguridad y ajuste UI Mail Graph
+
+### Modificado
+
+* `app/rutas_configuracion.py`: restringe rutas web/API de Mail Graph a `SUPER_ADMIN` o administrador inicial `.env`.
+* `app/templates/base.html`: oculta `Mail Automatico` del menu para perfiles no autorizados.
+* `app/templates/configuracion/mail_graph.html`: actualiza textos obsoletos sobre envio futuro y contenido, y enmascara Tenant ID, Client ID y Scope Graph.
+* `app/servicios/servicio_mail_graph.py`: conserva valores actuales de Tenant ID, Client ID y Scope si el formulario se guarda dejandolos en blanco.
+* `docs/MODULOS.md`.
+* `docs/ROADMAP.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Usuarios no autorizados reciben bloqueo 403 controlado y no obtienen configuracion Graph por API.
+* `Tenant ID`, `Client ID` y `Scope Graph` se muestran como `************` incluso para `SUPER_ADMIN`; el buzon remitente queda visible.
+* Se mantiene la regla de no mostrar ni guardar `CLIENT_SECRET`.
+* No se modifico el envio de evidencia cliente ni alerta interna.
+* No se modifico worker ni `scheduler_worker.py`.
+* No se crearon migraciones ni se ejecuto SQL.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
 ## 2026-07-03 - Fase 15J.1 ajuste correo alerta interna
 
 ### Modificado

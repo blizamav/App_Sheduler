@@ -24,6 +24,7 @@ GRAPH_SCOPE_DEFAULT = "https://graph.microsoft.com/.default"
 EMAIL_BASICO_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 TOKEN_TIMEOUT_SEGUNDOS = 20
 SENDMAIL_TIMEOUT_SEGUNDOS = 30
+CAMPOS_GRAPH_SENSIBLES = {"tenant_id", "client_id", "graph_scope"}
 
 
 def obtener_mail_graph_config(usuario=None):
@@ -47,7 +48,7 @@ def guardar_mail_graph_config(datos_entrada, usuario=None):
         return False, ["No se acepta client_secret por API ni formulario. Debe configurarse por entorno."], None
 
     actual = obtener_mail_graph_config(usuario)
-    datos = _normalizar(datos_originales)
+    datos = _normalizar(datos_originales, actual)
     errores = validar_configuracion_mail_graph(datos)
     if errores:
         registrar_log_sistema(
@@ -81,8 +82,8 @@ def guardar_mail_graph_config(datos_entrada, usuario=None):
         "MAIL_GRAPH",
         "Configuracion global Mail Graph actualizada.",
         usuario=usuario,
-        valor_anterior=json.dumps({c["campo"]: c["anterior"] for c in cambios}, ensure_ascii=False),
-        valor_nuevo=json.dumps({c["campo"]: c["nuevo"] for c in cambios}, ensure_ascii=False),
+        valor_anterior=json.dumps(_dict_cambios_trazables(cambios, "anterior"), ensure_ascii=False),
+        valor_nuevo=json.dumps(_dict_cambios_trazables(cambios, "nuevo"), ensure_ascii=False),
     )
     registrar_auditoria(
         "EDITAR_CONFIG_MAIL_GRAPH",
@@ -90,8 +91,8 @@ def guardar_mail_graph_config(datos_entrada, usuario=None):
         id_entidad=id_config,
         nombre_entidad=datos.get("send_mail_user"),
         descripcion="Configuracion global Mail Graph actualizada.",
-        valores_antes={c["campo"]: c["anterior"] for c in cambios},
-        valores_despues={c["campo"]: c["nuevo"] for c in cambios},
+        valores_antes=_dict_cambios_trazables(cambios, "anterior"),
+        valores_despues=_dict_cambios_trazables(cambios, "nuevo"),
         modulo="MAIL_GRAPH",
         usuario=usuario,
     )
@@ -294,12 +295,13 @@ def enviar_alerta_interna_graph(id_ejecucion, contexto, estado_final, codigo_sal
         }
 
 
-def _normalizar(datos):
+def _normalizar(datos, actual=None):
+    actual = actual or {}
     return {
         "activo": _booleano(datos.get("activo")),
-        "tenant_id": _texto(datos.get("tenant_id"), 100),
-        "client_id": _texto(datos.get("client_id"), 100),
-        "graph_scope": _texto(datos.get("graph_scope"), 255) or GRAPH_SCOPE_DEFAULT,
+        "tenant_id": _texto(datos.get("tenant_id"), 100) or actual.get("tenant_id"),
+        "client_id": _texto(datos.get("client_id"), 100) or actual.get("client_id"),
+        "graph_scope": _texto(datos.get("graph_scope"), 255) or actual.get("graph_scope") or GRAPH_SCOPE_DEFAULT,
         "send_mail_user": (_texto(datos.get("send_mail_user"), 255) or "").lower() or None,
         "save_to_sent_items": _booleano(datos.get("save_to_sent_items"), True),
         "alertas_destinatarios_default": _normalizar_emails_texto(datos.get("alertas_destinatarios_default")),
@@ -647,9 +649,9 @@ def _contiene_secret(datos):
 def _snapshot(config):
     return {
         "activo": bool(config.get("activo")) if config else False,
-        "tenant_id": config.get("tenant_id") if config else None,
-        "client_id": config.get("client_id") if config else None,
-        "graph_scope": config.get("graph_scope") if config else GRAPH_SCOPE_DEFAULT,
+        "tenant_id": _valor_trazable("tenant_id", config.get("tenant_id")) if config else None,
+        "client_id": _valor_trazable("client_id", config.get("client_id")) if config else None,
+        "graph_scope": _valor_trazable("graph_scope", config.get("graph_scope")) if config else GRAPH_SCOPE_DEFAULT,
         "send_mail_user": config.get("send_mail_user") if config else None,
         "save_to_sent_items": bool(config.get("save_to_sent_items")) if config else True,
         "alertas_destinatarios_default": config.get("alertas_destinatarios_default") if config else None,
@@ -679,3 +681,13 @@ def _calcular_cambios(actual, datos):
         if anterior != nuevo:
             cambios.append({"campo": campo, "anterior": anterior, "nuevo": nuevo})
     return cambios
+
+
+def _dict_cambios_trazables(cambios, clave):
+    return {c["campo"]: _valor_trazable(c["campo"], c.get(clave)) for c in cambios}
+
+
+def _valor_trazable(campo, valor):
+    if campo in CAMPOS_GRAPH_SENSIBLES and valor:
+        return "************"
+    return valor

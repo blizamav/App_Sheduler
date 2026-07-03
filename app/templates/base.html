@@ -39,7 +39,7 @@
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "PAPELERA_VER" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('papelera.') %}activo{% endif %}" href="{{ url_for('papelera.listado') }}"><span class="nav-icon">PB</span><span class="nav-text">Papelera operativa</span></a>
                 {% endif %}
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
+                {% if session.get("es_admin_env") or "SUPER_ADMIN" in session.get("roles", []) or "SUPER_ADMIN_ENV" in session.get("roles", []) %}
                 <a class="nav-link {% if request.endpoint == 'configuracion.mail_graph' %}activo{% endif %}" href="{{ url_for('configuracion.mail_graph') }}"><span class="nav-icon">MG</span><span class="nav-text">Mail Automatico</span></a>
                 {% endif %}
                 <p class="nav-seccion">Operacion</p>
