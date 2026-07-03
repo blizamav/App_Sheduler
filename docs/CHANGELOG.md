@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-07-03 - Fase 15C.2 ejecucion controlada de migracion 019
+
+### Ejecutado Manualmente
+
+* `database/migrations/019_crear_notificaciones_evidencias.sql` fue ejecutada manualmente en SQL Server sobre `APP_SCHEDULER_QA`.
+* Validacion previa SQL correcta:
+  * `dbo.tareas` existe.
+  * `dbo.ejecuciones` existe.
+  * `ejecuciones.id_ejecucion` es `bigint`.
+  * `tareas.id_tarea` es `int`.
+
+### Validado
+
+* Tablas creadas:
+  * `evidencias_ejecucion`
+  * `notificaciones_config_tarea`
+  * `notificaciones_destinatarios`
+  * `notificaciones_envios`
+* Constraints principales validadas:
+  * PK.
+  * FK.
+  * CHECK.
+  * DEFAULT.
+  * UNIQUE.
+* Indices principales validados.
+* Regla anti duplicado validada:
+  * `UX_notif_envio_exitoso_cliente`
+  * `is_unique = 1`
+  * `has_filter = 1`
+  * filtro `([tipo_envio]=N'EVIDENCIA_CLIENTE' AND [estado_envio]=N'ENVIADO')`
+* Docker web validado con `.env.docker`:
+  * `web Up`
+  * Flask levanta en `http://127.0.0.1:5000`
+  * sin `08001`
+  * sin `18456`
+* Docker worker validado:
+  * `worker Up`
+  * ciclo normal
+  * evaluadas `2`, ejecutadas `0`, omitidas `2`
+  * sin traceback
+  * sin error SQL
+* `docker compose down` dejo contenedores y red removidos.
+
+### Reglas
+
+* No se modifico codigo Python, HTML, CSS ni JavaScript.
+* No se modifico `docker-compose.yml`.
+* No se modifico `.env`.
+* No se modifico `.env.docker`.
+* No se modifico `database/release/`.
+* No se insertaron datos reales, destinatarios ni configuraciones.
+* No se implemento Graph.
+* No se implemento UI.
+* No se implemento capturador de stdout.
+* No se guarda JSON completo de evidencia.
+* No se guarda cuerpo completo del correo.
+* No se guardan secretos Graph.
+* No se hizo commit ni push.
+
 ## 2026-07-02 - Fase 15C migraciones SQL para notificaciones y evidencias
 
 ### Creado

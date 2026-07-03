@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15C crea migracion SQL versionada para notificaciones y evidencias, sin ejecutar SQL; Docker QA sigue homologado desde Fase 14G y el host local Windows sigue pendiente por `08001`.
+* Estado actual: Fase 15C.2 cierra la ejecucion controlada de la migracion 019 en `APP_SCHEDULER_QA`; Docker web/worker fueron validados post migracion.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15C - Migraciones SQL para notificaciones y evidencias.
-* Ultima actualizacion: 2026-07-02
+* Fase actual: Fase 15C.2 - Ejecucion controlada de migracion 019 en APP_SCHEDULER_QA.
+* Ultima actualizacion: 2026-07-03
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -56,6 +56,22 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-03 - Fase 15C.2 / Ejecucion controlada de migracion 019 en APP_SCHEDULER_QA
+
+* Archivos modificados: `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`, `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Archivo mantenido con ajuste menor previo: `database/migrations/019_crear_notificaciones_evidencias.sql`, solo comentario `passwords -> credenciales` para evitar falso positivo en checklist; no cambia SQL ejecutable.
+* Objetivo: documentar cierre de la ejecucion manual de la migracion 019 sobre `APP_SCHEDULER_QA`.
+* Validacion previa SQL: `dbo.tareas` y `dbo.ejecuciones` existen; `ejecuciones.id_ejecucion` es `bigint` no nulo; `tareas.id_tarea` es `int` no nulo.
+* Resultado de migracion: creadas correctamente `evidencias_ejecucion`, `notificaciones_config_tarea`, `notificaciones_destinatarios` y `notificaciones_envios`.
+* Constraints validadas: PK, FK, CHECK, DEFAULT y UNIQUE principales de las cuatro tablas.
+* Indices validados: indices operativos de configuracion, destinatarios, evidencias y envios.
+* Anti duplicado validado: `UX_notif_envio_exitoso_cliente` es unico, filtrado por `tipo_envio = EVIDENCIA_CLIENTE` y `estado_envio = ENVIADO`.
+* Docker web post migracion: `web Up`, Flask levantado en `http://127.0.0.1:5000`, sin `08001` ni `18456`.
+* Docker worker post migracion: `worker Up`, ciclo normal con evaluadas `2`, ejecutadas `0`, omitidas `2`, sin traceback ni error SQL.
+* Cierre Docker: `docker compose down` removio contenedores y red; `docker compose ps` quedo sin contenedores activos.
+* Seguridad: no se modifico `.env`, `.env.docker`, codigo, UI, Docker Compose ni `database/release/`; no se insertaron datos reales.
+* Alcance funcional: no se implemento Graph, UI ni capturador de `stdout`; las tablas quedan listas para backend futuro de configuracion de notificaciones.
 
 ### 2026-07-02 - Fase 15C / Migraciones SQL para notificaciones y evidencias
 

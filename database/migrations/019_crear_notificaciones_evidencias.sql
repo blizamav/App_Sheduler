@@ -10,7 +10,7 @@
     Reglas:
     - No guarda JSON completo de evidencia.
     - No guarda cuerpo completo del correo.
-    - No guarda secretos Graph, tokens, passwords ni cadenas de conexion.
+    - No guarda secretos Graph, tokens, credenciales ni cadenas de conexion.
     - No ejecuta envios ni implementa Graph.
 
     Ejecucion manual en SQL Server Management Studio.

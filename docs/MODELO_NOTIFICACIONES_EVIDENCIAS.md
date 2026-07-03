@@ -443,7 +443,33 @@ Incluye:
 * Indices operativos.
 * Indice unico filtrado para impedir mas de un envio exitoso de tipo `EVIDENCIA_CLIENTE` por ejecucion.
 
-No se ejecuto SQL en Fase 15C y no se modifico `database/release/`.
+Fase 15C creo el script sin ejecutarlo. En Fase 15C.2 la migracion fue ejecutada manualmente en `APP_SCHEDULER_QA` y validada correctamente.
+
+Validacion previa confirmada:
+
+* `dbo.tareas` existe.
+* `dbo.ejecuciones` existe.
+* `ejecuciones.id_ejecucion` es `bigint`, `max_length = 8`, `is_nullable = 0`.
+* `tareas.id_tarea` es `int`, `max_length = 4`, `is_nullable = 0`.
+
+Tablas creadas en `APP_SCHEDULER_QA`:
+
+* `evidencias_ejecucion`
+* `notificaciones_config_tarea`
+* `notificaciones_destinatarios`
+* `notificaciones_envios`
+
+Validaciones posteriores:
+
+* constraints principales PK, FK, CHECK, DEFAULT y UNIQUE validadas.
+* indices operativos validados.
+* `UX_notif_envio_exitoso_cliente` validado como indice unico filtrado con `([tipo_envio]=N'EVIDENCIA_CLIENTE' AND [estado_envio]=N'ENVIADO')`.
+* las tablas quedaron sin datos iniciales reales.
+* Docker `web` y `worker` levantaron correctamente despues de la migracion.
+* `docker compose down` cerro contenedores y red correctamente.
+* no se modifico `database/release/`.
+* no se implemento Graph, UI ni capturador de `stdout`.
+* no se guardan secretos, JSON completo ni cuerpo completo del correo.
 
 Permisos futuros sugeridos:
 
