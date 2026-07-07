@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 15J.5 aclara textos UI de correos y destinatarios, sin tocar envios.
+* Estado actual: Fase UI-6 agrega auto cierre global y cierre manual para toasts/flashes, sin tocar backend ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 15J.5 - Claridad UI correos y destinatarios.
-* Ultima actualizacion: 2026-07-03
+* Fase actual: Fase UI-6 - Auto cierre de toasts y mensajes del sistema.
+* Ultima actualizacion: 2026-07-07
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -40,6 +40,12 @@
 * Correo alerta interna: Fase 15J.1 no muestra rutas fisicas ni relativas del servidor; el log se referencia desde APP Scheduler, modulo Ejecuciones, por ID de ejecucion.
 * Seguridad Mail Graph: Fase 15J.2 restringe menu, rutas web y API de Mail Automatico a `SUPER_ADMIN` o administrador inicial `.env`; Fase 15J.3 mantiene Tenant ID, Client ID y Scope ocultos/deshabilitados por defecto y los revela solo tras modal de confirmacion y endpoint protegido; Fase 15J.4 auto oculta esos campos luego de 20 segundos; Fase 15J.5 mejora textos visibles de correos/destinatarios sin cambiar valores internos.
 * Diseno UI/UX: Corporativo sobrio, responsive, sidebar oscuro, topbar clara compacta, componentes reutilizables, fondo claro, azul corporativo, cyan moderado y estados por color; Fase 12B.1F corrige el shell visual con sidebar flexible robusto y tratamiento premium de componentes compartidos.
+* UI moderna: Fase UI-1 agrega login con fondo canvas de red digital/neural, transicion de entrada por modulo, microinteracciones sutiles y respeto a `prefers-reduced-motion`.
+* Identidad visual SOEX: Fase UI-2 ajusta paleta a azul profundo, blanco, grises limpios y acento rojo puntual; convierte flashes en mensajes flotantes modernos y reduce la red del login a textura sutil.
+* Pulido SOEX: Fase UI-3 reduce decoraciones pegadas, usa rojo como indicador fino, suaviza sidebar/header/cards/tablas/formularios y mejora mensajes flash como toasts compactos.
+* Replanteo login SOEX: Fase UI-4 elimina texto tecnico visible de variables de entorno, corrige padding externo del login y reduce la red/nodos a textura secundaria.
+* Sidebar: Fase UI-5 reordena la navegacion por flujo operativo e incorpora iconos SVG lineales representativos sin dependencias externas.
+* Toasts/flashes: Fase UI-6 agrega auto cierre global de 5 segundos, cierre manual accesible y eliminacion del DOM para mensajes flotantes.
 
 ## 3. Estructura actual del proyecto
 
@@ -67,6 +73,85 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-07 - Fase UI-6 / Auto cierre de toasts y mensajes del sistema
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/static/js/app.js`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: los flashes server-side ya se veian como notificaciones flotantes, pero el JS solo agregaba una clase de salida a `.alerta`; no habia cierre manual, no se removian del DOM y el selector era demasiado amplio para alertas inline/paneles.
+* Implementacion: se inicializan solo los flashes globales con selector `[data-flash-messages] > .alerta`, se agrega boton `button.alerta-cerrar`, `role=status` o `role=alert` segun tipo y temporizador de 5 segundos.
+* Toasts JS: `.toast-sistema` reutiliza el mismo cierre global de 5 segundos, limpia temporizadores si el usuario cierra manualmente y elimina el nodo al finalizar la transicion.
+* UX: salida con clase `.toast-saliendo`, apilamiento existente por grid, cierre individual y respeto a `prefers-reduced-motion` mediante las reglas globales existentes.
+* Alcance: aplica en login y app autenticada porque los flashes se renderizan desde `base.html`; no se modifico logica de negocio, backend funcional, autenticacion, permisos, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`.
+
+### 2026-07-04 - Fase UI-5 / Reordenamiento sidebar e iconografia corporativa
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/base.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: el sidebar mantenia agrupacion heredada poco natural para el flujo diario y los iconos eran iniciales de texto, menos claros para una plataforma operativa.
+* Nueva estructura: Inicio (`Panel`), Operacion (`Tareas`, `Scripts`, `Ejecuciones`), Programador (`Panel programador`, `Eventos programador`, `Config. programador`, `Feriados`), Configuracion (`Clientes`, `Categorias`, `Tipos`, `Mail Automatico`), Seguridad (`Usuarios`), Control y trazabilidad (`Auditoria`, `Papelera operativa`).
+* Iconografia: se agrego sprite SVG inline con iconos lineales para dashboard, checklist, codigo, ejecucion, calendario/programador, eventos, configuracion, feriados, clientes, categorias, tipos, mail, usuarios, auditoria y papelera.
+* Permisos/rutas: se mantuvieron las condiciones Jinja existentes para visibilidad y los `url_for(...)` originales; `Mail Automatico` conserva restriccion `SUPER_ADMIN`/admin inicial.
+* Ubicacion: `Papelera operativa` queda al final junto a Auditoria; `Usuarios` queda en Seguridad.
+* Alcance: no se modifico logica de negocio, backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`; no se modifico BD, migraciones, `.env`, `.env.docker` ni `database/release/`; no se ejecuto SQL.
+* Pruebas recomendadas: validar sidebar expandido/colapsado, scroll, estados activos, usuarios con/sin permisos y acceso a rutas visibles.
+
+### 2026-07-04 - Fase UI-4 / Replanteo visual SOEX sin tocar funcionalidad
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/login.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico visual: el login seguia mostrando una red/nodos con demasiado peso, el padding del contenedor generaba margen externo visible y existia texto tecnico para usuario final sobre variables de entorno.
+* Enfoque: se priorizo una composicion corporativa SOEX con azul profundo, blanco limpio, grises suaves y rojo como acento puntual, dejando la animacion solo como textura secundaria.
+* Login: `.contenido:has(.login-page)` elimina padding en login para evitar bordes blancos externos; el fondo se replantea con planos corporativos y textura sutil.
+* Texto: `Usuario inicial configurado por variables de entorno.` fue reemplazado por `Acceso restringido a usuarios autorizados.`.
+* Canvas: se redujo cantidad de nodos, velocidad, opacidad y conexiones para que no sea protagonista visual.
+* Componentes: headers de bloques reciben acento rojo fino; se mantiene el pulido de sidebar/header/cards/tablas/formularios/botones.
+* Alcance: no se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`; no se modifico BD, migraciones, `.env`, `.env.docker` ni `database/release/`; no se ejecuto SQL.
+* Pruebas recomendadas: validar login sin bordes blancos, login/logout, mensajes flash, navegacion, modales, formularios, Mail Graph sensible y responsive.
+
+### 2026-07-04 - Fase UI-3 / Correccion direccion visual SOEX y pulido corporativo
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico visual: el login seguia viendose generico, las franjas rojas se percibian pegadas, el sidebar se sentia pesado y los mensajes flash todavia parecian alertas basicas.
+* Enfoque: se redujeron decoraciones grandes, se mantuvo azul profundo corporativo y se uso rojo SOEX como acento puntual/fino, no como bloque dominante.
+* Login: se suavizo el fondo, la red digital queda como textura sutil y el acento rojo se concentra en una forma discreta y en el borde lateral de la tarjeta.
+* Sidebar/header: se redujo peso visual, se mejoro el activo con indicador rojo fino y se mantuvo contraste corporativo.
+* Componentes: cards, tablas, formularios, botones y badges quedan mas blancos, limpios, con sombras suaves y foco mas sobrio.
+* Mensajes: flash/toasts se compactan con icono visual por tipo y entrada/salida suave.
+* Transiciones: se conservan transiciones cortas y soporte `prefers-reduced-motion`.
+* Alcance: no se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`; no se modifico BD, migraciones, `.env`, `.env.docker` ni `database/release/`; no se ejecuto SQL.
+* Pruebas recomendadas: validar login/logout, mensajes flash, navegacion, modales, formularios, Mail Graph sensible y responsive.
+
+### 2026-07-04 - Fase UI-2 / Rediseno visual corporativo SOEX y pulido general
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/login.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico visual: el login posterior a UI-1 tenia una lectura demasiado literal de red digital, poca identidad SOEX y los mensajes flash seguian pareciendo bloques basicos.
+* Enfoque: se ajusto la linea visual a azul profundo corporativo, blanco controlado, grises suaves y acento rojo SOEX puntual, sin copiar literalmente ninguna referencia.
+* Login: se elimino la sensacion de borde blanco dominante, se integraron formas diagonales/acento rojo y se redujo densidad/velocidad del canvas para que sea textura sutil.
+* Mensajes: los flash de Flask se presentan como mensajes flotantes modernos con marcador lateral por tipo; las alertas inline siguen dentro de sus formularios/paneles.
+* Transiciones: se conserva la entrada suave de contenido y se pulen microinteracciones de hover/focus sin bloquear navegacion.
+* Sidebar/header: se reforzo azul profundo, estado activo y acento rojo controlado.
+* Componentes: botones, cards, formularios y tablas mantienen estructura funcional y reciben pulido visual.
+* Accesibilidad/performance: se mantiene `prefers-reduced-motion`; el canvas tiene menos nodos y movimiento mas lento.
+* Alcance: no se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`; no se modifico BD, migraciones, `.env`, `.env.docker` ni `database/release/`; no se ejecuto SQL.
+* Pruebas recomendadas: validar login/logout, mensajes flash, navegacion, modales, formularios, Mail Graph sensible y responsive.
+
+### 2026-07-04 - Fase UI-1 / Rediseno visual moderno, login animado y transiciones
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/login.html`, `app/static/css/estilos.css`, `app/static/js/app.js`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico visual inicial: el login tenia estructura aislada y segura para redisenar sin tocar autenticacion; `base.html` usa `.contenido` como contenedor principal, adecuado para transiciones suaves entre modulos; CSS global ya contaba con variables, cards, botones, tablas y estados reutilizables.
+* Login: se agrego canvas `data-login-network` para fondo azul oscuro con nodos y lineas conectadas, mas fallback visual estatico mediante gradientes y grilla sutil.
+* Formulario login: se mejoro profundidad visual con panel glass sobrio, sombra premium, borde sutil y entrada animada corta.
+* Transiciones: `.contenido` aplica fade-in y desplazamiento vertical leve al cargar cada modulo, con duracion corta.
+* Microinteracciones: se reforzaron estados activos del menu, hover de cards/bloques, focus de inputs y hover de tablas.
+* Accesibilidad/performance: la animacion del login limita nodos, pausa cuando la pestana esta oculta y se desactiva con `prefers-reduced-motion`.
+* Alcance: no se modifico login backend, autenticacion, permisos, base de datos, migraciones, envios Graph, alertas, worker ni `scheduler_worker.py`; no se modifico `.env`, `.env.docker` ni `database/release/`.
+* Pruebas recomendadas: abrir login y validar legibilidad/fondo animado; autenticar; navegar entre modulos y verificar transiciones; probar formularios/modales existentes; revisar responsive.
 
 ### 2026-07-03 - Fase 15J.5 / Claridad UI correos y destinatarios
 

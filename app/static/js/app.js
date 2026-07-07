@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const consolaMonitor = document.querySelector("[data-worker-monitor-console]");
     const badgeLineasMonitor = document.querySelector("[data-worker-monitor-lines-badge]");
     const eventosMonitor = document.querySelector("[data-worker-monitor-events]");
-    const alertas = document.querySelectorAll(".alerta");
+    const alertasFlash = document.querySelectorAll("[data-flash-messages] > .alerta");
     const confirmables = document.querySelectorAll(".requiere-confirmacion");
     const formulariosConfirmables = document.querySelectorAll(".requiere-confirmacion-form");
     const modalConfirmacion = document.querySelector("#modalConfirmacion");
@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const botonMailGraphOcultar = document.querySelector("[data-mail-graph-ocultar]");
     const estadoMailGraphSensible = document.querySelector("[data-mail-graph-sensible-estado]");
     const camposMailGraphSensibles = document.querySelectorAll("[data-mail-graph-sensitive]");
+    const lienzoLogin = document.querySelector("[data-login-network]");
     let formularioPendiente = null;
     let accionConfirmadaPendiente = null;
     let temporizadorMailGraphSensible = null;
@@ -91,6 +92,95 @@ document.addEventListener("DOMContentLoaded", () => {
     let intervaloMonitorWorker = null;
     let monitorWorkerCargando = false;
     let monitorWorkerPausado = false;
+
+    const iniciarRedLogin = () => {
+        if (!lienzoLogin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            return;
+        }
+
+        const contexto = lienzoLogin.getContext("2d");
+        if (!contexto) {
+            return;
+        }
+
+        let ancho = 0;
+        let alto = 0;
+        let puntos = [];
+        let raf = null;
+
+        const crearPuntos = () => {
+            const total = Math.min(34, Math.max(14, Math.floor((ancho * alto) / 68000)));
+            puntos = Array.from({ length: total }, () => ({
+                x: Math.random() * ancho,
+                y: Math.random() * alto,
+                vx: (Math.random() - 0.5) * 0.14,
+                vy: (Math.random() - 0.5) * 0.14,
+                r: 1 + Math.random() * 1.2,
+            }));
+        };
+
+        const redimensionar = () => {
+            const ratio = Math.min(window.devicePixelRatio || 1, 2);
+            ancho = lienzoLogin.clientWidth || window.innerWidth;
+            alto = lienzoLogin.clientHeight || window.innerHeight;
+            lienzoLogin.width = Math.floor(ancho * ratio);
+            lienzoLogin.height = Math.floor(alto * ratio);
+            contexto.setTransform(ratio, 0, 0, ratio, 0, 0);
+            crearPuntos();
+        };
+
+        const dibujar = () => {
+            contexto.clearRect(0, 0, ancho, alto);
+            contexto.fillStyle = "rgba(180, 229, 247, 0.42)";
+            contexto.lineWidth = 1;
+
+            puntos.forEach((punto, indice) => {
+                punto.x += punto.vx;
+                punto.y += punto.vy;
+                if (punto.x < 0 || punto.x > ancho) {
+                    punto.vx *= -1;
+                }
+                if (punto.y < 0 || punto.y > alto) {
+                    punto.vy *= -1;
+                }
+
+                for (let j = indice + 1; j < puntos.length; j += 1) {
+                    const otro = puntos[j];
+                    const dx = punto.x - otro.x;
+                    const dy = punto.y - otro.y;
+                    const distancia = Math.sqrt(dx * dx + dy * dy);
+                    if (distancia < 128) {
+                        const alpha = (1 - distancia / 128) * 0.08;
+                        contexto.strokeStyle = `rgba(180, 229, 247, ${alpha})`;
+                        contexto.beginPath();
+                        contexto.moveTo(punto.x, punto.y);
+                        contexto.lineTo(otro.x, otro.y);
+                        contexto.stroke();
+                    }
+                }
+
+                contexto.beginPath();
+                contexto.arc(punto.x, punto.y, punto.r, 0, Math.PI * 2);
+                contexto.fill();
+            });
+
+            raf = requestAnimationFrame(dibujar);
+        };
+
+        redimensionar();
+        dibujar();
+        window.addEventListener("resize", redimensionar);
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && raf) {
+                cancelAnimationFrame(raf);
+                raf = null;
+            } else if (!document.hidden && !raf) {
+                dibujar();
+            }
+        });
+    };
+
+    iniciarRedLogin();
 
     const esVistaCompacta = () => window.matchMedia("(max-width: 960px)").matches;
     const cerrarSidebarCompacto = () => cuerpo.classList.remove("sidebar-abierto");
@@ -145,11 +235,44 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    alertas.forEach((alerta) => {
-        setTimeout(() => {
-            alerta.classList.add("alerta-saliendo");
-        }, 4500);
-    });
+    const cerrarElementoToast = (elemento, temporizador = null) => {
+        if (!elemento || elemento.dataset.cerrando === "1") {
+            return;
+        }
+        if (temporizador) {
+            clearTimeout(temporizador);
+        }
+        elemento.dataset.cerrando = "1";
+        elemento.classList.add("toast-saliendo");
+
+        const remover = () => elemento.remove();
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            remover();
+            return;
+        }
+        elemento.addEventListener("transitionend", remover, { once: true });
+        setTimeout(remover, 360);
+    };
+
+    const inicializarToastFlash = (alerta) => {
+        if (!alerta || alerta.dataset.toastInicializado === "1") {
+            return;
+        }
+        alerta.dataset.toastInicializado = "1";
+        alerta.setAttribute("role", alerta.classList.contains("error") ? "alert" : "status");
+
+        const cerrar = document.createElement("button");
+        cerrar.type = "button";
+        cerrar.className = "alerta-cerrar";
+        cerrar.setAttribute("aria-label", "Cerrar notificacion");
+        cerrar.textContent = "x";
+        alerta.appendChild(cerrar);
+
+        const temporizador = setTimeout(() => cerrarElementoToast(alerta), 5000);
+        cerrar.addEventListener("click", () => cerrarElementoToast(alerta, temporizador));
+    };
+
+    alertasFlash.forEach(inicializarToastFlash);
 
     const obtenerLimiteMonitor = () => {
         const valor = Number(selectorLimiteMonitor?.value || 100);
@@ -1639,12 +1762,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         requestAnimationFrame(() => toast.classList.add("visible"));
 
-        const cerrarToast = () => {
-            toast.classList.remove("visible");
-            toast.addEventListener("transitionend", () => toast.remove(), { once: true });
-        };
-        cerrar.addEventListener("click", cerrarToast);
-        setTimeout(cerrarToast, 3200);
+        const temporizador = setTimeout(() => cerrarElementoToast(toast), 5000);
+        cerrar.addEventListener("click", () => cerrarElementoToast(toast, temporizador));
     };
 
     const emailBasicoValido = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || "").trim());

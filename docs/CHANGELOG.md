@@ -1,5 +1,123 @@
 # Changelog
 
+## 2026-07-07 - Fase UI-6 auto cierre de toasts y mensajes del sistema
+
+### Modificado
+
+* `app/static/js/app.js`: agrega inicializacion global de flashes como toasts, cierre manual y auto cierre de 5 segundos con limpieza del DOM.
+* `app/static/css/estilos.css`: agrega boton de cierre, salida visual compartida y respeta `prefers-reduced-motion` mediante las reglas globales existentes.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Los flashes renderizados en `base.html` con selector `[data-flash-messages] > .alerta` ahora se cierran individualmente.
+* Los toasts creados por JavaScript con `.toast-sistema` usan el mismo tiempo global de 5 segundos y cierre manual.
+* Aplica tanto en login como dentro de la app autenticada porque ambos heredan `base.html`.
+* No se modifico logica de negocio, backend funcional, autenticacion, permisos, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
+## 2026-07-04 - Fase UI-5 reordenamiento sidebar e iconografia corporativa
+
+### Modificado
+
+* `app/templates/base.html`: reordena visualmente el sidebar por flujo operativo y reemplaza iniciales por iconos SVG inline.
+* `app/static/css/estilos.css`: ajusta estilo lineal, tamano y color de iconos de navegacion.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Nueva estructura: Inicio, Operacion, Programador, Configuracion, Seguridad, Control y trazabilidad.
+* `Papelera operativa` queda al final junto a Auditoria.
+* `Usuarios` queda separado en Seguridad.
+* `Mail Automatico` queda en Configuracion y mantiene restriccion `SUPER_ADMIN`/admin inicial.
+* Las rutas y condiciones de permisos existentes se conservan.
+* No se agregaron dependencias externas ni emojis.
+* No se modifico logica de negocio, backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-04 - Fase UI-4 replanteo visual SOEX
+
+### Modificado
+
+* `app/templates/login.html`: elimina texto tecnico visible sobre variables de entorno y lo reemplaza por lenguaje corporativo.
+* `app/static/css/estilos.css`: asegura login full screen sin padding externo, reduce protagonismo de nodos, replantea fondo corporativo y refuerza acentos SOEX discretos en componentes.
+* `app/static/js/app.js`: baja densidad, velocidad y opacidad visual del canvas de login para que sea textura secundaria.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Login sin margen blanco externo por padding del contenedor principal.
+* Texto final de login: `Acceso restringido a usuarios autorizados.`
+* Fondo login con azul profundo, grilla sutil y acento rojo controlado, sin depender de red/nodos como protagonista.
+* Cards, headers y bloques reciben acento SOEX fino y controlado.
+* Se mantiene `prefers-reduced-motion` y la animacion queda secundaria.
+* No se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-04 - Fase UI-3 correccion direccion visual SOEX
+
+### Modificado
+
+* `app/static/css/estilos.css`: corrige direccion visual SOEX, suaviza login, sidebar, header, cards, tablas, formularios, botones, badges y mensajes flash.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Login menos generico, con fondo azul profundo, red digital muy sutil y acento rojo controlado como borde/forma discreta.
+* Se reducen franjas decorativas grandes para evitar sensacion de elemento pegado.
+* Sidebar menos pesado, con activo elegante e indicador rojo SOEX fino.
+* Header, cards, tablas, inputs y botones se pulen con sombras mas suaves, fondos mas blancos y foco mas limpio.
+* Mensajes flash se ven como toasts compactos con icono/marcador visual por tipo.
+* No se copio literalmente ninguna referencia; se aplico una linea visual inspirada en SOEX.
+* No se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-04 - Fase UI-2 rediseno visual corporativo SOEX
+
+### Modificado
+
+* `app/templates/login.html`: mantiene el canvas visual, pero deja las advertencias propias del login como alertas inline dentro del panel.
+* `app/static/css/estilos.css`: ajusta paleta hacia azul profundo SOEX con acento rojo, corrige composicion del login, moderniza mensajes flash como toasts flotantes y pule sidebar, header, botones, tarjetas y tablas.
+* `app/static/js/app.js`: reduce densidad/velocidad de la red animada para que funcione como textura corporativa sutil.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Login full viewport con fondo azul profundo, acentos geometricos rojos moderados y red digital menos literal.
+* Mensajes de sistema Flask se visualizan como alertas flotantes modernas, sin cambiar el mecanismo flash.
+* Sidebar/header adoptan una linea mas corporativa, con azul profundo y acento rojo controlado.
+* Botones, cards, inputs y tablas reciben microinteracciones mas limpias y coherentes.
+* Se mantiene soporte `prefers-reduced-motion`.
+* No se modifico logica de negocio, autenticacion backend, permisos, Graph, evidencias, alertas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-07-04 - Fase UI-1 rediseno visual moderno
+
+### Modificado
+
+* `app/templates/login.html`: agrega canvas visual para fondo animado tipo red digital/neural, sin cambiar formulario ni flujo de autenticacion.
+* `app/static/css/estilos.css`: moderniza login, agrega transicion de entrada al contenido, microinteracciones en tarjetas/tablas/menu y soporte `prefers-reduced-motion`.
+* `app/static/js/app.js`: agrega animacion canvas liviana para nodos conectados en login, con limite de nodos y pausa cuando la pestana queda oculta.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Login con fondo azul oscuro corporativo, nodos y lineas sutiles.
+* Formulario de login con profundidad visual, blur y mejor presencia.
+* Transicion suave de entrada en el contenedor principal de modulos.
+* Microinteracciones sutiles en botones, menu, cards y tablas.
+* La animacion respeta `prefers-reduced-motion` y deja un fondo estatico usable si se reduce movimiento o falla canvas.
+* No se modifico autenticacion backend ni logica funcional.
+* No se modifico base de datos, migraciones, permisos, envios Graph, alertas, worker ni `scheduler_worker.py`.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
 ## 2026-07-03 - Fase 15J.5 claridad UI correos y destinatarios
 
 ### Modificado

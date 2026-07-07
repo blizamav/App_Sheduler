@@ -7,6 +7,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
 </head>
 <body>
+    <svg class="iconos-nav" aria-hidden="true" focusable="false">
+        <symbol id="icon-panel" viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v4h-7zM13 11h7v8h-7zM4 13h7v6H4z"/></symbol>
+        <symbol id="icon-tareas" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+        <symbol id="icon-scripts" viewBox="0 0 24 24"><path d="m9 18-6-6 6-6M15 6l6 6-6 6"/></symbol>
+        <symbol id="icon-ejecuciones" viewBox="0 0 24 24"><path d="M7 4v16l13-8zM3 4v16"/></symbol>
+        <symbol id="icon-programador" viewBox="0 0 24 24"><path d="M6 3v4M18 3v4M4 8h16M5 5h14v15H5zM12 12v4l3 2"/></symbol>
+        <symbol id="icon-eventos" viewBox="0 0 24 24"><path d="M6 3v4M18 3v4M4 8h16M5 5h14v15H5zM8 12h3M8 16h6"/></symbol>
+        <symbol id="icon-config" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 12h3M17 12h3M12 4v3M12 17v3M6.6 6.6l2.1 2.1M15.3 15.3l2.1 2.1M17.4 6.6l-2.1 2.1M8.7 15.3l-2.1 2.1"/></symbol>
+        <symbol id="icon-feriados" viewBox="0 0 24 24"><path d="M6 3v4M18 3v4M4 8h16M5 5h14v15H5zM9 13l6 4M15 13l-6 4"/></symbol>
+        <symbol id="icon-clientes" viewBox="0 0 24 24"><path d="M4 21V5h10v16M14 9h6v12M7 8h3M7 12h3M7 16h3M17 13h1M17 17h1"/></symbol>
+        <symbol id="icon-categorias" viewBox="0 0 24 24"><path d="M4 6h7l2 3h7v9H4zM4 10h16"/></symbol>
+        <symbol id="icon-tipos" viewBox="0 0 24 24"><path d="M12 3 4 7l8 4 8-4zM4 12l8 4 8-4M4 17l8 4 8-4"/></symbol>
+        <symbol id="icon-mail" viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6M17 14l3 3M20 14l-3 3"/></symbol>
+        <symbol id="icon-usuarios" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM18 8v6M21 11h-6"/></symbol>
+        <symbol id="icon-auditoria" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6zM9 12l2 2 4-5"/></symbol>
+        <symbol id="icon-papelera" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+    </svg>
     <div class="app-shell">
         {% if session.get("usuario") %}
         <div class="overlay-sidebar" data-sidebar-cerrar></div>
@@ -22,58 +39,60 @@
                 <button class="icon-btn solo-mobile" type="button" data-sidebar-cerrar aria-label="Cerrar menu">x</button>
             </div>
             <nav class="nav">
-                <a class="nav-link {% if request.endpoint == 'principal.panel' %}activo{% endif %}" href="{{ url_for('principal.panel') }}"><span class="nav-icon">P</span><span class="nav-text">Panel</span></a>
-                <p class="nav-seccion">Administracion</p>
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span class="nav-icon">U</span><span class="nav-text">Usuarios</span></a>
-                {% endif %}
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CLIENTES_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'mantenedores.clientes_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.clientes_listado') }}"><span class="nav-icon">CL</span><span class="nav-text">Clientes</span></a>
-                {% endif %}
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CATEGORIAS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'mantenedores.categorias_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.categorias_listado') }}"><span class="nav-icon">CA</span><span class="nav-text">Categorias</span></a>
-                {% endif %}
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TIPOS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'mantenedores.tipos_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.tipos_listado') }}"><span class="nav-icon">TP</span><span class="nav-text">Tipos</span></a>
-                {% endif %}
-                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "PAPELERA_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('papelera.') %}activo{% endif %}" href="{{ url_for('papelera.listado') }}"><span class="nav-icon">PB</span><span class="nav-text">Papelera operativa</span></a>
-                {% endif %}
-                {% if session.get("es_admin_env") or "SUPER_ADMIN" in session.get("roles", []) or "SUPER_ADMIN_ENV" in session.get("roles", []) %}
-                <a class="nav-link {% if request.endpoint == 'configuracion.mail_graph' %}activo{% endif %}" href="{{ url_for('configuracion.mail_graph') }}"><span class="nav-icon">MG</span><span class="nav-text">Mail Automatico</span></a>
-                {% endif %}
+                <p class="nav-seccion">Inicio</p>
+                <a class="nav-link {% if request.endpoint == 'principal.panel' %}activo{% endif %}" href="{{ url_for('principal.panel') }}"><span class="nav-icon"><svg><use href="#icon-panel"></use></svg></span><span class="nav-text">Panel</span></a>
                 <p class="nav-seccion">Operacion</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TAREAS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tareas.') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}"><span class="nav-icon">TA</span><span class="nav-text">Tareas</span></a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tareas.') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}"><span class="nav-icon"><svg><use href="#icon-tareas"></use></svg></span><span class="nav-text">Tareas</span></a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">TA</span><span class="nav-text">Tareas</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-tareas"></use></svg></span><span class="nav-text">Tareas</span></a>
                 {% endif %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span class="nav-icon">SC</span><span class="nav-text">Scripts</span></a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scripts.') %}activo{% else %}deshabilitado{% endif %}" href="#"><span class="nav-icon"><svg><use href="#icon-scripts"></use></svg></span><span class="nav-text">Scripts</span></a>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% endif %}" href="{{ url_for('ejecuciones.listado') }}"><span class="nav-icon">EJ</span><span class="nav-text">Ejecuciones</span></a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ejecuciones.') %}activo{% endif %}" href="{{ url_for('ejecuciones.listado') }}"><span class="nav-icon"><svg><use href="#icon-ejecuciones"></use></svg></span><span class="nav-text">Ejecuciones</span></a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">EJ</span><span class="nav-text">Ejecuciones</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-ejecuciones"></use></svg></span><span class="nav-text">Ejecuciones</span></a>
                 {% endif %}
                 <p class="nav-seccion">Programador</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCHEDULER_CONFIG_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span class="nav-icon">PG</span><span class="nav-text">Panel programador</span></a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.eventos' %}activo{% endif %}" href="{{ url_for('scheduler.eventos') }}"><span class="nav-icon">EV</span><span class="nav-text">Eventos programador</span></a>
-                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span class="nav-icon">CF</span><span class="nav-text">Config. programador</span></a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.panel' %}activo{% endif %}" href="{{ url_for('scheduler.panel') }}"><span class="nav-icon"><svg><use href="#icon-programador"></use></svg></span><span class="nav-text">Panel programador</span></a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.eventos' %}activo{% endif %}" href="{{ url_for('scheduler.eventos') }}"><span class="nav-icon"><svg><use href="#icon-eventos"></use></svg></span><span class="nav-text">Eventos programador</span></a>
+                <a class="nav-link {% if request.endpoint == 'scheduler.configuracion' %}activo{% endif %}" href="{{ url_for('scheduler.configuracion') }}"><span class="nav-icon"><svg><use href="#icon-config"></use></svg></span><span class="nav-text">Config. programador</span></a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">PG</span><span class="nav-text">Panel programador</span></a>
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">EV</span><span class="nav-text">Eventos programador</span></a>
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">CF</span><span class="nav-text">Config. programador</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-programador"></use></svg></span><span class="nav-text">Panel programador</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-eventos"></use></svg></span><span class="nav-text">Eventos programador</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-config"></use></svg></span><span class="nav-text">Config. programador</span></a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "FERIADOS_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span class="nav-icon">FE</span><span class="nav-text">Feriados</span></a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feriados.') %}activo{% endif %}" href="{{ url_for('feriados.listado') }}"><span class="nav-icon"><svg><use href="#icon-feriados"></use></svg></span><span class="nav-text">Feriados</span></a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">FE</span><span class="nav-text">Feriados</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-feriados"></use></svg></span><span class="nav-text">Feriados</span></a>
+                {% endif %}
+                <p class="nav-seccion">Configuracion</p>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CLIENTES_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.clientes_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.clientes_listado') }}"><span class="nav-icon"><svg><use href="#icon-clientes"></use></svg></span><span class="nav-text">Clientes</span></a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "CATEGORIAS_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.categorias_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.categorias_listado') }}"><span class="nav-icon"><svg><use href="#icon-categorias"></use></svg></span><span class="nav-text">Categorias</span></a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "TIPOS_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint == 'mantenedores.tipos_listado' %}activo{% endif %}" href="{{ url_for('mantenedores.tipos_listado') }}"><span class="nav-icon"><svg><use href="#icon-tipos"></use></svg></span><span class="nav-text">Tipos</span></a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "SUPER_ADMIN" in session.get("roles", []) or "SUPER_ADMIN_ENV" in session.get("roles", []) %}
+                <a class="nav-link {% if request.endpoint == 'configuracion.mail_graph' %}activo{% endif %}" href="{{ url_for('configuracion.mail_graph') }}"><span class="nav-icon"><svg><use href="#icon-mail"></use></svg></span><span class="nav-text">Mail Automatico</span></a>
+                {% endif %}
+                <p class="nav-seccion">Seguridad</p>
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span class="nav-icon"><svg><use href="#icon-usuarios"></use></svg></span><span class="nav-text">Usuarios</span></a>
                 {% endif %}
                 <p class="nav-seccion">Control y trazabilidad</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "AUDITORIA_VER" in session.get("permisos", []) %}
-                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('auditoria.') %}activo{% endif %}" href="{{ url_for('auditoria.listado') }}"><span class="nav-icon">AU</span><span class="nav-text">Auditoria</span></a>
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('auditoria.') %}activo{% endif %}" href="{{ url_for('auditoria.listado') }}"><span class="nav-icon"><svg><use href="#icon-auditoria"></use></svg></span><span class="nav-text">Auditoria</span></a>
                 {% else %}
-                <a class="nav-link deshabilitado" href="#"><span class="nav-icon">AU</span><span class="nav-text">Auditoria</span></a>
+                <a class="nav-link deshabilitado" href="#"><span class="nav-icon"><svg><use href="#icon-auditoria"></use></svg></span><span class="nav-text">Auditoria</span></a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "PAPELERA_VER" in session.get("permisos", []) %}
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('papelera.') %}activo{% endif %}" href="{{ url_for('papelera.listado') }}"><span class="nav-icon"><svg><use href="#icon-papelera"></use></svg></span><span class="nav-text">Papelera operativa</span></a>
                 {% endif %}
             </nav>
             <div class="sidebar-footer">
@@ -102,7 +121,7 @@
 
             {% with mensajes = get_flashed_messages(with_categories=true) %}
                 {% if mensajes %}
-                <section class="mensajes">
+                <section class="mensajes" data-flash-messages>
                     {% for categoria, mensaje in mensajes %}
                     <div class="alerta {{ categoria }}">{{ mensaje }}</div>
                     {% endfor %}

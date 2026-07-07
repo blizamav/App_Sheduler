@@ -4,6 +4,7 @@
 
 {% block contenido %}
 <section class="login-page">
+    <canvas class="login-network" data-login-network aria-hidden="true"></canvas>
     <div class="login-ambient" aria-hidden="true"></div>
     <div class="login-panel">
         <div class="brand login-brand">
@@ -17,7 +18,7 @@
         <h1>Acceso corporativo</h1>
         <p>Gestion centralizada para tareas Python, trazabilidad y automatizacion controlada.</p>
         {% if advertencias_configuracion %}
-        <div class="alerta advertencia">
+        <div class="alerta advertencia alerta-inline">
             Configuracion local incompleta o con valores de plantilla. Reconstruye manualmente el archivo .env antes de usar credenciales reales.
         </div>
         {% endif %}
@@ -34,7 +35,7 @@
 
             <button class="btn primario" type="submit">Ingresar</button>
         </form>
-        <p class="texto-ayuda">Usuario inicial configurado por variables de entorno.</p>
+        <p class="texto-ayuda">Acceso restringido a usuarios autorizados.</p>
     </div>
 </section>
 {% endblock %}
