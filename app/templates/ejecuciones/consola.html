@@ -4,7 +4,7 @@
 {% block encabezado %}Consola de ejecucion{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida modulo-operativo-hero ejecucion-hero">
     <div>
         <p class="eyebrow">{{ "Automatica" if ejecucion.origen_ejecucion == "AUTOMATICA" else "Manual" }}</p>
         <h2>{{ ejecucion.nombre_tarea }}</h2>
@@ -16,8 +16,8 @@
     <a class="btn secundario" href="{{ url_for('ejecuciones.listado') }}">Volver a ejecuciones</a>
 </section>
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-operativo">
+    <article class="bloque bloque-operativo ejecucion-estado-card">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Estado</p>
@@ -25,7 +25,7 @@
             </div>
             <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion in ['EN_EJECUCION', 'PENDIENTE', 'DETENIDA_MANUALMENTE'] else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'inactivo' }}" data-ejecucion-badge>{{ ejecucion.estado_ejecucion }}</span>
         </div>
-        <div class="detalle-grid">
+        <div class="detalle-grid detalle-grid-operativo">
             <div><strong>Script activo</strong><span>{{ ejecucion.nombre_archivo }}</span></div>
             <div><strong>Script</strong><span>{{ ejecucion.nombre_script }}</span></div>
             <div><strong>Version</strong><span>{% if ejecucion.numero_version and ejecucion.numero_version != 'historica' %}v{{ ejecucion.numero_version }}{% else %}Historica{% endif %}</span></div>
@@ -41,7 +41,7 @@
             <div><strong>Estado maestro</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Eliminado permanentemente{% else %}Operativo disponible{% endif %}</span></div>
             <div><strong>Fuente</strong><span>{% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}Snapshot historico{% else %}Maestro operativo{% endif %}</span></div>
         </div>
-        <div class="acciones-formulario" data-ejecucion-acciones>
+        <div class="acciones-formulario acciones-operativas" data-ejecucion-acciones>
             <a class="btn secundario compacto" href="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">Actualizar log</a>
             {% if ejecucion.en_ejecucion %}
             <div class="acciones-formulario" data-ejecucion-accion-en-curso>
@@ -56,7 +56,7 @@
         </div>
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-operativo log-resumen-card">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Log</p>
@@ -68,7 +68,7 @@
     </article>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-operativo consola-bloque">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Consola</p>
@@ -76,6 +76,6 @@
         </div>
         <span class="badge advertencia" data-ejecucion-indicador>{{ "En ejecucion..." if ejecucion.en_ejecucion else "Finalizada" }}</span>
     </div>
-    <pre class="consola-ejecucion" data-ejecucion-log data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">{{ ejecucion.log }}</pre>
+    <pre class="consola-ejecucion consola-operativa" data-ejecucion-log data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">{{ ejecucion.log }}</pre>
 </section>
 {% endblock %}

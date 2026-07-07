@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase UI-6 agrega auto cierre global y cierre manual para toasts/flashes, sin tocar backend ni BD.
+* Estado actual: Fase UI-8 pule visualmente Tareas, Scripts y Ejecuciones, sin tocar backend funcional ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase UI-6 - Auto cierre de toasts y mensajes del sistema.
+* Fase actual: Fase UI-8 - Pulido visual de Tareas, Scripts y Ejecuciones.
 * Ultima actualizacion: 2026-07-07
 
 ## 2. Decisiones tecnicas vigentes
@@ -46,6 +46,8 @@
 * Replanteo login SOEX: Fase UI-4 elimina texto tecnico visible de variables de entorno, corrige padding externo del login y reduce la red/nodos a textura secundaria.
 * Sidebar: Fase UI-5 reordena la navegacion por flujo operativo e incorpora iconos SVG lineales representativos sin dependencias externas.
 * Toasts/flashes: Fase UI-6 agrega auto cierre global de 5 segundos, cierre manual accesible y eliminacion del DOM para mensajes flotantes.
+* Auditoria visual: Fase UI-7 deja diagnostico modulo por modulo y plan incremental UI-8 a UI-12 antes de nuevos cambios globales.
+* UI operacional: Fase UI-8 mejora jerarquia visual de Tareas, Scripts y Ejecuciones/logs con clases semanticas y CSS acotado, sin modificar logica.
 
 ## 3. Estructura actual del proyecto
 
@@ -73,6 +75,30 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-07 - Fase UI-8 / Pulido visual de Tareas, Scripts y Ejecuciones
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/tareas/listado.html`, `app/templates/tareas/formulario.html`, `app/templates/scripts/listado.html`, `app/templates/ejecuciones/listado.html`, `app/templates/ejecuciones/consola.html`, `app/static/css/estilos.css`, `docs/AUDITORIA_VISUAL_UI_SOEX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico inicial: los modulos operativos tenian buena base visual, pero alta densidad, acciones con pesos similares, badges largos y formularios extensos sin suficiente jerarquia secundaria.
+* Tareas: se agregaron celdas principales, contexto operativo, resumen visual de programacion, estado de ejecutabilidad con detalle separado y grupos de acciones por prioridad.
+* Formulario de tareas: se reforzaron secciones operativas, ayudas y bloque de notificaciones/evidencia con paneles mas claros.
+* Scripts: se destaco script activo, carga/versionamiento, version activa y acciones de version separando acciones normales de secundarias.
+* Ejecuciones/logs: se mejoro el historial diagnostico, el estado visual de errores, metadata de ejecucion y consola operativa.
+* Alcance: cambios UI/UX en HTML/CSS; no se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`.
+
+### 2026-07-07 - Fase UI-7 / Auditoria visual por modulo y plan SOEX
+
+* Archivos creados: `docs/AUDITORIA_VISUAL_UI_SOEX.md`.
+* Archivos modificados: `log_codex.md`.
+* Que se hizo: Se reviso visualmente la estructura de plantillas y componentes compartidos por modulo y se documento diagnostico, problemas detectados, prioridades, fases siguientes, archivos probables y riesgos.
+* Modulos cubiertos: Panel, Usuarios, Clientes/Categorias/Tipos, Tareas, Scripts, Ejecuciones, Programador, Eventos programador, Configuracion programador, Feriados, Mail Automatico, Auditoria, Papelera operativa y Logs.
+* Decisiones tomadas: No continuar con cambios globales a ciegas; priorizar Tareas/Scripts, Ejecuciones/Logs y Papelera por densidad y riesgo visual.
+* Alcance: documentacion solamente; no se modifico codigo funcional, backend, rutas, permisos, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `git status --short`.
 
 ### 2026-07-07 - Fase UI-6 / Auto cierre de toasts y mensajes del sistema
 

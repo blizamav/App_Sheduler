@@ -21,7 +21,7 @@
 {%- endmacro %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida modulo-operativo-hero">
     <div>
         <p class="eyebrow">Historial</p>
         <h2>Historial de ejecuciones</h2>
@@ -30,7 +30,7 @@
     <span class="badge info">{{ total }} registros filtrados</span>
 </section>
 
-<section class="bloque">
+<section class="bloque filtros-operativos">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Filtros</p>
@@ -111,7 +111,7 @@
     </form>
 </section>
 
-<section class="historial-ejecuciones">
+<section class="historial-ejecuciones historial-operativo">
     {% for grupo_anio in grupos %}
     <article class="historial-anio">
         <h3>{{ grupo_anio.anio }}</h3>
@@ -123,7 +123,7 @@
                 <h5>Dia {{ "%02d"|format(grupo_dia.dia) }}</h5>
                 <div class="ejecuciones-dia">
                     {% for ejecucion in grupo_dia.ejecuciones %}
-                    <article class="ejecucion-item">
+                    <article class="ejecucion-item ejecucion-operativa">
                         <div class="ejecucion-main">
                             <strong>#{{ ejecucion.id_ejecucion }} | {{ ejecucion.nombre_tarea }}</strong>
                             <span>
@@ -133,15 +133,15 @@
                         </div>
                         <div class="ejecucion-tags">
                             <span class="badge info">{{ ejecucion.origen_ejecucion or "-" }}</span>
-                            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
+                            <span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span>
                             {% if ejecucion.maestro_tarea_eliminado or ejecucion.maestro_script_eliminado or ejecucion.maestro_version_eliminado %}
                             <span class="badge inactivo">Snapshot historico</span>
                             {% endif %}
                         </div>
                         <div class="ejecucion-meta">
-                            <span>Inicio {{ ejecucion.fecha_hora_inicio.strftime('%H:%M:%S') if ejecucion.fecha_hora_inicio else '-' }}</span>
-                            <span>Termino {{ ejecucion.fecha_hora_termino.strftime('%H:%M:%S') if ejecucion.fecha_hora_termino else '-' }}</span>
-                            <span>{{ 'Proceso ' ~ ejecucion.nombre_worker if ejecucion.nombre_worker else 'Usuario ' ~ (ejecucion.usuario_ejecucion or '-') }}</span>
+                            <span><strong>Inicio</strong> {{ ejecucion.fecha_hora_inicio.strftime('%H:%M:%S') if ejecucion.fecha_hora_inicio else '-' }}</span>
+                            <span><strong>Termino</strong> {{ ejecucion.fecha_hora_termino.strftime('%H:%M:%S') if ejecucion.fecha_hora_termino else '-' }}</span>
+                            <span><strong>Origen</strong> {{ 'Proceso ' ~ ejecucion.nombre_worker if ejecucion.nombre_worker else 'Usuario ' ~ (ejecucion.usuario_ejecucion or '-') }}</span>
                         </div>
                         <a class="btn secundario compacto" href="{{ url_for('ejecuciones.consola', id_ejecucion=ejecucion.id_ejecucion) }}">Ver consola</a>
                     </article>

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-07 - Fase UI-8 pulido visual de Tareas, Scripts y Ejecuciones
+
+### Modificado
+
+* `app/templates/tareas/listado.html`: agrega estructura visual para celdas principales, contexto operativo, estado de ejecutabilidad y acciones agrupadas.
+* `app/templates/tareas/formulario.html`: refuerza secciones operativas y bloque de notificaciones/evidencia sin cambiar campos ni endpoints.
+* `app/templates/scripts/listado.html`: mejora jerarquia visual de script activo, carga/versionamiento, badges de version y acciones por version.
+* `app/templates/ejecuciones/listado.html`: mejora lectura diagnostica del historial y corrige el estado visual de ejecuciones con error.
+* `app/templates/ejecuciones/consola.html`: agrega clases visuales para resumen, detalle y consola operativa.
+* `app/static/css/estilos.css`: incorpora estilos UI-8 para modulos operativos, tablas densas, acciones agrupadas, versionamiento, notificaciones/evidencia y consola/log.
+* `docs/AUDITORIA_VISUAL_UI_SOEX.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Pulido exclusivamente UI/UX en Tareas, Scripts y Ejecuciones.
+* No se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-07 - Fase UI-6 auto cierre de toasts y mensajes del sistema
 
 ### Modificado

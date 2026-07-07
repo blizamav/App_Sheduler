@@ -4,7 +4,7 @@
 {% block encabezado %}{{ "Nueva" if modo == "crear" else "Editar" }} tarea{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida modulo-operativo-hero">
     <div>
         <p class="eyebrow">Tareas</p>
         <h2>{{ "Crear tarea" if modo == "crear" else "Editar tarea" }}</h2>
@@ -13,10 +13,10 @@
     <a class="btn secundario" href="{{ url_for('tareas.listado') }}">Volver</a>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-operativo">
     <form
         method="post"
-        class="formulario-admin requiere-confirmacion-form"
+        class="formulario-admin formulario-operativo requiere-confirmacion-form"
         data-programacion-form
         data-confirm-summary="tarea"
         data-form-modo="{{ modo }}"
@@ -26,10 +26,11 @@
         data-confirm-cancel="Cancelar"
         data-confirm-type="{{ 'info' if modo == 'crear' else 'warning' }}"
     >
-        <div class="seccion-formulario">
-            <div>
+        <div class="seccion-formulario seccion-operativa">
+            <div class="seccion-operativa-header">
                 <p class="eyebrow">Datos generales</p>
                 <h3>Identificacion</h3>
+                <p class="texto-secundario">Datos visibles para operar, filtrar y reconocer la tarea.</p>
             </div>
             <div class="form-grid">
                 <div class="campo">
@@ -81,10 +82,11 @@
             </div>
         </div>
 
-        <div class="seccion-formulario">
-            <div>
+        <div class="seccion-formulario seccion-operativa">
+            <div class="seccion-operativa-header">
                 <p class="eyebrow">Programacion</p>
                 <h3>Reglas base</h3>
+                <p class="texto-secundario">Define si la tarea se ejecuta manualmente, una vez, por intervalo o segun calendario.</p>
             </div>
             <div class="form-grid">
                 <div class="campo">
@@ -157,7 +159,7 @@
 
 {% if modo == "editar" %}
 <section
-    class="bloque notificaciones-tarea"
+    class="bloque bloque-operativo notificaciones-tarea"
     data-notificaciones-tarea
     data-tarea-id="{{ registro.id_tarea }}"
     data-url-obtener="{{ url_for('tareas_api.api_obtener_notificaciones', id_tarea=registro.id_tarea) }}"
@@ -165,14 +167,14 @@
     data-url-desactivar="{{ url_for('tareas_api.api_desactivar_notificaciones', id_tarea=registro.id_tarea) }}"
     data-url-validar-evidencia="{{ url_for('tareas_api.api_validar_soporte_evidencia', id_tarea=registro.id_tarea) }}"
 >
-    <div class="seccion-formulario">
-        <div>
+    <div class="seccion-formulario seccion-operativa">
+        <div class="seccion-operativa-header">
             <p class="eyebrow">Fase 15E</p>
             <h3>Notificaciones y evidencia</h3>
             <p class="texto-secundario">Configura si esta tarea enviara evidencia al finalizar correctamente. El envio real por Microsoft Graph se implementara en una fase posterior.</p>
         </div>
 
-        <div class="alerta info alerta-inline">
+        <div class="alerta info alerta-inline aviso-operativo">
             La app valida que el script declare soporte de evidencia antes de permitir activar este envio.
         </div>
 
@@ -197,7 +199,7 @@ print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre>
             <p class="texto-ayuda">La validacion es estatica: acepta strings reales del codigo y no considera delimitadores escritos solo en comentarios. La captura ocurre desde stdout.</p>
         </details>
 
-        <div class="alerta advertencia alerta-inline" data-evidencia-soporte-panel>
+        <div class="alerta advertencia alerta-inline evidencia-soporte-card" data-evidencia-soporte-panel>
             <div class="notificaciones-soporte-header">
                 <strong data-evidencia-soporte-texto>Validando soporte de evidencia stdout...</strong>
                 <span class="badge info" data-evidencia-soporte-badge>Validando</span>
@@ -205,7 +207,7 @@ print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre>
             <ul class="lista-simple" data-evidencia-soporte-errores></ul>
         </div>
 
-        <div class="form-grid">
+        <div class="form-grid panel-checks-operativo">
             <label class="checkline campo-full">
                 <input type="checkbox" data-notif-campo="enviar_evidencia">
                 Enviar evidencia al finalizar correctamente
@@ -236,7 +238,7 @@ print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre>
             </label>
         </div>
 
-        <p class="texto-ayuda">Canales de destinatarios: Para es el destinatario principal del correo; Copia es un destinatario visible en copia; Copia oculta recibe el correo sin que los demas lo vean.</p>
+        <p class="texto-ayuda ayuda-operativa">Canales de destinatarios: Para es el destinatario principal del correo; Copia es un destinatario visible en copia; Copia oculta recibe el correo sin que los demas lo vean.</p>
 
         <div class="notificaciones-grid">
             <article class="notificaciones-destinatarios" data-destinatarios-grupo="EVIDENCIA">

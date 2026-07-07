@@ -4,7 +4,7 @@
 {% block encabezado %}Tareas{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida modulo-operativo-hero">
     <div>
         <p class="eyebrow">Operacion</p>
         <h2>Tareas con programacion base</h2>
@@ -13,7 +13,7 @@
     <a class="btn primario" href="{{ url_for('tareas.nueva') }}">Nueva tarea</a>
 </section>
 
-<section class="bloque filtros-usuarios">
+<section class="bloque filtros-usuarios filtros-operativos">
     <form method="get" action="{{ url_for('tareas.listado') }}" class="formulario-filtros tareas-filtros">
         <div class="campo">
             <label for="estado">Estado</label>
@@ -70,7 +70,7 @@
     </form>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-operativo">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Listado</p>
@@ -82,7 +82,7 @@
         </div>
     </div>
 
-    <div class="tabla-base">
+    <div class="tabla-base tabla-operativa tareas-tabla">
         <table>
             <thead>
                 <tr>
@@ -99,14 +99,18 @@
                 {% for tarea in tareas %}
                 <tr>
                     <td>
+                        <div class="celda-principal">
                         <strong>{{ tarea.nombre_tarea }}</strong>
                         <small class="texto-tabla">{{ tarea.descripcion or "-" }}</small>
+                        </div>
                     </td>
                     <td>
+                        <div class="contexto-operativo">
                         <span>{{ tarea.nombre_cliente }}</span>
                         <small class="texto-tabla">{{ tarea.nombre_categoria }} / {{ tarea.nombre_tipo }}</small>
+                        </div>
                     </td>
-                    <td>{{ tarea.resumen_programacion }}</td>
+                    <td><span class="resumen-operativo">{{ tarea.resumen_programacion }}</span></td>
                     <td>
                         {% if tarea.ejecutar_en_feriados %}
                         <span class="badge advertencia">Si</span>
@@ -122,19 +126,25 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if tarea.ejecutable %}
-                        <span class="badge activo">Ejecutable</span>
-                        {% else %}
-                        <span class="badge advertencia" title="{{ tarea.motivo_no_ejecutable }}">No ejecutable: {{ tarea.motivo_no_ejecutable }}</span>
-                        {% endif %}
+                        <div class="estado-stack">
+                            {% if tarea.ejecutable %}
+                            <span class="badge activo">Ejecutable</span>
+                            {% else %}
+                            <span class="badge advertencia" title="{{ tarea.motivo_no_ejecutable }}">No ejecutable</span>
+                            <small>{{ tarea.motivo_no_ejecutable }}</small>
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
-                        <div class="acciones-tabla">
+                        <div class="acciones-tabla acciones-operativas">
+                            <div class="acciones-grupo">
                             <a class="btn secundario compacto" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea) }}">Editar</a>
                             {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "SCRIPTS_VER" in session.get("permisos", []) %}
                             <a class="btn secundario compacto" href="{{ url_for('scripts.por_tarea', id_tarea=tarea.id_tarea) }}">Scripts</a>
                             {% endif %}
+                            </div>
                             {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "EJECUCIONES_EJECUTAR" in session.get("permisos", []) %}
+                            <div class="acciones-grupo acciones-grupo-principal">
                             {% if tarea.ejecutable %}
                             <form method="post" action="{{ url_for('ejecuciones.ejecutar_tarea', id_tarea=tarea.id_tarea) }}">
                                 <button
@@ -152,7 +162,9 @@
                             {% else %}
                             <button class="btn secundario compacto" type="button" disabled title="No ejecutable: {{ tarea.motivo_no_ejecutable }}">Ejecutar ahora</button>
                             {% endif %}
+                            </div>
                             {% endif %}
+                            <div class="acciones-grupo acciones-grupo-secundario">
                             <form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if tarea.activo else 1 }}">
                                 <button
@@ -180,6 +192,7 @@
                                     Borrar
                                 </button>
                             </form>
+                            </div>
                         </div>
                     </td>
                 </tr>
