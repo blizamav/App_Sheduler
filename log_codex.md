@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase UI-10 pule visualmente Programador, Logs, Auditoria y Papelera, sin tocar backend funcional ni BD.
+* Estado actual: Fase 16A documenta diagnostico y propuesta minima para `.env` por script/version, sin tocar backend funcional ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase UI-10 - Pulido visual de Programador, Logs, Auditoria y Papelera.
+* Fase actual: Fase 16A - Diagnostico y propuesta controlada para .env por script/version.
 * Ultima actualizacion: 2026-07-08
 
 ## 2. Decisiones tecnicas vigentes
@@ -50,6 +50,9 @@
 * UI operacional: Fase UI-8 mejora jerarquia visual de Tareas, Scripts y Ejecuciones/logs con clases semanticas y CSS acotado, sin modificar logica.
 * UI administracion: Fase UI-9 mejora Panel, Usuarios y Maestros con dashboard, tablas administrativas, formularios y badges de rol consistentes.
 * UI control: Fase UI-10 mejora Programador, Eventos, Configuracion, Feriados, Logs, Auditoria y Papelera con tratamiento de centro de control y zonas de riesgo.
+* UI control aviso scheduler: Fase UI-10.1 mueve `Scheduler desactivado.` desde el contenedor flotante global a una alerta inline dentro de Configuracion programador.
+* Sidebar activo visible: Fase UI-10.2 ajusta solo el scroll interno de `.sidebar .nav` para mantener centrado el modulo activo tras navegar o redimensionar.
+* Env por script/version: Fase 16A confirma soporte actual por version con archivo en `env_scripts/` e inyeccion al subprocess; recomienda habilitar pegado de contenido desde la app sin migracion obligatoria.
 
 ## 3. Estructura actual del proyecto
 
@@ -77,6 +80,41 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-08 - Fase 16A / Diagnostico y propuesta controlada para .env por script/version
+
+* Archivos creados: `docs/DIAGNOSTICO_ENV_SCRIPTS.md`, `docs/USO_ENV_SCRIPTS.md`.
+* Archivos modificados: `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: APP Scheduler ya soporta `.env` por version mediante `scripts_versiones.requiere_env`, `ruta_env_fisica`, `ruta_env_relativa`, archivo bajo `env_scripts/`, carga con `dotenv_values()` e inyeccion a `subprocess.Popen(..., env=entorno)`.
+* Brecha detectada: hoy el usuario puede adjuntar archivo `.env`, pero no pegar contenido desde la app; tampoco se muestra una vista segura de claves configuradas.
+* Propuesta minima: reutilizar estructura actual, agregar textarea de contenido `.env`, validar `KEY=VALUE`, guardar internamente como archivo `.env` bajo `env_scripts/` y mantener en BD solo rutas/metadata.
+* Migracion: no se requiere migracion para la mejora minima; una tabla de variables por clave queda como alternativa futura no recomendada sin decision formal de cifrado de secretos.
+* Seguridad: no se documentaron secretos reales; la guia usa valores enmascarados y recomienda `os.getenv()` sin imprimir credenciales.
+* Alcance: documentacion solamente; no se modifico codigo funcional, Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `git status --short`; busqueda de archivos prohibidos en cambios; busqueda de secretos reales en documentos nuevos.
+
+### 2026-07-08 - Fase UI-10.2 / Mantener posicion del sidebar y modulo activo visible
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/static/js/app.js`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: al navegar a modulos ubicados abajo en el menu lateral, el documento recargaba y el scroll interno del sidebar volvia arriba, dejando fuera de vista el modulo activo.
+* Correccion aplicada: se agrego `mantenerSidebarActivoVisible()` en el JS global para detectar `.sidebar .nav-link.activo`, calcular su posicion dentro de `.sidebar .nav` y ajustar solo `nav.scrollTop`.
+* UX: el contenido principal no usa `window.scrollTo` ni `scrollIntoView`, por lo que no debe saltar; el ajuste se limita al menu lateral y se recalcula al redimensionar.
+* Toasts/alertas: se mantiene la correccion UI-10.1 de `Scheduler desactivado.` como alerta inline, sin volver al contenedor flotante `.mensajes`.
+* Alcance: cambio solo UI/UX en JavaScript/documentacion; no se modifico logica funcional, backend, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`.
+
+### 2026-07-08 - Fase UI-10.1 / Correccion toast alerta Scheduler desactivado
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/scheduler/configuracion.html`, `app/static/css/estilos.css`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Problema detectado: la advertencia `Scheduler desactivado.` se renderizaba con el contenedor global `.mensajes`, por lo que quedaba fija en la esquina superior derecha y podia tapar botones o controles.
+* Correccion aplicada: las advertencias de Configuracion programador ahora se muestran como alertas inline dentro del contenido, bajo el encabezado del modulo, usando `alerta-inline` y estilos acotados de aviso operativo.
+* Alcance: cambio solo UI/UX en HTML/CSS; no se modifico logica del scheduler, backend, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`; parseo Jinja de `scheduler/configuracion.html`.
 
 ### 2026-07-08 - Fase UI-10 / Pulido visual de Programador, Logs, Auditoria y Papelera
 

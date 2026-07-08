@@ -213,10 +213,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    const mantenerSidebarActivoVisible = () => {
+        const navSidebar = document.querySelector(".sidebar .nav");
+        const enlaceActivo = navSidebar?.querySelector(".nav-link.activo");
+        if (!navSidebar || !enlaceActivo) {
+            return;
+        }
+
+        const destino = enlaceActivo.offsetTop - (navSidebar.clientHeight / 2) + (enlaceActivo.offsetHeight / 2);
+        const maximoScroll = Math.max(0, navSidebar.scrollHeight - navSidebar.clientHeight);
+        navSidebar.scrollTop = Math.min(Math.max(destino, 0), maximoScroll);
+    };
+
+    requestAnimationFrame(mantenerSidebarActivoVisible);
+
     window.addEventListener("resize", () => {
         if (!esVistaCompacta()) {
             cerrarSidebarCompacto();
         }
+        requestAnimationFrame(mantenerSidebarActivoVisible);
     });
 
     document.addEventListener("keydown", (evento) => {

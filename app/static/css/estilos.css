@@ -2081,6 +2081,20 @@ textarea {
     border-left-color: rgba(24, 168, 216, 0.36);
 }
 
+.scheduler-aviso-estado {
+    border-left-color: rgba(184, 117, 3, 0.42);
+}
+
+.lista-alertas-control {
+    display: grid;
+    gap: 10px;
+}
+
+.lista-alertas-control .alerta-inline {
+    margin: 0;
+    line-height: 1.45;
+}
+
 .bloque-calendario {
     border-left-color: rgba(19, 138, 75, 0.26);
 }

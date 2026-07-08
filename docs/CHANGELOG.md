@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-07-08 - Fase 16A diagnostico .env por script/version
+
+### Creado
+
+* `docs/DIAGNOSTICO_ENV_SCRIPTS.md`: diagnostico tecnico del soporte actual de `.env` por version, brechas y propuesta minima.
+* `docs/USO_ENV_SCRIPTS.md`: guia operativa para configurar y consumir variables con `os.getenv()`.
+
+### Modificado
+
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Fase documental de diagnostico y propuesta controlada.
+* Se confirmo que ya existe soporte por version mediante `scripts_versiones.requiere_env`, `ruta_env_fisica`, `ruta_env_relativa`, carga con `dotenv_values()` e inyeccion al subprocess con `env`.
+* Se propuso como mejora minima permitir pegar contenido `.env` desde la app y guardarlo como archivo seguro bajo `env_scripts/`, sin migracion obligatoria.
+* No se modifico codigo funcional, Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
+## 2026-07-08 - Fase UI-10.2 sidebar mantiene modulo activo visible
+
+### Modificado
+
+* `app/static/js/app.js`: agrega ajuste visual del scroll interno del sidebar para centrar el link activo al cargar y al redimensionar.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Correccion exclusivamente UI/UX del menu lateral; el scroll ajustado es solo `.sidebar .nav`, no el contenido principal ni `window`.
+* Los modulos inferiores como Auditoria, Papelera operativa, Mail Automatico, Usuarios y Feriados quedan visibles cuando son la opcion activa.
+* El aviso `Scheduler desactivado.` permanece resuelto como alerta inline por UI-10.1 y no usa el contenedor flotante de toasts.
+* No se modifico logica funcional, backend, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
+## 2026-07-08 - Fase UI-10.1 correccion toast Scheduler desactivado
+
+### Modificado
+
+* `app/templates/scheduler/configuracion.html`: convierte las advertencias del programador en alertas internas del contenido, bajo el encabezado del modulo.
+* `app/static/css/estilos.css`: agrega estilos acotados para el aviso operativo inline del programador.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Correccion exclusivamente UI/UX del aviso `Scheduler desactivado.` para que informe sin tapar botones ni controles.
+* El sistema global de flashes/toasts permanece en `base.html` con `[data-flash-messages]`.
+* No se modifico logica del scheduler, backend, rutas, permisos, servicios Python, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-08 - Fase UI-10 pulido visual de Programador, Logs, Auditoria y Papelera
 
 ### Modificado

@@ -14,10 +14,18 @@
 </section>
 
 {% if configuracion.advertencias %}
-<section class="mensajes">
-    {% for advertencia in configuracion.advertencias %}
-    <div class="alerta advertencia">{{ advertencia }}</div>
-    {% endfor %}
+<section class="bloque bloque-control scheduler-aviso-estado">
+    <div class="bloque-header">
+        <div>
+            <p class="eyebrow">Estado operativo</p>
+            <h3>Atencion del programador</h3>
+        </div>
+    </div>
+    <div class="lista-alertas-control">
+        {% for advertencia in configuracion.advertencias %}
+        <div class="alerta advertencia alerta-inline">{{ advertencia }}</div>
+        {% endfor %}
+    </div>
 </section>
 {% endif %}
 
