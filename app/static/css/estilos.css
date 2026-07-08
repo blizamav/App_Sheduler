@@ -2287,6 +2287,43 @@ tr:last-child td {
     line-height: 1.45;
 }
 
+.ayuda-env-script {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(21, 91, 196, 0.14);
+    border-radius: var(--radio);
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.ayuda-env-script p {
+    margin: 0;
+}
+
+.ayuda-env-script summary {
+    cursor: pointer;
+    color: var(--color-azul);
+    font-weight: 900;
+}
+
+.ayuda-env-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.ayuda-env-script pre {
+    margin: 8px 0 0;
+    padding: 12px;
+    overflow: auto;
+    border-radius: var(--radio);
+    background: #071b35;
+    color: #e8f5fb;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
 .punto {
     display: inline-block;
     width: 10px;
@@ -3228,6 +3265,10 @@ tr:last-child td {
 
     .acciones-control .btn {
         justify-content: center;
+    }
+
+    .ayuda-env-grid {
+        grid-template-columns: 1fr;
     }
 
     .terminal-control {

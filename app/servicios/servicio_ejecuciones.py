@@ -360,10 +360,10 @@ def _validar_contexto_ejecucion(id_tarea, usuario):
     if contexto.get("requiere_env"):
         ruta_env = contexto.get("ruta_env_relativa")
         if not ruta_env:
-            return False, "Esta version requiere un archivo .env, pero no tiene uno asociado o no existe fisicamente.", None
+            return False, "El script requiere .env, pero no tiene variables de entorno configuradas en APP Scheduler.", None
         ruta_env_fisica = resolver_ruta_segura(Path(ruta_env))
         if not ruta_env_fisica.exists() or not ruta_env_fisica.is_file():
-            return False, "Esta version requiere un archivo .env, pero no tiene uno asociado o no existe fisicamente.", None
+            return False, "El script requiere .env, pero no tiene variables de entorno configuradas en APP Scheduler.", None
     return True, "OK", contexto
 
 

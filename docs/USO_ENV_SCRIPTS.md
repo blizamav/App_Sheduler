@@ -6,9 +6,9 @@ El `.env` por script permite definir variables de entorno especificas para una v
 
 Sirve para que el script lea parametros como servidor, base de datos, usuario tecnico, host SFTP, puerto o limites de trabajo sin dejar esos valores quemados en el codigo Python.
 
-## Donde se configura hoy
+## Donde se configura
 
-Hoy se configura en:
+Se configura en:
 
 ```text
 Tareas > Scripts > Versiones > boton .env
@@ -28,16 +28,16 @@ Estados visibles:
 2. Entrar a `Scripts`.
 3. Subir o seleccionar una version.
 4. Abrir el panel `.env` de esa version.
-5. Marcar `Requiere .env` si corresponde.
-6. Adjuntar un archivo `.env`.
+5. Marcar `Este script requiere archivo .env` si corresponde.
+6. Pegar contenido en `Contenido .env` o adjuntar un archivo `.env`.
 7. Guardar.
 8. Ejecutar la tarea.
 
 APP Scheduler carga ese archivo e inyecta sus variables al proceso Python.
 
-## Mejora recomendada
+## Contenido pegado desde la app
 
-La mejora minima propuesta para una fase posterior es permitir pegar contenido `.env` directamente en la app, ademas de adjuntar archivo.
+Desde Fase 16B se puede pegar contenido `.env` directamente en la app, ademas de adjuntar archivo.
 
 El usuario no deberia copiar manualmente archivos dentro de:
 
@@ -47,7 +47,9 @@ scripts/.../v2/.env
 scripts/.../v3/.env
 ```
 
-APP Scheduler debe guardar la configuracion en su carpeta segura de `env_scripts/` y asociarla a la version correspondiente.
+APP Scheduler guarda la configuracion en su carpeta segura de `env_scripts/` y la asocia a la version correspondiente usando los campos existentes de `scripts_versiones`.
+
+Si se pega contenido y tambien se adjunta archivo en el mismo envio, la app rechaza la operacion para evitar ambiguedad.
 
 ## Formato correcto
 
@@ -58,12 +60,13 @@ KEY=VALUE
 OTRA_KEY=OTRO_VALOR
 ```
 
-Reglas esperadas:
+Reglas aplicadas:
 
 * las lineas vacias se ignoran;
 * las lineas que empiezan con `#` se ignoran;
 * cada linea util debe tener `KEY=VALUE`;
 * `KEY` no puede venir vacio;
+* `VALUE` puede venir vacio;
 * `VALUE` puede contener espacios;
 * `VALUE` puede contener backslash;
 * `VALUE` puede contener rutas UNC;
@@ -104,6 +107,25 @@ Si falta una variable obligatoria, el script debe fallar con un mensaje claro, s
 if not sql_server:
     raise RuntimeError("Falta variable requerida: SQL_SERVER")
 ```
+
+## Ayuda visible en la app
+
+Desde Fase 16C, el panel `Variables de entorno del script` incluye una ayuda desplegable dentro de:
+
+```text
+Tareas > Scripts > Versiones > boton .env
+```
+
+La ayuda muestra:
+
+* que APP Scheduler carga el `.env` antes de ejecutar la version;
+* que el script debe leer valores con `os.getenv()`;
+* que el script no debe exigir un `.env` fisico local junto al `.py`;
+* ejemplo corto de script compatible;
+* ejemplo de formato `.env` sin secretos reales;
+* ejemplo de carga local opcional para scripts que tambien se ejecutan fuera de APP Scheduler.
+
+La ayuda no muestra secretos reales y mantiene el contenido guardado oculto.
 
 ## Que no hacer
 
@@ -204,7 +226,7 @@ Si la version requiere `.env` y esta configurado:
 .env cargado correctamente
 ```
 
-Si la version requiere `.env` y no tiene configuracion, la mejora recomendada debe mostrar:
+Si la version requiere `.env` y no tiene configuracion, APP Scheduler muestra:
 
 ```text
 El script requiere .env, pero no tiene variables de entorno configuradas en APP Scheduler.

@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 16A documenta diagnostico y propuesta minima para `.env` por script/version, sin tocar backend funcional ni BD.
+* Estado actual: Fase 16C agrega ayuda visible en la app para scripts con `.env` por version, sin tocar ejecucion ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 16A - Diagnostico y propuesta controlada para .env por script/version.
+* Fase actual: Fase 16C - Ayuda en app para scripts con .env adjunto.
 * Ultima actualizacion: 2026-07-08
 
 ## 2. Decisiones tecnicas vigentes
@@ -53,6 +53,8 @@
 * UI control aviso scheduler: Fase UI-10.1 mueve `Scheduler desactivado.` desde el contenedor flotante global a una alerta inline dentro de Configuracion programador.
 * Sidebar activo visible: Fase UI-10.2 ajusta solo el scroll interno de `.sidebar .nav` para mantener centrado el modulo activo tras navegar o redimensionar.
 * Env por script/version: Fase 16A confirma soporte actual por version con archivo en `env_scripts/` e inyeccion al subprocess; recomienda habilitar pegado de contenido desde la app sin migracion obligatoria.
+* Env textarea por version: Fase 16B agrega pegado de contenido `.env`, validacion `KEY=VALUE` y guardado seguro como archivo `.env` bajo `env_scripts/`, sin exponer valores.
+* Ayuda env en app: Fase 16C explica en la pantalla de scripts que APP Scheduler carga el `.env`, que el script debe usar `os.getenv()` y que la carga local debe ser opcional.
 
 ## 3. Estructura actual del proyecto
 
@@ -80,6 +82,30 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-08 - Fase 16C / Ayuda en app para scripts con .env adjunto
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/scripts/listado.html`, `app/static/css/estilos.css`, `docs/USO_ENV_SCRIPTS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* UI: se agrego una ayuda compacta dentro de `Variables de entorno del script`, con explicacion de carga automatica por APP Scheduler y lectura via `os.getenv()`.
+* Ejemplos: se agrego ejemplo de script compatible, ejemplo de formato `.env` con secretos enmascarados y ejemplo de carga local opcional para ejecucion fuera de APP Scheduler.
+* Seguridad: no se muestran secretos reales; la ayuda indica no imprimir passwords, tokens ni secretos.
+* Alcance: cambio UI/UX y documentacion; no se modifico logica de ejecucion, backend funcional, servicios `.env`, subprocess, BD, migraciones, Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se ejecuto SQL, no se modifico `.env`, `.env.docker`, `database/release/`, `env_scripts/`, logs ni archivos `.env` reales.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`; parseo Jinja de `scripts/listado.html`.
+
+### 2026-07-08 - Fase 16B / Implementacion textarea .env por version de script
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/scripts/listado.html`, `app/rutas_scripts.py`, `app/servicios/servicio_scripts.py`, `app/servicios/servicio_ejecuciones.py`, `app/servicios/servicio_env_scripts.py`, `docs/USO_ENV_SCRIPTS.md`, `docs/DIAGNOSTICO_ENV_SCRIPTS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* UI: el panel `.env` de cada version ahora muestra `Variables de entorno del script`, estado `.env requerido/configurado`, textarea `Contenido .env`, ayuda de uso y advertencia de seguridad; la carga por archivo `.env` se mantiene.
+* Backend: `guardar_env_version()` acepta contenido pegado, valida lineas utiles `KEY=VALUE`, separa solo por el primer `=`, permite valores vacios y guarda el texto como `.env` en la ruta segura `env_scripts/.../vX/.env`.
+* Seguridad: si se pega contenido y se adjunta archivo al mismo tiempo, la operacion se rechaza; no se muestra contenido guardado ni se registra en logs/auditoria.
+* Ejecucion: se mantiene el flujo existente de `servicio_env_scripts.py` y `subprocess.Popen(..., env=entorno)`; se mejora el mensaje cuando falta configuracion requerida.
+* Migracion: no se creo migracion ni tabla nueva; se reutilizaron `scripts_versiones.requiere_env`, `ruta_env_fisica` y `ruta_env_relativa`.
+* Alcance excluido: no se modifico Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se ejecuto SQL, no se modifico `.env`, `.env.docker`, BD ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`; pruebas unitarias directas de validacion de contenido `.env`; parseo Jinja de `scripts/listado.html`.
 
 ### 2026-07-08 - Fase 16A / Diagnostico y propuesta controlada para .env por script/version
 

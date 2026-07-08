@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-07-08 - Fase 16C ayuda en app para scripts con .env adjunto
+
+### Modificado
+
+* `app/templates/scripts/listado.html`: agrega ayuda visible/desplegable dentro de `Variables de entorno del script` con uso de `os.getenv()`, ejemplo compatible, ejemplo `.env` y carga local opcional.
+* `app/static/css/estilos.css`: agrega estilos acotados para la ayuda del `.env` en la pantalla de scripts.
+* `docs/USO_ENV_SCRIPTS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Cambio UI/UX y documentacion solamente.
+* No se modifico logica de ejecucion, servicios de carga `.env`, subprocess, backend funcional, BD ni migraciones.
+* No se modifico Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* No se modifico `.env`, `.env.docker`, `database/release/`, `env_scripts/`, logs ni archivos `.env` reales.
+* No se ejecuto SQL.
+
+## 2026-07-08 - Fase 16B textarea .env por version de script
+
+### Modificado
+
+* `app/templates/scripts/listado.html`: agrega seccion `Variables de entorno del script`, estado `.env requerido/configurado`, textarea `Contenido .env` y mantiene carga por archivo.
+* `app/rutas_scripts.py`: envia `contenido_env` al servicio de scripts.
+* `app/servicios/servicio_scripts.py`: valida contenido `KEY=VALUE`, guarda texto como `.env` bajo `env_scripts/` y mantiene metadata en `scripts_versiones`.
+* `app/servicios/servicio_ejecuciones.py`: mejora el mensaje cuando una version requiere `.env` pero no tiene configuracion.
+* `app/servicios/servicio_env_scripts.py`: alinea el mensaje de error de carga faltante.
+* `docs/USO_ENV_SCRIPTS.md`.
+* `docs/DIAGNOSTICO_ENV_SCRIPTS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Se reutilizo la estructura existente `env_scripts/.../vX/.env`.
+* Se reutilizaron `scripts_versiones.requiere_env`, `ruta_env_fisica` y `ruta_env_relativa`.
+* No se creo tabla nueva ni migracion.
+* No se modifico el flujo base de ejecucion; las variables siguen cargandose con `dotenv_values()` e inyectandose a `subprocess.Popen(..., env=entorno)`.
+* No se modifico Graph, evidencias, alertas, correos, worker ni `scheduler_worker.py`.
+* No se modifico `.env`, `.env.docker`, base de datos ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-08 - Fase 16A diagnostico .env por script/version
 
 ### Creado

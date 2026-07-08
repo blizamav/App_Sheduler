@@ -11,7 +11,7 @@ def cargar_env_version(ruta_env_relativa):
     if BASE_DIR.resolve() not in ruta.parents:
         raise ValueError("Ruta .env no permitida.")
     if not ruta.exists() or not ruta.is_file():
-        raise ValueError("Esta version requiere un archivo .env, pero no tiene uno asociado o no existe fisicamente.")
+        raise ValueError("El script requiere .env, pero no tiene variables de entorno configuradas en APP Scheduler.")
 
     valores = dotenv_values(ruta)
     entorno = os.environ.copy()

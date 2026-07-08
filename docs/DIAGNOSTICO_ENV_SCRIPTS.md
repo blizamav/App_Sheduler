@@ -263,3 +263,15 @@ Despues de eso, el script debe seguir leyendo con `os.getenv()`.
 ## Cierre del diagnostico
 
 La plataforma ya carga e inyecta `.env` por version cuando existe archivo asociado. La implementacion minima pendiente es mejorar la UI/servicio para que el usuario pueda pegar contenido `.env` desde la app, con validacion simple, sin exponer secretos y sin requerir copia manual en carpetas fisicas.
+
+## Nota de implementacion Fase 16B
+
+La mejora minima fue implementada sin migracion:
+
+* `app/templates/scripts/listado.html` agrega textarea `contenido_env` en el panel `.env` de cada version.
+* `app/rutas_scripts.py` envia `contenido_env` a `guardar_env_version()`.
+* `app/servicios/servicio_scripts.py` valida lineas utiles `KEY=VALUE`, separando solo por el primer `=`, y guarda el contenido como `.env` bajo `env_scripts/.../vX/.env`.
+* La carga por archivo `.env` existente se mantiene.
+* Si el usuario pega contenido y adjunta archivo a la vez, la app rechaza la operacion para evitar ambiguedad.
+* La ejecucion sigue usando `servicio_env_scripts.py` y `subprocess.Popen(..., env=entorno)`.
+* El contenido guardado no se muestra de vuelta en la UI ni se registra en logs o auditoria.

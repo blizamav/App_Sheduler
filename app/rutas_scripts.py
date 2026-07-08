@@ -87,6 +87,7 @@ def guardar_env(id_version):
         request.files.get("archivo_env"),
         request.form.get("requiere_env") == "1",
         session.get("usuario"),
+        request.form.get("contenido_env"),
     )
     flash(mensaje, "success" if ok else "error")
     return _volver_a_tarea(id_version)

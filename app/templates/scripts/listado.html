@@ -181,8 +181,82 @@
                     <td colspan="7">
                         <form method="post" enctype="multipart/form-data" action="{{ url_for('scripts.guardar_env', id_version=version.id_version) }}" class="formulario-admin requiere-confirmacion-form" data-confirm-title="{{ 'Reemplazar archivo .env' if version.ruta_env_relativa else 'Asociar archivo .env' }}" data-confirm-message="{{ 'Esta version ya tiene un archivo .env asociado. Si continuas, sera reemplazado. El contenido no sera mostrado ni registrado. Deseas continuar?' if version.ruta_env_relativa else 'Estas a punto de asociar un archivo .env a esta version. El contenido no sera mostrado ni registrado. Deseas continuar?' }}" data-confirm-ok="{{ 'Si, reemplazar .env' if version.ruta_env_relativa else 'Si, asociar .env' }}" data-confirm-cancel="Cancelar" data-confirm-type="warning">
                             <input type="hidden" name="volver" value="{{ request.path }}">
-                            <label class="checkline"><input name="requiere_env" type="checkbox" value="1" {% if version.requiere_env %}checked{% endif %}> Requiere .env</label>
-                            <div class="campo"><label>Archivo .env</label><input name="archivo_env" type="file" accept=".env"></div>
+                            <div class="bloque-subseccion">
+                                <h4>Variables de entorno del script</h4>
+                                <div class="badges-linea">
+                                    <span class="badge {{ 'advertencia' if version.requiere_env else 'inactivo' }}">.env requerido: {{ 'Si' if version.requiere_env else 'No' }}</span>
+                                    <span class="badge {{ 'activo' if version.ruta_env_relativa else 'inactivo' }}">.env configurado: {{ 'Si' if version.ruta_env_relativa else 'No' }}</span>
+                                </div>
+                            </div>
+                            <label class="checkline"><input name="requiere_env" type="checkbox" value="1" {% if version.requiere_env %}checked{% endif %}> Este script requiere archivo .env</label>
+                            <div class="campo">
+                                <label for="contenido_env_{{ version.id_version }}">Contenido .env</label>
+                                <textarea id="contenido_env_{{ version.id_version }}" name="contenido_env" rows="7" placeholder="KEY=VALUE&#10;OTRA_KEY=OTRO_VALOR"></textarea>
+                                <p class="texto-ayuda">Estas variables seran cargadas automaticamente por APP Scheduler al ejecutar esta version. El contenido guardado no se muestra por seguridad.</p>
+                            </div>
+                            <div class="campo">
+                                <label>Archivo .env</label>
+                                <input name="archivo_env" type="file" accept=".env">
+                                <p class="texto-ayuda">Alternativa al textarea. Usa solo una opcion: pegar contenido o adjuntar archivo.</p>
+                            </div>
+                            <div class="alerta advertencia alerta-inline">
+                                Los valores sensibles no se mostraran en logs. Los scripts deben leer variables con os.getenv().
+                            </div>
+                            <div class="ayuda-env-script">
+                                <strong>Como debe leer el .env mi script</strong>
+                                <p>APP Scheduler carga automaticamente el .env configurado antes de ejecutar esta version. Dentro del script lee las variables con <code>os.getenv()</code>; no dependas obligatoriamente de un archivo .env fisico junto al .py.</p>
+                                <details>
+                                    <summary>Ver ejemplo de script compatible</summary>
+                                    <div class="ayuda-env-grid">
+                                        <div>
+                                            <p class="eyebrow">Python</p>
+                                            <pre><code>import os
+
+def env_requerido(nombre):
+    valor = os.getenv(nombre)
+    if valor is None or valor.strip() == "":
+        raise RuntimeError(f"Variable requerida no configurada: {nombre}")
+    return valor
+
+SQL_SERVER = env_requerido("SQL_SERVER")
+SQL_DATABASE = env_requerido("SQL_DATABASE")
+SFTP_HOST = env_requerido("SFTP_HOST")
+
+print("Variables cargadas correctamente desde APP Scheduler")</code></pre>
+                                        </div>
+                                        <div>
+                                            <p class="eyebrow">.env</p>
+                                            <pre><code>SQL_SERVER=SERVIDOR\INSTANCIA
+SQL_DATABASE=BASE_DATOS
+SQL_USERNAME=usuario
+SQL_PASSWORD=********
+SFTP_HOST=192.168.0.150
+SFTP_USERNAME=usuario_sftp
+SFTP_PASSWORD=********
+SFTP_PORT=22</code></pre>
+                                        </div>
+                                    </div>
+                                    <p class="texto-ayuda">Si tambien ejecutas el script fuera de APP Scheduler, la carga de un .env local debe ser opcional. Valida variables requeridas con os.getenv() y no imprimas passwords, tokens ni secretos.</p>
+                                    <pre><code>import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+def cargar_env_local_opcional(path=ENV_PATH):
+    if not os.path.exists(path):
+        return
+
+    with open(path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+cargar_env_local_opcional()</code></pre>
+                                </details>
+                            </div>
                             <div class="acciones-formulario">
                             <button class="btn primario" type="submit">{{ "Reemplazar .env" if version.ruta_env_relativa else "Asociar .env" }}</button>
                             </div>

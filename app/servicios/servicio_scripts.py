@@ -1,4 +1,4 @@
-from pathlib import Path
+import re
 
 from app.repositorios.repositorio_scripts import (
     activar_version,
@@ -29,6 +29,7 @@ from app.servicios.servicio_archivos import (
     max_env_bytes,
     max_script_bytes,
     nombre_archivo_seguro,
+    resolver_ruta_segura,
     validar_tamano,
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
@@ -399,7 +400,10 @@ def eliminar_version_script(id_version, usuario):
     return True, "Version retirada de la operacion y enviada a Papelera operativa. El historial de ejecuciones se conserva."
 
 
-def guardar_env_version(id_version, archivo, requiere_env, usuario):
+PATRON_CLAVE_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def guardar_env_version(id_version, archivo, requiere_env, usuario, contenido_env=None):
     version = obtener_version(id_version)
     if not version:
         return False, "Version no encontrada."
@@ -407,12 +411,19 @@ def guardar_env_version(id_version, archivo, requiere_env, usuario):
     ruta_env_fisica = version.get("ruta_env_fisica")
     ruta_env_relativa = version.get("ruta_env_relativa")
     try:
+        contenido_normalizado = validar_contenido_env(contenido_env)
+        if archivo and archivo.filename and contenido_normalizado is not None:
+            return False, "Usa solo una opcion: adjuntar archivo .env o pegar contenido .env."
         if archivo and archivo.filename:
             validar_tamano(archivo, max_env_bytes())
             nombre_archivo = nombre_archivo_seguro(archivo.filename, ".env")
             ruta_relativa = construir_ruta_relativa("env_scripts", tarea, version["numero_version"], nombre_archivo)
             eliminar_archivo_seguro(ruta_env_relativa)
             ruta_env_fisica, ruta_env_relativa = guardar_archivo(archivo, ruta_relativa)
+        elif contenido_normalizado is not None:
+            ruta_relativa = construir_ruta_relativa("env_scripts", tarea, version["numero_version"], ".env")
+            eliminar_archivo_seguro(ruta_env_relativa)
+            ruta_env_fisica, ruta_env_relativa = guardar_contenido_env(ruta_relativa, contenido_normalizado)
         actualizar_env_version(id_version, requiere_env, ruta_env_fisica, ruta_env_relativa)
         registrar_log_sistema("SCRIPT_ENV_ASOCIADO", "SCRIPTS", f"Env actualizado para version v{version['numero_version']}.", usuario=usuario)
         registrar_auditoria(
@@ -435,12 +446,46 @@ def guardar_env_version(id_version, archivo, requiere_env, usuario):
             "scripts_versiones",
             id_entidad=id_version,
             descripcion="Error controlado al guardar metadatos .env de version.",
-            valores_despues={"requiere_env": requiere_env, "tiene_archivo_env": bool(archivo and archivo.filename)},
+            valores_despues={"requiere_env": requiere_env, "tiene_archivo_env": bool(archivo and archivo.filename), "tiene_contenido_env": bool(contenido_env and contenido_env.strip())},
             resultado="ERROR",
             modulo="SCRIPTS",
             usuario=usuario,
         )
         return False, "No fue posible guardar el .env."
+
+
+def validar_contenido_env(contenido_env):
+    if contenido_env is None or not str(contenido_env).strip():
+        return None
+    texto = str(contenido_env).replace("\r\n", "\n").replace("\r", "\n")
+    if len(texto.encode("utf-8")) > max_env_bytes():
+        raise ValueError("El contenido .env supera el tamano maximo permitido.")
+
+    lineas_validas = []
+    for numero, linea in enumerate(texto.split("\n"), start=1):
+        if not linea.strip() or linea.lstrip().startswith("#"):
+            lineas_validas.append(linea.rstrip())
+            continue
+        if "=" not in linea:
+            raise ValueError(f"Linea {numero} invalida. Se esperaba formato KEY=VALUE.")
+        clave, _valor = linea.split("=", 1)
+        clave = clave.strip()
+        if not clave:
+            raise ValueError(f"Linea {numero} invalida. KEY no puede estar vacio.")
+        if not PATRON_CLAVE_ENV.fullmatch(clave):
+            raise ValueError(f"Linea {numero} invalida. KEY debe ser compatible con una variable de entorno.")
+        lineas_validas.append(linea.rstrip())
+
+    if not any(linea.strip() and not linea.lstrip().startswith("#") for linea in lineas_validas):
+        raise ValueError("El contenido .env no contiene variables utiles.")
+    return "\n".join(lineas_validas).rstrip() + "\n"
+
+
+def guardar_contenido_env(ruta_relativa, contenido):
+    ruta_fisica = resolver_ruta_segura(ruta_relativa)
+    ruta_fisica.parent.mkdir(parents=True, exist_ok=True)
+    ruta_fisica.write_text(contenido, encoding="utf-8", newline="\n")
+    return str(ruta_fisica), ruta_relativa.as_posix()
 
 
 def eliminar_env_version(id_version, usuario):
