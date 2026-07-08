@@ -4,7 +4,7 @@
 {% block encabezado %}{{ "Nuevo" if modo == "crear" else "Editar" }} {{ config.singular }}{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida admin-hero maestro-hero">
     <div>
         <p class="eyebrow">Mantenedores</p>
         <h2>{{ "Crear" if modo == "crear" else "Editar" }} {{ config.singular }}</h2>
@@ -13,10 +13,10 @@
     <a class="btn secundario" href="{{ url_for('mantenedores.' ~ entidad ~ '_listado') }}">Volver</a>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-admin bloque-maestro">
     <form
         method="post"
-        class="formulario-admin requiere-confirmacion-form"
+        class="formulario-admin formulario-admin-ui requiere-confirmacion-form"
         data-form-modo="{{ modo }}"
         data-confirm-title="{{ 'Crear ' ~ config.singular if modo == 'crear' else 'Guardar cambios' }}"
         data-confirm-message="{{ 'Se creara un nuevo registro. Deseas continuar?' if modo == 'crear' else 'Estas por modificar este registro. Deseas guardar los cambios?' }}"
@@ -24,6 +24,12 @@
         data-confirm-cancel="Cancelar"
         data-confirm-type="{{ 'info' if modo == 'crear' else 'warning' }}"
     >
+        <div class="seccion-admin-form">
+            <div class="seccion-admin-header">
+                <p class="eyebrow">Registro maestro</p>
+                <h3>Datos base</h3>
+                <p class="texto-secundario">Informacion usada para clasificar y organizar tareas operativas.</p>
+            </div>
         <div class="form-grid">
             <div class="campo">
                 <label for="nombre">Nombre</label>
@@ -33,6 +39,7 @@
                 <label for="descripcion">Descripcion</label>
                 <input id="descripcion" name="descripcion" value="{{ registro.descripcion or '' }}">
             </div>
+        </div>
         </div>
 
         <div class="acciones-formulario">

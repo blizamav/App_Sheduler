@@ -4,7 +4,7 @@
 {% block encabezado %}Usuarios{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida admin-hero">
     <div>
         <p class="eyebrow">Seguridad</p>
         <h2>Administracion de usuarios</h2>
@@ -13,7 +13,7 @@
     <a class="btn primario" href="{{ url_for('usuarios.nuevo') }}">Nuevo usuario</a>
 </section>
 
-<section class="bloque filtros-usuarios">
+<section class="bloque filtros-usuarios filtros-admin">
     <form method="get" action="{{ url_for('usuarios.listado') }}" class="formulario-filtros">
         <div class="campo">
             <label for="estado">Estado</label>
@@ -43,7 +43,7 @@
     </form>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-admin">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Directorio</p>
@@ -55,7 +55,7 @@
         </div>
     </div>
 
-    <div class="tabla-base">
+    <div class="tabla-base tabla-admin usuarios-tabla">
         <table>
             <thead>
                 <tr>
@@ -71,9 +71,9 @@
             <tbody>
                 {% for item in usuarios %}
                 <tr>
-                    <td>{{ item.usuario }}</td>
+                    <td><div class="celda-admin-principal"><strong>{{ item.usuario }}</strong></div></td>
                     <td>{{ item.nombre_completo }}</td>
-                    <td>{{ item.email or "-" }}</td>
+                    <td><span class="texto-tabla-inline">{{ item.email or "-" }}</span></td>
                     <td>
                         {% if item.nombre_rol or item.codigo_rol %}
                         <span class="badge rol {% if item.codigo_rol == 'SUPER_ADMIN' %}super-admin{% elif item.codigo_rol == 'ADMIN' %}admin{% endif %}">{{ item.nombre_rol or item.codigo_rol|replace("_", " ")|title }}</span>
@@ -90,12 +90,15 @@
                     </td>
                     <td>{{ item.fecha_creacion }}</td>
                     <td>
-                        <div class="acciones-tabla">
+                        <div class="acciones-tabla acciones-admin">
+                            <div class="acciones-grupo">
                             {% if item.puede_editar %}
                             <a class="btn secundario compacto" href="{{ url_for('usuarios.editar', id_usuario=item.id_usuario) }}">Editar</a>
                             {% else %}
                             <span class="badge inactivo">Protegido</span>
                             {% endif %}
+                            </div>
+                            <div class="acciones-grupo acciones-grupo-secundario">
                             {% if item.puede_cambiar_estado %}
                             <form method="post" action="{{ url_for('usuarios.estado', id_usuario=item.id_usuario) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
@@ -127,6 +130,7 @@
                                 </button>
                             </form>
                             {% endif %}
+                            </div>
                         </div>
                     </td>
                 </tr>

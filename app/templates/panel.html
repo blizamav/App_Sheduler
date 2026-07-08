@@ -9,7 +9,7 @@
 {% set permisos = session.get("permisos", []) %}
 {% set es_admin = session.get("es_admin_env") or "*" in permisos %}
 
-<section class="bienvenida contenedor">
+<section class="bienvenida contenedor dashboard-hero">
     <div>
         <p class="eyebrow">Resumen ejecutivo</p>
         <h2>Bienvenido, {{ session.get("usuario_nombre") or session.get("usuario") }}</h2>
@@ -43,26 +43,26 @@
 </section>
 {% endif %}
 
-<section class="metricas">
-    <article class="card metrica">
+<section class="metricas metricas-dashboard">
+    <article class="card metrica metrica-dashboard">
         <span class="badge info">Tareas</span>
         <span>Total tareas</span>
         <strong>{{ metricas.total_tareas }}</strong>
         <small>{{ metricas.tareas_activas }} activas registradas.</small>
     </article>
-    <article class="card metrica exito">
+    <article class="card metrica metrica-dashboard exito">
         <span class="badge activo">Scripts</span>
         <span>Scripts activos</span>
         <strong>{{ metricas.scripts_activos }}</strong>
         <small>{{ metricas.tareas_con_script }} tareas con script asociado.</small>
     </article>
-    <article class="card metrica info">
+    <article class="card metrica metrica-dashboard info">
         <span class="badge info">Hoy</span>
         <span>Ejecuciones hoy</span>
         <strong>{{ metricas.ejecuciones_hoy }}</strong>
         <small>{{ metricas.exitosas_hoy }} exitosas / {{ metricas.errores_hoy }} con error.</small>
     </article>
-    <article class="card metrica {% if metricas.en_curso %}advertencia{% else %}exito{% endif %}">
+    <article class="card metrica metrica-dashboard {% if metricas.en_curso %}advertencia{% else %}exito{% endif %}">
         <span class="badge {% if metricas.en_curso %}advertencia{% else %}activo{% endif %}">En curso</span>
         <span>Ejecuciones activas</span>
         <strong>{{ metricas.en_curso }}</strong>
@@ -70,8 +70,8 @@
     </article>
 </section>
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-dashboard">
+    <article class="bloque bloque-dashboard">
         <div class="bloque-header">
             <h3>Programador</h3>
             <span class="badge {% if scheduler.scheduler_activo %}activo{% else %}inactivo{% endif %}">
@@ -87,7 +87,7 @@
         </div>
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-dashboard accesos-dashboard">
         <div class="bloque-header">
             <h3>Accesos rapidos</h3>
             <span class="badge info">Operacion</span>
@@ -112,13 +112,13 @@
     </article>
 </section>
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-dashboard">
+    <article class="bloque bloque-dashboard">
         <div class="bloque-header">
             <h3>Ultimas ejecuciones</h3>
             <span class="badge info">{{ panel.ultimas_ejecuciones|length }} registros</span>
         </div>
-        <div class="tabla-base">
+        <div class="tabla-base tabla-admin tabla-dashboard">
             <table>
                 <thead>
                     <tr>
@@ -132,7 +132,7 @@
                 <tbody>
                     {% for ejecucion in panel.ultimas_ejecuciones %}
                         <tr>
-                            <td>{{ ejecucion.nombre_tarea or "Tarea sin nombre" }}</td>
+                            <td><strong>{{ ejecucion.nombre_tarea or "Tarea sin nombre" }}</strong></td>
                             <td>{{ ejecucion.origen_ejecucion }}</td>
                             <td><span class="badge {{ 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'advertencia' if ejecucion.estado_ejecucion == 'EN_EJECUCION' else 'inactivo' }}">{{ ejecucion.estado_ejecucion }}</span></td>
                             <td>{{ ejecucion.fecha_hora_inicio }}</td>
@@ -148,7 +148,7 @@
         </div>
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-dashboard estado-dashboard">
         <div class="bloque-header">
             <h3>Estado general</h3>
             <span class="badge {% if panel.datos_ok %}activo{% else %}advertencia{% endif %}">

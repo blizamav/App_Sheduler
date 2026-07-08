@@ -1882,6 +1882,159 @@ textarea {
     tab-size: 4;
 }
 
+.dashboard-hero,
+.admin-hero {
+    border-left: 4px solid rgba(215, 25, 32, 0.76);
+    background:
+        linear-gradient(90deg, rgba(215, 25, 32, 0.035), transparent 28%),
+        linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.dashboard-hero h2,
+.admin-hero h2 {
+    color: var(--color-azul-oscuro);
+}
+
+.metricas-dashboard {
+    align-items: stretch;
+}
+
+.metrica-dashboard {
+    position: relative;
+    overflow: hidden;
+    border-left: 4px solid rgba(21, 91, 196, 0.24);
+}
+
+.metrica-dashboard::after {
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: 76px;
+    height: 76px;
+    content: "";
+    background: linear-gradient(135deg, rgba(24, 168, 216, 0.12), transparent 70%);
+    pointer-events: none;
+}
+
+.metrica-dashboard.exito {
+    border-left-color: rgba(19, 138, 75, 0.42);
+}
+
+.metrica-dashboard.advertencia {
+    border-left-color: rgba(184, 117, 3, 0.45);
+}
+
+.panel-dashboard {
+    align-items: stretch;
+}
+
+.bloque-dashboard,
+.bloque-admin {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(248, 251, 255, 0.98)),
+        var(--color-superficie);
+}
+
+.bloque-dashboard {
+    border-left: 4px solid rgba(21, 91, 196, 0.18);
+}
+
+.estado-dashboard {
+    border-left-color: rgba(19, 138, 75, 0.28);
+}
+
+.accesos-dashboard {
+    border-left-color: rgba(24, 168, 216, 0.28);
+}
+
+.tabla-dashboard table,
+.tabla-admin table {
+    min-width: 820px;
+}
+
+.filtros-admin {
+    border-left: 4px solid rgba(21, 91, 196, 0.18);
+    background:
+        linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.bloque-admin {
+    border-left: 4px solid rgba(21, 91, 196, 0.16);
+}
+
+.bloque-maestro {
+    border-left-color: rgba(24, 168, 216, 0.24);
+}
+
+.maestro-hero {
+    border-left-color: rgba(24, 168, 216, 0.58);
+}
+
+.usuarios-tabla td,
+.maestros-tabla td,
+.tabla-dashboard td {
+    line-height: 1.42;
+}
+
+.celda-admin-principal {
+    display: grid;
+    gap: 4px;
+    color: var(--color-azul-oscuro);
+}
+
+.texto-tabla-inline {
+    color: var(--color-texto-suave);
+}
+
+.acciones-admin {
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.formulario-admin-ui {
+    display: grid;
+    gap: 18px;
+}
+
+.seccion-admin-form {
+    display: grid;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid rgba(219, 229, 242, 0.9);
+    border-radius: var(--radio);
+    background: rgba(248, 251, 255, 0.78);
+}
+
+.seccion-admin-header h3 {
+    margin: 0;
+    color: var(--color-azul-oscuro);
+}
+
+.checkline-admin {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid rgba(219, 229, 242, 0.76);
+    border-radius: var(--radio);
+    background: #fbfdff;
+}
+
+.badge.rol {
+    border-color: rgba(21, 91, 196, 0.22);
+    background: #eef5fb;
+    color: var(--color-azul);
+}
+
+.badge.rol.super-admin {
+    border-color: rgba(215, 25, 32, 0.24);
+    background: #fff0f0;
+    color: var(--color-rojo);
+}
+
+.badge.rol.admin {
+    border-color: rgba(24, 168, 216, 0.28);
+    background: #e8f5fb;
+    color: #0b6f95;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -2687,6 +2840,11 @@ tr:last-child td {
     .acciones-versiones {
         min-width: 0;
     }
+
+    .tabla-dashboard table,
+    .tabla-admin table {
+        min-width: 760px;
+    }
 }
 
 @media (max-width: 960px) {
@@ -2815,6 +2973,34 @@ tr:last-child td {
         min-height: 320px;
         max-height: 58vh;
         font-size: 0.82rem;
+    }
+
+    .dashboard-hero,
+    .admin-hero {
+        border-left-width: 0;
+        border-top: 4px solid rgba(215, 25, 32, 0.76);
+    }
+
+    .maestro-hero {
+        border-top-color: rgba(24, 168, 216, 0.58);
+    }
+
+    .seccion-admin-form {
+        padding: 14px;
+    }
+
+    .acciones-admin,
+    .acciones-admin .acciones-grupo {
+        width: 100%;
+    }
+
+    .acciones-admin form,
+    .acciones-admin .btn {
+        width: 100%;
+    }
+
+    .acciones-admin .btn {
+        justify-content: center;
     }
 
     .paginacion {

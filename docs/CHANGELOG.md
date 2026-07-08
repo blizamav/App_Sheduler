@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-08 - Fase UI-9 pulido visual de Panel, Usuarios y Maestros
+
+### Modificado
+
+* `app/templates/panel.html`: agrega estructura visual de dashboard, metricas jerarquizadas, bloques de estado y tabla administrativa.
+* `app/templates/usuarios/listado.html`: mejora jerarquia visual del directorio, filtros, tabla, roles, estados y acciones agrupadas.
+* `app/templates/usuarios/formulario.html`: agrega seccion administrativa para identidad, rol, password y estado.
+* `app/templates/mantenedores/listado.html`: unifica visualmente Clientes, Categorias y Tipos como maestros corporativos.
+* `app/templates/mantenedores/formulario.html`: agrega estructura de formulario maestro con seccion de datos base.
+* `app/static/css/estilos.css`: incorpora estilos UI-9 para dashboard, filtros administrativos, tablas, acciones, formularios, roles y responsive.
+* `docs/AUDITORIA_VISUAL_UI_SOEX.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Pulido exclusivamente UI/UX en Panel, Usuarios, Clientes, Categorias y Tipos.
+* No se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-07 - Fase UI-8 pulido visual de Tareas, Scripts y Ejecuciones
 
 ### Modificado

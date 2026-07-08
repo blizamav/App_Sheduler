@@ -4,7 +4,7 @@
 {% block encabezado %}{{ config.titulo }}{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida admin-hero maestro-hero">
     <div>
         <p class="eyebrow">Mantenedores</p>
         <h2>{{ config.titulo }}</h2>
@@ -13,7 +13,7 @@
     <a class="btn primario" href="{{ url_for('mantenedores.' ~ entidad ~ '_nuevo') }}">Nuevo {{ config.singular }}</a>
 </section>
 
-<section class="bloque filtros-usuarios">
+<section class="bloque filtros-usuarios filtros-admin">
     <form method="get" action="{{ url_for('mantenedores.' ~ entidad ~ '_listado') }}" class="formulario-filtros">
         <div class="campo">
             <label for="estado">Estado</label>
@@ -34,7 +34,7 @@
     </form>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-admin bloque-maestro">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Listado</p>
@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    <div class="tabla-base">
+    <div class="tabla-base tabla-admin maestros-tabla">
         <table>
             <thead>
                 <tr>
@@ -61,8 +61,8 @@
             <tbody>
                 {% for item in registros %}
                 <tr>
-                    <td>{{ item.nombre }}</td>
-                    <td>{{ item.descripcion or "-" }}</td>
+                    <td><div class="celda-admin-principal"><strong>{{ item.nombre }}</strong></div></td>
+                    <td><span class="texto-tabla-inline">{{ item.descripcion or "-" }}</span></td>
                     <td>
                         {% if item.activo %}
                         <span class="badge activo">Activo</span>
@@ -73,8 +73,11 @@
                     <td>{{ item.fecha_creacion }}</td>
                     <td>{{ item.fecha_actualizacion or "-" }}</td>
                     <td>
-                        <div class="acciones-tabla">
+                        <div class="acciones-tabla acciones-admin">
+                            <div class="acciones-grupo">
                             <a class="btn secundario compacto" href="{{ url_for('mantenedores.' ~ entidad ~ '_editar', id_registro=item.id) }}">Editar</a>
+                            </div>
+                            <div class="acciones-grupo acciones-grupo-secundario">
                             <form method="post" action="{{ url_for('mantenedores.' ~ entidad ~ '_estado', id_registro=item.id) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">
                                 <button
@@ -102,6 +105,7 @@
                                     Borrar
                                 </button>
                             </form>
+                            </div>
                         </div>
                     </td>
                 </tr>

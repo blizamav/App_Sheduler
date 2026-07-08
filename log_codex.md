@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase UI-8 pule visualmente Tareas, Scripts y Ejecuciones, sin tocar backend funcional ni BD.
+* Estado actual: Fase UI-9 pule visualmente Panel, Usuarios y Maestros, sin tocar backend funcional ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase UI-8 - Pulido visual de Tareas, Scripts y Ejecuciones.
-* Ultima actualizacion: 2026-07-07
+* Fase actual: Fase UI-9 - Pulido visual de Panel, Usuarios y Maestros.
+* Ultima actualizacion: 2026-07-08
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -48,6 +48,7 @@
 * Toasts/flashes: Fase UI-6 agrega auto cierre global de 5 segundos, cierre manual accesible y eliminacion del DOM para mensajes flotantes.
 * Auditoria visual: Fase UI-7 deja diagnostico modulo por modulo y plan incremental UI-8 a UI-12 antes de nuevos cambios globales.
 * UI operacional: Fase UI-8 mejora jerarquia visual de Tareas, Scripts y Ejecuciones/logs con clases semanticas y CSS acotado, sin modificar logica.
+* UI administracion: Fase UI-9 mejora Panel, Usuarios y Maestros con dashboard, tablas administrativas, formularios y badges de rol consistentes.
 
 ## 3. Estructura actual del proyecto
 
@@ -75,6 +76,18 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-08 - Fase UI-9 / Pulido visual de Panel, Usuarios y Maestros
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/panel.html`, `app/templates/usuarios/listado.html`, `app/templates/usuarios/formulario.html`, `app/templates/mantenedores/listado.html`, `app/templates/mantenedores/formulario.html`, `app/static/css/estilos.css`, `docs/AUDITORIA_VISUAL_UI_SOEX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico inicial: Panel, Usuarios y Maestros tenian buena base visual, pero requerian mas jerarquia administrativa, acciones mejor separadas, tablas mas limpias y formularios con secciones.
+* Panel: se agrego tratamiento de dashboard operativo, metricas jerarquizadas, bloques de estado/accesos y tabla administrativa para ultimas ejecuciones.
+* Usuarios: se pulio hero, filtros, directorio, roles, estados, acciones agrupadas y formulario de identidad/rol/password.
+* Maestros: Clientes, Categorias y Tipos comparten tratamiento visual consistente para listado, tabla, acciones y formulario de datos base.
+* Alcance: cambios UI/UX en HTML/CSS; no se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`; parseo Jinja de plantillas modificadas.
 
 ### 2026-07-07 - Fase UI-8 / Pulido visual de Tareas, Scripts y Ejecuciones
 
