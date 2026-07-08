@@ -11,6 +11,10 @@ El 2026-07-07 se ejecuto la Fase UI-8 sobre Tareas, Scripts y Ejecuciones. Se ap
 
 El 2026-07-08 se ejecuto la Fase UI-9 sobre Panel, Usuarios y Maestros. Se aplico pulido visual acotado a plantillas y CSS: dashboard operativo, metricas jerarquizadas, tablas administrativas, formularios de usuario/maestros, badges de rol y acciones agrupadas. No se modifico backend, rutas, permisos, servicios Python, Graph, evidencias, worker ni base de datos.
 
+## Nota de avance UI-10
+
+El 2026-07-08 se ejecuto la Fase UI-10 sobre Programador, Eventos programador, Configuracion programador, Feriados, Logs, Auditoria y Papelera. Se aplico pulido visual acotado a plantillas y CSS: centro de control del scheduler, tablas de monitoreo, filtros de control, calendario local, terminal de logs, modulo de auditoria y zona de riesgo de Papelera. No se modifico backend, rutas, permisos, servicios Python, Graph, evidencias, worker ni base de datos.
+
 ## 1. Diagnostico general
 
 La aplicacion ya tiene una base visual corporativa consistente: sidebar oscuro, topbar clara, tarjetas blancas, badges por estado, botones reutilizables, tablas comunes, mensajes flotantes y acentos SOEX controlados. La direccion visual es correcta para una herramienta operativa TI.

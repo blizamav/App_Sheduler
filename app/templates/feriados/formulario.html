@@ -4,7 +4,7 @@
 {% block encabezado %}{{ "Nuevo" if modo == "crear" else "Editar" }} feriado{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero calendario-hero">
     <div>
         <p class="eyebrow">Calendario</p>
         <h2>{{ "Crear" if modo == "crear" else "Editar" }} feriado</h2>
@@ -13,10 +13,10 @@
     <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Volver</a>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control bloque-calendario">
     <form
         method="post"
-        class="formulario-admin requiere-confirmacion-form"
+        class="formulario-admin formulario-control requiere-confirmacion-form"
         data-form-modo="{{ modo }}"
         data-confirm-title="{{ 'Crear feriado' if modo == 'crear' else 'Guardar cambios de feriado' }}"
         data-confirm-message="{{ 'Se creara un feriado manual en el calendario local.' if modo == 'crear' else 'Estas por modificar este feriado.' }}"

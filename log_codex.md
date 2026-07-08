@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase UI-9 pule visualmente Panel, Usuarios y Maestros, sin tocar backend funcional ni BD.
+* Estado actual: Fase UI-10 pule visualmente Programador, Logs, Auditoria y Papelera, sin tocar backend funcional ni BD.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase UI-9 - Pulido visual de Panel, Usuarios y Maestros.
+* Fase actual: Fase UI-10 - Pulido visual de Programador, Logs, Auditoria y Papelera.
 * Ultima actualizacion: 2026-07-08
 
 ## 2. Decisiones tecnicas vigentes
@@ -49,6 +49,7 @@
 * Auditoria visual: Fase UI-7 deja diagnostico modulo por modulo y plan incremental UI-8 a UI-12 antes de nuevos cambios globales.
 * UI operacional: Fase UI-8 mejora jerarquia visual de Tareas, Scripts y Ejecuciones/logs con clases semanticas y CSS acotado, sin modificar logica.
 * UI administracion: Fase UI-9 mejora Panel, Usuarios y Maestros con dashboard, tablas administrativas, formularios y badges de rol consistentes.
+* UI control: Fase UI-10 mejora Programador, Eventos, Configuracion, Feriados, Logs, Auditoria y Papelera con tratamiento de centro de control y zonas de riesgo.
 
 ## 3. Estructura actual del proyecto
 
@@ -76,6 +77,20 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-08 - Fase UI-10 / Pulido visual de Programador, Logs, Auditoria y Papelera
+
+* Archivos creados: Ninguno.
+* Archivos modificados: `app/templates/base.html`, `app/templates/scheduler/panel.html`, `app/templates/scheduler/eventos.html`, `app/templates/scheduler/_eventos_historial.html`, `app/templates/scheduler/configuracion.html`, `app/templates/feriados/listado.html`, `app/templates/feriados/sincronizar.html`, `app/templates/feriados/formulario.html`, `app/templates/auditoria/listado.html`, `app/templates/auditoria/detalle.html`, `app/templates/papelera/listado.html`, `app/static/css/estilos.css`, `docs/AUDITORIA_VISUAL_UI_SOEX.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico inicial: los modulos de control ya eran funcionales, pero requerian mas jerarquia visual para estados del scheduler, eventos, logs, auditoria y acciones peligrosas en Papelera.
+* Programador/Eventos/Configuracion: se agrego tratamiento de centro de control, metricas de monitoreo, tablas de eventos y formularios operativos con clases visuales acotadas.
+* Feriados: se unifico listado, sincronizacion y formulario como calendario local de control del programador.
+* Logs: se reforzo el panel lateral y terminal visual para diagnostico TI sin ocultar contenido.
+* Auditoria: se reforzo listado y detalle como modulo de control corporativo.
+* Papelera: se marco visualmente como zona de recuperacion/riesgo y se separaron acciones criticas.
+* Alcance: cambios UI/UX en HTML/CSS; no se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* BD/seguridad: no se modifico BD, no se crearon migraciones, no se ejecuto SQL, no se tocaron `.env`, `.env.docker` ni `database/release/`.
+* Pruebas ejecutadas: `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`; parseo Jinja de plantillas modificadas.
 
 ### 2026-07-08 - Fase UI-9 / Pulido visual de Panel, Usuarios y Maestros
 

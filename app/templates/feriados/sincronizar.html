@@ -4,7 +4,7 @@
 {% block encabezado %}Sincronizar feriados{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero calendario-hero">
     <div>
         <p class="eyebrow">Sincronizacion</p>
         <h2>Sincronizar feriados</h2>
@@ -13,7 +13,7 @@
     <a class="btn secundario" href="{{ url_for('feriados.listado') }}">Volver</a>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control bloque-calendario">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Consulta controlada</p>
@@ -40,7 +40,7 @@
 </section>
 
 {% if preview %}
-<section class="bloque">
+<section class="bloque bloque-control bloque-calendario">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Vista previa</p>
@@ -54,7 +54,7 @@
             <span class="badge error">Errores {{ preview.resumen.errores }}</span>
         </div>
     </div>
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control feriados-tabla">
         <table>
             <thead>
                 <tr>
@@ -105,20 +105,20 @@
 {% endif %}
 
 {% if resultado %}
-<section class="bloque">
+<section class="bloque bloque-control bloque-calendario">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Resultado</p>
             <h3>Sincronizacion aplicada</h3>
         </div>
     </div>
-    <div class="grid-metricas">
-        <article class="card-metrica"><span>Nuevos</span><strong>{{ resultado.resumen.nuevos }}</strong></article>
-        <article class="card-metrica"><span>Actualizados</span><strong>{{ resultado.resumen.actualizar }}</strong></article>
-        <article class="card-metrica"><span>Sin cambios</span><strong>{{ resultado.resumen.sin_cambios }}</strong></article>
-        <article class="card-metrica"><span>Omitidos manual</span><strong>{{ resultado.resumen.omitidos_manual }}</strong></article>
-        <article class="card-metrica"><span>Omitidos inactivo</span><strong>{{ resultado.resumen.omitidos_inactivo }}</strong></article>
-        <article class="card-metrica"><span>Errores</span><strong>{{ resultado.resumen.errores }}</strong></article>
+    <div class="grid-metricas metricas-control">
+        <article class="card-metrica metrica-control"><span>Nuevos</span><strong>{{ resultado.resumen.nuevos }}</strong></article>
+        <article class="card-metrica metrica-control"><span>Actualizados</span><strong>{{ resultado.resumen.actualizar }}</strong></article>
+        <article class="card-metrica metrica-control"><span>Sin cambios</span><strong>{{ resultado.resumen.sin_cambios }}</strong></article>
+        <article class="card-metrica metrica-control"><span>Omitidos manual</span><strong>{{ resultado.resumen.omitidos_manual }}</strong></article>
+        <article class="card-metrica metrica-control"><span>Omitidos inactivo</span><strong>{{ resultado.resumen.omitidos_inactivo }}</strong></article>
+        <article class="card-metrica metrica-control metrica-alerta"><span>Errores</span><strong>{{ resultado.resumen.errores }}</strong></article>
     </div>
     {% if resultado.errores %}
     <div class="alerta error">

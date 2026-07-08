@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-08 - Fase UI-10 pulido visual de Programador, Logs, Auditoria y Papelera
+
+### Modificado
+
+* `app/templates/base.html`: agrega clases visuales al panel lateral de logs y terminal del monitor.
+* `app/templates/scheduler/panel.html`: refuerza el panel programador como centro de control operativo.
+* `app/templates/scheduler/eventos.html` y `app/templates/scheduler/_eventos_historial.html`: mejora estructura visual de filtros, limpieza controlada e historial de eventos.
+* `app/templates/scheduler/configuracion.html`: agrega tratamiento visual de configuracion operacional segura.
+* `app/templates/feriados/*.html`: unifica listado, sincronizacion y formulario como calendario local de control.
+* `app/templates/auditoria/*.html`: refuerza listado y detalle como modulo de control corporativo.
+* `app/templates/papelera/listado.html`: separa visualmente recuperacion, bloqueo y zona de peligro.
+* `app/static/css/estilos.css`: incorpora estilos UI-10 para centros de control, tablas de monitoreo, filtros, logs, auditoria y papelera.
+* `docs/AUDITORIA_VISUAL_UI_SOEX.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Pulido exclusivamente UI/UX en Programador, Eventos programador, Configuracion programador, Feriados, Logs, Auditoria y Papelera.
+* No se modifico logica de negocio, backend funcional, rutas, permisos, servicios Python, repositorios, Graph, evidencias, alertas operativas, worker ni `scheduler_worker.py`.
+* No se modifico base de datos, migraciones, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-08 - Fase UI-9 pulido visual de Panel, Usuarios y Maestros
 
 ### Modificado

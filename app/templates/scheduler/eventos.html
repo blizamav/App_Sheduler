@@ -4,7 +4,7 @@
 {% block encabezado %}Eventos programador{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero scheduler-hero">
     <div>
         <p class="eyebrow">Trazabilidad</p>
         <h2>Eventos del programador</h2>
@@ -13,7 +13,7 @@
     <span class="badge info">{{ total }} registros filtrados</span>
 </section>
 
-<section class="bloque">
+<section class="bloque filtros-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Filtros</p>
@@ -21,7 +21,7 @@
         </div>
         <a class="btn secundario compacto" href="{{ url_for('scheduler.eventos') }}">Limpiar filtros</a>
     </div>
-    <form class="formulario-admin" method="get">
+    <form class="formulario-admin formulario-control" method="get">
         <input type="hidden" name="page" value="1">
         <div class="grid-formulario compacto-grid">
             <div class="campo">
@@ -90,7 +90,7 @@
 {% set permisos_sesion = session.get("permisos", []) %}
 {% set puede_limpiar_eventos = session.get("es_admin_env") or "*" in permisos_sesion or "SCHEDULER_CONFIG_EDITAR" in permisos_sesion %}
 {% if puede_limpiar_eventos %}
-<section class="bloque limpieza-eventos">
+<section class="bloque bloque-control limpieza-eventos zona-control-riesgo">
     <div class="bloque-header limpieza-header">
         <div>
             <p class="eyebrow">Limpieza controlada</p>

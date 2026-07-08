@@ -133,7 +133,7 @@
         </main>
 
         {% if session.get("usuario") %}
-        <aside class="panel-logs" id="panelLogs" aria-label="Monitor lateral del programador" data-worker-monitor-panel data-monitor-url="{{ url_for('worker_api.api_monitor_worker') }}">
+        <aside class="panel-logs panel-logs-control" id="panelLogs" aria-label="Monitor lateral del programador" data-worker-monitor-panel data-monitor-url="{{ url_for('worker_api.api_monitor_worker') }}">
             <div class="panel-logs-resize" data-panel-logs-resize aria-hidden="true" title="Redimensionar panel"></div>
             <div class="panel-logs-header">
                 <div>
@@ -240,7 +240,7 @@
                     <span class="badge info" data-worker-monitor-lines-badge>0 lineas</span>
                 </div>
                 <p class="panel-logs-ayuda">Salida reciente del proceso programador. Solo lectura.</p>
-                <pre class="terminal-visual" data-worker-monitor-console>Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue reiniciado.</pre>
+                <pre class="terminal-visual terminal-control" data-worker-monitor-console>Consola del worker no disponible. El worker aun no ha iniciado o el buffer fue reiniciado.</pre>
             </section>
             <footer class="panel-logs-footer">
                 Fuente: API de monitoreo worker. Solo lectura.

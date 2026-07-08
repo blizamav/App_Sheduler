@@ -2035,6 +2035,181 @@ textarea {
     color: #0b6f95;
 }
 
+.control-hero {
+    border-left: 4px solid rgba(21, 91, 196, 0.36);
+    background:
+        linear-gradient(90deg, rgba(21, 91, 196, 0.045), transparent 30%),
+        linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.control-hero h2 {
+    color: var(--color-azul-oscuro);
+}
+
+.scheduler-hero {
+    border-left-color: rgba(24, 168, 216, 0.52);
+}
+
+.calendario-hero {
+    border-left-color: rgba(19, 138, 75, 0.45);
+}
+
+.auditoria-hero {
+    border-left-color: rgba(21, 91, 196, 0.5);
+}
+
+.papelera-hero {
+    border-left-color: rgba(215, 25, 32, 0.64);
+}
+
+.panel-control {
+    align-items: stretch;
+}
+
+.bloque-control,
+.filtros-control {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(248, 251, 255, 0.98)),
+        var(--color-superficie);
+}
+
+.bloque-control {
+    border-left: 4px solid rgba(21, 91, 196, 0.18);
+}
+
+.bloque-senal {
+    border-left-color: rgba(24, 168, 216, 0.36);
+}
+
+.bloque-calendario {
+    border-left-color: rgba(19, 138, 75, 0.26);
+}
+
+.bloque-riesgo,
+.zona-control-riesgo,
+.papelera-panel {
+    border-left-color: rgba(215, 25, 32, 0.4);
+}
+
+.filtros-control {
+    border-left: 4px solid rgba(21, 91, 196, 0.18);
+}
+
+.formulario-control {
+    display: grid;
+    gap: 18px;
+}
+
+.checkline-control {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid rgba(219, 229, 242, 0.76);
+    border-radius: var(--radio);
+    background: #fbfdff;
+}
+
+.metricas-control {
+    align-items: stretch;
+}
+
+.metrica-control {
+    border-left-color: rgba(21, 91, 196, 0.24);
+}
+
+.metrica-control strong {
+    color: var(--color-azul-oscuro);
+}
+
+.metrica-alerta {
+    border-left-color: rgba(215, 25, 32, 0.42);
+}
+
+.detalle-grid-control div {
+    background:
+        linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.tabla-control table {
+    min-width: 920px;
+}
+
+.tabla-control th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.tabla-control td {
+    line-height: 1.42;
+}
+
+.eventos-tabla table,
+.auditoria-tabla table,
+.papelera-tabla table {
+    min-width: 1080px;
+}
+
+.feriados-tabla table {
+    min-width: 980px;
+}
+
+.acciones-control {
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.acciones-papelera .btn {
+    white-space: normal;
+}
+
+.zona-control-riesgo {
+    background:
+        linear-gradient(90deg, rgba(215, 25, 32, 0.035), transparent 30%),
+        linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.papelera-panel .acciones-bloque {
+    align-items: flex-start;
+}
+
+.auditoria-panel {
+    border-left-color: rgba(21, 91, 196, 0.28);
+}
+
+.auditoria-detalle {
+    border-left-color: rgba(21, 91, 196, 0.22);
+}
+
+.auditoria-valor-card {
+    border-left-color: rgba(24, 168, 216, 0.24);
+}
+
+.panel-logs-control {
+    border-left-color: rgba(24, 168, 216, 0.34);
+    background:
+        linear-gradient(180deg, rgba(21, 91, 196, 0.035), transparent 260px),
+        #fbfdff;
+}
+
+.panel-logs-control .panel-logs-seccion-principal {
+    border-left-color: rgba(24, 168, 216, 0.42);
+}
+
+.panel-logs-control .panel-logs-mini {
+    background:
+        linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.terminal-control {
+    border: 1px solid #1a3658;
+    background:
+        linear-gradient(180deg, rgba(24, 168, 216, 0.1), transparent 24%),
+        linear-gradient(90deg, rgba(215, 25, 32, 0.08), transparent 18%),
+        #061221;
+    color: #dbeafe;
+    tab-size: 4;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -2845,6 +3020,16 @@ tr:last-child td {
     .tabla-admin table {
         min-width: 760px;
     }
+
+    .tabla-control table {
+        min-width: 820px;
+    }
+
+    .eventos-tabla table,
+    .auditoria-tabla table,
+    .papelera-tabla table {
+        min-width: 960px;
+    }
 }
 
 @media (max-width: 960px) {
@@ -3001,6 +3186,40 @@ tr:last-child td {
 
     .acciones-admin .btn {
         justify-content: center;
+    }
+
+    .control-hero {
+        border-left-width: 0;
+        border-top: 4px solid rgba(21, 91, 196, 0.42);
+    }
+
+    .scheduler-hero {
+        border-top-color: rgba(24, 168, 216, 0.52);
+    }
+
+    .calendario-hero {
+        border-top-color: rgba(19, 138, 75, 0.45);
+    }
+
+    .papelera-hero {
+        border-top-color: rgba(215, 25, 32, 0.64);
+    }
+
+    .acciones-control,
+    .acciones-papelera,
+    .acciones-papelera form,
+    .acciones-papelera .btn {
+        width: 100%;
+    }
+
+    .acciones-control .btn {
+        justify-content: center;
+    }
+
+    .terminal-control {
+        min-height: 260px;
+        max-height: 48vh;
+        font-size: 0.82rem;
     }
 
     .paginacion {

@@ -4,7 +4,7 @@
 {% block encabezado %}Detalle auditoria{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida auditoria-hero">
+<section class="contenedor bienvenida control-hero auditoria-hero">
     <div>
         <p class="eyebrow">Auditoria #{{ registro.id_auditoria }}</p>
         <h2>{{ registro.accion or "Accion auditada" }}</h2>
@@ -16,7 +16,7 @@
     </div>
 </section>
 
-<section class="bloque auditoria-detalle">
+<section class="bloque bloque-control auditoria-detalle">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Usuario</p>
@@ -31,7 +31,7 @@
     </div>
 </section>
 
-<section class="bloque auditoria-detalle">
+<section class="bloque bloque-control auditoria-detalle">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Entidad</p>
@@ -48,7 +48,7 @@
     </div>
 </section>
 
-<section class="bloque auditoria-detalle">
+<section class="bloque bloque-control auditoria-detalle">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Descripcion</p>
@@ -59,7 +59,7 @@
 </section>
 
 <section class="auditoria-valores">
-    <article class="bloque auditoria-valor-card">
+    <article class="bloque bloque-control auditoria-valor-card">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Antes</p>
@@ -68,7 +68,7 @@
         </div>
         <pre>{{ registro.valores_antes_formateado or "-" }}</pre>
     </article>
-    <article class="bloque auditoria-valor-card">
+    <article class="bloque bloque-control auditoria-valor-card">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Despues</p>

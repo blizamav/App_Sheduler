@@ -4,7 +4,7 @@
 {% block encabezado %}Configuracion Programador{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero scheduler-hero">
     <div>
         <p class="eyebrow">Programador</p>
         <h2>Configuracion operativa del programador</h2>
@@ -21,8 +21,8 @@
 </section>
 {% endif %}
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-control">
+    <article class="bloque bloque-control">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Resumen</p>
@@ -30,7 +30,7 @@
             </div>
             <span class="badge info">BD</span>
         </div>
-        <div class="detalle-grid">
+        <div class="detalle-grid detalle-grid-control">
             <div><strong>Programador</strong><span>{{ "Activo" if configuracion.scheduler_activo else "Inactivo" }}</span></div>
             <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
             <div><strong>Intervalo</strong><span>{{ configuracion.intervalo_revision_segundos }} segundos</span></div>
@@ -42,7 +42,7 @@
         </div>
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-control">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Ejecucion</p>
@@ -53,7 +53,7 @@
     </article>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Edicion</p>
@@ -62,7 +62,7 @@
     </div>
     <form
         method="post"
-        class="formulario-admin requiere-confirmacion-form"
+        class="formulario-admin formulario-control requiere-confirmacion-form"
         data-confirm-summary="scheduler"
         data-confirm-title="Guardar configuracion del programador"
         data-confirm-message="Estas a punto de modificar la configuracion operativa del programador."
@@ -70,15 +70,15 @@
         data-confirm-cancel="Cancelar"
         data-confirm-type="warning"
     >
-        <label class="checkline">
+        <label class="checkline checkline-control">
             <input name="scheduler_activo" type="checkbox" value="1" data-label="Programador activo" data-original="{{ '1' if configuracion.scheduler_activo else '0' }}" {% if configuracion.scheduler_activo %}checked{% endif %}>
             Programador activo
         </label>
-        <label class="checkline">
+        <label class="checkline checkline-control">
             <input name="permitir_ejecucion_automatica" type="checkbox" value="1" data-label="Ejecucion automatica" data-original="{{ '1' if configuracion.permitir_ejecucion_automatica else '0' }}" {% if configuracion.permitir_ejecucion_automatica %}checked{% endif %}>
             Permitir ejecucion automatica
         </label>
-        <label class="checkline">
+        <label class="checkline checkline-control">
             <input name="modo_mantenimiento" type="checkbox" value="1" data-label="Modo mantenimiento" data-original="{{ '1' if configuracion.modo_mantenimiento else '0' }}" {% if configuracion.modo_mantenimiento %}checked{% endif %}>
             Modo mantenimiento
         </label>

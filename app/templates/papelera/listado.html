@@ -6,7 +6,7 @@
 {% block contenido %}
 {% set permisos_sesion = session.get("permisos", []) %}
 {% set puede_eliminar_permanente = session.get("es_admin_env") or "*" in permisos_sesion or "PAPELERA_ELIMINAR_PERMANENTE" in permisos_sesion %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero papelera-hero">
     <div>
         <p class="eyebrow">Administracion</p>
         <h2>Papelera operativa</h2>
@@ -15,7 +15,7 @@
     <span class="badge advertencia">Historial protegido</span>
 </section>
 
-<section class="bloque filtros-usuarios">
+<section class="bloque filtros-control">
     <form method="get" action="{{ url_for('papelera.listado') }}" class="formulario-filtros tareas-filtros">
         <div class="campo">
             <label for="entidad">Entidad</label>
@@ -58,7 +58,7 @@
 </section>
 
 {% if resultado_masivo %}
-<section class="bloque resultado-masivo">
+<section class="bloque bloque-control resultado-masivo zona-control-riesgo">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Resultado de proceso masivo</p>
@@ -84,7 +84,7 @@
         {% endfor %}
     </div>
     {% if resultado_masivo.detalles_no_eliminados %}
-    <div class="tabla-base tabla-compacta">
+    <div class="tabla-base tabla-compacta tabla-control">
         <table>
             <thead>
                 <tr>
@@ -110,7 +110,7 @@
 </section>
 {% endif %}
 
-<section class="bloque">
+<section class="bloque bloque-control papelera-panel">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Registros retirados</p>
@@ -148,7 +148,7 @@
         </div>
     </div>
 
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control papelera-tabla">
         <table>
             <thead>
                 <tr>
@@ -188,7 +188,7 @@
                     <td>{{ item.motivo_eliminado_operativo or "-" }}</td>
                     <td>{{ item.dependencias_resumen }}</td>
                     <td>
-                        <div class="acciones-tabla">
+                        <div class="acciones-tabla acciones-control acciones-papelera">
                             <form method="post" action="{{ url_for('papelera.restaurar', entidad=item.entidad, id_registro=item.id_registro) }}">
                                 <input type="hidden" name="volver" value="{{ request.full_path }}">
                                 <button

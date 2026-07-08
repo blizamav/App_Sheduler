@@ -4,7 +4,7 @@
 {% block encabezado %}Feriados{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero calendario-hero">
     <div>
         <p class="eyebrow">Calendario</p>
         <h2>Feriados</h2>
@@ -18,7 +18,7 @@
     </div>
 </section>
 
-<section class="bloque filtros-usuarios">
+<section class="bloque filtros-control">
     <form method="get" action="{{ url_for('feriados.listado') }}" class="formulario-filtros">
         <div class="campo">
             <label for="anio">Ano</label>
@@ -47,7 +47,7 @@
     </form>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control bloque-calendario">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Calendario local</p>
@@ -55,7 +55,7 @@
         </div>
         <span class="badge info">Mostrando {{ total_registros }} registros</span>
     </div>
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control feriados-tabla">
         <table>
             <thead>
                 <tr>
@@ -80,7 +80,7 @@
                     <td><span class="badge info">{{ item.origen }}</span></td>
                     <td><span class="badge {{ 'activo' if item.activo else 'inactivo' }}">{{ "Activo" if item.activo else "Inactivo" }}</span></td>
                     <td>
-                        <div class="acciones-tabla">
+                        <div class="acciones-tabla acciones-control">
                             <a class="btn secundario compacto" href="{{ url_for('feriados.editar', id_feriado=item.id_feriado) }}">Editar</a>
                             <form method="post" action="{{ url_for('feriados.estado', id_feriado=item.id_feriado) }}">
                                 <input type="hidden" name="activo" value="{{ 0 if item.activo else 1 }}">

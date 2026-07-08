@@ -4,7 +4,7 @@
 {% block encabezado %}Panel Programador{% endblock %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero scheduler-hero">
     <div>
         <p class="eyebrow">Operacion</p>
         <h2>Panel operativo del programador</h2>
@@ -16,30 +16,30 @@
 </section>
 
 {% if not panel %}
-<section class="bloque">
+<section class="bloque bloque-control">
     <p class="estado-vacio">No fue posible cargar informacion operativa del programador.</p>
 </section>
 {% else %}
-<section class="grid-metricas">
-    <article class="card-metrica">
+<section class="grid-metricas metricas-control">
+    <article class="card-metrica metrica-control">
         <span>Automaticas</span>
         <strong>{{ panel.resumen_ejecuciones.total }}</strong>
     </article>
-    <article class="card-metrica">
+    <article class="card-metrica metrica-control">
         <span>En ejecucion</span>
         <strong>{{ panel.resumen_ejecuciones.en_ejecucion }}</strong>
     </article>
-    <article class="card-metrica">
+    <article class="card-metrica metrica-control metrica-alerta">
         <span>Errores</span>
         <strong>{{ panel.resumen_ejecuciones.errores }}</strong>
     </article>
-    <article class="card-metrica">
+    <article class="card-metrica metrica-control">
         <span>Candidatas</span>
         <strong>{{ panel.tareas_candidatas|length }}</strong>
     </article>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control bloque-senal">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Senal de vida</p>
@@ -48,7 +48,7 @@
         <span class="badge {{ panel.worker.estado.badge }}">{{ panel.worker.estado.texto }}</span>
     </div>
     {% if panel.worker.heartbeat %}
-    <div class="detalle-grid">
+    <div class="detalle-grid detalle-grid-control">
         <div><strong>Proceso</strong><span>{{ panel.worker.heartbeat.nombre_worker }}</span></div>
         <div><strong>Estado</strong><span>{{ panel.worker.heartbeat.estado }}</span></div>
         <div><strong>Ultima senal</strong><span>{{ panel.worker.heartbeat.fecha_ultimo_heartbeat or "-" }}</span></div>
@@ -73,7 +73,7 @@
     {% endif %}
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Trazabilidad</p>
@@ -81,20 +81,20 @@
         </div>
         <span class="badge info">Hoy</span>
     </div>
-    <div class="grid-metricas">
-        <article class="card-metrica">
+    <div class="grid-metricas metricas-control">
+        <article class="card-metrica metrica-control">
             <span>Eventos hoy</span>
             <strong>{{ panel.resumen_eventos_programador.eventos_hoy }}</strong>
         </article>
-        <article class="card-metrica">
+        <article class="card-metrica metrica-control">
             <span>Ejecutadas</span>
             <strong>{{ panel.resumen_eventos_programador.tareas_ejecutadas }}</strong>
         </article>
-        <article class="card-metrica">
+        <article class="card-metrica metrica-control">
             <span>Omitidas</span>
             <strong>{{ panel.resumen_eventos_programador.tareas_omitidas }}</strong>
         </article>
-        <article class="card-metrica">
+        <article class="card-metrica metrica-control metrica-alerta">
             <span>Errores</span>
             <strong>{{ panel.resumen_eventos_programador.errores_programador }}</strong>
         </article>
@@ -127,7 +127,7 @@
     </div>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Trazabilidad</p>
@@ -135,7 +135,7 @@
         </div>
         <a class="btn secundario compacto" href="{{ url_for('scheduler.eventos') }}">Ver historial de eventos</a>
     </div>
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control">
         <table>
             <thead>
                 <tr>
@@ -172,8 +172,8 @@
     </div>
 </section>
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-control">
+    <article class="bloque bloque-control">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Configuracion</p>
@@ -182,7 +182,7 @@
             <span class="badge {{ panel.estado_operativo.badge }}">{{ panel.estado_operativo.texto }}</span>
         </div>
         {% if panel.configuracion %}
-        <div class="detalle-grid">
+        <div class="detalle-grid detalle-grid-control">
             <div><strong>Programador</strong><span>{{ "Activo" if panel.configuracion.scheduler_activo else "Inactivo" }}</span></div>
             <div><strong>Ejecucion automatica</strong><span>{{ "Permitida" if panel.configuracion.permitir_ejecucion_automatica else "No permitida" }}</span></div>
             <div><strong>Mantenimiento</strong><span>{{ "Activo" if panel.configuracion.modo_mantenimiento else "Inactivo" }}</span></div>
@@ -196,7 +196,7 @@
         {% endif %}
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-control bloque-calendario">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Calendario local</p>
@@ -204,7 +204,7 @@
             </div>
             <span class="badge info">{{ panel.feriados.activos }} activos</span>
         </div>
-        <div class="detalle-grid">
+        <div class="detalle-grid detalle-grid-control">
             <div><strong>Total</strong><span>{{ panel.feriados.total }}</span></div>
             <div><strong>Manuales activos</strong><span>{{ panel.feriados.manuales_activos }}</span></div>
             <div><strong>API_NAGER activos</strong><span>{{ panel.feriados.api_nager_activos }}</span></div>
@@ -214,7 +214,7 @@
     </article>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Automaticas</p>
@@ -222,7 +222,7 @@
         </div>
         <span class="badge info">{{ panel.ultimas_ejecuciones|length }} registros</span>
     </div>
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control">
         <table>
             <thead>
                 <tr>
@@ -252,8 +252,8 @@
     </div>
 </section>
 
-<section class="panel-grid">
-    <article class="bloque">
+<section class="panel-grid panel-control">
+    <article class="bloque bloque-control">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Candidatas</p>
@@ -261,7 +261,7 @@
             </div>
             <span class="badge info">{{ panel.tareas_candidatas|length }} tareas</span>
         </div>
-        <div class="tabla-base">
+        <div class="tabla-base tabla-control">
             <table>
                 <thead>
                     <tr>
@@ -287,7 +287,7 @@
         </div>
     </article>
 
-    <article class="bloque">
+    <article class="bloque bloque-control bloque-riesgo">
         <div class="bloque-header">
             <div>
                 <p class="eyebrow">Alertas</p>
@@ -295,7 +295,7 @@
             </div>
             <span class="badge {{ 'error' if panel.errores_recientes else 'activo' }}">{{ panel.errores_recientes|length }}</span>
         </div>
-        <div class="tabla-base">
+        <div class="tabla-base tabla-control">
             <table>
                 <thead>
                     <tr>

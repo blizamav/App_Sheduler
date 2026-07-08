@@ -18,7 +18,7 @@
 {%- endmacro %}
 
 {% block contenido %}
-<section class="contenedor bienvenida">
+<section class="contenedor bienvenida control-hero auditoria-hero">
     <div>
         <p class="eyebrow">Control y trazabilidad</p>
         <h2>Auditoria de acciones humanas</h2>
@@ -27,7 +27,7 @@
     <span class="badge info">{{ total }} registros filtrados</span>
 </section>
 
-<section class="bloque">
+<section class="bloque filtros-control">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Filtros</p>
@@ -35,7 +35,7 @@
         </div>
         <a class="btn secundario compacto" href="{{ url_for('auditoria.listado') }}">Limpiar filtros</a>
     </div>
-    <form class="formulario-admin" method="get">
+    <form class="formulario-admin formulario-control" method="get">
         <input type="hidden" name="page" value="1">
         <div class="grid-formulario compacto-grid">
             <div class="campo">
@@ -91,7 +91,7 @@
     </form>
 </section>
 
-<section class="bloque">
+<section class="bloque bloque-control auditoria-panel">
     <div class="bloque-header">
         <div>
             <p class="eyebrow">Historial formal</p>
@@ -99,7 +99,7 @@
         </div>
         <span class="badge info">Pagina {{ page }} de {{ total_paginas }}</span>
     </div>
-    <div class="tabla-base">
+    <div class="tabla-base tabla-control auditoria-tabla">
         <table>
             <thead>
                 <tr>
