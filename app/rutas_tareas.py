@@ -7,6 +7,7 @@ from app.servicios.servicio_notificaciones import (
     obtener_config_notificacion_tarea,
 )
 from app.servicios.servicio_evidencias import validar_soporte_evidencia_script_por_tarea
+from app.servicios.servicio_scripts import configurar_script_inicial_tarea, validar_script_inicial_tarea
 from app.servicios.servicio_tareas import (
     actualizar_tarea_admin,
     cambiar_estado_tarea_admin,
@@ -55,6 +56,14 @@ def _registro_desde_formulario():
     return registro
 
 
+def _configura_script_inicial():
+    return request.form.get("configurar_script_inicial") == "1"
+
+
+def _requiere_env_script_inicial():
+    return request.form.get("script_inicial_requiere_env") == "1"
+
+
 @bp_tareas.route("/")
 @permiso_requerido("TAREAS_VER")
 def listado():
@@ -83,11 +92,39 @@ def nueva():
 
     if request.method == "POST":
         registro = _registro_desde_formulario()
+        configurar_script = _configura_script_inicial()
+        if configurar_script:
+            errores_script = validar_script_inicial_tarea(
+                request.files.get("archivo_script_inicial"),
+                _requiere_env_script_inicial(),
+                request.files.get("script_inicial_archivo_env"),
+                request.form.get("script_inicial_contenido_env"),
+            )
+            if errores_script:
+                for mensaje in errores_script:
+                    flash(mensaje, "error")
+                return render_template("tareas/formulario.html", modo="crear", registro=registro, catalogos=catalogos)
+
         try:
             ok, mensajes, id_tarea = crear_tarea_admin(request.form, session.get("usuario"))
         except Exception:
             ok, mensajes, id_tarea = False, ["No fue posible crear la tarea. Verifica conexion y migracion 008."], None
         if ok:
+            if configurar_script:
+                ok_script, mensaje_script = configurar_script_inicial_tarea(
+                    id_tarea,
+                    request.files.get("archivo_script_inicial"),
+                    _requiere_env_script_inicial(),
+                    session.get("usuario"),
+                    request.files.get("script_inicial_archivo_env"),
+                    request.form.get("script_inicial_contenido_env"),
+                )
+                if ok_script:
+                    flash(f"{mensajes[0]} {mensaje_script}", "success")
+                else:
+                    flash(f"{mensajes[0]} No fue posible configurar el script inicial: {mensaje_script}", "warning")
+                return redirect(url_for("tareas.editar", id_tarea=id_tarea))
+
             flash(mensajes[0], "success")
             return redirect(url_for("tareas.editar", id_tarea=id_tarea))
 

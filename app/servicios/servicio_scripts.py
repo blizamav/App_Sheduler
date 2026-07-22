@@ -584,3 +584,97 @@ def _obtener_version_activa(script, versiones):
 
 def _nombre_contenedor_script(tarea):
     return f"Script de {tarea.get('nombre_tarea') or 'tarea'}"
+def validar_script_inicial_tarea(archivo_script, requiere_env, archivo_env=None, contenido_env=None):
+    errores = []
+    tiene_archivo_env = bool(archivo_env and archivo_env.filename)
+    contenido_env_normalizado = None
+
+    if not archivo_script or not archivo_script.filename:
+        errores.append("Debes seleccionar un archivo Python .py para configurar el script inicial.")
+    else:
+        try:
+            validar_tamano(archivo_script, max_script_bytes())
+            nombre_archivo_seguro(archivo_script.filename, ".py")
+        except ValueError as error:
+            errores.append(str(error))
+        finally:
+            _reiniciar_archivo(archivo_script)
+
+    try:
+        contenido_env_normalizado = validar_contenido_env(contenido_env)
+    except ValueError as error:
+        errores.append(str(error))
+
+    if tiene_archivo_env:
+        try:
+            validar_tamano(archivo_env, max_env_bytes())
+            nombre_archivo_seguro(archivo_env.filename, ".env")
+        except ValueError as error:
+            errores.append(str(error))
+        finally:
+            _reiniciar_archivo(archivo_env)
+
+    if tiene_archivo_env and contenido_env_normalizado is not None:
+        errores.append("Usa solo una opcion para .env: pegar contenido o adjuntar archivo.")
+
+    if requiere_env and not tiene_archivo_env and contenido_env_normalizado is None:
+        errores.append("Este script requiere .env. Debes pegar contenido o adjuntar un archivo .env.")
+
+    if not requiere_env and (tiene_archivo_env or contenido_env_normalizado is not None):
+        errores.append("Para cargar un .env inicial debes marcar que el script requiere archivo .env.")
+
+    return errores
+
+
+def configurar_script_inicial_tarea(
+    id_tarea,
+    archivo_script,
+    requiere_env,
+    usuario,
+    archivo_env=None,
+    contenido_env=None,
+):
+    errores = validar_script_inicial_tarea(archivo_script, requiere_env, archivo_env, contenido_env)
+    if errores:
+        return False, " ".join(errores)
+
+    _reiniciar_archivo(archivo_script)
+    ok, mensaje = subir_version(
+        id_tarea,
+        archivo_script,
+        "Version inicial cargada durante el alta integral de tarea.",
+        requiere_env,
+        usuario,
+    )
+    if not ok:
+        return False, mensaje
+
+    script = obtener_script_por_tarea(id_tarea)
+    versiones = listar_versiones(script["id_script"]) if script else []
+    version_inicial = next((version for version in versiones if version.get("numero_version") == 1), None)
+    version_inicial = version_inicial or _obtener_version_activa(script, versiones)
+    if not version_inicial:
+        return False, "Script inicial creado, pero no fue posible ubicar la version v1 para configurar .env."
+
+    if requiere_env:
+        _reiniciar_archivo(archivo_env)
+        ok_env, mensaje_env = guardar_env_version(
+            version_inicial["id_version"],
+            archivo_env,
+            True,
+            usuario,
+            contenido_env=contenido_env,
+        )
+        if not ok_env:
+            return False, mensaje_env
+
+    return True, "Script inicial v1 configurado correctamente."
+
+
+def _reiniciar_archivo(archivo):
+    if not archivo:
+        return
+    try:
+        archivo.stream.seek(0)
+    except Exception:
+        pass

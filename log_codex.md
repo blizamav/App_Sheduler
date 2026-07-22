@@ -55,6 +55,7 @@
 * Env por script/version: Fase 16A confirma soporte actual por version con archivo en `env_scripts/` e inyeccion al subprocess; recomienda habilitar pegado de contenido desde la app sin migracion obligatoria.
 * Env textarea por version: Fase 16B agrega pegado de contenido `.env`, validacion `KEY=VALUE` y guardado seguro como archivo `.env` bajo `env_scripts/`, sin exponer valores.
 * Ayuda env en app: Fase 16C explica en la pantalla de scripts que APP Scheduler carga el `.env`, que el script debe usar `os.getenv()` y que la carga local debe ser opcional.
+* Alta integral tarea/script: Fase 17A permite configurar script inicial `v1` y `.env` al crear tarea, reutilizando servicios existentes de scripts/versiones/env y sin migracion.
 
 ## 3. Estructura actual del proyecto
 
@@ -82,6 +83,18 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-14 - Fase 17A / Alta integral de tarea con script inicial y .env
+
+* Archivos creados: `docs/FLUJO_ALTA_TAREA_SCRIPT.md`.
+* Archivos modificados: `app/templates/tareas/formulario.html`, `app/rutas_tareas.py`, `app/servicios/servicio_scripts.py`, `app/static/js/app.js`, `docs/USO_ENV_SCRIPTS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: La tarea se crea desde `app/rutas_tareas.py` usando `crear_tarea_admin()`. El modulo `Scripts` crea el contenedor logico y version inicial mediante `subir_version()`, guarda archivos en `scripts/.../vN/` y asocia `.env` por version con `guardar_env_version()` bajo `env_scripts/.../vN/.env`.
+* Que se hizo: Se agrego en `/tareas/nueva` una seccion opcional para cargar archivo `.py`, indicar si requiere `.env` y pegar o adjuntar el `.env` durante el alta. Al guardar, se crea la tarea y luego se configura la version `v1` activa reutilizando los servicios existentes.
+* Por que se hizo: Para reducir el flujo operativo de alta de tarea con script, evitando que el usuario deba crear la tarea y luego ir manualmente al modulo `Scripts` cuando ya tiene el archivo inicial.
+* Decisiones tomadas: No crear migracion porque el modelo actual ya contiene `scripts`, `scripts_versiones`, `id_version_activa`, `requiere_env`, `ruta_env_fisica` y `ruta_env_relativa`. Validar `.py` y `.env` antes de crear la tarea para minimizar inconsistencias.
+* Pruebas recomendadas: Crear tarea sin script; crear tarea con `.py` sin `.env`; crear tarea con `.py` y `.env` pegado; crear tarea con `.py` y `.env` adjunto; validar rechazo al marcar `.env` sin informarlo; validar rechazo al pegar y adjuntar `.env` simultaneamente; verificar que el modulo `Scripts` sigue cargando versiones posteriores.
+* Riesgos: La operacion combina base de datos y archivos fisicos; si ocurre un error posterior no previsto al guardar script/env, la tarea puede quedar creada sin script inicial y debe corregirse desde `Scripts`.
+* Proximos pasos: Validar funcionalmente en navegador con datos locales y no avanzar a nuevas fases sin solicitud explicita.
 
 ### 2026-07-08 - Fase 16C / Ayuda en app para scripts con .env adjunto
 

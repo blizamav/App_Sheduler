@@ -239,3 +239,24 @@ El `.env` de APP Scheduler raiz configura la aplicacion.
 El `.env` por script configura solo la ejecucion de una version de script.
 
 No mezclar ambos usos.
+Desde Fase 17A tambien puede configurarse durante el alta de una tarea nueva, usando la seccion opcional:
+
+```text
+Tareas > Nueva tarea > Script inicial
+```
+
+### Alta integral desde tarea
+
+1. Abrir `Tareas > Nueva tarea`.
+2. Completar datos generales y programacion.
+3. Marcar `Configurar script inicial ahora`.
+4. Adjuntar archivo Python `.py`.
+5. Marcar `Este script requiere archivo .env` solo si corresponde.
+6. Pegar contenido `.env` o adjuntar archivo `.env`.
+7. Guardar la tarea.
+
+APP Scheduler crea la tarea, crea el contenedor de script, carga la version `v1` como activa y asocia el `.env` a esa version si fue informado.
+
+### Administracion posterior desde Scripts
+
+La seccion de script inicial es opcional. Si se omite, el flujo tradicional desde el modulo `Scripts` sigue funcionando igual.

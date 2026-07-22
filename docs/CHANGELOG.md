@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-14 - Fase 17A alta integral de tarea con script inicial y .env
+
+### Creado
+
+* `docs/FLUJO_ALTA_TAREA_SCRIPT.md`: documenta el alta de tarea sin script, con script inicial y con `.env` pegado o adjunto.
+
+### Modificado
+
+* `app/templates/tareas/formulario.html`: agrega seccion opcional `Script inicial` en el alta de tarea, con carga de `.py`, marca de `.env`, textarea y adjunto `.env`.
+* `app/rutas_tareas.py`: valida el script inicial antes de crear la tarea y, al guardar, configura version `v1` usando el servicio de scripts.
+* `app/servicios/servicio_scripts.py`: agrega helpers para validar y configurar script inicial reutilizando carga de versiones y guardado de `.env` existente.
+* `app/static/js/app.js`: agrega ocultamiento/validacion visual del bloque opcional y resumen de confirmacion.
+* `docs/USO_ENV_SCRIPTS.md`.
+* `docs/CHANGELOG.md`.
+* `log_codex.md`.
+
+### Alcance
+
+* Permite crear tarea y script inicial en una sola operacion desde `/tareas/nueva`.
+* Reutiliza `subir_version()` y `guardar_env_version()` para mantener consistencia con el modulo `Scripts`.
+* No requiere migracion: el modelo actual ya soporta `scripts`, `scripts_versiones`, version activa, `requiere_env`, `ruta_env_fisica` y `ruta_env_relativa`.
+* No se modifico Graph, evidencias, alertas, correos, worker, `scheduler_worker.py`, `.env`, `.env.docker` ni `database/release/`.
+* No se ejecuto SQL.
+
 ## 2026-07-08 - Fase 16C ayuda en app para scripts con .env adjunto
 
 ### Modificado

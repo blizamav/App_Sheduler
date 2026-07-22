@@ -2293,3 +2293,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
     inicializarNotificacionesTarea(panelNotificacionesTarea);
 });
+    const actualizarScriptInicial = (formulario) => {
+        const toggle = formulario.querySelector("[data-script-inicial-toggle]");
+        const campos = formulario.querySelector("[data-script-inicial-campos]");
+        if (!toggle || !campos) {
+            return;
+        }
+        campos.classList.toggle("oculto", !toggle.checked);
+    };
+
+        const configurarScriptInicial = formulario.querySelector("[data-script-inicial-toggle]")?.checked || false;
+        if (configurarScriptInicial) {
+            const archivoScript = formulario.querySelector("[name='archivo_script_inicial']");
+            const requiereEnv = formulario.querySelector("[name='script_inicial_requiere_env']")?.checked || false;
+            const contenidoEnv = valorCampo(formulario, "[name='script_inicial_contenido_env']");
+            const archivoEnv = formulario.querySelector("[name='script_inicial_archivo_env']");
+            const tieneArchivoEnv = Boolean(archivoEnv?.files?.length);
+
+            if (!archivoScript?.files?.length) {
+                return marcarInvalido(archivoScript, "Selecciona el archivo Python inicial.");
+            }
+            if (!archivoScript.files[0].name.toLowerCase().endsWith(".py")) {
+                return marcarInvalido(archivoScript, "El script inicial debe ser un archivo .py.");
+            }
+            if (requiereEnv && !contenidoEnv && !tieneArchivoEnv) {
+                return marcarInvalido(
+                    formulario.querySelector("[name='script_inicial_contenido_env']"),
+                    "Pega contenido .env o adjunta un archivo .env."
+                );
+            }
+            if (contenidoEnv && tieneArchivoEnv) {
+                return marcarInvalido(
+                    formulario.querySelector("[name='script_inicial_contenido_env']"),
+                    "Usa solo una opcion para .env: pegar contenido o adjuntar archivo."
+                );
+            }
+            if (!requiereEnv && (contenidoEnv || tieneArchivoEnv)) {
+                return marcarInvalido(
+                    formulario.querySelector("[name='script_inicial_requiere_env']"),
+                    "Marca que el script requiere .env antes de cargarlo."
+                );
+            }
+        }
+
+        if (formulario.dataset.formModo === "crear") {
+            const configurarScriptInicial = formulario.querySelector("[data-script-inicial-toggle]")?.checked;
+            const requiereEnv = formulario.querySelector("[name='script_inicial_requiere_env']")?.checked;
+            const archivoScript = formulario.querySelector("[name='archivo_script_inicial']")?.files?.[0]?.name || "";
+            resumen.appendChild(crearSeccionResumen("Script inicial", [
+                ["Configurar ahora", configurarScriptInicial ? "Si" : "No"],
+                ["Archivo", configurarScriptInicial ? archivoScript : ""],
+                [".env", configurarScriptInicial ? (requiereEnv ? "Requiere .env" : "No requiere") : ""],
+            ]));
+        }
+        actualizarScriptInicial(formulario);
+        formulario.querySelector("[data-script-inicial-toggle]")?.addEventListener("change", () => {
+            actualizarScriptInicial(formulario);
+        });

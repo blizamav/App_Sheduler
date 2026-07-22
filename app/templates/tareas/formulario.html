@@ -16,6 +16,7 @@
 <section class="bloque bloque-operativo">
     <form
         method="post"
+        enctype="multipart/form-data"
         class="formulario-admin formulario-operativo requiere-confirmacion-form"
         data-programacion-form
         data-confirm-summary="tarea"
@@ -149,6 +150,73 @@
                 </div>
             </div>
         </div>
+
+        {% if modo == "crear" %}
+        <div class="seccion-formulario seccion-operativa script-inicial-tarea" data-script-inicial-bloque>
+            <div class="seccion-operativa-header">
+                <p class="eyebrow">Script inicial</p>
+                <h3>Alta integral de tarea</h3>
+                <p class="texto-secundario">Puedes dejar esta tarea lista para ejecutar subiendo el script inicial y su .env desde aqui. Tambien puedes omitir esta seccion y configurar el script despues desde el modulo Scripts.</p>
+            </div>
+
+            <label class="checkline campo-full">
+                <input
+                    name="configurar_script_inicial"
+                    type="checkbox"
+                    value="1"
+                    data-script-inicial-toggle
+                    {% if registro.configurar_script_inicial %}checked{% endif %}
+                >
+                Configurar script inicial ahora
+            </label>
+
+            <div class="script-inicial-campos" data-script-inicial-campos>
+                <div class="alerta info alerta-inline aviso-operativo">
+                    Se creara el contenedor de script de la tarea y la version activa v1. Si adjuntas .env, solo se guarda como archivo asociado a esa version; su contenido no se muestra en pantalla.
+                </div>
+
+                <div class="form-grid">
+                    <div class="campo">
+                        <label for="archivo_script_inicial">Archivo Python inicial</label>
+                        <input id="archivo_script_inicial" name="archivo_script_inicial" type="file" accept=".py">
+                        <p class="texto-ayuda">Solo archivos .py. Se guardara como version v1 activa.</p>
+                    </div>
+
+                    <label class="checkline campo-full">
+                        <input
+                            name="script_inicial_requiere_env"
+                            type="checkbox"
+                            value="1"
+                            {% if registro.script_inicial_requiere_env %}checked{% endif %}
+                        >
+                        Este script requiere archivo .env
+                    </label>
+
+                    <div class="campo campo-full">
+                        <label for="script_inicial_contenido_env">Pegar contenido .env</label>
+                        <textarea id="script_inicial_contenido_env" name="script_inicial_contenido_env" rows="5" placeholder="VARIABLE=valor">{{ registro.script_inicial_contenido_env or '' }}</textarea>
+                        <p class="texto-ayuda">Usa formato KEY=VALUE. No pegues secretos en capturas, tickets ni documentacion.</p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="script_inicial_archivo_env">O adjuntar archivo .env</label>
+                        <input id="script_inicial_archivo_env" name="script_inicial_archivo_env" type="file" accept=".env">
+                        <p class="texto-ayuda">Usa solo una opcion: pegar contenido o adjuntar archivo.</p>
+                    </div>
+
+                    <div class="campo campo-full ayuda-env-script">
+                        <details>
+                            <summary>Como debe leer variables el script</summary>
+                            <pre><code>import os
+
+ambiente = os.getenv("AMBIENTE")</code></pre>
+                            <p class="texto-ayuda">APP Scheduler inyecta el .env asociado a la version al ejecutar el proceso. No escribas claves directamente dentro del script.</p>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <div class="acciones-formulario">
             <button class="btn primario" type="submit">{{ "Crear tarea" if modo == "crear" else "Guardar cambios" }}</button>
