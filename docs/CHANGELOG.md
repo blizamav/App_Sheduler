@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-22 - Fase 17D eliminacion permanente operativa con historial protegido
+
+### Creado
+
+* `docs/PAPELERA_OPERATIVA.md`: formaliza la diferencia entre dato operativo e historial protegido y el ciclo de vida de scripts y `.env`.
+
+### Modificado
+
+* `app/repositorios/repositorio_papelera.py`: elimina con la tarea programaciones, scripts, versiones y configuracion operativa de notificaciones, conservando y desacoplando el historial.
+* `app/servicios/servicio_papelera.py`: deja de bloquear por scripts propios, limpia archivos bajo rutas controladas y aplica el mismo flujo en eliminacion masiva.
+* `app/templates/papelera/listado.html`: aclara el alcance operativo y la conservacion de historial en avisos y confirmaciones.
+
+### Alcance
+
+* Una ejecucion en curso, falta de desacople historico o snapshots insuficientes siguen siendo bloqueos reales.
+* El historial finalizado no bloquea la eliminacion permanente de la tarea.
+* Archivos inexistentes no detienen la limpieza; rutas sospechosas se rechazan sin exponerlas.
+* No requiere migracion y no se ejecuto SQL.
+
 ## 2026-07-14 - Fase 17A alta integral de tarea con script inicial y .env
 
 ### Creado

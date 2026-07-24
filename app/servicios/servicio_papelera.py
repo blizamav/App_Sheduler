@@ -1,4 +1,7 @@
 from math import ceil
+from pathlib import Path
+
+from flask import current_app
 
 from app.repositorios.repositorio_papelera import (
     ENTIDADES,
@@ -14,6 +17,7 @@ from app.repositorios.repositorio_papelera import (
 from app.repositorios.repositorio_usuarios import contar_administradores_activos
 from app.servicios.servicio_auditoria import registrar_auditoria
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
+from app.servicios.servicio_archivos import resolver_ruta_segura
 
 
 ENTIDADES_FILTRO = [
@@ -27,9 +31,9 @@ ENTIDADES_FILTRO = [
 ]
 
 ORDEN_ELIMINACION_MASIVA = (
+    "tareas",
     "scripts_versiones",
     "scripts",
-    "tareas",
     "clientes",
     "categorias",
     "tipos",
@@ -134,7 +138,7 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
         return False, motivo
 
     try:
-        eliminar_permanente(entidad, id_registro)
+        resultado_eliminacion = eliminar_permanente(entidad, id_registro)
     except RuntimeError as error:
         registrar_log_sistema(
             "PAPELERA_ELIMINACION_PERMANENTE_BLOQUEADA",
@@ -156,10 +160,17 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
         _auditar_eliminacion_permanente_bloqueada(entidad, id_registro, registro, MENSAJE_BLOQUEO_PERMANENTE, usuario)
         return False, MENSAJE_BLOQUEO_PERMANENTE
 
+    resultado_archivos = _eliminar_archivos_operativos(resultado_eliminacion.get("archivos_operativos", []))
+    resumen_seguro = {
+        "registros_operativos_eliminados": resultado_eliminacion.get("registros_operativos_eliminados", {}),
+        "archivos": resultado_archivos,
+    }
     registrar_log_sistema(
         "PAPELERA_ELIMINACION_PERMANENTE",
         "PAPELERA",
-        f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}.",
+        f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}. "
+        f"Archivos eliminados: {resultado_archivos['eliminados']}; no encontrados: {resultado_archivos['no_encontrados']}; "
+        f"no eliminados: {resultado_archivos['no_eliminados']}.",
         usuario=usuario,
         valor_anterior=str(registro),
     )
@@ -168,12 +179,23 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
         entidad,
         id_entidad=id_registro,
         nombre_entidad=registro.get("nombre"),
-        descripcion=f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}.",
+        descripcion=f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}. El historial se conserva protegido.",
         valores_antes=registro,
+        valores_despues=resumen_seguro,
         resultado="OK",
         modulo="PAPELERA",
         usuario=usuario,
     )
+    if entidad == "tareas":
+        if resultado_archivos["no_eliminados"]:
+            return True, (
+                "Tarea retirada de la Papelera. El historial se conserva protegido. "
+                "Algunos archivos fisicos no pudieron eliminarse; revisar el registro operativo."
+            )
+        mensaje = "Tarea eliminada permanentemente de la operacion. Scripts y .env asociados eliminados. El historial se conserva protegido."
+        if resultado_archivos["no_encontrados"]:
+            mensaje += f" Archivos fisicos ya inexistentes: {resultado_archivos['no_encontrados']}."
+        return True, mensaje
     return True, "Registro eliminado permanentemente de las tablas operativas. El historial se conserva."
 
 
@@ -198,7 +220,10 @@ def eliminar_todo_permanente(usuario, id_usuario_sesion=None):
             nombre = registro.get("nombre") or f"#{id_registro}"
 
             try:
-                ok, mensaje = eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesion)
+                if not obtener_eliminado(entidad, id_registro):
+                    ok, mensaje = True, "Registro eliminado junto con su entidad operativa propietaria."
+                else:
+                    ok, mensaje = eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesion)
             except Exception:
                 ok = False
                 mensaje = "Error controlado al intentar eliminar este registro."
@@ -338,8 +363,6 @@ def _evaluar_eliminacion(entidad, deps):
         return False, MENSAJE_BLOQUEO_PERMANENTE
     if entidad == "tareas" and deps.get("ejecuciones_en_curso", 0) > 0:
         return False, "No puedes eliminar permanentemente una tarea con ejecucion en curso."
-    if entidad == "tareas" and deps.get("scripts_operativos", 0) > 0:
-        return False, MENSAJE_BLOQUEO_PERMANENTE
     if entidad == "scripts" and deps.get("tareas_vigentes", 0) > 0:
         return False, MENSAJE_BLOQUEO_PERMANENTE
     if entidad == "scripts" and deps.get("versiones_operativas", 0) > 0:
@@ -357,7 +380,13 @@ def _resumir_dependencias(entidad, deps, motivo):
     if entidad == "usuarios":
         return f"Historial asociado: {deps.get('historial', 0)} eventos."
     if entidad == "tareas":
-        return f"Ejecuciones en curso: {deps.get('ejecuciones_en_curso', 0)}. Scripts operativos: {deps.get('scripts_operativos', 0)}."
+        return (
+            f"Ejecuciones en curso: {deps.get('ejecuciones_en_curso', 0)}. "
+            f"Scripts a eliminar con la tarea: {deps.get('scripts_total', 0)}. "
+            f"Programaciones: {deps.get('programaciones', 0)}. "
+            f"Configuraciones de notificacion: {deps.get('configuraciones_notificacion', 0)}. "
+            "El historial asociado se conserva protegido."
+        )
     if entidad == "scripts":
         return f"Tareas vigentes: {deps.get('tareas_vigentes', 0)}. Versiones operativas: {deps.get('versiones_operativas', 0)}."
     if entidad == "scripts_versiones":
@@ -436,6 +465,37 @@ def _motivo_seguro(mensaje):
     if any(patron in texto.lower() for patron in bloqueados):
         return "Error controlado."
     return texto
+
+
+def _eliminar_archivos_operativos(archivos):
+    resultado = {"eliminados": 0, "no_encontrados": 0, "no_eliminados": 0}
+    bases = {
+        "script": Path(str(current_app.config.get("RUTA_BASE_SCRIPTS", "scripts"))),
+        "env": Path(str(current_app.config.get("RUTA_BASE_ENV_SCRIPTS", "env_scripts"))),
+    }
+    for archivo in archivos:
+        tipo = archivo.get("tipo")
+        ruta_relativa = archivo.get("ruta_relativa")
+        try:
+            if tipo not in bases or not ruta_relativa:
+                raise ValueError("Tipo o ruta de archivo no permitida.")
+            ruta = Path(str(ruta_relativa))
+            if ruta.is_absolute():
+                raise ValueError("Ruta absoluta no permitida.")
+            base = resolver_ruta_segura(bases[tipo])
+            destino = resolver_ruta_segura(ruta)
+            if destino != base and base not in destino.parents:
+                raise ValueError("Ruta fuera del directorio operativo permitido.")
+            if not destino.exists():
+                resultado["no_encontrados"] += 1
+                continue
+            if not destino.is_file():
+                raise ValueError("La ruta operativa no corresponde a un archivo.")
+            destino.unlink()
+            resultado["eliminados"] += 1
+        except (OSError, TypeError, ValueError):
+            resultado["no_eliminados"] += 1
+    return resultado
 
 
 def _entero(valor, defecto, minimo=None, maximo=None):

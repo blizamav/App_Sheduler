@@ -229,6 +229,7 @@ def restaurar(entidad, id_registro, usuario):
 
 
 def eliminar_permanente(entidad, id_registro):
+    resultado = {"archivos_operativos": [], "registros_operativos_eliminados": {}}
     with obtener_conexion() as conexion:
         cursor = conexion.cursor()
         if entidad == "usuarios":
@@ -241,6 +242,7 @@ def eliminar_permanente(entidad, id_registro):
             _validar_desacople_historico(cursor, entidad, id_registro)
             ids_scripts = _ids_scripts_tarea(cursor, id_registro)
             ids_versiones = _ids_versiones_scripts(cursor, ids_scripts)
+            resultado["archivos_operativos"] = _archivos_versiones_tarea(cursor, id_registro)
             _asegurar_snapshots_tarea(cursor, id_registro)
             _validar_snapshots_tarea(cursor, id_registro)
             cursor.execute("UPDATE dbo.ejecuciones SET id_tarea = NULL WHERE id_tarea = ?", id_registro)
@@ -251,7 +253,9 @@ def eliminar_permanente(entidad, id_registro):
                 cursor.execute("UPDATE dbo.ejecuciones SET id_version = NULL WHERE id_version = ?", id_version)
             if _existe_tabla(cursor, "dbo.scheduler_eventos") and _existe_columna(cursor, "dbo.scheduler_eventos", "id_tarea"):
                 cursor.execute("UPDATE dbo.scheduler_eventos SET id_tarea = NULL WHERE id_tarea = ?", id_registro)
+            configuraciones_eliminadas = _eliminar_configuracion_notificaciones_tarea(cursor, id_registro)
             cursor.execute("DELETE FROM dbo.programaciones WHERE id_tarea = ?", id_registro)
+            programaciones_eliminadas = max(cursor.rowcount, 0)
             cursor.execute("UPDATE dbo.scripts SET id_version_activa = NULL WHERE id_tarea = ?", id_registro)
             cursor.execute(
                 """
@@ -259,12 +263,20 @@ def eliminar_permanente(entidad, id_registro):
                 WHERE id_script IN (
                     SELECT id_script FROM dbo.scripts WHERE id_tarea = ?
                 )
-                  AND ISNULL(eliminado_operativo, 0) = 1
                 """,
                 id_registro,
             )
-            cursor.execute("DELETE FROM dbo.scripts WHERE id_tarea = ? AND ISNULL(eliminado_operativo, 0) = 1", id_registro)
+            versiones_eliminadas = max(cursor.rowcount, 0)
+            cursor.execute("DELETE FROM dbo.scripts WHERE id_tarea = ?", id_registro)
+            scripts_eliminados = max(cursor.rowcount, 0)
             cursor.execute("DELETE FROM dbo.tareas WHERE id_tarea = ?", id_registro)
+            resultado["registros_operativos_eliminados"] = {
+                "tareas": max(cursor.rowcount, 0),
+                "programaciones": programaciones_eliminadas,
+                "scripts": scripts_eliminados,
+                "scripts_versiones": versiones_eliminadas,
+                "configuraciones_notificacion": configuraciones_eliminadas,
+            }
         elif entidad == "scripts":
             _validar_desacople_historico(cursor, entidad, id_registro)
             ids_versiones = _ids_versiones_scripts(cursor, [id_registro])
@@ -287,6 +299,44 @@ def eliminar_permanente(entidad, id_registro):
             cursor.execute("UPDATE dbo.scripts SET id_version_activa = NULL WHERE id_version_activa = ?", id_registro)
             cursor.execute("DELETE FROM dbo.scripts_versiones WHERE id_version = ?", id_registro)
         conexion.commit()
+    return resultado
+
+
+def _archivos_versiones_tarea(cursor, id_tarea):
+    cursor.execute(
+        """
+        SELECT v.ruta_relativa, v.ruta_env_relativa
+        FROM dbo.scripts_versiones v
+        INNER JOIN dbo.scripts s ON s.id_script = v.id_script
+        WHERE s.id_tarea = ?
+        """,
+        id_tarea,
+    )
+    archivos = []
+    for ruta_script, ruta_env in cursor.fetchall():
+        if ruta_script:
+            archivos.append({"tipo": "script", "ruta_relativa": str(ruta_script)})
+        if ruta_env:
+            archivos.append({"tipo": "env", "ruta_relativa": str(ruta_env)})
+    return archivos
+
+
+def _eliminar_configuracion_notificaciones_tarea(cursor, id_tarea):
+    if not _existe_tabla(cursor, "dbo.notificaciones_config_tarea"):
+        return 0
+    if _existe_tabla(cursor, "dbo.notificaciones_destinatarios"):
+        cursor.execute(
+            """
+            DELETE d
+            FROM dbo.notificaciones_destinatarios d
+            INNER JOIN dbo.notificaciones_config_tarea c
+                ON c.id_config_notificacion = d.id_config_notificacion
+            WHERE c.id_tarea = ?
+            """,
+            id_tarea,
+        )
+    cursor.execute("DELETE FROM dbo.notificaciones_config_tarea WHERE id_tarea = ?", id_tarea)
+    return max(cursor.rowcount, 0)
 
 
 def _ids_scripts_tarea(cursor, id_tarea):
@@ -635,6 +685,14 @@ def _dependencias_tarea(cursor, id_tarea):
     en_curso = int(cursor.fetchone()[0] or 0)
     cursor.execute("SELECT COUNT(1) FROM dbo.scripts WHERE id_tarea = ? AND ISNULL(eliminado_operativo, 0) = 0", id_tarea)
     scripts_operativos = int(cursor.fetchone()[0] or 0)
+    cursor.execute("SELECT COUNT(1) FROM dbo.scripts WHERE id_tarea = ?", id_tarea)
+    scripts_total = int(cursor.fetchone()[0] or 0)
+    cursor.execute("SELECT COUNT(1) FROM dbo.programaciones WHERE id_tarea = ?", id_tarea)
+    programaciones = int(cursor.fetchone()[0] or 0)
+    configuraciones_notificacion = 0
+    if _existe_tabla(cursor, "dbo.notificaciones_config_tarea"):
+        cursor.execute("SELECT COUNT(1) FROM dbo.notificaciones_config_tarea WHERE id_tarea = ?", id_tarea)
+        configuraciones_notificacion = int(cursor.fetchone()[0] or 0)
     cursor.execute(
         """
         SELECT
@@ -653,6 +711,9 @@ def _dependencias_tarea(cursor, id_tarea):
     resultado = {
         "ejecuciones_en_curso": en_curso,
         "scripts_operativos": scripts_operativos,
+        "scripts_total": scripts_total,
+        "programaciones": programaciones,
+        "configuraciones_notificacion": configuraciones_notificacion,
         "maestros_eliminados": maestros_eliminados,
     }
     resultado.update(_dependencias_desacople_historico(cursor, "tareas", id_tarea))

@@ -10,7 +10,7 @@
     <div>
         <p class="eyebrow">Administracion</p>
         <h2>Papelera operativa</h2>
-        <p>La papelera contiene registros retirados de la operacion normal. Puedes restaurarlos como inactivos o eliminarlos permanentemente de las tablas operativas. El historial de ejecuciones, logs, eventos y snapshots no se elimina.</p>
+        <p>La papelera contiene registros retirados de la operacion normal. Al eliminar una tarea permanentemente también se eliminan sus scripts, versiones, archivos .py, .env, programaciones y configuración operativa. El historial de ejecuciones, logs, evidencias, envíos, auditoría, eventos y snapshots se conserva protegido.</p>
     </div>
     <span class="badge advertencia">Historial protegido</span>
 </section>
@@ -129,7 +129,7 @@
                     type="submit"
                     {% if total_papelera == 0 %}disabled{% endif %}
                     data-confirm-title="Eliminar permanentemente todo"
-                    data-confirm-message="Advertencia: esta accion intentara eliminar permanentemente todos los registros actualmente en Papelera usando las mismas reglas seguras de eliminacion individual. Los registros bloqueados se conservaran en Papelera. El historial de ejecuciones, logs, eventos del programador, auditoria y snapshots historicos se conservara. Esta accion no se puede deshacer desde la aplicacion."
+                    data-confirm-message="Advertencia: esta accion intentara eliminar permanentemente todos los registros actualmente en Papelera usando las mismas reglas seguras de eliminacion individual. Las tareas eliminaran tambien sus scripts, versiones y archivos operativos asociados. Los registros bloqueados se conservaran en Papelera. El historial de ejecuciones, logs, evidencias, envios, eventos del programador, auditoria y snapshots historicos se conservara. Esta accion no se puede deshacer desde la aplicacion."
                     data-confirm-ok="Eliminar permanentemente todo"
                     data-confirm-cancel="Cancelar"
                     data-confirm-type="danger"
@@ -209,7 +209,7 @@
                                     class="btn secundario compacto requiere-confirmacion"
                                     type="submit"
                                     data-confirm-title="Eliminar permanentemente"
-                                    data-confirm-message="Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Ya no aparecerá en mantenedores, papelera, selects ni paneles operativos. El historial de ejecuciones, logs, eventos del programador y snapshots históricos se conservará. Esta acción no se puede deshacer desde la aplicación."
+                                    data-confirm-message="Advertencia: esta acción eliminará permanentemente el registro de las tablas operativas. Si es una tarea, también eliminará sus scripts, versiones, archivos .py, .env, programaciones y configuración operativa. El historial de ejecuciones, logs, evidencias, envíos, auditoría, eventos y snapshots se conservará protegido. Esta acción no se puede deshacer desde la aplicación."
                                     data-confirm-ok="Eliminar permanentemente"
                                     data-confirm-cancel="Cancelar"
                                     data-confirm-type="danger"

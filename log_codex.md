@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 16C agrega ayuda visible en la app para scripts con `.env` por version, sin tocar ejecucion ni BD.
+* Estado actual: Fase 17D corrige la eliminacion permanente de tareas para retirar sus componentes operativos y conservar el historial protegido.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 16C - Ayuda en app para scripts con .env adjunto.
-* Ultima actualizacion: 2026-07-08
+* Fase actual: Fase 17D - Eliminacion permanente operativa con historial protegido.
+* Ultima actualizacion: 2026-07-22
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -83,6 +83,17 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-07-22 - Fase 17D / Eliminacion permanente operativa con historial protegido
+
+* Diagnostico: Papelera bloqueaba tareas con scripts no eliminados previamente y el repositorio solo borraba hijos marcados individualmente en Papelera. Tampoco limpiaba configuracion de notificaciones ni archivos `.py`/`.env`.
+* Regla aplicada: la tarea absorbe programaciones, scripts, versiones, configuracion de notificaciones y archivos operativos; ejecuciones, logs, evidencias, envios, auditoria, eventos y snapshots se conservan.
+* Backend: la transaccion completa snapshots, nulifica referencias historicas y elimina dependencias operativas. La eliminacion masiva procesa tareas primero y reconoce hijos ya absorbidos.
+* Filesystem: las rutas salen de metadata persistida y se confinan a las bases configuradas de scripts/env; inexistencias continúan de forma controlada y rutas sospechosas se rechazan.
+* UI: mensajes y confirmaciones explican que se eliminan componentes operativos y que el historial queda protegido.
+* BD: el modelo desacoplado existente permite el flujo; no se crea migracion y no se ejecuta SQL.
+* Seguridad: no se exponen rutas fisicas ni contenido `.env`; no se modifican Graph, correos, evidencias ni historial.
+* Staging: el staging existente de Fase 17A se conserva sin cambios; 17D queda solo en el working tree.
 
 ### 2026-07-14 - Fase 17A / Alta integral de tarea con script inicial y .env
 
