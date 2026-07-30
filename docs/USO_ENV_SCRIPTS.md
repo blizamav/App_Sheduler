@@ -16,6 +16,12 @@ Tareas > Scripts > Versiones > boton .env
 
 La configuracion es por version. Una tarea puede tener hasta 3 versiones de script y cada version puede tener su propio estado `.env`.
 
+## Descarga del archivo Python
+
+Desde `Tareas > Scripts`, cada version muestra la accion `Descargar script`. La descarga entrega exclusivamente el archivo `.py` asociado a esa version, sea activa o no activa, y no cambia ningun estado.
+
+La aplicacion obtiene la ruta desde el identificador de version guardado en base de datos; el navegador no envia rutas. Se valida que el archivo exista, tenga extension `.py` y permanezca dentro de `RUTA_BASE_SCRIPTS`. Esta accion nunca descarga el `.env`, contenido de `env_scripts`, logs ni otros archivos del servidor, y no muestra rutas fisicas o relativas internas.
+
 Estados visibles:
 
 * `.env: No requiere`

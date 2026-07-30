@@ -19,6 +19,22 @@
 * Archivos inexistentes no detienen la limpieza; rutas sospechosas se rechazan sin exponerlas.
 * No requiere migracion y no se ejecuto SQL.
 
+## 2026-07-15 - Fase 17B descarga segura de scripts
+
+### Modificado
+
+* `app/rutas_scripts.py`: agrega `GET /scripts/versiones/<id_version>/descargar`, protegido por `SCRIPTS_VER`, y entrega el `.py` como adjunto.
+* `app/servicios/servicio_scripts.py`: resuelve el archivo desde el `id_version` y valida nombre, extension, existencia y pertenencia a `RUTA_BASE_SCRIPTS`.
+* `app/templates/scripts/listado.html`: agrega `Descargar script` por version y deja de mostrar la ruta relativa interna.
+* `docs/USO_ENV_SCRIPTS.md`, `docs/CHANGELOG.md` y `log_codex.md`.
+
+### Alcance
+
+* Permite descargar versiones activas y no activas sin cambiar su estado.
+* Solo descarga el `.py` asociado en base de datos; no acepta rutas desde el frontend ni permite descargar `.env`.
+* No expone rutas fisicas, no requiere migracion y no modifica el flujo de carga/versionamiento.
+* Validaciones ejecutadas: casos de servicio valido, fuera de base, `.env` e inexistente; endpoint autorizado y 403 sin permiso; parseo Jinja; `compileall`; `git diff --check`; `git status --short`.
+
 ## 2026-07-14 - Fase 17A alta integral de tarea con script inicial y .env
 
 ### Creado

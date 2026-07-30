@@ -128,7 +128,6 @@
                     <th>Archivo</th>
                     <th>Estado</th>
                     <th>.env</th>
-                    <th>Ruta relativa</th>
                     <th>Fecha carga</th>
                     <th>Acciones</th>
                 </tr>
@@ -150,11 +149,11 @@
                         <span class="badge inactivo">No requiere</span>
                         {% endif %}
                     </td>
-                    <td><small class="texto-tabla">{{ version.ruta_relativa }}</small></td>
                     <td>{{ version.fecha_carga }}</td>
                     <td>
                         <div class="acciones-tabla acciones-operativas acciones-versiones">
                             <div class="acciones-grupo">
+                            <a class="btn secundario compacto" href="{{ url_for('scripts.descargar_version', id_version=version.id_version) }}">Descargar script</a>
                             {% if not version.es_activa %}
                             <form method="post" action="{{ url_for('scripts.activar_version', id_version=version.id_version) }}">
                                 <input type="hidden" name="volver" value="{{ request.path }}">
@@ -178,7 +177,7 @@
                     </td>
                 </tr>
                 <tr id="env-{{ version.id_version }}" class="fila-panel fila-panel-operativa oculto">
-                    <td colspan="7">
+                    <td colspan="6">
                         <form method="post" enctype="multipart/form-data" action="{{ url_for('scripts.guardar_env', id_version=version.id_version) }}" class="formulario-admin requiere-confirmacion-form" data-confirm-title="{{ 'Reemplazar archivo .env' if version.ruta_env_relativa else 'Asociar archivo .env' }}" data-confirm-message="{{ 'Esta version ya tiene un archivo .env asociado. Si continuas, sera reemplazado. El contenido no sera mostrado ni registrado. Deseas continuar?' if version.ruta_env_relativa else 'Estas a punto de asociar un archivo .env a esta version. El contenido no sera mostrado ni registrado. Deseas continuar?' }}" data-confirm-ok="{{ 'Si, reemplazar .env' if version.ruta_env_relativa else 'Si, asociar .env' }}" data-confirm-cancel="Cancelar" data-confirm-type="warning">
                             <input type="hidden" name="volver" value="{{ request.path }}">
                             <div class="bloque-subseccion">
@@ -268,7 +267,7 @@ cargar_env_local_opcional()</code></pre>
                     </td>
                 </tr>
                 <tr id="reemplazar-{{ version.id_version }}" class="fila-panel fila-panel-operativa oculto">
-                    <td colspan="7">
+                    <td colspan="6">
                         <form method="post" enctype="multipart/form-data" action="{{ url_for('scripts.reemplazar_version', id_version=version.id_version) }}" class="formulario-admin requiere-confirmacion-form" data-confirm-title="Reemplazar version" data-confirm-message="Estas a punto de reemplazar la version v{{ version.numero_version }}. Esta accion actualizara el archivo asociado a esa version y quedara registrada en el sistema. Deseas continuar?" data-confirm-ok="Si, reemplazar version" data-confirm-cancel="Cancelar" data-confirm-type="danger">
                             <input type="hidden" name="volver" value="{{ request.path }}">
                             <div class="campo"><label>Nuevo archivo .py</label><input name="archivo_script" type="file" accept=".py" required></div>
@@ -279,7 +278,7 @@ cargar_env_local_opcional()</code></pre>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="estado-vacio">No hay versiones cargadas.</td>
+                    <td colspan="6" class="estado-vacio">No hay versiones cargadas.</td>
                 </tr>
                 {% endfor %}
             </tbody>

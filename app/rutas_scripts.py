@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 
 from app.seguridad import permiso_requerido
 from app.servicios.servicio_scripts import (
@@ -9,6 +9,7 @@ from app.servicios.servicio_scripts import (
     eliminar_script_logico,
     eliminar_version_script,
     guardar_env_version,
+    obtener_archivo_version_descarga,
     obtener_vista_scripts_tarea,
     reemplazar_version_script,
     subir_version,
@@ -26,6 +27,23 @@ def por_tarea(id_tarea):
         flash("Tarea no encontrada.", "error")
         return redirect(url_for("tareas.listado"))
     return render_template("scripts/listado.html", **vista)
+
+
+@bp_scripts.route("/scripts/versiones/<int:id_version>/descargar")
+@permiso_requerido("SCRIPTS_VER")
+def descargar_version(id_version):
+    archivo, mensaje = obtener_archivo_version_descarga(id_version)
+    if not archivo:
+        flash(mensaje, "error")
+        return _volver_a_tarea(id_version)
+
+    return send_file(
+        archivo["ruta_fisica"],
+        as_attachment=True,
+        download_name=archivo["nombre_archivo"],
+        mimetype="text/x-python",
+        conditional=True,
+    )
 
 
 @bp_scripts.route("/tareas/<int:id_tarea>/scripts/versiones/nueva", methods=["POST"])

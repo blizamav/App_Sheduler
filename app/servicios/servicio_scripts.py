@@ -1,4 +1,7 @@
 import re
+from pathlib import Path
+
+from flask import current_app
 
 from app.repositorios.repositorio_scripts import (
     activar_version,
@@ -71,6 +74,40 @@ def obtener_vista_scripts_tarea(id_tarea):
         "proxima_version": _siguiente_version(versiones_todas),
         "maximo_versiones": len(versiones_todas) >= 3,
     }
+
+
+def obtener_archivo_version_descarga(id_version):
+    version = obtener_version(id_version)
+    if not version:
+        return None, "Version de script no encontrada."
+
+    try:
+        ruta_relativa = Path(str(version.get("ruta_relativa") or ""))
+        nombre_archivo = str(version.get("nombre_archivo") or "")
+        if not ruta_relativa.parts or ruta_relativa.is_absolute():
+            raise ValueError("Ruta de script no permitida.")
+        if nombre_archivo_seguro(nombre_archivo, ".py") != nombre_archivo:
+            raise ValueError("Nombre de script no permitido.")
+        if ruta_relativa.name != nombre_archivo or ruta_relativa.suffix.lower() != ".py":
+            raise ValueError("El archivo no corresponde a la version solicitada.")
+
+        ruta_base_scripts = resolver_ruta_segura(
+            Path(str(current_app.config.get("RUTA_BASE_SCRIPTS", "scripts")))
+        )
+        ruta_fisica = resolver_ruta_segura(ruta_relativa)
+        if ruta_base_scripts not in ruta_fisica.parents:
+            raise ValueError("Ruta fuera del directorio de scripts.")
+    except (OSError, TypeError, ValueError):
+        return None, "El archivo de script asociado tiene una ruta invalida o no permitida."
+
+    if not ruta_fisica.is_file():
+        return None, "El archivo de script asociado a esta version no esta disponible."
+
+    return {
+        "ruta_fisica": ruta_fisica,
+        "nombre_archivo": nombre_archivo,
+        "id_tarea": version["id_tarea"],
+    }, None
 
 
 def subir_version(id_tarea, archivo, observacion, requiere_env, usuario):

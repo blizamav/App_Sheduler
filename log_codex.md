@@ -56,6 +56,7 @@
 * Env textarea por version: Fase 16B agrega pegado de contenido `.env`, validacion `KEY=VALUE` y guardado seguro como archivo `.env` bajo `env_scripts/`, sin exponer valores.
 * Ayuda env en app: Fase 16C explica en la pantalla de scripts que APP Scheduler carga el `.env`, que el script debe usar `os.getenv()` y que la carga local debe ser opcional.
 * Alta integral tarea/script: Fase 17A permite configurar script inicial `v1` y `.env` al crear tarea, reutilizando servicios existentes de scripts/versiones/env y sin migracion.
+* Descarga segura de scripts: Fase 17B permite descargar el `.py` de una version mediante su `id_version`, con permiso `SCRIPTS_VER` y confinamiento estricto a `RUTA_BASE_SCRIPTS`; no permite descargar `.env`.
 
 ## 3. Estructura actual del proyecto
 
@@ -94,6 +95,16 @@
 * BD: el modelo desacoplado existente permite el flujo; no se crea migracion y no se ejecuta SQL.
 * Seguridad: no se exponen rutas fisicas ni contenido `.env`; no se modifican Graph, correos, evidencias ni historial.
 * Staging: el staging existente de Fase 17A se conserva sin cambios; 17D queda solo en el working tree.
+
+### 2026-07-15 - Fase 17B / Descarga segura de script por version
+
+* Archivos modificados: `app/templates/scripts/listado.html`, `app/rutas_scripts.py`, `app/servicios/servicio_scripts.py`, `docs/USO_ENV_SCRIPTS.md`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: Los `.py` se guardan bajo `RUTA_BASE_SCRIPTS` con patron `scripts/.../vN/archivo.py`; `scripts_versiones` conserva `nombre_archivo`, `ruta_fisica` y `ruta_relativa`; `resolver_ruta_segura()` resuelve rutas dentro del proyecto; el acceso de lectura al modulo usa `SCRIPTS_VER`.
+* Backend/UI: Se agrego `GET /scripts/versiones/<id_version>/descargar` y la accion `Descargar script` en cada fila. La ruta se obtiene exclusivamente desde la version persistida; la UI ya no muestra la ruta relativa interna.
+* Seguridad: Se rechazan rutas absolutas, nombres o extensiones distintos de `.py`, diferencias entre el nombre persistido y el archivo, rutas fuera de `RUTA_BASE_SCRIPTS` y archivos inexistentes. La respuesta solo expone el nombre de descarga.
+* Alcance: Descarga versiones activas y no activas sin activarlas, reemplazarlas ni modificarlas. No descarga `.env`, `env_scripts`, logs, carpetas ni archivos arbitrarios.
+* BD: No requiere migracion y no se ejecuto SQL.
+* Pruebas ejecutadas: servicio con archivo valido, ruta fuera de `RUTA_BASE_SCRIPTS`, intento `.env` y archivo inexistente; endpoint con permiso y respuesta 403 sin permiso; parseo Jinja; `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`.
 
 ### 2026-07-14 - Fase 17A / Alta integral de tarea con script inicial y .env
 
