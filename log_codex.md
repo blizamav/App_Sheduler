@@ -57,6 +57,7 @@
 * Ayuda env en app: Fase 16C explica en la pantalla de scripts que APP Scheduler carga el `.env`, que el script debe usar `os.getenv()` y que la carga local debe ser opcional.
 * Alta integral tarea/script: Fase 17A permite configurar script inicial `v1` y `.env` al crear tarea, reutilizando servicios existentes de scripts/versiones/env y sin migracion.
 * Descarga segura de scripts: Fase 17B permite descargar el `.py` de una version mediante su `id_version`, con permiso `SCRIPTS_VER` y confinamiento estricto a `RUTA_BASE_SCRIPTS`; no permite descargar `.env`.
+* Salida en vivo: Fase 17C ejecuta scripts con `-u` y `PYTHONUNBUFFERED=1`; el monitor conserva lectura/escritura linea por linea y la consola consulta cada 1,5 segundos sin forzar el scroll manual.
 
 ## 3. Estructura actual del proyecto
 
@@ -95,6 +96,17 @@
 * BD: el modelo desacoplado existente permite el flujo; no se crea migracion y no se ejecuta SQL.
 * Seguridad: no se exponen rutas fisicas ni contenido `.env`; no se modifican Graph, correos, evidencias ni historial.
 * Staging: el staging existente de Fase 17A se conserva sin cambios; 17D queda solo en el working tree.
+
+### 2026-07-17 - Fase 17C / Salida de ejecucion en tiempo real
+
+* Archivos creados: `docs/LOGS_EJECUCION_TIEMPO_REAL.md`.
+* Archivos modificados: `app/servicios/servicio_procesos.py`, `app/static/js/app.js`, `app/templates/ejecuciones/consola.html`, `docs/CHANGELOG.md`, `log_codex.md`.
+* Diagnostico: El subprocess ya usaba `stdout=PIPE`, `stderr=STDOUT`, texto y lectura `for linea in proceso.stdout`; cada linea se escribia de inmediato en `logs_tareas` y `/ejecuciones/<id>/log` era consultado por polling. El Python hijo se iniciaba sin modo no bufferizado, por lo que podia acumular `print()` hasta terminar. La UI refrescaba cada 3 segundos y forzaba siempre el scroll final.
+* Backend: `iniciar_proceso_python()` agrega `-u` y fuerza `PYTHONUNBUFFERED=1`. No usa `communicate()` y no cambia la captura de delimitadores de evidencia.
+* UI: Polling cada 1,5 segundos, sin solicitudes solapadas, reemplazo sin duplicados, detencion al estado final y seguimiento del final solo cuando el usuario no se desplazo hacia arriba.
+* Seguridad/compatibilidad: El endpoint existente mantiene `EJECUCIONES_LOG_VER`, recibe solo `id_ejecucion` y no expone rutas. El mismo flujo sirve a ejecucion manual y automatica, incluido Docker.
+* BD: No requiere migracion y no se ejecuto SQL.
+* Pruebas ejecutadas: proceso Python real sin `flush=True` confirmo `print` antes de 0,4 segundos, `logging` progresivo, delimitadores visibles y escritura inmediata al log antes del cierre; endpoint autorizado y 403 sin permiso; sintaxis JavaScript; parseo Jinja; `python -m compileall app scheduler_worker.py`; `git diff --check`; `git status --short`.
 
 ### 2026-07-15 - Fase 17B / Descarga segura de script por version
 

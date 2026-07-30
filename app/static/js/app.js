@@ -1484,6 +1484,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const estadosFinales = new Set(["EXITOSA", "ERROR", "DETENIDA_MANUALMENTE", "CANCELADA"]);
         let estadoVisualActual = estadoEjecucion?.textContent?.trim() || "";
         let toastFinalMostrado = estadosFinales.has(estadoVisualActual);
+        let intervaloConsola = null;
+        let actualizacionConsolaEnCurso = false;
+        let primeraActualizacionConsola = true;
 
         const claseBadgeEstado = (estado) => {
             if (estado === "EXITOSA") {
@@ -1531,7 +1534,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 codigoEjecucion.textContent = datos.codigo_salida ?? "-";
             }
             if (indicadorEjecucion) {
-                indicadorEjecucion.textContent = esFinal ? "Finalizada" : estado === "PENDIENTE" ? "Pendiente" : "En ejecucion...";
+                indicadorEjecucion.textContent = esFinal
+                    ? "Ejecucion finalizada"
+                    : estado === "PENDIENTE"
+                        ? "Pendiente"
+                        : "Actualizando en vivo";
                 indicadorEjecucion.className = `badge ${esFinal ? claseBadgeEstado(estado) : "advertencia"}`;
             }
             if (accionesEnCursoEjecucion) {
@@ -1551,6 +1558,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const actualizarConsola = async () => {
+            if (actualizacionConsolaEnCurso) {
+                return false;
+            }
+            actualizacionConsolaEnCurso = true;
             try {
                 const respuesta = await fetch(consolaEjecucion.dataset.logUrl, {
                     headers: { Accept: "application/json" },
@@ -1559,25 +1570,46 @@ document.addEventListener("DOMContentLoaded", () => {
                     return true;
                 }
                 const datos = await respuesta.json();
-                consolaEjecucion.textContent = datos.log || "";
-                consolaEjecucion.scrollTop = consolaEjecucion.scrollHeight;
+                const distanciaAlFinal = consolaEjecucion.scrollHeight
+                    - consolaEjecucion.scrollTop
+                    - consolaEjecucion.clientHeight;
+                const seguirSalida = primeraActualizacionConsola || distanciaAlFinal <= 48;
+                const logActualizado = datos.log || "";
+                if (consolaEjecucion.textContent !== logActualizado) {
+                    consolaEjecucion.textContent = logActualizado;
+                }
+                if (seguirSalida) {
+                    consolaEjecucion.scrollTop = consolaEjecucion.scrollHeight;
+                }
+                primeraActualizacionConsola = false;
                 return actualizarEstadoVisual(datos);
             } catch (error) {
                 return false;
+            } finally {
+                actualizacionConsolaEnCurso = false;
             }
         };
 
-        const intervalo = setInterval(async () => {
+        const detenerPollingConsola = () => {
+            if (intervaloConsola) {
+                clearInterval(intervaloConsola);
+                intervaloConsola = null;
+            }
+        };
+
+        const iniciarPollingConsola = async () => {
             const finalizada = await actualizarConsola();
-            if (finalizada) {
-                clearInterval(intervalo);
+            if (!finalizada) {
+                intervaloConsola = setInterval(async () => {
+                    const ejecucionFinalizada = await actualizarConsola();
+                    if (ejecucionFinalizada) {
+                        detenerPollingConsola();
+                    }
+                }, 1500);
             }
-        }, 3000);
-        actualizarConsola().then((finalizada) => {
-            if (finalizada) {
-                clearInterval(intervalo);
-            }
-        });
+        };
+
+        iniciarPollingConsola();
 
         if (formularioDetenerEjecucion) {
             formularioDetenerEjecucion.addEventListener("submit", async (evento) => {

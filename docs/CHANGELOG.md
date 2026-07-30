@@ -19,6 +19,27 @@
 * Archivos inexistentes no detienen la limpieza; rutas sospechosas se rechazan sin exponerlas.
 * No requiere migracion y no se ejecuto SQL.
 
+## 2026-07-17 - Fase 17C salida de ejecucion en tiempo real
+
+### Creado
+
+* `docs/LOGS_EJECUCION_TIEMPO_REAL.md`: documenta captura no bufferizada, polling, scroll y compatibilidad con evidencia stdout.
+
+### Modificado
+
+* `app/servicios/servicio_procesos.py`: ejecuta scripts con `python -u` y `PYTHONUNBUFFERED=1`, manteniendo `stdout=PIPE` y `stderr=STDOUT`.
+* `app/static/js/app.js`: actualiza la consola cada 1,5 segundos, evita solicitudes solapadas, detiene el polling al finalizar y respeta el scroll manual.
+* `app/templates/ejecuciones/consola.html`: muestra indicadores claros de salida en vivo y finalizacion.
+* `docs/CHANGELOG.md` y `log_codex.md`.
+
+### Alcance
+
+* La lectura y escritura linea por linea existente ahora recibe oportunamente la salida del Python hijo.
+* Ejecuciones manuales y automaticas reutilizan el mismo flujo.
+* No cambia el contrato ni la captura de evidencia, y stdout/stderr permanece completo en el log fisico y visible sin filtrado funcional.
+* No requiere migracion ni cambios de base de datos.
+* Validaciones: proceso real con `print` sin flush, `logging`, error y delimitadores; crecimiento inmediato del log; endpoint autorizado/403; sintaxis JavaScript; Jinja; `compileall`; `git diff --check`; `git status --short`.
+
 ## 2026-07-15 - Fase 17B descarga segura de scripts
 
 ### Modificado

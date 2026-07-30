@@ -9,17 +9,19 @@ PROCESOS_EJECUCION = {}
 
 
 def iniciar_proceso_python(ruta_script, entorno):
+    entorno_proceso = dict(entorno or os.environ)
+    entorno_proceso["PYTHONUNBUFFERED"] = "1"
     kwargs = {
         "stdout": subprocess.PIPE,
         "stderr": subprocess.STDOUT,
-        "env": entorno,
+        "env": entorno_proceso,
         "text": True,
         "bufsize": 1,
         "shell": False,
     }
     if os.name != "nt":
         kwargs["start_new_session"] = True
-    return subprocess.Popen([sys.executable, str(ruta_script)], **kwargs)
+    return subprocess.Popen([sys.executable, "-u", str(ruta_script)], **kwargs)
 
 
 def registrar_proceso(id_ejecucion, proceso):

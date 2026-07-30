@@ -62,7 +62,7 @@
                 <p class="eyebrow">Log</p>
                 <h3>{{ ejecucion.nombre_archivo_log or "Consola" }}</h3>
             </div>
-            <span class="badge info">Polling 3s</span>
+            <span class="badge info">Actualizacion 1,5s</span>
         </div>
         <p class="estado-vacio">Se muestran los ultimos 120 KB del archivo de log. No se muestra contenido de archivos .env.</p>
     </article>
@@ -74,7 +74,7 @@
             <p class="eyebrow">Consola</p>
             <h3>Salida stdout/stderr</h3>
         </div>
-        <span class="badge advertencia" data-ejecucion-indicador>{{ "En ejecucion..." if ejecucion.en_ejecucion else "Finalizada" }}</span>
+        <span class="badge {{ 'advertencia' if ejecucion.en_ejecucion else 'activo' if ejecucion.estado_ejecucion == 'EXITOSA' else 'error' if ejecucion.estado_ejecucion == 'ERROR' else 'inactivo' }}" data-ejecucion-indicador>{{ "Actualizando en vivo" if ejecucion.en_ejecucion else "Ejecucion finalizada" }}</span>
     </div>
     <pre class="consola-ejecucion consola-operativa" data-ejecucion-log data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">{{ ejecucion.log }}</pre>
 </section>
