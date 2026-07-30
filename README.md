@@ -4,7 +4,9 @@ Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Pytho
 
 ## Estado actual
 
-El proyecto avanzo hasta Fase 11G. La fuente formal del roadmap desde este punto es `docs/ROADMAP.md`.
+El estado local confirmado por commit llega hasta Fase 17D. Queda pendiente el push al repositorio remoto y la normalizacion documental final de Fase 17X.
+
+La fuente formal del roadmap es `docs/ROADMAP.md`; el detalle cronologico se mantiene en `docs/CHANGELOG.md` y `log_codex.md`.
 
 * Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
 * Fase 2: diseno UI/UX base, responsive y corporativo.

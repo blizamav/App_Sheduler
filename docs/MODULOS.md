@@ -1,5 +1,9 @@
 # Modulos
 
+## Estado de normalizacion 17X
+
+El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, Fase 17C y Fase 17D quedaron cerradas localmente por commits separados, sin cambios de base de datos. Queda pendiente el push al repositorio remoto.
+
 ## Implementados
 
 * Login inicial desde `.env`.

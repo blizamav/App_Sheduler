@@ -97,6 +97,17 @@
 * Seguridad: no se exponen rutas fisicas ni contenido `.env`; no se modifican Graph, correos, evidencias ni historial.
 * Staging: el staging existente de Fase 17A se conserva sin cambios; 17D queda solo en el working tree.
 
+### 2026-07-22 - Fase 17X / Normalizacion de cambios pendientes
+
+* Diagnostico: 17A, 17B, 17C y 17D quedaron cerradas localmente por commits separados; queda pendiente normalizar documentacion y realizar push cuando se autorice.
+* Validacion 17A: flujo sin script, alta con script v1 activa, `.env` pegado/adjunto, carga posterior de variables y rechazo de `.env` requerido faltante, usando mocks y directorios temporales sin SQL.
+* Validacion 17B: descarga activa/no activa, confinamiento a `.py` bajo scripts, bloqueo de `.env`, respuesta adjunta autorizada y 403 sin permiso.
+* Validacion 17C: `print` y `logging` progresivos, error con salida previa y evidencia stdout completa con delimitadores visibles.
+* Riesgo vigente: alta de tarea y persistencia de archivos no forman una transaccion unica; ante falla posterior la tarea puede quedar creada sin script y debe completarse desde `Scripts`.
+* Documentacion: se alinea el estado en `README.md`, `docs/ROADMAP.md` y `docs/MODULOS.md` declarando cierre local por commits y push pendiente.
+* BD/seguridad: no se ejecuta SQL, no se modifican `.env`, `.env.docker`, migraciones ni `database/release/`.
+* Cierre pendiente: revisar remanentes funcionales no staged antes de commit/push final; esta fase no hace commit ni push.
+
 ### 2026-07-17 - Fase 17C / Salida de ejecucion en tiempo real
 
 * Archivos creados: `docs/LOGS_EJECUCION_TIEMPO_REAL.md`.

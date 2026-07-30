@@ -19,6 +19,26 @@
 * Archivos inexistentes no detienen la limpieza; rutas sospechosas se rechazan sin exponerlas.
 * No requiere migracion y no se ejecuto SQL.
 
+## 2026-07-22 - Fase 17X normalizacion de cambios pendientes
+
+### Estado
+
+* Fases 17A, 17B, 17C y 17D quedaron cerradas localmente por commits separados.
+* Queda pendiente el push al repositorio remoto.
+* No se agregan funcionalidades nuevas en esta normalizacion.
+
+### Validaciones
+
+* Fase 17A: flujo anterior sin script; script inicial v1 activa; `.env` pegado y adjunto; carga posterior de variables; rechazo de `.env` requerido faltante.
+* Fase 17B: descarga de version activa y no activa; bloqueo de `.env`/rutas no permitidas; respuesta adjunta autorizada y 403 sin permiso.
+* Fase 17C: salida progresiva con `print` y `logging`, error con salida previa y delimitadores de evidencia visibles.
+* `python -m compileall app scheduler_worker.py` correcto.
+* No requiere migraciones y no se ejecuto SQL.
+
+### Documentacion
+
+* `README.md`, `docs/ROADMAP.md` y `docs/MODULOS.md` aclaran el estado local cerrado por commits y el push pendiente.
+
 ## 2026-07-17 - Fase 17C salida de ejecucion en tiempo real
 
 ### Creado
