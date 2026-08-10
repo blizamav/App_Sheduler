@@ -280,6 +280,7 @@ def eliminar_permanente(entidad, id_registro):
         elif entidad == "scripts":
             _validar_desacople_historico(cursor, entidad, id_registro)
             ids_versiones = _ids_versiones_scripts(cursor, [id_registro])
+            resultado["archivos_operativos"] = _archivos_versiones_script(cursor, id_registro)
             _asegurar_snapshots_script(cursor, id_registro)
             _validar_snapshots_script(cursor, id_registro)
             cursor.execute("UPDATE dbo.ejecuciones SET id_script = NULL WHERE id_script = ?", id_registro)
@@ -290,14 +291,21 @@ def eliminar_permanente(entidad, id_registro):
                 "DELETE FROM dbo.scripts_versiones WHERE id_script = ? AND ISNULL(eliminado_operativo, 0) = 1",
                 id_registro,
             )
+            versiones_eliminadas = max(cursor.rowcount, 0)
             cursor.execute("DELETE FROM dbo.scripts WHERE id_script = ?", id_registro)
+            resultado["registros_operativos_eliminados"] = {
+                "scripts": max(cursor.rowcount, 0),
+                "scripts_versiones": versiones_eliminadas,
+            }
         elif entidad == "scripts_versiones":
             _validar_desacople_historico(cursor, entidad, id_registro)
+            resultado["archivos_operativos"] = _archivos_version(cursor, id_registro)
             _asegurar_snapshots_version(cursor, id_registro)
             _validar_snapshots_version(cursor, id_registro)
             cursor.execute("UPDATE dbo.ejecuciones SET id_version = NULL WHERE id_version = ?", id_registro)
             cursor.execute("UPDATE dbo.scripts SET id_version_activa = NULL WHERE id_version_activa = ?", id_registro)
             cursor.execute("DELETE FROM dbo.scripts_versiones WHERE id_version = ?", id_registro)
+            resultado["registros_operativos_eliminados"] = {"scripts_versiones": max(cursor.rowcount, 0)}
         conexion.commit()
     return resultado
 
@@ -319,6 +327,63 @@ def _archivos_versiones_tarea(cursor, id_tarea):
         if ruta_env:
             archivos.append({"tipo": "env", "ruta_relativa": str(ruta_env)})
     return archivos
+
+
+def _archivos_versiones_script(cursor, id_script):
+    cursor.execute(
+        """
+        SELECT ruta_relativa, ruta_env_relativa
+        FROM dbo.scripts_versiones
+        WHERE id_script = ?
+        """,
+        id_script,
+    )
+    return _filas_archivos_versiones(cursor.fetchall())
+
+
+def _archivos_version(cursor, id_version):
+    cursor.execute(
+        """
+        SELECT ruta_relativa, ruta_env_relativa
+        FROM dbo.scripts_versiones
+        WHERE id_version = ?
+        """,
+        id_version,
+    )
+    return _filas_archivos_versiones(cursor.fetchall())
+
+
+def _filas_archivos_versiones(filas):
+    archivos = []
+    for ruta_script, ruta_env in filas:
+        if ruta_script:
+            archivos.append({"tipo": "script", "ruta_relativa": str(ruta_script)})
+        if ruta_env:
+            archivos.append({"tipo": "env", "ruta_relativa": str(ruta_env)})
+    return archivos
+
+
+def listar_rutas_operativas_scripts():
+    rutas = {"script": set(), "env": set()}
+    with obtener_conexion() as conexion:
+        cursor = conexion.cursor()
+        cursor.execute(
+            """
+            SELECT v.ruta_relativa, v.ruta_env_relativa
+            FROM dbo.scripts_versiones v
+            INNER JOIN dbo.scripts s ON s.id_script = v.id_script
+            INNER JOIN dbo.tareas t ON t.id_tarea = s.id_tarea
+            WHERE ISNULL(v.eliminado_operativo, 0) = 0
+              AND ISNULL(s.eliminado_operativo, 0) = 0
+              AND ISNULL(t.eliminado_operativo, 0) = 0
+            """
+        )
+        for ruta_script, ruta_env in cursor.fetchall():
+            if ruta_script:
+                rutas["script"].add(str(ruta_script).replace("\\", "/").lower())
+            if ruta_env:
+                rutas["env"].add(str(ruta_env).replace("\\", "/").lower())
+    return rutas
 
 
 def _eliminar_configuracion_notificaciones_tarea(cursor, id_tarea):

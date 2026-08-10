@@ -1,5 +1,92 @@
 # Changelog
 
+## 2026-08-10 - Fase 18D.3 validacion end-to-end de eliminacion permanente
+
+### Validado
+
+* Se creo por el flujo HTTP normal la tarea temporal `QA_ELIMINACION_PERMANENTE_18D3` (`id_tarea = 13`) con script `19`, versiones v1 `26` y v2 `27`, dos archivos `.py` y dos `.env` de prueba sin secretos.
+* La ejecucion manual `10094` finalizo `EXITOSA` con codigo de salida 0 antes de borrar la tarea.
+* El borrado operativo retiro la tarea del conjunto operativo, la dejo visible en Papelera y conservo los cuatro archivos hasta la confirmacion permanente.
+* La eliminacion permanente desde `/papelera/tareas/13/eliminar-permanente` retiro tarea, script, versiones y programacion, junto con los dos `.py`, dos `.env` y sus carpetas vacias.
+* Se conservaron la ejecucion, el registro y archivo de log, la auditoria y los snapshots historicos. Las FK operativas de la ejecucion quedaron desacopladas en `NULL` conforme al modelo.
+* Dry-run posterior: 0 `.py` huerfanos, 0 `.env` huerfanos, 0 carpetas vacias y 0 rutas rechazadas. Los roots `scripts/` y `env_scripts/` permanecen intactos.
+
+### Entorno de prueba
+
+* El ODBC local mantiene el error ambiental `08001`. La prueba uso las rutas Flask reales y los servicios existentes con un adaptador temporal en memoria hacia `pymssql`; no se modifico codigo ni configuracion.
+* El hilo de ejecucion emitio una comprobacion ODBC tardia al finalizar el arnes temporal, despues de persistir estado `EXITOSA`, log y auditoria. No afecto la eliminacion ni el historial y permanece asociado al diagnostico ODBC conocido.
+
+### Alcance
+
+* No se agregaron funcionalidades, migraciones ni SQL destructivo manual.
+* No se modifico `.env`, `.env.docker` ni `database/release/`.
+
+## 2026-08-10 - Fase 18D.2 limpieza controlada de huerfanos fisicos
+
+### Ejecutado
+
+* Se repitio el dry-run antes de limpiar: 14 `.py` huerfanos, 6 `.env` huerfanos, 5 carpetas vacias, 0 archivos referenciados y 0 rutas rechazadas.
+* Mediante consultas `SELECT` se confirmo que `tareas`, `scripts`, `scripts_versiones` y `programaciones` permanecian en 0, sin rutas operativas vigentes.
+* Se eliminaron exclusivamente los 14 `.py` y 6 `.env` clasificados como `HUERFANO` dentro de `scripts/` y `env_scripts/`.
+* Se eliminaron 46 carpetas que quedaron vacias: 35 durante la limpieza de archivos y 11 durante la poda final controlada con `rmdir`.
+
+### Validado
+
+* Dry-run posterior: 0 `.py` huerfanos, 0 `.env` huerfanos, 0 carpetas vacias, 0 referenciados y 0 rechazados.
+* Estado posterior de BD: `tareas = 0`, `scripts = 0`, `scripts_versiones = 0` y `programaciones = 0`.
+* Los roots `scripts/` y `env_scripts/` permanecen intactos y no son enlaces simbolicos.
+
+### Alcance
+
+* No se leyo contenido de archivos `.env` ni se expusieron credenciales.
+* No se uso borrado recursivo amplio ni se ejecuto SQL destructivo.
+* No se modifico `.env`, `.env.docker`, `database/release/` ni `database/migrations/`.
+
+## 2026-08-10 - Fase 18D.1 correccion borrado fisico y dry-run
+
+### Corregido
+
+* `app/repositorios/repositorio_papelera.py`: la eliminacion permanente individual de `scripts` y `scripts_versiones` captura rutas `.py` y `.env` antes de borrar registros operativos.
+* `app/servicios/servicio_papelera.py`: la limpieza fisica valida roots permitidos, rechaza rutas externas, elimina solo archivos conocidos y poda carpetas padre vacias con `rmdir`.
+* Se mejora el log seguro de eliminacion permanente con conteos separados para scripts `.py`, `.env` y carpetas vacias.
+
+### Agregado
+
+* Dry-run interno de huerfanos operativos para comparar rutas vigentes en BD contra `scripts/` y `env_scripts/` sin eliminar archivos.
+
+### Validado
+
+* Pruebas controladas de eliminacion fisica en roots temporales: archivos asociados, carpeta con archivo extra, path traversal, archivo inexistente y dry-run sin limpieza.
+* Dry-run real sin limpieza: 14 `.py` huerfanos, 6 `.env` huerfanos y 5 carpetas vacias.
+* Verificacion posterior: los residuos reales siguen existiendo.
+* `python -m compileall app scheduler_worker.py` OK.
+
+### Alcance
+
+* No se ejecuto SQL destructivo.
+* No se eliminaron residuos reales.
+* No se modifico `.env`, `.env.docker`, `database/release/` ni migraciones.
+
+## 2026-08-10 - Fase 18B diagnostico conectividad ODBC local SQL Server
+
+### Diagnostico
+
+* Se reviso la capa `app/database/conexion.py` y se confirmo que la cadena ODBC ya es parametrizable por `.env` mediante `DB_DRIVER`, `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`.
+* La configuracion local efectiva usa `ODBC Driver 17 for SQL Server`, `Encrypt=no` y `TrustServerCertificate=yes`, sin uso del driver antiguo `SQL Server` desde el codigo.
+* Se detectaron drivers instalados: `SQL Server`, `ODBC Driver 17 for SQL Server` y `ODBC Driver 18 for SQL Server`.
+* Las pruebas con ODBC Driver 17 y 18, combinando `Encrypt` y `TrustServerCertificate`, siguieron fallando con `08001` / SSL Provider / cifrado no soportado en el cliente.
+* La prueba TCP hacia `192.168.0.180:1433` responde, pero la conexion ODBC no completa el handshake.
+* Se probaron variantes de servidor con IP, instancia nombrada y puerto TCP directo sin cambiar `.env`; todas fallaron con el mismo error ODBC.
+
+### Resultado
+
+* Causa probable: condicion ambiental de TLS/SSL entre cliente ODBC local Windows y SQL Server, posible Force Encryption/certificado del servidor o instalacion/configuracion ODBC local, no falta de parametrizacion en el codigo.
+* No se cambio codigo funcional ni cadena hardcodeada.
+* No se modifico `.env` ni `.env.docker`.
+* No se ejecuto SQL correctivo, solo pruebas inocuas de conexion `SELECT 1` cuando la conexion lo intentaba.
+* No se tocaron `database/release/` ni `database/migrations/`.
+* Validaciones: `python -m compileall app scheduler_worker.py` OK, `git diff --check` OK.
+
 ## 2026-07-22 - Fase 17D eliminacion permanente operativa con historial protegido
 
 ### Creado

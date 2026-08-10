@@ -10,6 +10,7 @@ from app.repositorios.repositorio_papelera import (
     MENSAJE_SNAPSHOTS_INSUFICIENTES,
     dependencias,
     eliminar_permanente,
+    listar_rutas_operativas_scripts,
     listar_eliminados,
     obtener_eliminado,
     restaurar,
@@ -169,8 +170,13 @@ def eliminar_registro_permanente(entidad, id_registro, usuario, id_usuario_sesio
         "PAPELERA_ELIMINACION_PERMANENTE",
         "PAPELERA",
         f"Registro eliminado permanentemente desde tablas operativas: {registro['entidad_label']} #{id_registro}. "
-        f"Archivos eliminados: {resultado_archivos['eliminados']}; no encontrados: {resultado_archivos['no_encontrados']}; "
-        f"no eliminados: {resultado_archivos['no_eliminados']}.",
+        f"Scripts .py eliminados: {resultado_archivos['por_tipo']['script']['eliminados']}; "
+        f"Scripts .py no encontrados: {resultado_archivos['por_tipo']['script']['no_encontrados']}; "
+        f"Env eliminados: {resultado_archivos['por_tipo']['env']['eliminados']}; "
+        f"Env no encontrados: {resultado_archivos['por_tipo']['env']['no_encontrados']}; "
+        f"Archivos no eliminados: {resultado_archivos['no_eliminados']}; "
+        f"Carpetas vacias eliminadas: {resultado_archivos['carpetas_eliminadas']}; "
+        f"Carpetas no eliminadas: {resultado_archivos['carpetas_no_eliminadas']}.",
         usuario=usuario,
         valor_anterior=str(registro),
     )
@@ -468,34 +474,136 @@ def _motivo_seguro(mensaje):
 
 
 def _eliminar_archivos_operativos(archivos):
-    resultado = {"eliminados": 0, "no_encontrados": 0, "no_eliminados": 0}
-    bases = {
-        "script": Path(str(current_app.config.get("RUTA_BASE_SCRIPTS", "scripts"))),
-        "env": Path(str(current_app.config.get("RUTA_BASE_ENV_SCRIPTS", "env_scripts"))),
+    resultado = {
+        "eliminados": 0,
+        "no_encontrados": 0,
+        "no_eliminados": 0,
+        "carpetas_eliminadas": 0,
+        "carpetas_no_eliminadas": 0,
+        "por_tipo": {
+            "script": {"eliminados": 0, "no_encontrados": 0, "no_eliminados": 0},
+            "env": {"eliminados": 0, "no_encontrados": 0, "no_eliminados": 0},
+        },
     }
     for archivo in archivos:
-        tipo = archivo.get("tipo")
-        ruta_relativa = archivo.get("ruta_relativa")
         try:
-            if tipo not in bases or not ruta_relativa:
-                raise ValueError("Tipo o ruta de archivo no permitida.")
-            ruta = Path(str(ruta_relativa))
-            if ruta.is_absolute():
-                raise ValueError("Ruta absoluta no permitida.")
-            base = resolver_ruta_segura(bases[tipo])
-            destino = resolver_ruta_segura(ruta)
-            if destino != base and base not in destino.parents:
-                raise ValueError("Ruta fuera del directorio operativo permitido.")
+            tipo, base, destino = _resolver_archivo_operativo(archivo)
             if not destino.exists():
                 resultado["no_encontrados"] += 1
+                resultado["por_tipo"][tipo]["no_encontrados"] += 1
                 continue
             if not destino.is_file():
                 raise ValueError("La ruta operativa no corresponde a un archivo.")
             destino.unlink()
             resultado["eliminados"] += 1
+            resultado["por_tipo"][tipo]["eliminados"] += 1
+            _podar_carpetas_vacias(destino.parent, base, resultado)
         except (OSError, TypeError, ValueError):
             resultado["no_eliminados"] += 1
+            tipo = str((archivo or {}).get("tipo") or "").lower()
+            if tipo in resultado["por_tipo"]:
+                resultado["por_tipo"][tipo]["no_eliminados"] += 1
     return resultado
+
+
+def auditar_huerfanos_archivos_operativos(rutas_vigentes=None):
+    """Compara rutas vigentes en BD contra archivos fisicos sin eliminar nada."""
+    rutas_vigentes = rutas_vigentes if rutas_vigentes is not None else listar_rutas_operativas_scripts()
+    bases = _bases_archivos_operativos()
+    resultado = {
+        "referenciados": [],
+        "huerfanos": [],
+        "carpetas_vacias": [],
+        "rechazados": [],
+        "resumen": {
+            "script_referenciados": 0,
+            "script_huerfanos": 0,
+            "env_referenciados": 0,
+            "env_huerfanos": 0,
+            "carpetas_vacias": 0,
+            "rechazados": 0,
+        },
+    }
+    for tipo, base in bases.items():
+        if not base.exists():
+            continue
+        vigentes = {str(ruta).replace("\\", "/").lower() for ruta in rutas_vigentes.get(tipo, set())}
+        for archivo in base.rglob("*"):
+            if not archivo.is_file():
+                continue
+            try:
+                archivo_resuelto = archivo.resolve()
+                if archivo_resuelto != base and base not in archivo_resuelto.parents:
+                    raise ValueError("Ruta fuera del root permitido.")
+                ruta_relativa = archivo_resuelto.relative_to(resolver_ruta_segura(Path("."))).as_posix()
+            except (OSError, ValueError):
+                resultado["rechazados"].append({"tipo": tipo, "estado": "RECHAZADO"})
+                resultado["resumen"]["rechazados"] += 1
+                continue
+            item = {"tipo": tipo, "ruta_relativa": ruta_relativa}
+            if ruta_relativa.lower() in vigentes:
+                item["estado"] = "REFERENCIADO"
+                resultado["referenciados"].append(item)
+                resultado["resumen"][f"{tipo}_referenciados"] += 1
+            else:
+                item["estado"] = "HUERFANO"
+                resultado["huerfanos"].append(item)
+                resultado["resumen"][f"{tipo}_huerfanos"] += 1
+        for carpeta in base.rglob("*"):
+            if carpeta.is_dir() and _carpeta_esta_vacia(carpeta):
+                resultado["carpetas_vacias"].append(
+                    {"tipo": tipo, "ruta_relativa": carpeta.relative_to(resolver_ruta_segura(Path("."))).as_posix(), "estado": "CARPETA_VACIA"}
+                )
+                resultado["resumen"]["carpetas_vacias"] += 1
+    return resultado
+
+
+def _resolver_archivo_operativo(archivo):
+    bases = _bases_archivos_operativos()
+    tipo = str((archivo or {}).get("tipo") or "").lower()
+    ruta_relativa = (archivo or {}).get("ruta_relativa")
+    if tipo not in bases or not ruta_relativa:
+        raise ValueError("Tipo o ruta de archivo no permitida.")
+    ruta = Path(str(ruta_relativa))
+    if ruta.is_absolute():
+        raise ValueError("Ruta absoluta no permitida.")
+    base = bases[tipo]
+    destino = resolver_ruta_segura(ruta)
+    if destino != base and base not in destino.parents:
+        raise ValueError("Ruta fuera del directorio operativo permitido.")
+    return tipo, base, destino
+
+
+def _bases_archivos_operativos():
+    return {
+        "script": resolver_ruta_segura(Path(str(current_app.config.get("RUTA_BASE_SCRIPTS", "scripts")))),
+        "env": resolver_ruta_segura(Path(str(current_app.config.get("RUTA_BASE_ENV_SCRIPTS", "env_scripts")))),
+    }
+
+
+def _podar_carpetas_vacias(carpeta_inicial, base, resultado):
+    carpeta = carpeta_inicial.resolve()
+    while carpeta != base and base in carpeta.parents:
+        try:
+            carpeta.rmdir()
+            resultado["carpetas_eliminadas"] += 1
+        except OSError:
+            resultado["carpetas_no_eliminadas"] += 1
+            break
+        except ValueError:
+            resultado["carpetas_no_eliminadas"] += 1
+            break
+        carpeta = carpeta.parent
+
+
+def _carpeta_esta_vacia(carpeta):
+    try:
+        next(carpeta.iterdir())
+        return False
+    except StopIteration:
+        return True
+    except OSError:
+        return False
 
 
 def _entero(valor, defecto, minimo=None, maximo=None):
