@@ -4,6 +4,12 @@
 
 El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, Fase 17C y Fase 17D quedaron cerradas localmente por commits separados, sin cambios de base de datos. Queda pendiente el push al repositorio remoto.
 
+## Bootstrap limpio
+
+Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. El manifiesto combina el release base inmutable con definiciones limpias de notificaciones, evidencias y Mail Graph. La migracion correctiva 021 de QA no participa. Bootstrap, validacion SQL y smoke test Flask quedaron validados en base temporal mediante adaptador de prueba por la incidencia ODBC; Factory Reset permanece sin implementar.
+
+La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
+
 ## Implementados
 
 * Login inicial desde `.env`.
@@ -691,11 +697,12 @@ Implementado en Fase 4:
 
 Implementado en Fase 13A:
 
-* `database/release/` contiene instalacion SQL limpia desde cero para `APP_SCHEDULER_QA`.
-* `002_schema_final.sql` consolida el modelo vigente de seguridad, mantenedores, tareas, scripts, ejecuciones, logs, scheduler, feriados, papelera, snapshots y auditoria.
+* `database/release/` conserva el release base publicado de Fase 13B.
+* `database/bootstrap/` complementa ese release y pasa a ser la fuente vigente para instalaciones nuevas desde Fase 19B.
+* `002_schema_final.sql` consolida el modelo base de seguridad, mantenedores, tareas, scripts, ejecuciones, logs, scheduler, feriados, papelera, snapshots y auditoria.
 * Seeds consolidados cargan datos base sin usuarios reales ni credenciales.
 * `099_validacion_instalacion.sql` valida estructura y datos base con consultas de solo lectura.
-* `database/migrations/` y `database/seeds/` permanecen como historial de desarrollo incremental.
+* `database/migrations/` conserva cambios incrementales activos; los seeds y migraciones anteriores a 13B permanecen archivados en `database/legacy_pre_release_13B/`.
 
 No implementado en Fase 13A:
 

@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-08-11 - Fase 19B.3B smoke test Flask validado
+
+### Validado
+
+* Flask se probo contra `APP_SCHEDULER_BOOTSTRAP_TEST` mediante override exclusivo del proceso y adaptador temporal en memoria hacia `pymssql`, sin modificar la conexion de produccion.
+* `SUPER_ADMIN_ENV`, panel, tareas, ejecuciones, Papelera, scheduler, usuarios y configuraciones respondieron correctamente, sin errores `500` ni objetos o columnas faltantes.
+* La arquitectura real de scripts se valido con la tarea temporal `QA_BOOTSTRAP_SMOKE_19B`: `GET /tareas/1/scripts` respondio `200`; no existe ni se requiere una ruta global `/scripts/`.
+* El alta integral creo script `1`, version activa v1 `1` y su archivo `.py`. El borrado operativo conservo el archivo y la eliminacion permanente lo retiro junto con tarea, programacion, script y version.
+* El dry-run inicial y final quedo en cero. Tras revertir la transaccion aislada, todas las tablas operativas y de prueba volvieron a cero.
+* La ejecucion final exclusiva de `100_validacion_bootstrap_actual.sql` retorno `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33`.
+
+### Cierre
+
+* Fase 19B queda validada: base vacia, bootstrap limpio, validacion SQL, smoke Flask, flujo real de scripts y restauracion del estado virgen comprobados.
+* Factory Reset continua sin implementar y Fase 19C no fue iniciada.
+* No se modificaron `.env`, `.env.docker`, codigo de produccion ni `database/release/`; no se hizo staging, commit ni push.
+
+## 2026-08-11 - Fase 19B.2 validacion de catalogos corregida
+
+### Corregido
+
+* `database/bootstrap/100_validacion_bootstrap_actual.sql` ahora valida exclusivamente los codigos definidos por el seed oficial `database/release/004_seed_catalogos_base.sql`.
+* Se retiraron siete expectativas historicas ajenas al bootstrap limpio y se incorporaron `cat_estados_tarea.ELIMINADA` y `cat_niveles_log.DEBUG`.
+
+### Validado
+
+* Se ejecuto unicamente el script 100 sobre `APP_SCHEDULER_BOOTSTRAP_TEST`.
+* Resultado: `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33`, sin `THROW`.
+* No se repitio el bootstrap 001-010, no se modifico `APP_SCHEDULER_QA` y no se ejecuto SQL destructivo.
+
+### Alcance
+
+* No se modificaron `.env`, `.env.docker` ni `database/release/`.
+* No se hizo staging, commit ni push.
+
+## 2026-08-10 - Fase 19B bootstrap limpio actual preparado
+
+### Agregado
+
+* Se creo `database/bootstrap/` con manifiesto versionado, ejecutor SQLCMD, DDL limpio equivalente a migraciones 019/020 y validacion complementaria del esquema actual.
+* El bootstrap reutiliza `database/release/001-006` sin modificar el release publicado.
+* Se documento la fuente de verdad y el procedimiento en `docs/BOOTSTRAP_INSTALACION_LIMPIA.md`.
+
+### Validado
+
+* Inventario read-only de QA: 33 tablas; las cinco diferencias frente al release son las tablas de notificaciones, evidencias y Mail Graph.
+* Se detecto drift funcional: QA no contiene los 12 permisos de mantenedores y el release no los asigna a roles. El bootstrap agrega la matriz historica mediante un seed complementario, sin modificar el release.
+* Se clasifico como drift esperado la compatibilidad antigua de Auditoria y un CHECK redundante de ejecuciones presentes en QA; no son requeridos por el esquema limpio ni por el backend actual.
+* `APP_SCHEDULER_BOOTSTRAP_TEST` no existe al momento del diagnostico.
+* `021_consolidar_configuracion_mail_graph_qa.sql` queda excluida del bootstrap y del futuro Factory Reset.
+* La ejecucion SQL real y el smoke test quedan pendientes: ODBC 17, ODBC 18 y el driver legado fallan con `08001` antes de abrir conexion. No se utilizo `pymssql` para DDL.
+* Manifiesto y ejecutor tienen el mismo orden, todos los archivos existen, no hay `APP_SCHEDULER_QA` hardcodeado en SQL del bootstrap y los 40 permisos usados por rutas quedan cubiertos por los 51 permisos base.
+* `python -m compileall app scheduler_worker.py` y `git diff --check` finalizaron correctamente.
+
+### Alcance
+
+* Factory Reset no fue implementado.
+* No se modificaron `.env`, `.env.docker`, `database/release/` ni `APP_SCHEDULER_QA`.
+
 ## 2026-08-10 - Fase 18D.3 validacion end-to-end de eliminacion permanente
 
 ### Validado

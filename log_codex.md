@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental conservado en `database/migrations/` y `database/seeds/`; release SQL limpio consolidado en `database/release/` para instalaciones desde cero.
-* Estado actual: Fase 18D.3 valido end-to-end la eliminacion permanente corregida sin dejar residuos fisicos y conservando historial protegido.
+* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
+* Estado actual: Fase 19B cerrada y validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST`: bootstrap limpio, 33 tablas, validacion SQL, smoke Flask, script v1 por tarea, eliminacion permanente y estado virgen final.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 18D.3 - Validacion end-to-end de eliminacion permanente corregida.
-* Ultima actualizacion: 2026-08-10
+* Fase actual: Fase 19B.3B - Cierre del smoke test con arquitectura real de scripts.
+* Ultima actualizacion: 2026-08-11
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -86,6 +86,38 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-08-11 - Fase 19B.3B / Smoke test Flask y cierre Fase 19B
+
+* Metodo: override exclusivo del proceso a `APP_SCHEDULER_BOOTSTRAP_TEST` y adaptador temporal en memoria `pyodbc`/`pymssql`, sin modificar configuracion ni codigo permanente. El arnes mantuvo una transaccion compartida y ejecuto rollback al cierre.
+* Estado inicial: tareas, scripts, versiones, programaciones, ejecuciones, usuarios y maestros en cero; dry-run de filesystem sin huerfanos, carpetas vacias ni rutas rechazadas.
+* Flujo Flask: se crearon maestros ficticios, tarea `QA_BOOTSTRAP_SMOKE_19B` (`id_tarea = 1`), script `1` y v1 activa `1` con archivo Python minimo y sin `.env`.
+* Arquitectura validada: `GET /tareas/1/scripts` respondio `200`. `/scripts/` no forma parte del diseno y no fue implementado.
+* Limpieza normal: el borrado operativo envio la tarea a Papelera y conservo el archivo; la eliminacion permanente retiro tarea, programacion, script, version y archivo. Los maestros temporales tambien fueron retirados por sus flujos normales.
+* Estado final: rollback integral del arnes dejo tablas operativas, maestros, logs y auditoria en cero; dry-run final en cero.
+* Validacion SQL final: se ejecuto solo `100_validacion_bootstrap_actual.sql`; resultado `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33`.
+* Conclusion: Fase 19B validada. Factory Reset no fue implementado y Fase 19C no fue iniciada.
+* Seguridad: no se modificaron `.env`, `.env.docker`, codigo de produccion ni `database/release/`; no se altero `APP_SCHEDULER_QA` y no se hizo staging, commit ni push.
+
+### 2026-08-11 - Fase 19B.2 / Validacion de catalogos corregida
+
+* Archivo funcional modificado: `database/bootstrap/100_validacion_bootstrap_actual.sql`.
+* Documentacion modificada: `docs/CHANGELOG.md`, `docs/BOOTSTRAP_INSTALACION_LIMPIA.md` y `log_codex.md`.
+* Causa raiz: el validador esperaba siete codigos historicos que no pertenecen al contrato actual de `database/release/004_seed_catalogos_base.sql` y no comprobaba `ELIMINADA` ni `DEBUG`.
+* Correccion: se elimino la expectativa de `EN_EJECUCION`, `ERROR` y `FINALIZADA` en estados de tarea; `OMITIDA`, `OMITIDA_FERIADO` y `OMITIDA_FIN_SEMANA` en estados de ejecucion; e `INTERVALO_DIARIO` en tipos de programacion. Se agregaron `ELIMINADA` y `DEBUG`.
+* Validacion: se ejecuto solo el script 100 contra `APP_SCHEDULER_BOOTSTRAP_TEST`; resultado `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33`, sin `THROW`.
+* Alcance: no se repitio 001-010, no se ejecuto SQL destructivo, no se modifico `APP_SCHEDULER_QA`, `.env`, `.env.docker` ni `database/release/` y no se hizo staging, commit ni push.
+* Proximo paso: smoke test Flask controlado contra la base temporal antes de evaluar Fase 19C.
+
+### 2026-08-10 - Fase 19B / Bootstrap limpio actual preparado
+
+* Archivos creados: `database/bootstrap/000_ejecutar_bootstrap_completo.sql`, `manifest.json`, `007_crear_notificaciones_evidencias.sql`, `008_crear_configuracion_mail_graph.sql`, `009_seed_configuracion_mail_graph.sql`, `010_seed_permisos_mantenedores.sql`, `100_validacion_bootstrap_actual.sql`, `database/bootstrap/README.md` y `docs/BOOTSTRAP_INSTALACION_LIMPIA.md`.
+* Archivos modificados: `docs/CHANGELOG.md`, `docs/ROADMAP.md`, `docs/MODULOS.md` y `log_codex.md`.
+* Diagnostico: El release contiene 28 tablas; QA contiene 33. El drift estructural requerido corresponde a las cinco tablas de 019/020. QA conserva seis columnas legacy de Auditoria, dos indices, un DEFAULT y un CHECK redundante no requeridos por el codigo actual. Ademas, QA carece de los 12 permisos de mantenedores exigidos por el backend y la matriz release no los asigna.
+* Decisiones: Reutilizar `database/release/001-006` como base inmutable; agregar DDL parametrizado fuera del release; usar `manifest.json` como unica lista oficial; excluir 021 por ser correccion QA.
+* Validaciones: Inventario QA read-only mediante `pymssql`; confirmacion de que `APP_SCHEDULER_BOOTSTRAP_TEST` no existe; ODBC 17/18/legado fallaron con `08001` antes de conectar.
+* Pendiente: Ejecutar bootstrap real y smoke test Flask contra la base temporal. Fase 19B no se considera cerrada y Factory Reset no fue implementado.
+* Seguridad: No se mostraron secretos, no se modificaron `.env`/`.env.docker`, no se modifico `database/release/`, no se ejecuto DDL/DML ni se altero QA. Solo se ejecutaron consultas de metadatos autorizadas.
 
 ### 2026-08-10 - Fase 18D.3 / Validacion end-to-end eliminacion permanente corregida
 
