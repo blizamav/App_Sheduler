@@ -1124,6 +1124,29 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    document.querySelectorAll("[data-factory-reset-execute='1']").forEach((formulario) => {
+        formulario.addEventListener("submit", (evento) => {
+            if (formulario.dataset.factoryResetConfirmed !== "1") {
+                return;
+            }
+            if (formulario.dataset.factoryResetSending === "1") {
+                evento.preventDefault();
+                return;
+            }
+            evento.preventDefault();
+            formulario.dataset.factoryResetSending = "1";
+            const panel = document.querySelector("[data-factory-reset-running]");
+            if (panel) {
+                panel.classList.add("visible");
+                panel.setAttribute("aria-hidden", "false");
+            }
+            formulario.querySelectorAll("button").forEach((boton) => {
+                boton.disabled = true;
+            });
+            requestAnimationFrame(() => HTMLFormElement.prototype.submit.call(formulario));
+        });
+    });
+
     if (modalCancelar) {
         modalCancelar.addEventListener("click", cerrarModalConfirmacion);
     }
@@ -1140,6 +1163,9 @@ document.addEventListener("DOMContentLoaded", () => {
         modalConfirmar.addEventListener("click", () => {
             const formulario = formularioPendiente;
             if (formulario) {
+                if (formulario.dataset.factoryResetExecute === "1") {
+                    formulario.dataset.factoryResetConfirmed = "1";
+                }
                 envioConfirmado = true;
                 cerrarModalConfirmacion(true);
                 formulario.requestSubmit();

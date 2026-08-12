@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-Fase 19B queda validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST`. Fase 19C implementa la infraestructura preventiva de Factory Reset: lock externo compartido, bloqueos web/worker, diagnóstico, permiso exclusivo, CSRF, preview firmado y Zona de Peligro. El reset destructivo y la reconstrucción de BD siguen deshabilitados y quedan para Fase 19D.
+Fase 19B queda validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST` y Fase 19C aporta la infraestructura preventiva. Fase 19D implementa el orquestador Factory Reset con kill switch, SQLCMD administrativo, blue-green, rollback, cuarentena filesystem, auditoria nueva e invalidacion de sesiones. Fase 19D.1 valido el flujo con SQL Server real sobre bases desechables: dos resets exitosos, conservacion `OLD`, rollback post intercambio, fallo bootstrap aislado y rechazo de sesion ajena. Esta validacion no autoriza por si sola ejecutar Factory Reset sobre `APP_SCHEDULER_QA`.
 
 Normalizacion Fase 17X: Fase 17A (alta integral de tarea con script inicial y `.env`), Fase 17B (descarga segura del `.py` por version), Fase 17C (salida de ejecucion en tiempo real) y Fase 17D (eliminacion permanente operativa con historial protegido) quedaron cerradas localmente por commits separados. Queda pendiente el push al repositorio remoto. Ninguna de estas fases requiere migracion.
 

@@ -8,10 +8,20 @@
     <div>
         <p class="eyebrow">Administracion critica</p>
         <h2>Restablecer APP Scheduler</h2>
-        <p>Diagnostico preventivo para reconstruir una instalacion desde el bootstrap oficial.</p>
+        <p>Diagnostico y reconstruccion controlada desde el bootstrap oficial.</p>
     </div>
     <span class="badge {{ 'error' if lock.bloquea else 'activo' }}">{{ lock.estado }}</span>
 </section>
+
+{% if estado_operacion %}
+<section class="bloque">
+    <div class="seccion-operativa-header">
+        <p class="eyebrow">Ultimo estado externo</p>
+        <h3>{{ estado_operacion.fase }}</h3>
+        <p>{{ estado_operacion.mensaje }}</p>
+    </div>
+</section>
+{% endif %}
 
 <section class="bloque factory-reset-peligro">
     <div class="seccion-operativa-header">
@@ -19,9 +29,7 @@
         <h3>Restablecer app a estado de fabrica</h3>
         <p>Esta operacion eliminara permanentemente toda la instalacion actual y reconstruira APP Scheduler desde cero.</p>
     </div>
-    <div class="alerta advertencia alerta-inline">
-        Factory Reset todavia requiere confirmacion final. Fase 19C no puede ejecutar cambios destructivos.
-    </div>
+    <div class="alerta advertencia alerta-inline">La ejecucion definitiva exige preview vigente, frase exacta y una segunda confirmacion.</div>
     <form
         method="post"
         action="{{ url_for('factory_reset.preview') }}"
@@ -51,7 +59,7 @@
         <ul>{% for bloqueo in preview.bloqueos %}<li>{{ bloqueo }}</li>{% endfor %}</ul>
     </div>
     {% else %}
-    <div class="alerta info alerta-inline">Las condiciones actuales permiten avanzar a una confirmacion futura. Este preview no autoriza ni ejecuta el reset.</div>
+        <div class="alerta info alerta-inline">Las condiciones actuales permiten presentar la confirmacion definitiva. El preview por si solo no ejecuta el reset.</div>
     {% endif %}
 
     <div class="factory-reset-grid">
@@ -86,6 +94,7 @@
                 <tr><td>Bootstrap SQL</td><td>{{ 'COINCIDE' if preview.bootstrap.version_coincide else 'REVISAR' }}</td><td>{{ preview.bootstrap.mensaje }}</td></tr>
                 <tr><td>Tareas candidatas</td><td>{{ preview.diagnostico.tareas_candidatas }}</td><td>Programaciones que podrian ser evaluadas por el worker.</td></tr>
                 <tr><td>SUPER_ADMIN_ENV</td><td>{{ preview.super_admin_env.estado }}</td><td>{{ preview.super_admin_env.mensaje }}</td></tr>
+                <tr><td>Motor SQLCMD</td><td>{{ 'LISTO' if preview.configuracion_reset.disponible else 'BLOQUEADO' }}</td><td>Credencial administrativa separada y target explicito.</td></tr>
                 <tr><td>Scripts Python</td><td>{{ preview.filesystem.archivos_py }}</td><td>Solo conteo; contenido no leido.</td></tr>
                 <tr><td>Archivos .env</td><td>{{ preview.filesystem.archivos_env }}</td><td>Solo conteo; contenido no leido.</td></tr>
                 <tr><td>Logs</td><td>{{ preview.filesystem.archivos_log }}</td><td>Archivos detectados en roots configurados.</td></tr>
@@ -94,13 +103,44 @@
     </div>
 
     <section class="factory-reset-segunda-confirmacion">
-        <h3>Segunda confirmacion preparada</h3>
-        <p>En la fase destructiva se exigira escribir exactamente <strong>RESTABLECER APP SCHEDULER</strong> y presentar este preview vigente.</p>
-        <input type="hidden" value="{{ preview.token_preview }}" aria-hidden="true">
-        <label for="factoryResetConfirmacion">Confirmacion final</label>
-        <input id="factoryResetConfirmacion" value="" placeholder="RESTABLECER APP SCHEDULER" disabled>
-        <button class="btn peligro" type="button" disabled>Factory Reset no habilitado</button>
+        <h3>Segunda confirmacion definitiva</h3>
+        {% if preview.reset_destructivo_habilitado %}
+        <p>Escribe exactamente <strong>RESTABLECER APP SCHEDULER</strong>. La base anterior y la cuarentena filesystem se conservaran para rollback.</p>
+        <form
+            method="post"
+            action="{{ url_for('factory_reset.ejecutar') }}"
+            class="requiere-confirmacion-form"
+            data-confirm-title="Factory Reset definitivo"
+            data-confirm-message="Se reconstruira la base y se vaciaran los roots operativos. No cierres esta ventana."
+            data-confirm-ok="Restablecer definitivamente"
+            data-confirm-cancel="Cancelar"
+            data-confirm-type="danger"
+            data-confirm-requires-check="1"
+            data-confirm-check-label="Comprendo que la instalacion actual dejara de estar operativa."
+            data-factory-reset-execute="1"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="token_preview" value="{{ preview.token_preview }}">
+            <input type="hidden" name="resumen_hash" value="{{ preview.resumen_hash }}">
+            <label for="factoryResetConfirmacion">Confirmacion final</label>
+            <input id="factoryResetConfirmacion" name="confirmacion" value="" placeholder="RESTABLECER APP SCHEDULER" autocomplete="off" required>
+            <button class="btn peligro" type="submit">Restablecer definitivamente</button>
+        </form>
+        {% else %}
+        <p>La ejecucion permanece bloqueada hasta resolver todos los puntos indicados en el preview.</p>
+        <input value="" placeholder="RESTABLECER APP SCHEDULER" disabled>
+        <button class="btn peligro" type="button" disabled>Factory Reset bloqueado</button>
+        {% endif %}
     </section>
 </section>
 {% endif %}
+
+<div class="factory-reset-ejecutando" data-factory-reset-running aria-hidden="true">
+    <div class="factory-reset-ejecutando-contenido" role="status" aria-live="assertive">
+        <span class="spinner" aria-hidden="true"></span>
+        <p class="eyebrow">Operacion critica en curso</p>
+        <h2>Restableciendo APP Scheduler</h2>
+        <p>Creando y validando la instalacion nueva. No cierres esta ventana ni reenvies el formulario.</p>
+    </div>
+</div>
 {% endblock %}

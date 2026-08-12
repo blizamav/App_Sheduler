@@ -33,6 +33,14 @@ from app.servicios.servicio_programador import debe_ejecutarse_ahora
 
 USUARIO_WORKER = "scheduler_worker"
 ESTADOS_LOG_ACTIVOS = set()
+FASES_FACTORY_RESET_SIN_BD = {
+    "PREPARANDO_INTERCAMBIO",
+    "INTERCAMBIANDO_BD",
+    "LIMPIANDO_FILESYSTEM",
+    "VALIDANDO_RESULTADO",
+    "REGISTRANDO_RESET",
+    "ROLLBACK",
+}
 
 
 def ejecutar_worker_continuo():
@@ -42,8 +50,9 @@ def ejecutar_worker_continuo():
     try:
         while True:
             intervalo = ejecutar_ciclo_worker(nombre_worker=nombre_worker)
-            bloqueado, _lock = factory_reset_bloquea_ejecuciones()
-            actualizar_heartbeat(nombre_worker, "BLOQUEADO_FACTORY_RESET" if bloqueado else "ESPERANDO")
+            bloqueado, lock = factory_reset_bloquea_ejecuciones()
+            if not (bloqueado and lock.get("fase") in FASES_FACTORY_RESET_SIN_BD):
+                actualizar_heartbeat(nombre_worker, "BLOQUEADO_FACTORY_RESET" if bloqueado else "ESPERANDO")
             time.sleep(intervalo)
     except KeyboardInterrupt:
         _log_consola("Worker detenido por interrupcion.", origen="WORKER", nivel="WARNING")
@@ -67,6 +76,16 @@ def ejecutar_ciclo_worker(fecha_hora_actual=None, nombre_worker=None):
     try:
         bloqueado, lock = factory_reset_bloquea_ejecuciones()
         if bloqueado:
+            if lock.get("fase") in FASES_FACTORY_RESET_SIN_BD:
+                _registrar_estado_unico(
+                    "FACTORY_RESET_SIN_BD",
+                    "WORKER_FACTORY_RESET_SIN_BD",
+                    "Factory Reset en fase critica. Worker en pausa sin acceso a SQL Server.",
+                    "WARNING",
+                    origen="FACTORY_RESET",
+                )
+                return 60
+            _limpiar_estados_log({"FACTORY_RESET_SIN_BD"})
             registrar_inicio_ciclo(nombre_worker_actual)
             _registrar_estado_unico(
                 "FACTORY_RESET_BLOQUEADO",

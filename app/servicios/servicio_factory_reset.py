@@ -58,6 +58,9 @@ def generar_preview_factory_reset(usuario):
         and version_bootstrap_sql == manifiesto["version"]
     )
     super_admin_env = validar_super_admin_env()
+    from app.servicios.servicio_factory_reset_sql import validar_configuracion_factory_reset_sql
+
+    configuracion_reset = validar_configuracion_factory_reset_sql()
 
     if lock["bloquea"]:
         bloqueos.append("Existe un lock global de Factory Reset activo o dudoso.")
@@ -65,10 +68,11 @@ def generar_preview_factory_reset(usuario):
         bloqueos.append("Existen ejecuciones EN_EJECUCION.")
     if not manifiesto["valido"]:
         bloqueos.append("El manifiesto bootstrap no esta disponible o es invalido.")
-    elif not manifiesto["version_coincide"]:
-        bloqueos.append("La version BOOTSTRAP_SQL instalada no coincide con el manifiesto vigente.")
     if not super_admin_env["disponible"]:
         bloqueos.append("SUPER_ADMIN_ENV no esta disponible para recuperar acceso.")
+    if diagnostico["procesos_hijos_conocidos"] or diagnostico["pids_vivos_registrados"]:
+        bloqueos.append("Existen procesos de ejecucion activos o PID vivos.")
+    bloqueos.extend(configuracion_reset["bloqueos"])
 
     preview = {
         "version_preview": VERSION_PREVIEW,
@@ -87,7 +91,8 @@ def generar_preview_factory_reset(usuario):
         "filesystem": filesystem,
         "bootstrap": manifiesto,
         "super_admin_env": super_admin_env,
-        "reset_destructivo_habilitado": False,
+        "configuracion_reset": configuracion_reset,
+        "reset_destructivo_habilitado": not bloqueos and configuracion_reset["disponible"],
     }
     resumen_hash = _hash_preview(preview)
     preview["resumen_hash"] = resumen_hash
@@ -98,6 +103,7 @@ def generar_preview_factory_reset(usuario):
             "resumen_hash": resumen_hash,
             "estado_lock": lock["estado"],
             "id_operacion": preview["id_operacion"],
+            "manifest_hash": manifiesto.get("hash_conjunto"),
         }
     )
     return preview
@@ -127,6 +133,8 @@ def validar_manifiesto_bootstrap():
         "orden": [],
         "faltantes": [],
         "mensaje": "Manifiesto no validado.",
+        "hash_conjunto": None,
+        "scripts": [],
     }
     try:
         datos = json.loads(ruta.read_text(encoding="utf-8"))
@@ -135,15 +143,41 @@ def validar_manifiesto_bootstrap():
         archivos = [str(item["file"]) for item in scripts]
         faltantes = []
         rutas_validas = True
+        hasher = hashlib.sha256(ruta.read_bytes())
+        scripts_normalizados = []
         for archivo in archivos:
             relativa = Path(archivo)
             if relativa.is_absolute() or ".." in relativa.parts:
                 rutas_validas = False
                 faltantes.append("ruta_invalida")
                 continue
-            if not (BASE_DIR / relativa).is_file():
+            candidata = BASE_DIR / relativa
+            absoluta = candidata.resolve()
+            tiene_symlink = candidata.is_symlink() or any(
+                padre.is_symlink() for padre in candidata.parents if padre != BASE_DIR and BASE_DIR in padre.parents
+            )
+            if BASE_DIR not in absoluta.parents or tiene_symlink or absoluta.suffix.lower() != ".sql":
+                rutas_validas = False
+                faltantes.append("ruta_invalida")
+                continue
+            if not absoluta.is_file():
                 faltantes.append(relativa.name)
-        orden_valido = ordenes == sorted(set(ordenes)) and bool(ordenes) and ordenes[-1] == 100
+                continue
+            hasher.update(str(relativa).replace("\\", "/").encode("utf-8"))
+            hasher.update(absoluta.read_bytes())
+        for item in scripts:
+            scripts_normalizados.append({
+                "order": int(item["order"]),
+                "file": str(item["file"]),
+                "type": str(item.get("type") or "")[:30],
+            })
+        orden_valido = (
+            ordenes == sorted(set(ordenes))
+            and bool(ordenes)
+            and ordenes[0] == 1
+            and ordenes[-1] == 100
+            and len(set(archivos)) == len(archivos)
+        )
         resultado.update(
             {
                 "valido": bool(rutas_validas and orden_valido and not faltantes),
@@ -151,6 +185,8 @@ def validar_manifiesto_bootstrap():
                 "cantidad_scripts": len(scripts),
                 "orden": ordenes,
                 "faltantes": faltantes,
+                "hash_conjunto": hasher.hexdigest() if rutas_validas and not faltantes else None,
+                "scripts": scripts_normalizados,
             }
         )
         resultado["mensaje"] = "Bootstrap disponible y ordenado." if resultado["valido"] else "Bootstrap incompleto o desordenado."
@@ -206,6 +242,14 @@ def _diagnosticar_operacion():
         },
         "tareas_candidatas": len(candidatos),
     }
+
+
+def diagnosticar_operacion_factory_reset():
+    return _diagnosticar_operacion()
+
+
+def inventariar_filesystem_factory_reset():
+    return _inventariar_filesystem()
 
 
 def _diagnostico_no_disponible():

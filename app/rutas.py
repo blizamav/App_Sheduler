@@ -1,3 +1,5 @@
+import time
+
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 from app.seguridad import login_requerido
@@ -36,6 +38,7 @@ def login():
             session["roles"] = ["SUPER_ADMIN_ENV"]
             session["permisos"] = ["*"]
             session["es_admin_env"] = True
+            session["sesion_iniciada_epoch"] = time.time()
             registrar_log_sistema(
                 "LOGIN_EXITOSO",
                 "AUTH",
@@ -69,6 +72,7 @@ def login():
             session["roles"] = datos_usuario["roles"]
             session["permisos"] = datos_usuario["permisos"]
             session["es_admin_env"] = False
+            session["sesion_iniciada_epoch"] = time.time()
             flash(mensaje, "success")
             return redirect(url_for("principal.panel"))
 

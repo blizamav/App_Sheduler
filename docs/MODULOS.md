@@ -6,7 +6,7 @@ El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, 
 
 ## Bootstrap limpio
 
-Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos e incorpora exclusivamente infraestructura preventiva de Factory Reset; la reconstrucción destructiva permanece sin implementar.
+Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos e incorpora infraestructura preventiva. Fase 19D agrega el orquestador blue-green real, todavía pendiente de validación destructiva sobre SQL Server desechable.
 
 La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
 
@@ -16,6 +16,9 @@ La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<
 * `/administracion/factory-reset/preview`: inventario no destructivo protegido por CSRF.
 * `servicio_control_runtime.py`: lock externo atómico, compartido por web y worker.
 * `servicio_factory_reset.py`: conteos, diagnóstico, filesystem, manifiesto, recuperación administrativa y token firmado.
+* `servicio_factory_reset_sql.py`: ejecutor SQLCMD administrativo, bootstrap, sesiones, intercambio, rollback y validación final.
+* `servicio_factory_reset_filesystem.py`: cuarentena verificada, limpieza confinada y restauración de roots.
+* `servicio_orquestador_factory_reset.py`: máquina de estados y coordinación transaccional de BD/filesystem.
 * La ejecución manual y automática consulta el lock en backend.
 * El worker conserva heartbeat bloqueado y no toma candidatos nuevos.
 * La segunda confirmación existe solo como diseño visual deshabilitado; no hay endpoint de ejecución.

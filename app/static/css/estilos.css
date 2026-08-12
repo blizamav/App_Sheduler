@@ -3391,6 +3391,53 @@ tr:last-child td {
     color: var(--color-error, #b42318);
 }
 
+.factory-reset-ejecutando {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    place-items: center;
+    padding: 24px;
+    background: rgba(8, 18, 35, 0.88);
+}
+
+.factory-reset-ejecutando.visible {
+    display: grid;
+}
+
+.factory-reset-ejecutando-contenido {
+    width: min(560px, 100%);
+    padding: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: #fff;
+    text-align: center;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.factory-reset-ejecutando .spinner {
+    display: inline-block;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 16px;
+    border: 3px solid #dce5f1;
+    border-top-color: var(--color-primario, #1456a0);
+    border-radius: 50%;
+    animation: factory-reset-giro 0.9s linear infinite;
+}
+
+@keyframes factory-reset-giro {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .factory-reset-ejecutando .spinner {
+        animation: none;
+    }
+}
+
 @media (max-width: 1100px) {
     .factory-reset-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

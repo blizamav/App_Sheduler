@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
-* Estado actual: Fase 19C implementa infraestructura preventiva de Factory Reset: lock externo, bloqueos de ejecucion, permiso exclusivo, CSRF, preview firmado y UI sin accion destructiva.
+* Estado actual: Fase 19D implementa orquestador Factory Reset blue-green con rollback y cuarentena reversible; Fase 19D.1 valido el flujo sobre SQL Server real y bases desechables.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 19C - Seguridad, lock global y preview Factory Reset.
-* Ultima actualizacion: 2026-08-11
+* Fase actual: Fase 19D.1 - Validacion SQL real del Factory Reset completada sobre entorno desechable.
+* Ultima actualizacion: 2026-08-12
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -86,6 +86,34 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-08-12 - Fase 19D.1 / Validacion SQL real Factory Reset
+
+* Estado inicial: HEAD `6401de8`; cambios de Fase 19D sin staging; `.env`, `.env.docker` y `database/release/` intactos.
+* SQLCMD: no existia en `PATH`, rutas conocidas ni Docker disponible. Se descargo `sqlcmd` (Go) oficial Microsoft `v1.10.0` a `%TEMP%`, sin instalacion administrativa ni cambio de `PATH`, verificando SHA-256 publicado.
+* Credencial: se reutilizo solo dentro del proceso la configuracion SQL existente, sin imprimir password ni cadena; SQL Server 15 confirmo `sysadmin`, `CREATE ANY DATABASE`, `ALTER ANY DATABASE` y `VIEW SERVER STATE`.
+* Exito: `APP_SCHEDULER_FACTORY_SOURCE_TEST` se creo mediante bootstrap oficial `19C.0`, paso validacion 100, recibio fixtures sinteticos y completo dos resets reales consecutivos.
+* Blue-green: tras cada reset la base oficial quedo online y virgen; se conservaron dos bases `OLD` con el estado anterior. No se uso `DROP DATABASE`.
+* Filesystem: cinco roots temporales bajo `%TEMP%` fueron respaldados con hashes y quedaron vacios; no se tocaron roots operativos reales.
+* Auditoria y acceso: la nueva base registro un unico primer evento `FACTORY_RESET_COMPLETADO`; el login `SUPER_ADMIN_ENV` redirigio correctamente a `/panel`.
+* Rollback: `APP_SCHEDULER_FACTORY_ROLLBACK_TEST` sufrio un fallo controlado posterior al intercambio; se restauro `SOURCE`, el marcador previo y todos los archivos, la instalacion fallida quedo aislada y el lock quedo `FACTORY_RESET_ERROR`.
+* Fallo bootstrap: `APP_SCHEDULER_FACTORY_BOOTSTRAP_FAIL_TEST` conservo origen y roots; `NEW` quedo aislada con cero tablas antes del intercambio.
+* Sesion ajena: `APP_SCHEDULER_FACTORY_SESSION_TEST` aborto el intercambio; la conexion externa siguio respondiendo y no fue terminada.
+* Seguridad: toda operacion se limito por guardas a nombres `APP_SCHEDULER_FACTORY_*`; `APP_SCHEDULER_QA` y `APP_SCHEDULER` no fueron targets. No se modificaron `.env`, `.env.docker` ni `database/release/`.
+* Pendientes: definir retencion/limpieza autorizada de bases `OLD`, `FAILED`, `NEW` y cuarentenas; probar reinicio/timeout; cualquier uso en QA requiere autorizacion independiente.
+* Git: no se hizo staging, commit ni push.
+
+### 2026-08-12 - Fase 19D / Orquestador Factory Reset
+
+* Arquitectura: orquestador por fases con precheck, lock, NEW, bootstrap por manifiesto, validación 100, intercambio ACTUAL/OLD, limpieza filesystem, validación final, auditoría y liberación controlada.
+* Seguridad SQL: credencial administrativa exclusiva desde entorno, kill switch apagado por defecto, target exacto, SQLCMDPASSWORD y rechazo de sesiones ajenas.
+* Rollback: conserva OLD/FAILED; filesystem se copia a cuarentena bajo control runtime, se verifica SHA-256 y puede restaurarse.
+* Coordinación: worker omite SQL durante fases críticas y middleware web responde 503 fuera de rutas de control.
+* Sesiones: marca externa invalida sesiones anteriores; la sesión ejecutora se limpia al completar.
+* UI/API: segunda frase exacta habilitada, POST destructivo, overlay sin doble submit y endpoint de estado seguro.
+* Pruebas: 14 casos aislados aprobados con motor SQL simulado y roots temporales, incluida restauración tras limpieza parcial y contrato POST exclusivo.
+* Limitación: `sqlcmd` no está disponible en este host; no se ejecutó SQL ni reset real. `APP_SCHEDULER_QA`, `.env`, `.env.docker` y `database/release/` no se tocaron.
+* Próximo paso: Fase 19E debe comenzar por prueba destructiva autorizada exclusivamente sobre bases desechables y definir retención de OLD/cuarentenas.
 
 ### 2026-08-11 - Fase 19C / Infraestructura preventiva Factory Reset
 

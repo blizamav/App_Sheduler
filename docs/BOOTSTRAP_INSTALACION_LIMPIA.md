@@ -4,7 +4,7 @@
 
 El bootstrap actual fue ejecutado manualmente desde cero sobre `APP_SCHEDULER_BOOTSTRAP_TEST`. Los scripts 001-010 finalizaron correctamente y, tras alinear la matriz de catalogos del script 100 con el seed oficial 004, la validacion final retorno `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33` sin `THROW`.
 
-El smoke test Flask tambien fue completado: login `SUPER_ADMIN_ENV`, rutas principales, alta integral de tarea con script v1, vista real de scripts por tarea y eliminacion permanente funcionaron contra la base bootstrap. La base y el filesystem regresaron a estado virgen y el script 100 volvio a finalizar `OK`. Fase 19C agrega infraestructura preventiva, pero Factory Reset destructivo aun no esta implementado.
+El smoke test Flask tambien fue completado: login `SUPER_ADMIN_ENV`, rutas principales, alta integral de tarea con script v1, vista real de scripts por tarea y eliminacion permanente funcionaron contra la base bootstrap. La base y el filesystem regresaron a estado virgen y el script 100 volvio a finalizar `OK`. Fase 19D consume este manifiesto mediante SQLCMD y valida 100 antes y después del intercambio; su prueba destructiva real sobre SQL Server desechable sigue pendiente.
 
 ## Fuente de verdad
 
@@ -75,4 +75,4 @@ El bootstrap se define para una base nueva. Los scripts mantienen defensas de ex
 
 ## Relacion con Factory Reset
 
-El futuro Factory Reset debe leer `manifest.json`; no debe mantener otra lista hardcodeada. Bootstrap, validaciones SQL y smoke test Flask ya fueron comprobados. Esta validacion no implementa Factory Reset ni inicia Fase 19C.
+Factory Reset lee `manifest.json` como lista única, calcula hash del manifiesto y scripts y rechaza cambios posteriores al preview. Bootstrap, validaciones SQL y smoke test Flask fueron comprobados previamente; el orquestador 19D aún requiere una ejecución controlada sobre bases desechables antes de autorizar QA.

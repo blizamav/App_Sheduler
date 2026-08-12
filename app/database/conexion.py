@@ -45,6 +45,7 @@ def obtener_parametros_conexion():
             "yes",
         ),
         "timeout": _normalizar_timeout_odbc(current_app.config.get("DB_TIMEOUT"), 10),
+        "application_name": current_app.config.get("DB_APPLICATION_NAME", "APP_SCHEDULER"),
     }
 
 
@@ -74,6 +75,7 @@ def construir_cadena_conexion():
         f"Encrypt={parametros['encrypt']};"
         f"TrustServerCertificate={parametros['trust_server_certificate']};"
         f"Connection Timeout={parametros['timeout']};"
+        f"APP={_valor_odbc(parametros['application_name'])};"
     )
 
 

@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-08-12 - Fase 19D.1 validacion SQL real de Factory Reset
+
+### Validado
+
+* `sqlcmd` (Go) oficial de Microsoft `v1.10.0` se uso desde `%TEMP%`, sin instalacion administrativa ni cambios en `PATH`; el SHA-256 del binario descargado fue verificado.
+* La credencial usada solo dentro del proceso de prueba confirmo conexion a `master` y permisos administrativos suficientes, sin imprimir password ni cadena de conexion.
+* `APP_SCHEDULER_FACTORY_SOURCE_TEST` se construyo con el manifiesto oficial `19C.0`; la validacion 100 retorno `BOOTSTRAP_ACTUAL = OK`.
+* El primer reset real creo una instalacion nueva, conservo la anterior como `OLD`, dejo los roots temporales vacios y registro `FACTORY_RESET_COMPLETADO` como primer evento de auditoria.
+* El login `SUPER_ADMIN_ENV` funciono contra la instalacion resultante y un segundo reset real completo demostro repetibilidad; quedaron dos bases `OLD` online para inspeccion.
+* El rollback real sobre `APP_SCHEDULER_FACTORY_ROLLBACK_TEST` restauro el nombre original, datos y filesystem tras un fallo controlado posterior al intercambio; la instalacion fallida quedo aislada y el lock permanecio en `FACTORY_RESET_ERROR`.
+* El fallo controlado de bootstrap sobre `APP_SCHEDULER_FACTORY_BOOTSTRAP_FAIL_TEST` conservo `SOURCE`, dejo `NEW` aislada sin tablas y no limpio filesystem.
+* Una sesion ajena sobre `APP_SCHEDULER_FACTORY_SESSION_TEST` aborto el intercambio y siguio conectada; no se ejecuto `KILL` contra ella.
+
+### Seguridad y alcance
+
+* Todos los DDL/DML destructivos se limitaron a bases cuyo nombre comienza con `APP_SCHEDULER_FACTORY_` y a roots creados en `%TEMP%`.
+* `APP_SCHEDULER_QA`, `APP_SCHEDULER`, `.env`, `.env.docker` y `database/release/` no fueron modificados.
+* No se uso `DROP DATABASE`; las bases desechables `SOURCE`, `OLD`, `FAILED` y `NEW` de diagnostico se conservaron para revision.
+* No se hizo staging, commit ni push.
+
+## 2026-08-12 - Fase 19D orquestador Factory Reset
+
+### Agregado
+
+* Orquestador por fases con recálculo final, lock exclusivo, bootstrap SQLCMD, blue-green, rollback y log externo.
+* Endpoint `POST /administracion/factory-reset/ejecutar` con segunda confirmación exacta, CSRF y preview firmado vigente.
+* Endpoint seguro `/administracion/factory-reset/estado` y pantalla bloqueante durante ejecución.
+* Credencial administrativa separada y kill switch `FACTORY_RESET_HABILITADO=false` por defecto.
+* Limpieza filesystem confinada con cuarentena verificada SHA-256 y rollback.
+* Invalidación global de sesiones anteriores al último Factory Reset.
+* Suite `tests/test_factory_reset_19d.py` con 14 pruebas aisladas aprobadas.
+
+### Seguridad
+
+* La contraseña SQLCMD usa solo `SQLCMDPASSWORD`; no aparece en argumentos ni logs.
+* Sesiones SQL ajenas bloquean el intercambio; solo sesiones identificadas como APP Scheduler pueden cerrarse.
+* No existe `DROP DATABASE`; OLD, FAILED y cuarentenas se conservan.
+* Worker y web respetan fases críticas sin abrir nuevas conexiones SQL operativas.
+
+### Alcance
+
+* No se ejecutó SQL ni Factory Reset real porque `sqlcmd` no está instalado/configurado en este host.
+* `APP_SCHEDULER_QA`, `.env`, `.env.docker` y `database/release/` permanecen intactos.
+* No se hizo commit ni push. La prueba destructiva sobre bases desechables sigue pendiente antes de cerrar 19D.
+
 ## 2026-08-11 - Fase 19C infraestructura preventiva Factory Reset
 
 ### Agregado
