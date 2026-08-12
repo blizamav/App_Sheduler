@@ -18,6 +18,23 @@ class ErrorFactoryResetSQL(RuntimeError):
     pass
 
 
+def parsear_targets_permitidos_factory_reset(valor):
+    """Normaliza una allowlist exacta de bases; rechaza patrones e identificadores invalidos."""
+    permitidos = []
+    vistos = set()
+    for elemento in str(valor or "").split(","):
+        nombre = elemento.strip()
+        if not nombre:
+            continue
+        _validar_nombre_bd(nombre)
+        normalizado = nombre.upper()
+        if normalizado in vistos:
+            continue
+        vistos.add(normalizado)
+        permitidos.append(nombre)
+    return permitidos
+
+
 def validar_configuracion_factory_reset_sql():
     ejecutable = _resolver_sqlcmd()
     servidor = str(current_app.config.get("FACTORY_RESET_DB_SERVER") or "").strip()
@@ -25,8 +42,20 @@ def validar_configuracion_factory_reset_sql():
     password = str(current_app.config.get("FACTORY_RESET_DB_PASSWORD") or "")
     destino = str(current_app.config.get("FACTORY_RESET_DB_TARGET") or "").strip()
     actual = str(current_app.config.get("DB_DATABASE") or "").strip()
+    allowlist_valor = current_app.config.get("FACTORY_RESET_DB_ALLOWED_TARGETS")
     prefijo_app = str(current_app.config.get("FACTORY_RESET_APP_NAME_PREFIX") or PREFIJO_APP_SQL).strip()
     bloqueos = []
+    allowlist_invalida = False
+    try:
+        targets_permitidos = parsear_targets_permitidos_factory_reset(allowlist_valor)
+    except ValueError:
+        targets_permitidos = []
+        allowlist_invalida = True
+    allowlist_normalizada = {nombre.upper() for nombre in targets_permitidos}
+    destino_normalizado = destino.upper()
+    actual_normalizado = actual.upper()
+    target_coincide = bool(destino and actual and destino_normalizado == actual_normalizado)
+    target_en_allowlist = bool(destino and destino_normalizado in allowlist_normalizada)
     if not current_app.config.get("FACTORY_RESET_HABILITADO", False):
         bloqueos.append("Factory Reset esta deshabilitado por configuracion.")
     if not ejecutable:
@@ -42,8 +71,14 @@ def validar_configuracion_factory_reset_sql():
         _validar_nombre_bd(actual)
     except ValueError:
         bloqueos.append("El nombre de base configurado no es seguro.")
-    if destino and actual and destino != actual:
+    if allowlist_invalida:
+        bloqueos.append("FACTORY_RESET_DB_ALLOWED_TARGETS contiene un identificador no permitido.")
+    elif not targets_permitidos:
+        bloqueos.append("FACTORY_RESET_DB_ALLOWED_TARGETS no esta configurada.")
+    if destino and actual and not target_coincide:
         bloqueos.append("FACTORY_RESET_DB_TARGET no coincide exactamente con DB_DATABASE.")
+    if destino and not target_en_allowlist:
+        bloqueos.append("FACTORY_RESET_DB_TARGET no pertenece a FACTORY_RESET_DB_ALLOWED_TARGETS.")
     if not prefijo_app or len(prefijo_app) > 100 or not re.fullmatch(r"[A-Za-z0-9_-]+", prefijo_app):
         bloqueos.append("FACTORY_RESET_APP_NAME_PREFIX no es valido.")
     return {
@@ -51,7 +86,11 @@ def validar_configuracion_factory_reset_sql():
         "bloqueos": bloqueos,
         "sqlcmd_disponible": bool(ejecutable),
         "credencial_administrativa": bool(usuario and password),
-        "target_coincide": bool(destino and actual and destino == actual),
+        "target_configurado": destino or None,
+        "target_coincide": target_coincide,
+        "target_en_allowlist": target_en_allowlist,
+        "allowlist_configurada": bool(targets_permitidos) and not allowlist_invalida,
+        "targets_permitidos": targets_permitidos,
         "habilitado": bool(current_app.config.get("FACTORY_RESET_HABILITADO", False)),
     }
 

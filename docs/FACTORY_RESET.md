@@ -20,7 +20,8 @@ Solo `SUPER_ADMIN` o `SUPER_ADMIN_ENV` con `FACTORY_RESET_EJECUTAR` o permiso gl
 * `SUPER_ADMIN_ENV` disponible;
 * cero ejecuciones y procesos de scripts activos;
 * credencial SQL administrativa y SQLCMD disponibles;
-* target administrativo idéntico a `DB_DATABASE`.
+* target administrativo identico a `DB_DATABASE`;
+* target incluido de forma exacta en `FACTORY_RESET_DB_ALLOWED_TARGETS`.
 
 Rutas:
 
@@ -38,6 +39,7 @@ La conexión normal de APP Scheduler no requiere permisos `CREATE DATABASE`, `AL
 ```env
 FACTORY_RESET_HABILITADO=false
 FACTORY_RESET_DB_TARGET=
+FACTORY_RESET_DB_ALLOWED_TARGETS=
 FACTORY_RESET_DB_SERVER=
 FACTORY_RESET_DB_USER=
 FACTORY_RESET_DB_PASSWORD=
@@ -48,7 +50,16 @@ FACTORY_RESET_SQLCMD_TIMEOUT_SEGUNDOS=900
 FACTORY_RESET_APP_NAME_PREFIX=APP_SCHEDULER
 ```
 
-`FACTORY_RESET_DB_TARGET` debe coincidir exactamente con `DB_DATABASE`. No configurar ni habilitar estas variables hasta disponer de una base desechable y una autorización específica.
+`FACTORY_RESET_DB_TARGET` debe coincidir con `DB_DATABASE` y pertenecer explicitamente a `FACTORY_RESET_DB_ALLOWED_TARGETS`. La allowlist es obligatoria y separada por comas; se ignoran espacios y elementos vacios, se compara sin distinguir mayusculas/minusculas y no se admiten wildcard, regex ni prefijos. Una allowlist ausente, vacia o invalida bloquea el reset. No configurar ni habilitar estas variables hasta disponer de un target y una autorizacion especificos.
+
+Ejemplo de autorizacion exclusiva para un ambiente QA:
+
+```env
+FACTORY_RESET_DB_TARGET=APP_SCHEDULER_QA
+FACTORY_RESET_DB_ALLOWED_TARGETS=APP_SCHEDULER_QA
+```
+
+El preview expone de forma segura el target configurado, la coincidencia con la base actual, si existe allowlist y si el target esta autorizado. El endpoint y el orquestador vuelven a ejecutar el mismo validador central antes de cualquier operacion destructiva.
 
 ## Lock y estados
 

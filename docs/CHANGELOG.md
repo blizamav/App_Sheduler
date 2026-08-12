@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-12 - Fase 19E.0A allowlist Factory Reset
+
+### Agregado
+
+* Nueva variable `FACTORY_RESET_DB_ALLOWED_TARGETS`, con lista de nombres de base separados por coma.
+* Parser central que elimina espacios y entradas vacias, deduplica sin distinguir mayusculas/minusculas y rechaza identificadores no validos.
+* Validacion fail-closed: el reset exige kill switch activo, target/base coincidentes, allowlist no vacia y pertenencia exacta del target.
+* Preview con target configurado, coincidencia con BD actual, estado de allowlist, targets permitidos y autorizacion final.
+* Diez pruebas dedicadas para allowlist vacia, target externo, target permitido, discrepancia, espacios, multiples targets, wildcard, produccion, kill switch y case handling.
+
+### Seguridad y alcance
+
+* No se hardcodeo QA ni produccion en el backend; cada ambiente debe declarar sus targets explicitamente.
+* Wildcard, regex y coincidencias parciales no estan permitidos.
+* No se modificaron `.env`, `.env.docker` ni `database/release/`; no se consulto SQL ni se ejecuto Factory Reset.
+* No se hizo commit ni push.
+
 ## 2026-08-12 - Fase 19D.1 validacion SQL real de Factory Reset
 
 ### Validado

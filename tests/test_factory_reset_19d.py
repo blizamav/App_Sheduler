@@ -83,6 +83,7 @@ class FactoryReset19DTest(unittest.TestCase):
             SECRET_KEY="test-factory-reset-secret",
             DB_DATABASE="APP_SCHEDULER_FACTORY_SOURCE_TEST",
             FACTORY_RESET_DB_TARGET="APP_SCHEDULER_FACTORY_SOURCE_TEST",
+            FACTORY_RESET_DB_ALLOWED_TARGETS="APP_SCHEDULER_FACTORY_SOURCE_TEST",
             FACTORY_RESET_HABILITADO=True,
             FACTORY_RESET_DB_SERVER="sql-test",
             FACTORY_RESET_DB_USER="admin-test",

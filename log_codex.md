@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
-* Estado actual: Fase 19D implementa orquestador Factory Reset blue-green con rollback y cuarentena reversible; Fase 19D.1 valido el flujo sobre SQL Server real y bases desechables.
+* Estado actual: Fase 19D implementa orquestador Factory Reset blue-green con rollback y cuarentena reversible; Fase 19D.1 valido el flujo real y Fase 19E.0A agrega allowlist explicita fail-closed para targets.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 19D.1 - Validacion SQL real del Factory Reset completada sobre entorno desechable.
+* Fase actual: Fase 19E.0A - Allowlist explicita de targets para Factory Reset.
 * Ultima actualizacion: 2026-08-12
 
 ## 2. Decisiones tecnicas vigentes
@@ -86,6 +86,18 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-08-12 - Fase 19E.0A / Allowlist explicita Factory Reset
+
+* Causa: el precheck 19E.1 detecto que `FACTORY_RESET_DB_TARGET == DB_DATABASE` no impedia una configuracion accidental donde ambas variables apuntaran a otra base.
+* Configuracion: se agrego `FACTORY_RESET_DB_ALLOWED_TARGETS` a configuracion central y plantillas; los archivos `.env` reales permanecieron intactos.
+* Parsing: split por coma, trim, omision de vacios, deduplicacion case-insensitive e identificadores exactos compatibles con la validacion SQL existente.
+* Seguridad: allowlist ausente/vacia/invalida bloquea; wildcard y patrones se rechazan; target debe coincidir con `DB_DATABASE` y estar incluido exactamente en la allowlist.
+* Integracion: preview, endpoint y orquestador consumen `validar_configuracion_factory_reset_sql()` como fuente unica de verdad.
+* UI: preview muestra target, coincidencia, allowlist y autorizacion sin exponer credenciales.
+* Tests: diez casos dedicados y fixture 19D actualizado para declarar su target desechable autorizado.
+* Alcance: no se ejecuto SQL, no se consulto ni modifico QA, no se ejecuto Factory Reset y no se modificaron `.env`, `.env.docker` ni `database/release/`.
+* Git: no se hizo staging, commit ni push.
 
 ### 2026-08-12 - Fase 19D.1 / Validacion SQL real Factory Reset
 
