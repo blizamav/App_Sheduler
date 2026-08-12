@@ -9,6 +9,7 @@ from app.repositorios.repositorio_scheduler import (
     listar_tareas_programadas_activas,
 )
 from app.servicios.servicio_calendario import obtener_feriado
+from app.servicios.servicio_control_runtime import factory_reset_bloquea_ejecuciones
 from app.servicios.servicio_ejecuciones import iniciar_ejecucion_automatica
 from app.servicios.servicio_logging_worker import registrar_log_worker
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
@@ -41,7 +42,8 @@ def ejecutar_worker_continuo():
     try:
         while True:
             intervalo = ejecutar_ciclo_worker(nombre_worker=nombre_worker)
-            actualizar_heartbeat(nombre_worker, "ESPERANDO")
+            bloqueado, _lock = factory_reset_bloquea_ejecuciones()
+            actualizar_heartbeat(nombre_worker, "BLOQUEADO_FACTORY_RESET" if bloqueado else "ESPERANDO")
             time.sleep(intervalo)
     except KeyboardInterrupt:
         _log_consola("Worker detenido por interrupcion.", origen="WORKER", nivel="WARNING")
@@ -63,6 +65,28 @@ def ejecutar_ciclo_worker(fecha_hora_actual=None, nombre_worker=None):
     ahora = fecha_hora_actual or datetime.now()
     nombre_worker_actual = nombre_worker or "worker_default"
     try:
+        bloqueado, lock = factory_reset_bloquea_ejecuciones()
+        if bloqueado:
+            registrar_inicio_ciclo(nombre_worker_actual)
+            _registrar_estado_unico(
+                "FACTORY_RESET_BLOQUEADO",
+                "WORKER_FACTORY_RESET_BLOQUEADO",
+                "Factory Reset activo. No se seleccionan ni inician tareas nuevas.",
+                "WARNING",
+                origen="FACTORY_RESET",
+            )
+            actualizar_heartbeat(nombre_worker_actual, "BLOQUEADO_FACTORY_RESET")
+            registrar_fin_ciclo(
+                nombre_worker_actual,
+                "OK",
+                0,
+                0,
+                0,
+                estado_final="BLOQUEADO_FACTORY_RESET",
+            )
+            return 60
+
+        _limpiar_estados_log({"FACTORY_RESET_BLOQUEADO"})
         configuracion = obtener_configuracion_activa()
         if not configuracion:
             registrar_inicio_ciclo(nombre_worker_actual)
@@ -153,6 +177,17 @@ def ejecutar_ciclo_worker(fecha_hora_actual=None, nombre_worker=None):
 
 
 def _evaluar_tareas(configuracion, ahora, intervalo, nombre_worker):
+    bloqueado, _lock = factory_reset_bloquea_ejecuciones()
+    if bloqueado:
+        _registrar_estado_unico(
+            "FACTORY_RESET_BLOQUEADO",
+            "WORKER_FACTORY_RESET_BLOQUEADO",
+            "Factory Reset activo antes de seleccionar candidatos.",
+            "WARNING",
+            origen="FACTORY_RESET",
+        )
+        return {"evaluadas": 0, "ejecutadas": 0, "omitidas": 0}
+
     max_concurrentes = _max_concurrentes_seguro(configuracion)
     en_curso = contar_ejecuciones_automaticas_en_curso()
     if en_curso >= max_concurrentes:

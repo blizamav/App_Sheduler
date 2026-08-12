@@ -23,6 +23,7 @@
         <symbol id="icon-usuarios" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM18 8v6M21 11h-6"/></symbol>
         <symbol id="icon-auditoria" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6zM9 12l2 2 4-5"/></symbol>
         <symbol id="icon-papelera" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+        <symbol id="icon-factory-reset" viewBox="0 0 24 24"><path d="M12 3v6M5.6 6.6A9 9 0 1 0 18.4 6.6M8 17h8M9 13h6"/></symbol>
     </svg>
     <div class="app-shell">
         {% if session.get("usuario") %}
@@ -84,6 +85,9 @@
                 <p class="nav-seccion">Seguridad</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "USUARIOS_ADMIN" in session.get("permisos", []) %}
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span class="nav-icon"><svg><use href="#icon-usuarios"></use></svg></span><span class="nav-text">Usuarios</span></a>
+                {% endif %}
+                {% if session.get("es_admin_env") or "SUPER_ADMIN" in session.get("roles", []) or "SUPER_ADMIN_ENV" in session.get("roles", []) %}
+                <a class="nav-link nav-link-peligro {% if request.endpoint and request.endpoint.startswith('factory_reset.') %}activo{% endif %}" href="{{ url_for('factory_reset.pantalla') }}"><span class="nav-icon"><svg><use href="#icon-factory-reset"></use></svg></span><span class="nav-text">Factory Reset</span></a>
                 {% endif %}
                 <p class="nav-seccion">Control y trazabilidad</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "AUDITORIA_VER" in session.get("permisos", []) %}

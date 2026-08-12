@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-08-11 - Fase 19C infraestructura preventiva Factory Reset
+
+### Agregado
+
+* Lock externo atómico en `runtime_control/factory_reset.lock`, compartido por web/worker y configurable mediante `RUTA_CONTROL_RUNTIME`.
+* Servicios de diagnóstico, inventario SQL/filesystem, validación del manifiesto y coincidencia con `BOOTSTRAP_SQL`, disponibilidad `SUPER_ADMIN_ENV`, CSRF específico y token firmado de preview por cinco minutos.
+* Rutas `GET /administracion/factory-reset` y `POST /administracion/factory-reset/preview`, exclusivas de `SUPER_ADMIN`/`SUPER_ADMIN_ENV` y permiso dedicado.
+* Zona de Peligro con primera confirmación y segunda confirmación preparada pero deshabilitada.
+* `database/bootstrap/011_seed_permiso_factory_reset.sql`: permiso `FACTORY_RESET_EJECUTAR` exclusivo para `SUPER_ADMIN`.
+* Documento `docs/FACTORY_RESET.md`.
+
+### Cambiado
+
+* Ejecución manual, creación automática y worker rechazan nuevas ejecuciones cuando el lock está presente.
+* Bootstrap vigente actualizado a `19C.0`, 52 permisos y matriz `SUPER_ADMIN=52`, `ADMIN=49`, `TI=34`, `TERCERO=7`.
+* Docker comparte `runtime_control/` entre web y worker; las plantillas de entorno documentan los timeouts sin modificar archivos reales.
+
+### Validado
+
+* Lock atómico y rechazo del segundo adquirente; liberación solo con identificador correcto.
+* Bloqueo de ejecución manual y worker antes de consultar candidatos.
+* Acceso `SUPER_ADMIN_ENV=200`, rol normal con permiso accidental `403`, CSRF inválido `403` y preview válido `200`.
+* Token vigente, rechazo por otro usuario y rechazo por expiración.
+* Manifiesto `19C.0` válido y ordenado.
+* Comparación de la versión `BOOTSTRAP_SQL` instalada con el manifiesto y bloqueo preventivo ante discrepancias.
+
+### Alcance
+
+* No existe endpoint destructivo, no se ejecutó Factory Reset, SQL ni bootstrap.
+* No se modificaron `.env`, `.env.docker` ni `database/release/`; no se hizo commit ni push.
+
 ## 2026-08-11 - Fase 19B.3B smoke test Flask validado
 
 ### Validado

@@ -90,11 +90,25 @@ IF (SELECT COUNT(*) FROM dbo.roles WHERE activo = 1) <> 4
    OR EXISTS (SELECT 1 FROM dbo.roles WHERE codigo_rol NOT IN (N'SUPER_ADMIN', N'ADMIN', N'TI', N'TERCERO'))
     INSERT INTO @errores VALUES (N'ROLES', N'Deben existir solo los cuatro roles base activos.');
 
-IF (SELECT COUNT(*) FROM dbo.permisos WHERE activo = 1) <> 51
-    INSERT INTO @errores VALUES (N'PERMISOS', N'Deben existir exactamente 51 permisos base activos.');
+IF (SELECT COUNT(*) FROM dbo.permisos WHERE activo = 1) <> 52
+    INSERT INTO @errores VALUES (N'PERMISOS', N'Deben existir exactamente 52 permisos base activos.');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.permisos WHERE codigo_permiso = N'FACTORY_RESET_EJECUTAR' AND activo = 1)
+    INSERT INTO @errores VALUES (N'PERMISOS', N'Falta el permiso FACTORY_RESET_EJECUTAR.');
+
+IF EXISTS (
+    SELECT 1
+    FROM dbo.roles_permisos rp
+    INNER JOIN dbo.roles r ON r.id_rol = rp.id_rol
+    INNER JOIN dbo.permisos p ON p.id_permiso = rp.id_permiso
+    WHERE p.codigo_permiso = N'FACTORY_RESET_EJECUTAR'
+      AND rp.activo = 1 AND rp.permitido = 1
+      AND r.codigo_rol <> N'SUPER_ADMIN'
+)
+    INSERT INTO @errores VALUES (N'PERMISOS', N'FACTORY_RESET_EJECUTAR solo puede pertenecer a SUPER_ADMIN.');
 
 DECLARE @matriz_roles TABLE (codigo_rol varchar(50) PRIMARY KEY, cantidad int NOT NULL);
-INSERT INTO @matriz_roles VALUES (N'SUPER_ADMIN', 51), (N'ADMIN', 49), (N'TI', 34), (N'TERCERO', 7);
+INSERT INTO @matriz_roles VALUES (N'SUPER_ADMIN', 52), (N'ADMIN', 49), (N'TI', 34), (N'TERCERO', 7);
 
 INSERT INTO @errores (categoria, detalle)
 SELECT N'ROLES_PERMISOS', CONCAT(m.codigo_rol, N': matriz de permisos incompleta.')
@@ -143,8 +157,8 @@ IF (SELECT COUNT(*) FROM dbo.reglas_feriados_irrenunciables WHERE activo = 1 AND
 IF (SELECT COUNT(*) FROM dbo.configuracion_mail_graph WHERE clave_configuracion = N'MAIL_GRAPH') <> 1
     INSERT INTO @errores VALUES (N'MAIL_GRAPH', N'Debe existir exactamente una configuracion MAIL_GRAPH.');
 
-IF (SELECT COUNT(*) FROM dbo.configuracion_sistema WHERE clave = N'BOOTSTRAP_SQL' AND valor = N'19B.0' AND activo = 1) <> 1
-    INSERT INTO @errores VALUES (N'BOOTSTRAP', N'No existe la marca de version BOOTSTRAP_SQL 19B.0.');
+IF (SELECT COUNT(*) FROM dbo.configuracion_sistema WHERE clave = N'BOOTSTRAP_SQL' AND valor = N'19C.0' AND activo = 1) <> 1
+    INSERT INTO @errores VALUES (N'BOOTSTRAP', N'No existe la marca de version BOOTSTRAP_SQL 19C.0.');
 
 IF EXISTS (
     SELECT 1 FROM dbo.configuracion_mail_graph

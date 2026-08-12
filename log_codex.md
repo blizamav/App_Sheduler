@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
-* Estado actual: Fase 19B cerrada y validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST`: bootstrap limpio, 33 tablas, validacion SQL, smoke Flask, script v1 por tarea, eliminacion permanente y estado virgen final.
+* Estado actual: Fase 19C implementa infraestructura preventiva de Factory Reset: lock externo, bloqueos de ejecucion, permiso exclusivo, CSRF, preview firmado y UI sin accion destructiva.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 19B.3B - Cierre del smoke test con arquitectura real de scripts.
+* Fase actual: Fase 19C - Seguridad, lock global y preview Factory Reset.
 * Ultima actualizacion: 2026-08-11
 
 ## 2. Decisiones tecnicas vigentes
@@ -86,6 +86,19 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-08-11 - Fase 19C / Infraestructura preventiva Factory Reset
+
+* Lock: `app/servicios/servicio_control_runtime.py` usa archivo JSON atómico externo a BD con estados NORMAL/PREPARANDO/EN_PROGRESO/ERROR, metadata segura y timeout sin liberación automática.
+* Protección: ejecución manual, automática y worker consultan el lock en backend; el worker no selecciona candidatos y mantiene heartbeat bloqueado cuando corresponde.
+* Diagnóstico: conteos de 33 tablas, ejecuciones/PID/procesos hijos, worker, candidatos, filesystem por metadata, manifiesto bootstrap, coincidencia con la marca `BOOTSTRAP_SQL` instalada y recuperación `SUPER_ADMIN_ENV`.
+* Seguridad web: autorización simultánea por rol y permiso, CSRF específico de sesión y token firmado de preview por 300 segundos ligado al usuario/hash/lock/operación.
+* UI: rutas GET y POST de preview, Zona de Peligro, primer modal y segunda confirmación visible pero deshabilitada. No existe ruta destructiva.
+* Bootstrap: nuevo `011_seed_permiso_factory_reset.sql`, versión `19C.0`, 52 permisos; solo `SUPER_ADMIN` recibe `FACTORY_RESET_EJECUTAR`.
+* Docker: `runtime_control/` compartido entre web y worker. Plantillas `.env.example` y `.env.docker.example` actualizadas; archivos reales intactos.
+* Pruebas: adquisición exclusiva, segundo lock rechazado, bloqueo manual/worker, manifiesto válido, versión instalada coincidente, preview bloqueado con ejecución activa, tokens vigente/otro usuario/vencido, acceso admin 200, rol normal 403, CSRF inválido 403 y preview con CSRF válido 200.
+* Alcance: no se ejecutó SQL, bootstrap ni Factory Reset; no se modificó `database/release/`, `.env` o `.env.docker`; no se hizo commit ni push.
+* Próximo paso: Fase 19D deberá implementar orquestación destructiva con recálculo inmediato, segunda confirmación y recuperación segura.
 
 ### 2026-08-11 - Fase 19B.3B / Smoke test Flask y cierre Fase 19B
 

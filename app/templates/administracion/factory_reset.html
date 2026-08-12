@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block titulo %}Factory Reset - APP Scheduler{% endblock %}
+{% block encabezado %}Factory Reset{% endblock %}
+
+{% block contenido %}
+<section class="contenedor bienvenida modulo-control-hero factory-reset-hero">
+    <div>
+        <p class="eyebrow">Administracion critica</p>
+        <h2>Restablecer APP Scheduler</h2>
+        <p>Diagnostico preventivo para reconstruir una instalacion desde el bootstrap oficial.</p>
+    </div>
+    <span class="badge {{ 'error' if lock.bloquea else 'activo' }}">{{ lock.estado }}</span>
+</section>
+
+<section class="bloque factory-reset-peligro">
+    <div class="seccion-operativa-header">
+        <p class="eyebrow">Zona de peligro</p>
+        <h3>Restablecer app a estado de fabrica</h3>
+        <p>Esta operacion eliminara permanentemente toda la instalacion actual y reconstruira APP Scheduler desde cero.</p>
+    </div>
+    <div class="alerta advertencia alerta-inline">
+        Factory Reset todavia requiere confirmacion final. Fase 19C no puede ejecutar cambios destructivos.
+    </div>
+    <form
+        method="post"
+        action="{{ url_for('factory_reset.preview') }}"
+        class="requiere-confirmacion-form"
+        data-confirm-title="Restablecer APP Scheduler"
+        data-confirm-message="Se generara un preview de impacto. No se eliminara informacion en este paso."
+        data-confirm-ok="Continuar"
+        data-confirm-cancel="Cancelar"
+        data-confirm-type="danger"
+    >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn peligro" type="submit">Restablecer app a estado de fabrica</button>
+    </form>
+</section>
+
+{% if preview %}
+<section class="bloque factory-reset-preview">
+    <div class="seccion-operativa-header">
+        <p class="eyebrow">Preview firmado</p>
+        <h3>Resultado: {{ preview.estado }}</h3>
+        <p>Vigencia: {{ preview.expira_segundos }} segundos. Identificador {{ preview.id_operacion }}.</p>
+    </div>
+
+    {% if preview.bloqueos %}
+    <div class="alerta error alerta-inline">
+        <strong>Factory Reset bloqueado.</strong>
+        <ul>{% for bloqueo in preview.bloqueos %}<li>{{ bloqueo }}</li>{% endfor %}</ul>
+    </div>
+    {% else %}
+    <div class="alerta info alerta-inline">Las condiciones actuales permiten avanzar a una confirmacion futura. Este preview no autoriza ni ejecuta el reset.</div>
+    {% endif %}
+
+    <div class="factory-reset-grid">
+        <article class="card resumen-card">
+            <span>Registros BD</span>
+            <strong>{{ preview.base_datos.total_registros }}</strong>
+            <small>{{ preview.base_datos.conteos|length }} tablas inventariadas</small>
+        </article>
+        <article class="card resumen-card">
+            <span>Ejecuciones activas</span>
+            <strong>{{ preview.diagnostico.total_ejecuciones_activas }}</strong>
+            <small>{{ preview.diagnostico.pids_vivos_registrados }} PID vivos</small>
+        </article>
+        <article class="card resumen-card">
+            <span>Archivos runtime</span>
+            <strong>{{ preview.filesystem.total_archivos }}</strong>
+            <small>{{ preview.filesystem.bytes_aproximados }} bytes aproximados</small>
+        </article>
+        <article class="card resumen-card">
+            <span>Bootstrap</span>
+            <strong>{{ preview.bootstrap.version or 'No disponible' }}</strong>
+            <small>Instalada: {{ preview.bootstrap.version_instalada or 'No disponible' }} - {{ preview.bootstrap.cantidad_scripts }} scripts</small>
+        </article>
+    </div>
+
+    <div class="tabla-contenedor">
+        <table>
+            <thead><tr><th>Elemento</th><th>Estado</th><th>Detalle</th></tr></thead>
+            <tbody>
+                <tr><td>Lock global</td><td><span class="badge {{ 'error' if preview.lock.bloquea else 'activo' }}">{{ preview.lock.estado }}</span></td><td>{{ preview.lock.mensaje }}</td></tr>
+                <tr><td>Worker</td><td>{{ preview.diagnostico.worker.estado }}</td><td>{{ 'Activo' if preview.diagnostico.worker.activo else 'Sin actividad confirmada' }}</td></tr>
+                <tr><td>Bootstrap SQL</td><td>{{ 'COINCIDE' if preview.bootstrap.version_coincide else 'REVISAR' }}</td><td>{{ preview.bootstrap.mensaje }}</td></tr>
+                <tr><td>Tareas candidatas</td><td>{{ preview.diagnostico.tareas_candidatas }}</td><td>Programaciones que podrian ser evaluadas por el worker.</td></tr>
+                <tr><td>SUPER_ADMIN_ENV</td><td>{{ preview.super_admin_env.estado }}</td><td>{{ preview.super_admin_env.mensaje }}</td></tr>
+                <tr><td>Scripts Python</td><td>{{ preview.filesystem.archivos_py }}</td><td>Solo conteo; contenido no leido.</td></tr>
+                <tr><td>Archivos .env</td><td>{{ preview.filesystem.archivos_env }}</td><td>Solo conteo; contenido no leido.</td></tr>
+                <tr><td>Logs</td><td>{{ preview.filesystem.archivos_log }}</td><td>Archivos detectados en roots configurados.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <section class="factory-reset-segunda-confirmacion">
+        <h3>Segunda confirmacion preparada</h3>
+        <p>En la fase destructiva se exigira escribir exactamente <strong>RESTABLECER APP SCHEDULER</strong> y presentar este preview vigente.</p>
+        <input type="hidden" value="{{ preview.token_preview }}" aria-hidden="true">
+        <label for="factoryResetConfirmacion">Confirmacion final</label>
+        <input id="factoryResetConfirmacion" value="" placeholder="RESTABLECER APP SCHEDULER" disabled>
+        <button class="btn peligro" type="button" disabled>Factory Reset no habilitado</button>
+    </section>
+</section>
+{% endif %}
+{% endblock %}

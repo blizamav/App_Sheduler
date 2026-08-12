@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-Fase 19B queda validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST`: bootstrap desde cero, 33 tablas, validacion SQL, login `SUPER_ADMIN_ENV`, rutas Flask principales, alta integral con script v1 mediante `/tareas/<id_tarea>/scripts`, eliminacion permanente y retorno a estado virgen. El smoke uso un adaptador temporal en memoria por el error ODBC local `08001`; no cambia la arquitectura permanente. Factory Reset no esta implementado y Fase 19C no fue iniciada.
+Fase 19B queda validada sobre `APP_SCHEDULER_BOOTSTRAP_TEST`. Fase 19C implementa la infraestructura preventiva de Factory Reset: lock externo compartido, bloqueos web/worker, diagnóstico, permiso exclusivo, CSRF, preview firmado y Zona de Peligro. El reset destructivo y la reconstrucción de BD siguen deshabilitados y quedan para Fase 19D.
 
 Normalizacion Fase 17X: Fase 17A (alta integral de tarea con script inicial y `.env`), Fase 17B (descarga segura del `.py` por version), Fase 17C (salida de ejecucion en tiempo real) y Fase 17D (eliminacion permanente operativa con historial protegido) quedaron cerradas localmente por commits separados. Queda pendiente el push al repositorio remoto. Ninguna de estas fases requiere migracion.
 

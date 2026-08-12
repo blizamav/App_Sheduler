@@ -4,7 +4,7 @@
 
 El bootstrap actual fue ejecutado manualmente desde cero sobre `APP_SCHEDULER_BOOTSTRAP_TEST`. Los scripts 001-010 finalizaron correctamente y, tras alinear la matriz de catalogos del script 100 con el seed oficial 004, la validacion final retorno `BOOTSTRAP_ACTUAL | OK | APP_SCHEDULER_BOOTSTRAP_TEST | 33` sin `THROW`.
 
-El smoke test Flask tambien fue completado: login `SUPER_ADMIN_ENV`, rutas principales, alta integral de tarea con script v1, vista real de scripts por tarea y eliminacion permanente funcionaron contra la base bootstrap. La base y el filesystem regresaron a estado virgen y el script 100 volvio a finalizar `OK`. Fase 19B queda validada; Factory Reset aun no esta implementado.
+El smoke test Flask tambien fue completado: login `SUPER_ADMIN_ENV`, rutas principales, alta integral de tarea con script v1, vista real de scripts por tarea y eliminacion permanente funcionaron contra la base bootstrap. La base y el filesystem regresaron a estado virgen y el script 100 volvio a finalizar `OK`. Fase 19C agrega infraestructura preventiva, pero Factory Reset destructivo aun no esta implementado.
 
 ## Fuente de verdad
 
@@ -26,6 +26,7 @@ El bootstrap reutiliza `database/release/001-006` como base publicada e inmutabl
 | 8 | `database/bootstrap/008_crear_configuracion_mail_graph.sql` | DDL | Tabla global Mail Graph. |
 | 9 | `database/bootstrap/009_seed_configuracion_mail_graph.sql` | Seed | Fila global segura y marca de version del bootstrap. |
 | 10 | `database/bootstrap/010_seed_permisos_mantenedores.sql` | Seed | Completar la matriz vigente de mantenedores. |
+| 11 | `database/bootstrap/011_seed_permiso_factory_reset.sql` | Seed | Crear `FACTORY_RESET_EJECUTAR` exclusivamente para `SUPER_ADMIN`. |
 | 100 | `database/bootstrap/100_validacion_bootstrap_actual.sql` | Validacion | Validacion del esquema actual de 33 tablas. |
 
 ## Migrations frente a bootstrap
@@ -36,7 +37,7 @@ El bootstrap reutiliza `database/release/001-006` como base publicada e inmutabl
 
 ## Seeds y estado inicial
 
-Se crean los roles `SUPER_ADMIN`, `ADMIN`, `TI` y `TERCERO`, 51 permisos y su matriz vigente: `SUPER_ADMIN=51`, `ADMIN=49`, `TI=34`, `TERCERO=7`. El seed complementario incorpora la politica historica de mantenedores: administracion completa para SUPER_ADMIN/ADMIN y lectura para TI. Tambien se crean catalogos tecnicos, configuracion scheduler inactiva y reglas base de feriados. No se crean usuarios, clientes, categorias, tipos de negocio, tareas, scripts, ejecuciones, logs ni auditoria.
+Se crean los roles `SUPER_ADMIN`, `ADMIN`, `TI` y `TERCERO`, 52 permisos y su matriz vigente: `SUPER_ADMIN=52`, `ADMIN=49`, `TI=34`, `TERCERO=7`. `FACTORY_RESET_EJECUTAR` pertenece exclusivamente a `SUPER_ADMIN`. Los seeds complementarios incorporan mantenedores y esta autorización preventiva sin habilitar un reset destructivo. Tambien se crean catalogos tecnicos, configuracion scheduler inactiva y reglas base de feriados. No se crean usuarios, clientes, categorias, tipos de negocio, tareas, scripts, ejecuciones, logs ni auditoria.
 
 Mail Graph queda con una sola fila `MAIL_GRAPH`, inactiva, `client_secret_origen = ENV` y sin tenant, client ID, remitente ni destinatarios. Ningun secreto se persiste desde SQL.
 

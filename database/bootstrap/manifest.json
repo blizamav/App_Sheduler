@@ -1,6 +1,6 @@
 {
   "bootstrap": "APP_SCHEDULER_BOOTSTRAP_V1",
-  "version": "19B.0",
+  "version": "19C.0",
   "database_mode": "new_database_only",
   "scripts": [
     {"order": 1, "file": "database/release/001_crear_base_datos.sql", "type": "DDL", "purpose": "Crear la base destino si no existe"},
@@ -13,6 +13,7 @@
     {"order": 8, "file": "database/bootstrap/008_crear_configuracion_mail_graph.sql", "type": "DDL", "purpose": "Crear la tabla global Mail Graph"},
     {"order": 9, "file": "database/bootstrap/009_seed_configuracion_mail_graph.sql", "type": "SEED", "purpose": "Crear una configuracion Mail Graph global, inactiva y sin secretos"},
     {"order": 10, "file": "database/bootstrap/010_seed_permisos_mantenedores.sql", "type": "SEED", "purpose": "Completar la matriz vigente de permisos de mantenedores"},
+    {"order": 11, "file": "database/bootstrap/011_seed_permiso_factory_reset.sql", "type": "SEED", "purpose": "Crear el permiso exclusivo FACTORY_RESET_EJECUTAR para SUPER_ADMIN"},
     {"order": 100, "file": "database/bootstrap/100_validacion_bootstrap_actual.sql", "type": "VALIDATION", "purpose": "Validar extensiones, estado virgen y bootstrap completo actual"}
   ],
   "excluded": [

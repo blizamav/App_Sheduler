@@ -18,4 +18,5 @@
 :r .\database\bootstrap\008_crear_configuracion_mail_graph.sql
 :r .\database\bootstrap\009_seed_configuracion_mail_graph.sql
 :r .\database\bootstrap\010_seed_permisos_mantenedores.sql
+:r .\database\bootstrap\011_seed_permiso_factory_reset.sql
 :r .\database\bootstrap\100_validacion_bootstrap_actual.sql

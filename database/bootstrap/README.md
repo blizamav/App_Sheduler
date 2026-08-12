@@ -4,6 +4,8 @@ Esta carpeta define el bootstrap vigente para una base nueva. El orden ejecutabl
 
 El bootstrap reutiliza `database/release/001-006` como base publicada e inmutable y agrega definiciones limpias y seeds para las funcionalidades posteriores. Esto evita copiar el esquema base de 885 lineas y mantiene separado el release historico del bootstrap actual.
 
+Desde Fase 19C, `011_seed_permiso_factory_reset.sql` agrega `FACTORY_RESET_EJECUTAR` exclusivamente a `SUPER_ADMIN`. El bootstrap vigente queda en version `19C.0`, con 52 permisos activos. Este seed solo prepara autorizacion; no implementa ni ejecuta un Factory Reset.
+
 ## Ejecucion
 
 1. Confirmar que el nombre destino corresponde a una base nueva y desechable.

@@ -4,6 +4,7 @@ from app.config import Configuracion, validar_configuracion_critica
 from app.rutas_auditoria import bp_auditoria
 from app.rutas_configuracion import bp_configuracion, bp_configuracion_api
 from app.rutas_feriados import bp_feriados
+from app.rutas_factory_reset import bp_factory_reset
 from app.rutas_mantenedores import bp_mantenedores
 from app.rutas_papelera import bp_papelera
 from app.rutas import bp_principal
@@ -38,4 +39,5 @@ def crear_app():
     app.register_blueprint(bp_worker_api)
     app.register_blueprint(bp_feriados)
     app.register_blueprint(bp_auditoria)
+    app.register_blueprint(bp_factory_reset)
     return app

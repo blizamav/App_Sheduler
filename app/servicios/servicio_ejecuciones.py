@@ -37,6 +37,7 @@ from app.servicios.servicio_logs_ejecucion import (
 )
 from app.servicios.servicio_logs_sistema import registrar_log_sistema
 from app.servicios.servicio_auditoria import registrar_auditoria
+from app.servicios.servicio_control_runtime import factory_reset_bloquea_ejecuciones
 from app.servicios.servicio_procesos import (
     detener_proceso,
     iniciar_proceso_python,
@@ -69,6 +70,15 @@ MESES = {
 
 
 def iniciar_ejecucion_manual(id_tarea, usuario):
+    bloqueada, lock = factory_reset_bloquea_ejecuciones()
+    if bloqueada:
+        current_app.logger.warning(
+            "EJECUCION_MANUAL_BLOQUEADA_FACTORY_RESET | estado=%s | operacion=%s",
+            lock.get("estado"),
+            lock.get("id_operacion") or "no_disponible",
+        )
+        return False, "APP Scheduler se encuentra en proceso de mantenimiento critico.", None
+
     ok, mensaje, contexto = _validar_contexto_ejecucion(id_tarea, usuario)
     if not ok:
         registrar_log_sistema("EJECUCION_MANUAL_BLOQUEADA", "EJECUCIONES", mensaje, usuario=usuario, nivel="WARNING")
@@ -130,6 +140,15 @@ def iniciar_ejecucion_manual(id_tarea, usuario):
 
 
 def iniciar_ejecucion_automatica(id_tarea, nombre_worker, fecha_programada, clave_programacion):
+    bloqueada, lock = factory_reset_bloquea_ejecuciones()
+    if bloqueada:
+        current_app.logger.warning(
+            "EJECUCION_AUTOMATICA_BLOQUEADA_FACTORY_RESET | estado=%s | operacion=%s",
+            lock.get("estado"),
+            lock.get("id_operacion") or "no_disponible",
+        )
+        return False, "APP Scheduler se encuentra en proceso de mantenimiento critico.", None
+
     ok, mensaje, contexto = _validar_contexto_ejecucion(id_tarea, "scheduler_worker")
     if not ok:
         registrar_log_sistema("EJECUCION_AUTOMATICA_BLOQUEADA", "EJECUCIONES", mensaje, usuario="scheduler_worker", nivel="WARNING")

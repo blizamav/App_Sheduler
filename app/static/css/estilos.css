@@ -3364,3 +3364,41 @@ tr:last-child td {
         width: auto;
     }
 }
+/* Factory Reset: zona administrativa critica, sin accion destructiva en Fase 19C. */
+.factory-reset-peligro {
+    border-left: 4px solid var(--color-error, #b42318);
+}
+
+.factory-reset-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.factory-reset-segunda-confirmacion {
+    display: grid;
+    gap: 12px;
+    max-width: 720px;
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--borde, #d8dee9);
+    border-radius: 6px;
+    background: var(--superficie-suave, #f7f9fc);
+}
+
+.nav-link-peligro .nav-icon {
+    color: var(--color-error, #b42318);
+}
+
+@media (max-width: 1100px) {
+    .factory-reset-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .factory-reset-grid {
+        grid-template-columns: 1fr;
+    }
+}

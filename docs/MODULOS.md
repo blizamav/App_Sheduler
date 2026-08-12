@@ -6,9 +6,19 @@ El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, 
 
 ## Bootstrap limpio
 
-Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. El manifiesto combina el release base inmutable con definiciones limpias de notificaciones, evidencias y Mail Graph. La migracion correctiva 021 de QA no participa. Bootstrap, validacion SQL y smoke test Flask quedaron validados en base temporal mediante adaptador de prueba por la incidencia ODBC; Factory Reset permanece sin implementar.
+Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos e incorpora exclusivamente infraestructura preventiva de Factory Reset; la reconstrucción destructiva permanece sin implementar.
 
 La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
+
+## Factory Reset preventivo
+
+* `/administracion/factory-reset`: pantalla exclusiva de `SUPER_ADMIN`/`SUPER_ADMIN_ENV`.
+* `/administracion/factory-reset/preview`: inventario no destructivo protegido por CSRF.
+* `servicio_control_runtime.py`: lock externo atómico, compartido por web y worker.
+* `servicio_factory_reset.py`: conteos, diagnóstico, filesystem, manifiesto, recuperación administrativa y token firmado.
+* La ejecución manual y automática consulta el lock en backend.
+* El worker conserva heartbeat bloqueado y no toma candidatos nuevos.
+* La segunda confirmación existe solo como diseño visual deshabilitado; no hay endpoint de ejecución.
 
 ## Implementados
 
