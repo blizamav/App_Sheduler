@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
-* Estado actual: Fase 19D implementa orquestador Factory Reset blue-green con rollback y cuarentena reversible; Fase 19D.1 valido el flujo real y Fase 19E.0A agrega allowlist explicita fail-closed para targets.
+* Estado actual: Factory Reset blue-green con rollback, allowlist fail-closed y experiencia visible completa para restablecer APP Scheduler a estado base.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Fase 19E.0A - Allowlist explicita de targets para Factory Reset.
+* Fase actual: Cierre funcional y visual de Restablecer APP Scheduler a estado base.
 * Ultima actualizacion: 2026-08-12
 
 ## 2. Decisiones tecnicas vigentes
@@ -86,6 +86,17 @@
 * Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
 
 ## 6. Historial de cambios
+
+### 2026-08-12 - Cierre UX / Restablecer APP Scheduler a estado base
+
+* Diagnostico: backend y seguridad ya estaban completos; faltaba conectar el overlay al estado real y clarificar el flujo critico para el operador.
+* UI: lenguaje unificado a `estado base`, impacto visible, boton critico, primera confirmacion de preview y segunda confirmacion definitiva.
+* Confirmacion: frase exacta validada en cliente antes de habilitar el boton, mas checkbox final; backend conserva la validacion autoritativa.
+* Progreso: polling de `/administracion/factory-reset/estado` por `operation_id`, fases y porcentajes reales, recuperacion de operacion en curso y estado de error seguro.
+* Prevencion: doble envio bloqueado mientras el POST definitivo permanece en curso.
+* Pruebas: cobertura de render inicial y recuperacion visual de un lock en `EJECUTANDO_BOOTSTRAP`, sin invocar el endpoint destructivo.
+* Alcance: no se ejecuto Factory Reset, SQL ni bootstrap; no se modificaron `.env`, `.env.docker` ni `database/release/`.
+* Git: no se hizo staging, commit ni push.
 
 ### 2026-08-12 - Fase 19E.0A / Allowlist explicita Factory Reset
 

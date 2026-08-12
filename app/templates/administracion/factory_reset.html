@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block titulo %}Factory Reset - APP Scheduler{% endblock %}
-{% block encabezado %}Factory Reset{% endblock %}
+{% block titulo %}Restablecer a estado base - APP Scheduler{% endblock %}
+{% block encabezado %}Restablecer a estado base{% endblock %}
 
 {% block contenido %}
 <section class="contenedor bienvenida modulo-control-hero factory-reset-hero">
     <div>
         <p class="eyebrow">Administracion critica</p>
-        <h2>Restablecer APP Scheduler</h2>
-        <p>Diagnostico y reconstruccion controlada desde el bootstrap oficial.</p>
+        <h2>Restablecer APP Scheduler a estado base</h2>
+        <p>Reconstruccion controlada desde el bootstrap oficial, con respaldo operativo y rollback.</p>
     </div>
     <span class="badge {{ 'error' if lock.bloquea else 'activo' }}">{{ lock.estado }}</span>
 </section>
@@ -23,25 +23,32 @@
 </section>
 {% endif %}
 
-<section class="bloque factory-reset-peligro">
+<section class="bloque factory-reset-peligro" aria-labelledby="factoryResetTitulo">
     <div class="seccion-operativa-header">
         <p class="eyebrow">Zona de peligro</p>
-        <h3>Restablecer app a estado de fabrica</h3>
-        <p>Esta operacion eliminara permanentemente toda la instalacion actual y reconstruira APP Scheduler desde cero.</p>
+        <h3 id="factoryResetTitulo">Restablecer la aplicacion a estado base</h3>
+        <p>Esta operacion reemplaza el estado operativo actual por una instalacion virgen y reconstruye APP Scheduler desde el bootstrap validado.</p>
     </div>
-    <div class="alerta advertencia alerta-inline">La ejecucion definitiva exige preview vigente, frase exacta y una segunda confirmacion.</div>
+    <div class="factory-reset-impacto">
+        <strong>Accion critica y funcionalmente irreversible</strong>
+        <p>Se retiraran tareas, scripts, ejecuciones, configuraciones operativas y archivos runtime de la instalacion activa. Solo debe utilizarse en un entorno expresamente autorizado.</p>
+    </div>
+    <div class="alerta advertencia alerta-inline">Este primer paso solo genera un preview seguro. La ejecucion definitiva exige un preview vigente, frase exacta y una segunda confirmacion.</div>
     <form
         method="post"
         action="{{ url_for('factory_reset.preview') }}"
         class="requiere-confirmacion-form"
-        data-confirm-title="Restablecer APP Scheduler"
-        data-confirm-message="Se generara un preview de impacto. No se eliminara informacion en este paso."
-        data-confirm-ok="Continuar"
+        data-confirm-title="Revisar impacto del restablecimiento"
+        data-confirm-message="Vas a preparar el restablecimiento a estado base. Este paso solo valida el entorno y genera un preview; todavia no elimina informacion."
+        data-confirm-ok="Generar preview seguro"
         data-confirm-cancel="Cancelar"
         data-confirm-type="danger"
     >
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="btn peligro" type="submit">Restablecer app a estado de fabrica</button>
+        <button class="btn peligro factory-reset-boton-principal" type="submit">
+            <svg aria-hidden="true"><use href="#icon-factory-reset"></use></svg>
+            <span>Restablecer APP Scheduler a estado base</span>
+        </button>
     </form>
 </section>
 
@@ -107,28 +114,32 @@
     </div>
 
     <section class="factory-reset-segunda-confirmacion">
-        <h3>Segunda confirmacion definitiva</h3>
+        <p class="eyebrow">Confirmacion 2 de 2</p>
+        <h3>Autorizar restablecimiento definitivo</h3>
         {% if preview.reset_destructivo_habilitado %}
-        <p>Escribe exactamente <strong>RESTABLECER APP SCHEDULER</strong>. La base anterior y la cuarentena filesystem se conservaran para rollback.</p>
+        <p>Escribe exactamente <strong>RESTABLECER APP SCHEDULER</strong>. La base anterior y la cuarentena filesystem se conservaran para rollback controlado.</p>
         <form
             method="post"
             action="{{ url_for('factory_reset.ejecutar') }}"
             class="requiere-confirmacion-form"
-            data-confirm-title="Factory Reset definitivo"
-            data-confirm-message="Se reconstruira la base y se vaciaran los roots operativos. No cierres esta ventana."
-            data-confirm-ok="Restablecer definitivamente"
+            data-confirm-title="Restablecer a estado base"
+            data-confirm-message="Esta es la confirmacion final. Se reconstruira la base activa y se retirara el estado operativo actual."
+            data-confirm-ok="Si, restablecer a estado base"
             data-confirm-cancel="Cancelar"
             data-confirm-type="danger"
             data-confirm-requires-check="1"
             data-confirm-check-label="Comprendo que la instalacion actual dejara de estar operativa."
+            data-confirm-exact-phrase="RESTABLECER APP SCHEDULER"
             data-factory-reset-execute="1"
+            data-factory-reset-operation="{{ preview.id_operacion }}"
         >
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="token_preview" value="{{ preview.token_preview }}">
             <input type="hidden" name="resumen_hash" value="{{ preview.resumen_hash }}">
             <label for="factoryResetConfirmacion">Confirmacion final</label>
-            <input id="factoryResetConfirmacion" name="confirmacion" value="" placeholder="RESTABLECER APP SCHEDULER" autocomplete="off" required>
-            <button class="btn peligro" type="submit">Restablecer definitivamente</button>
+            <input id="factoryResetConfirmacion" name="confirmacion" value="" placeholder="RESTABLECER APP SCHEDULER" autocomplete="off" spellcheck="false" required data-factory-reset-phrase>
+            <small class="texto-ayuda" data-factory-reset-phrase-help>La frase debe coincidir exactamente para habilitar la accion.</small>
+            <button class="btn peligro" type="submit" data-factory-reset-submit disabled>Restablecer a estado base</button>
         </form>
         {% else %}
         <p>La ejecucion permanece bloqueada hasta resolver todos los puntos indicados en el preview.</p>
@@ -139,12 +150,42 @@
 </section>
 {% endif %}
 
-<div class="factory-reset-ejecutando" data-factory-reset-running aria-hidden="true">
-    <div class="factory-reset-ejecutando-contenido" role="status" aria-live="assertive">
-        <span class="spinner" aria-hidden="true"></span>
-        <p class="eyebrow">Operacion critica en curso</p>
-        <h2>Restableciendo APP Scheduler</h2>
-        <p>Creando y validando la instalacion nueva. No cierres esta ventana ni reenvies el formulario.</p>
+<div
+    class="factory-reset-ejecutando{% if lock.bloquea %} visible{% endif %}"
+    data-factory-reset-running
+    data-factory-reset-status-url="{{ url_for('factory_reset.estado') }}"
+    data-factory-reset-operation="{{ lock.id_operacion or '' }}"
+    data-factory-reset-initial-state="{{ lock.estado }}"
+    data-factory-reset-initial-phase="{{ lock.fase }}"
+    data-factory-reset-initial-progress="{{ lock.progreso }}"
+    aria-hidden="{{ 'false' if lock.bloquea else 'true' }}"
+>
+    <div class="factory-reset-ejecutando-fondo" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="factory-reset-ejecutando-contenido" role="status" aria-live="assertive" aria-atomic="true">
+        <div class="factory-reset-marca-proceso" aria-hidden="true">
+            <svg><use href="#icon-factory-reset"></use></svg>
+            <span class="factory-reset-pulso"></span>
+        </div>
+        <p class="eyebrow" data-factory-reset-kicker>Operacion critica en curso</p>
+        <h2 data-factory-reset-title>Restableciendo APP Scheduler</h2>
+        <p class="factory-reset-subtitulo" data-factory-reset-message>Dejando la aplicacion en estado base. No cierres esta ventana ni relances la operacion.</p>
+        <div class="factory-reset-progreso" aria-label="Progreso del restablecimiento">
+            <div class="factory-reset-progreso-cabecera">
+                <strong data-factory-reset-phase>Preparando operacion</strong>
+                <span data-factory-reset-percent>{{ lock.progreso or 0 }}%</span>
+            </div>
+            <div class="factory-reset-progreso-pista" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ lock.progreso or 0 }}" data-factory-reset-progressbar>
+                <span data-factory-reset-progress style="width: {{ lock.progreso or 0 }}%"></span>
+            </div>
+        </div>
+        <ol class="factory-reset-etapas" aria-label="Etapas del restablecimiento">
+            <li data-reset-stage="PREPARACION"><span></span>Preparacion segura</li>
+            <li data-reset-stage="BOOTSTRAP"><span></span>Instalacion base</li>
+            <li data-reset-stage="INTERCAMBIO"><span></span>Activacion</li>
+            <li data-reset-stage="VALIDACION"><span></span>Validacion final</li>
+        </ol>
+        <div class="factory-reset-aviso" data-factory-reset-advice>La aplicacion esta ocupada. No cierres esta ventana mientras finaliza el proceso.</div>
+        <button class="btn secundario oculto" type="button" data-factory-reset-close>Cerrar detalle</button>
     </div>
 </div>
 {% endblock %}

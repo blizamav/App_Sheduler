@@ -32,6 +32,19 @@ Rutas:
 
 No existe variante GET del endpoint destructivo.
 
+## Experiencia visible
+
+La accion se presenta como `Restablecer APP Scheduler a estado base` dentro de la zona administrativa critica. El flujo visible conserva las mismas defensas del backend:
+
+1. primera confirmacion para generar un preview no destructivo;
+2. preview firmado con impacto y bloqueos actuales;
+3. frase exacta `RESTABLECER APP SCHEDULER`;
+4. checkbox consciente y confirmacion corporativa final;
+5. bloqueo de doble envio;
+6. overlay con fase, mensaje y progreso reales consultados desde `/administracion/factory-reset/estado`.
+
+El overlay puede recuperar una operacion en curso mediante su `operation_id`. En error o rollback muestra un mensaje seguro y exige revision manual. No calcula porcentajes en frontend: utiliza exclusivamente los valores registrados por el orquestador.
+
 ## Kill switch y credencial administrativa
 
 La conexión normal de APP Scheduler no requiere permisos `CREATE DATABASE`, `ALTER DATABASE` ni `DROP DATABASE`. El orquestador usa SQLCMD con una credencial externa separada. La contraseña se entrega al proceso exclusivamente mediante `SQLCMDPASSWORD`; no aparece en argumentos, logs, UI, token ni BD.

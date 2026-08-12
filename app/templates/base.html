@@ -87,7 +87,7 @@
                 <a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}"><span class="nav-icon"><svg><use href="#icon-usuarios"></use></svg></span><span class="nav-text">Usuarios</span></a>
                 {% endif %}
                 {% if session.get("es_admin_env") or "SUPER_ADMIN" in session.get("roles", []) or "SUPER_ADMIN_ENV" in session.get("roles", []) %}
-                <a class="nav-link nav-link-peligro {% if request.endpoint and request.endpoint.startswith('factory_reset.') %}activo{% endif %}" href="{{ url_for('factory_reset.pantalla') }}"><span class="nav-icon"><svg><use href="#icon-factory-reset"></use></svg></span><span class="nav-text">Factory Reset</span></a>
+                <a class="nav-link nav-link-peligro {% if request.endpoint and request.endpoint.startswith('factory_reset.') %}activo{% endif %}" href="{{ url_for('factory_reset.pantalla') }}"><span class="nav-icon"><svg><use href="#icon-factory-reset"></use></svg></span><span class="nav-text">Restablecer app</span></a>
                 {% endif %}
                 <p class="nav-seccion">Control y trazabilidad</p>
                 {% if session.get("es_admin_env") or "*" in session.get("permisos", []) or "AUDITORIA_VER" in session.get("permisos", []) %}

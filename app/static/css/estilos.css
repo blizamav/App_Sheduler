@@ -3364,9 +3364,36 @@ tr:last-child td {
         width: auto;
     }
 }
-/* Factory Reset: zona administrativa critica, sin accion destructiva en Fase 19C. */
+/* Factory Reset: experiencia critica apoyada en el flujo seguro de Fases 19C-19D. */
 .factory-reset-peligro {
     border-left: 4px solid var(--color-error, #b42318);
+    background: #fffafa;
+}
+
+.factory-reset-impacto {
+    display: grid;
+    gap: 6px;
+    margin: 16px 0;
+    padding: 16px 18px;
+    border: 1px solid #f1b7b2;
+    border-radius: 6px;
+    background: #fff1f0;
+    color: #7a271a;
+}
+
+.factory-reset-impacto p {
+    margin: 0;
+    color: #912018;
+}
+
+.factory-reset-boton-principal {
+    min-height: 46px;
+}
+
+.factory-reset-boton-principal svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
 }
 
 .factory-reset-grid {
@@ -3384,7 +3411,16 @@ tr:last-child td {
     padding: 18px;
     border: 1px solid var(--borde, #d8dee9);
     border-radius: 6px;
-    background: var(--superficie-suave, #f7f9fc);
+    background: #f8fafc;
+}
+
+.factory-reset-segunda-confirmacion .texto-ayuda {
+    margin-top: -6px;
+}
+
+.factory-reset-segunda-confirmacion .texto-exito {
+    color: var(--color-exito, #16803a);
+    font-weight: 700;
 }
 
 .nav-link-peligro .nav-icon {
@@ -3398,7 +3434,8 @@ tr:last-child td {
     display: none;
     place-items: center;
     padding: 24px;
-    background: rgba(8, 18, 35, 0.88);
+    overflow: hidden;
+    background: rgba(7, 17, 30, 0.96);
 }
 
 .factory-reset-ejecutando.visible {
@@ -3406,35 +3443,208 @@ tr:last-child td {
 }
 
 .factory-reset-ejecutando-contenido {
-    width: min(560px, 100%);
-    padding: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    background: #fff;
-    text-align: center;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    position: relative;
+    z-index: 2;
+    width: min(680px, 100%);
+    padding: 38px;
+    border: 1px solid rgba(111, 181, 224, 0.38);
+    border-radius: 8px;
+    background: #0c1b2d;
+    color: #f7fbff;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
 }
 
-.factory-reset-ejecutando .spinner {
-    display: inline-block;
-    width: 34px;
-    height: 34px;
-    margin-bottom: 16px;
-    border: 3px solid #dce5f1;
-    border-top-color: var(--color-primario, #1456a0);
+.factory-reset-ejecutando-fondo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.42;
+}
+
+.factory-reset-ejecutando-fondo span {
+    position: absolute;
+    left: -15%;
+    width: 130%;
+    height: 1px;
+    background: rgba(68, 171, 222, 0.55);
+    animation: factory-reset-flujo 4.2s ease-in-out infinite;
+}
+
+.factory-reset-ejecutando-fondo span:nth-child(1) { top: 24%; }
+.factory-reset-ejecutando-fondo span:nth-child(2) { top: 52%; animation-delay: 0.9s; }
+.factory-reset-ejecutando-fondo span:nth-child(3) { top: 78%; animation-delay: 1.8s; }
+
+.factory-reset-marca-proceso {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    margin-bottom: 22px;
+    border: 1px solid rgba(79, 182, 227, 0.58);
     border-radius: 50%;
-    animation: factory-reset-giro 0.9s linear infinite;
+    color: #65c7ee;
 }
 
-@keyframes factory-reset-giro {
-    to {
-        transform: rotate(360deg);
-    }
+.factory-reset-marca-proceso svg {
+    width: 28px;
+    height: 28px;
+}
+
+.factory-reset-pulso {
+    position: absolute;
+    inset: -1px;
+    border: 1px solid rgba(101, 199, 238, 0.65);
+    border-radius: 50%;
+    animation: factory-reset-pulso 1.8s ease-out infinite;
+}
+
+.factory-reset-ejecutando .eyebrow {
+    color: #79c9ec;
+}
+
+.factory-reset-ejecutando h2 {
+    margin: 4px 0 8px;
+    color: #fff;
+    font-size: 2rem;
+}
+
+.factory-reset-subtitulo {
+    margin: 0;
+    color: #b8c9d9;
+    line-height: 1.6;
+}
+
+.factory-reset-progreso {
+    display: grid;
+    gap: 10px;
+    margin-top: 28px;
+}
+
+.factory-reset-progreso-cabecera {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    color: #dceaf4;
+}
+
+.factory-reset-progreso-cabecera span {
+    color: #79c9ec;
+    font-variant-numeric: tabular-nums;
+}
+
+.factory-reset-progreso-pista {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #1d3348;
+}
+
+.factory-reset-progreso-pista > span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #3fb6e8;
+    transition: width 320ms ease;
+}
+
+.factory-reset-etapas {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.factory-reset-etapas li {
+    display: grid;
+    grid-template-columns: 10px 1fr;
+    align-items: center;
+    gap: 8px;
+    color: #7f96aa;
+    font-size: 0.78rem;
+}
+
+.factory-reset-etapas li > span {
+    width: 8px;
+    height: 8px;
+    border: 1px solid #567086;
+    border-radius: 50%;
+    background: #13283b;
+}
+
+.factory-reset-etapas li.actual,
+.factory-reset-etapas li.completada {
+    color: #e7f5fb;
+}
+
+.factory-reset-etapas li.actual > span {
+    border-color: #65c7ee;
+    background: #65c7ee;
+    box-shadow: 0 0 0 4px rgba(101, 199, 238, 0.14);
+}
+
+.factory-reset-etapas li.completada > span {
+    border-color: #49b779;
+    background: #49b779;
+}
+
+.factory-reset-aviso {
+    margin-top: 26px;
+    padding: 12px 14px;
+    border-left: 3px solid #3fb6e8;
+    background: #12283b;
+    color: #c6d7e4;
+    font-size: 0.88rem;
+}
+
+.factory-reset-ejecutando.estado-error .factory-reset-marca-proceso,
+.factory-reset-ejecutando.estado-error .factory-reset-progreso-cabecera span {
+    color: #ff9d92;
+    border-color: #c94a3c;
+}
+
+.factory-reset-ejecutando.estado-error .factory-reset-pulso {
+    display: none;
+}
+
+.factory-reset-ejecutando.estado-error .factory-reset-progreso-pista > span {
+    background: #d65445;
+}
+
+.factory-reset-ejecutando.estado-error .factory-reset-aviso {
+    border-left-color: #d65445;
+    background: #301d22;
+}
+
+.factory-reset-ejecutando.estado-completado .factory-reset-progreso-pista > span {
+    background: #49b779;
+}
+
+.factory-reset-ejecutando [data-factory-reset-close] {
+    margin-top: 18px;
+}
+
+@keyframes factory-reset-pulso {
+    from { opacity: 0.8; transform: scale(1); }
+    to { opacity: 0; transform: scale(1.55); }
+}
+
+@keyframes factory-reset-flujo {
+    0%, 100% { opacity: 0.12; transform: translateX(-8%); }
+    50% { opacity: 0.7; transform: translateX(8%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .factory-reset-ejecutando .spinner {
+    .factory-reset-pulso,
+    .factory-reset-ejecutando-fondo span {
         animation: none;
+    }
+
+    .factory-reset-progreso-pista > span {
+        transition: none;
     }
 }
 
@@ -3447,5 +3657,25 @@ tr:last-child td {
 @media (max-width: 640px) {
     .factory-reset-grid {
         grid-template-columns: 1fr;
+    }
+
+    .factory-reset-ejecutando {
+        padding: 14px;
+    }
+
+    .factory-reset-ejecutando-contenido {
+        padding: 26px 20px;
+    }
+
+    .factory-reset-ejecutando h2 {
+        font-size: 1.5rem;
+    }
+
+    .factory-reset-etapas {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .factory-reset-boton-principal {
+        width: 100%;
     }
 }

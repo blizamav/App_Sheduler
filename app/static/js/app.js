@@ -1120,11 +1120,151 @@ document.addEventListener("DOMContentLoaded", () => {
                 mostrarToast("No hay cambios para guardar.", "info");
                 return;
             }
+            if (formulario.dataset.confirmExactPhrase) {
+                const entrada = formulario.querySelector("[data-factory-reset-phrase]");
+                const coincide = entrada?.value === formulario.dataset.confirmExactPhrase;
+                if (!coincide) {
+                    entrada?.setCustomValidity("La frase de confirmacion no coincide exactamente.");
+                    entrada?.reportValidity();
+                    return;
+                }
+                entrada.setCustomValidity("");
+            }
             abrirModalConfirmacion(obtenerConfirmacionFormulario(formulario), formulario);
         });
     });
 
+    const panelFactoryReset = document.querySelector("[data-factory-reset-running]");
+    let intervaloFactoryReset = null;
+    const fasesFactoryReset = {
+        PRECHECK: ["Validando condiciones", "PREPARACION", 0],
+        LOCK_ADQUIRIDO: ["Proteccion global activada", "PREPARACION", 0],
+        BLOQUEANDO_ACTIVIDAD: ["Bloqueando nueva actividad", "PREPARACION", 0],
+        CREANDO_BD_TEMPORAL: ["Preparando instalacion nueva", "BOOTSTRAP", 1],
+        EJECUTANDO_BOOTSTRAP: ["Instalando estado base", "BOOTSTRAP", 1],
+        VALIDANDO_BD_TEMPORAL: ["Validando instalacion nueva", "BOOTSTRAP", 1],
+        PREPARANDO_INTERCAMBIO: ["Preparando activacion", "INTERCAMBIO", 2],
+        INTERCAMBIANDO_BD: ["Activando instalacion base", "INTERCAMBIO", 2],
+        LIMPIANDO_FILESYSTEM: ["Protegiendo estado operativo anterior", "INTERCAMBIO", 2],
+        VALIDANDO_RESULTADO: ["Validando resultado final", "VALIDACION", 3],
+        REGISTRANDO_RESET: ["Registrando nuevo estado", "VALIDACION", 3],
+        COMPLETADO: ["Restablecimiento completado", "VALIDACION", 4],
+        ROLLBACK: ["Restaurando estado anterior", "VALIDACION", 3],
+        ERROR: ["Revision manual requerida", "VALIDACION", 3],
+    };
+
+    const actualizarOverlayFactoryReset = (datos = {}) => {
+        if (!panelFactoryReset) {
+            return;
+        }
+        const fase = String(datos.fase || "PRECHECK").toUpperCase();
+        const estado = String(datos.estado || "FACTORY_RESET_PREPARANDO").toUpperCase();
+        const progreso = Math.max(0, Math.min(100, Number(datos.progreso) || 0));
+        const faseVisual = fasesFactoryReset[fase] || ["Procesando operacion", "PREPARACION", 0];
+        const esError = estado === "FACTORY_RESET_ERROR" || fase === "ERROR";
+        const completado = Boolean(datos.completado) || fase === "COMPLETADO";
+        const titulo = panelFactoryReset.querySelector("[data-factory-reset-title]");
+        const kicker = panelFactoryReset.querySelector("[data-factory-reset-kicker]");
+        const mensaje = panelFactoryReset.querySelector("[data-factory-reset-message]");
+        const faseTexto = panelFactoryReset.querySelector("[data-factory-reset-phase]");
+        const porcentaje = panelFactoryReset.querySelector("[data-factory-reset-percent]");
+        const barra = panelFactoryReset.querySelector("[data-factory-reset-progress]");
+        const progressbar = panelFactoryReset.querySelector("[data-factory-reset-progressbar]");
+        const aviso = panelFactoryReset.querySelector("[data-factory-reset-advice]");
+        const cerrar = panelFactoryReset.querySelector("[data-factory-reset-close]");
+
+        panelFactoryReset.classList.toggle("estado-error", esError);
+        panelFactoryReset.classList.toggle("estado-completado", completado && !esError);
+        titulo.textContent = esError
+            ? "El restablecimiento requiere revision"
+            : completado
+                ? "APP Scheduler quedo en estado base"
+                : "Restableciendo APP Scheduler";
+        kicker.textContent = esError ? "Operacion critica detenida" : completado ? "Operacion completada" : "Operacion critica en curso";
+        faseTexto.textContent = faseVisual[0];
+        mensaje.textContent = datos.error_seguro || datos.mensaje || "Dejando la aplicacion en estado base.";
+        porcentaje.textContent = `${progreso}%`;
+        barra.style.width = `${progreso}%`;
+        progressbar.setAttribute("aria-valuenow", String(progreso));
+        aviso.textContent = esError
+            ? "No relances la operacion. Revisa el diagnostico y el lock antes de continuar."
+            : completado
+                ? "La sesion se cerrara para ingresar a la instalacion nueva."
+                : "La aplicacion esta ocupada. No cierres esta ventana mientras finaliza el proceso.";
+        cerrar.classList.toggle("oculto", !esError);
+
+        panelFactoryReset.querySelectorAll("[data-reset-stage]").forEach((etapa, indice) => {
+            etapa.classList.toggle("completada", indice < faseVisual[2] || completado);
+            etapa.classList.toggle("actual", indice === faseVisual[2] && !completado);
+        });
+    };
+
+    const detenerMonitoreoFactoryReset = () => {
+        if (intervaloFactoryReset) {
+            window.clearInterval(intervaloFactoryReset);
+            intervaloFactoryReset = null;
+        }
+    };
+
+    const iniciarMonitoreoFactoryReset = (idOperacion) => {
+        if (!panelFactoryReset || !idOperacion) {
+            return;
+        }
+        panelFactoryReset.dataset.factoryResetOperation = idOperacion;
+        const consultar = async () => {
+            const urlBase = panelFactoryReset.dataset.factoryResetStatusUrl;
+            try {
+                const respuesta = await fetch(`${urlBase}?operacion=${encodeURIComponent(idOperacion)}`, {
+                    headers: { Accept: "application/json" },
+                    credentials: "same-origin",
+                    cache: "no-store",
+                });
+                if (!respuesta.ok) {
+                    return;
+                }
+                const datos = await respuesta.json();
+                if (!datos.id_operacion && datos.estado === "NORMAL") {
+                    return;
+                }
+                actualizarOverlayFactoryReset(datos);
+                if (datos.completado || datos.estado === "FACTORY_RESET_ERROR") {
+                    detenerMonitoreoFactoryReset();
+                }
+            } catch (_error) {
+                const faseTexto = panelFactoryReset.querySelector("[data-factory-reset-phase]");
+                if (faseTexto) {
+                    faseTexto.textContent = "Reconectando con el proceso";
+                }
+            }
+        };
+        detenerMonitoreoFactoryReset();
+        consultar();
+        intervaloFactoryReset = window.setInterval(consultar, 1000);
+    };
+
     document.querySelectorAll("[data-factory-reset-execute='1']").forEach((formulario) => {
+        const entradaFrase = formulario.querySelector("[data-factory-reset-phrase]");
+        const botonEnvio = formulario.querySelector("[data-factory-reset-submit]");
+        const ayudaFrase = formulario.querySelector("[data-factory-reset-phrase-help]");
+        const fraseEsperada = formulario.dataset.confirmExactPhrase || "";
+        const validarFrase = () => {
+            const coincide = entradaFrase?.value === fraseEsperada;
+            if (botonEnvio) {
+                botonEnvio.disabled = !coincide;
+            }
+            if (ayudaFrase) {
+                ayudaFrase.classList.toggle("texto-exito", coincide);
+                ayudaFrase.textContent = coincide
+                    ? "Frase verificada. La confirmacion final esta disponible."
+                    : "La frase debe coincidir exactamente para habilitar la accion.";
+            }
+            if (entradaFrase) {
+                entradaFrase.setCustomValidity("");
+            }
+        };
+        entradaFrase?.addEventListener("input", validarFrase);
+        validarFrase();
+
         formulario.addEventListener("submit", (evento) => {
             if (formulario.dataset.factoryResetConfirmed !== "1") {
                 return;
@@ -1135,16 +1275,31 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             evento.preventDefault();
             formulario.dataset.factoryResetSending = "1";
-            const panel = document.querySelector("[data-factory-reset-running]");
-            if (panel) {
-                panel.classList.add("visible");
-                panel.setAttribute("aria-hidden", "false");
+            if (panelFactoryReset) {
+                panelFactoryReset.classList.add("visible");
+                panelFactoryReset.setAttribute("aria-hidden", "false");
+                actualizarOverlayFactoryReset({ fase: "PRECHECK", progreso: 2, mensaje: "Validando nuevamente las condiciones antes de iniciar." });
+                iniciarMonitoreoFactoryReset(formulario.dataset.factoryResetOperation);
             }
             formulario.querySelectorAll("button").forEach((boton) => {
                 boton.disabled = true;
             });
             requestAnimationFrame(() => HTMLFormElement.prototype.submit.call(formulario));
         });
+    });
+
+    if (panelFactoryReset?.classList.contains("visible")) {
+        actualizarOverlayFactoryReset({
+            estado: panelFactoryReset.dataset.factoryResetInitialState,
+            fase: panelFactoryReset.dataset.factoryResetInitialPhase,
+            progreso: panelFactoryReset.dataset.factoryResetInitialProgress,
+        });
+        iniciarMonitoreoFactoryReset(panelFactoryReset.dataset.factoryResetOperation);
+    }
+
+    panelFactoryReset?.querySelector("[data-factory-reset-close]")?.addEventListener("click", () => {
+        panelFactoryReset.classList.remove("visible");
+        panelFactoryReset.setAttribute("aria-hidden", "true");
     });
 
     if (modalCancelar) {

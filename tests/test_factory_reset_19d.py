@@ -247,6 +247,53 @@ class FactoryReset19DTest(unittest.TestCase):
         )
         self.assertEqual(respuesta.status_code, 302)
 
+    def test_pantalla_expone_flujo_estado_base_y_monitor_real(self):
+        client = self.app.test_client()
+        with client.session_transaction() as sesion:
+            sesion.update(
+                usuario="admin",
+                roles=["SUPER_ADMIN_ENV"],
+                permisos=["*"],
+                es_admin_env=True,
+                sesion_iniciada_epoch=time.time(),
+            )
+        respuesta = client.get("/administracion/factory-reset")
+        html = respuesta.get_data(as_text=True)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("Restablecer APP Scheduler a estado base", html)
+        self.assertIn('data-factory-reset-status-url="/administracion/factory-reset/estado"', html)
+        self.assertIn("No cierres esta ventana", html)
+        self.assertIn('class="factory-reset-ejecutando"', html)
+        self.assertIn('aria-hidden="true"', html)
+
+    def test_pantalla_recupera_operacion_en_curso_sin_ejecutar_reset(self):
+        operacion = str(uuid4())
+        with self.app.app_context():
+            adquirir_lock_factory_reset("FACTORY_RESET_PREPARANDO", "test", operacion)
+            actualizar_lock_factory_reset(
+                operacion,
+                "FACTORY_RESET_EN_PROGRESO",
+                fase="EJECUTANDO_BOOTSTRAP",
+                progreso=30,
+                mensaje="Instalando estado base.",
+            )
+        client = self.app.test_client()
+        with client.session_transaction() as sesion:
+            sesion.update(
+                usuario="admin",
+                roles=["SUPER_ADMIN_ENV"],
+                permisos=["*"],
+                es_admin_env=True,
+                sesion_iniciada_epoch=time.time(),
+            )
+        respuesta = client.get("/administracion/factory-reset")
+        html = respuesta.get_data(as_text=True)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("factory-reset-ejecutando visible", html)
+        self.assertIn(f'data-factory-reset-operation="{operacion}"', html)
+        self.assertIn('data-factory-reset-initial-phase="EJECUTANDO_BOOTSTRAP"', html)
+        self.assertIn('aria-valuenow="30"', html)
+
     def test_worker_no_accede_bd_en_intercambio(self):
         with self.app.app_context():
             operacion = str(uuid4())

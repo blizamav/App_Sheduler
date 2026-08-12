@@ -10,10 +10,12 @@ Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instal
 
 La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
 
-## Factory Reset preventivo
+## Factory Reset operativo protegido
 
 * `/administracion/factory-reset`: pantalla exclusiva de `SUPER_ADMIN`/`SUPER_ADMIN_ENV`.
 * `/administracion/factory-reset/preview`: inventario no destructivo protegido por CSRF.
+* `/administracion/factory-reset/ejecutar`: POST destructivo protegido por frase exacta, segunda confirmacion, token firmado, kill switch y precheck final.
+* `/administracion/factory-reset/estado`: estado externo seguro por operacion para mostrar fases y progreso reales.
 * `servicio_control_runtime.py`: lock externo atómico, compartido por web y worker.
 * `servicio_factory_reset.py`: conteos, diagnóstico, filesystem, manifiesto, recuperación administrativa y token firmado.
 * `servicio_factory_reset_sql.py`: ejecutor SQLCMD administrativo, bootstrap, sesiones, intercambio, rollback y validación final.
@@ -21,7 +23,8 @@ La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<
 * `servicio_orquestador_factory_reset.py`: máquina de estados y coordinación transaccional de BD/filesystem.
 * La ejecución manual y automática consulta el lock en backend.
 * El worker conserva heartbeat bloqueado y no toma candidatos nuevos.
-* La segunda confirmación existe solo como diseño visual deshabilitado; no hay endpoint de ejecución.
+* La interfaz presenta impacto, preview, frase exacta y confirmacion consciente antes del envio definitivo.
+* El overlay recupera fase, mensaje y progreso del lock/log externo; no inventa porcentajes y bloquea el doble envio.
 
 ## Implementados
 

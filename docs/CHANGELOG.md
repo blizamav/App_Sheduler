@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-12 - Cierre UX Restablecer a estado base
+
+### Mejorado
+
+* La pantalla administrativa unifica el concepto visible como `Restablecer APP Scheduler a estado base` y presenta el impacto funcional antes del preview.
+* La primera confirmacion aclara que solo genera un preview no destructivo; la segunda exige frase exacta, checkbox consciente y confirmacion final.
+* La frase `RESTABLECER APP SCHEDULER` se valida tambien en cliente antes de habilitar el boton, conservando la validacion autoritativa del backend.
+* El overlay critico consume `/administracion/factory-reset/estado` y muestra fase, mensaje y progreso reales del orquestador, sin porcentajes simulados.
+* Una operacion en curso se recupera al volver a abrir la pantalla; errores y rollback se presentan con mensaje seguro y exigencia de revision manual.
+* El envio definitivo queda protegido contra doble submit mientras el formulario permanece pendiente.
+
+### Seguridad y alcance
+
+* No se cambio preview, CSRF, token firmado, allowlist, kill switch, lock, worker, SQLCMD, bootstrap, rollback ni autorizacion.
+* No se ejecuto Factory Reset, SQL ni bootstrap; `.env`, `.env.docker` y `database/release/` permanecieron intactos.
+* No se hizo staging, commit ni push.
+
 ## 2026-08-12 - Fase 19E.0A allowlist Factory Reset
 
 ### Agregado
