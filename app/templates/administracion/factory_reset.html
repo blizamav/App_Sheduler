@@ -8,7 +8,7 @@
     <div>
         <p class="eyebrow">Administracion critica</p>
         <h2>Restablecer APP Scheduler a estado base</h2>
-        <p>Reconstruccion controlada desde el bootstrap oficial, con respaldo operativo y rollback.</p>
+        <p>Reconstruccion in-place de la unica base autorizada, con transaccion SQL y cuarentena temporal de archivos.</p>
     </div>
     <span class="badge {{ 'error' if lock.bloquea else 'activo' }}">{{ lock.estado }}</span>
 </section>
@@ -27,7 +27,7 @@
     <div class="seccion-operativa-header">
         <p class="eyebrow">Zona de peligro</p>
         <h3 id="factoryResetTitulo">Restablecer la aplicacion a estado base</h3>
-        <p>Esta operacion reemplaza el estado operativo actual por una instalacion virgen y reconstruye APP Scheduler desde el bootstrap validado.</p>
+        <p>Esta operacion reconstruye APP Scheduler dentro de la base actual. No crea, renombra ni elimina bases de datos.</p>
     </div>
     <div class="factory-reset-impacto">
         <strong>Accion critica y funcionalmente irreversible</strong>
@@ -102,6 +102,8 @@
                 <tr><td>Tareas candidatas</td><td>{{ preview.diagnostico.tareas_candidatas }}</td><td>Cuenta las tareas que podrían ser evaluadas por el worker.</td></tr>
                 <tr><td>SUPER_ADMIN_ENV</td><td>{{ preview.super_admin_env.estado }}</td><td>Verifica que exista acceso administrativo de recuperación configurado por entorno.</td></tr>
                 <tr><td>Motor SQLCMD</td><td>{{ 'LISTO' if preview.configuracion_reset.sqlcmd_disponible else 'BLOQUEADO' }}</td><td>Verifica que la herramienta administrativa SQLCMD esté disponible para ejecutar el Factory Reset.</td></tr>
+                <tr><td>Modo de reset</td><td>{{ preview.configuracion_reset.modo }}</td><td>Opera solo dentro de la base objetivo; no crea ni intercambia bases.</td></tr>
+                <tr><td>Cuenta SQL de mantenimiento</td><td>{{ 'LISTA' if preview.entorno_in_place.disponible else 'BLOQUEADA' }}</td><td>Valida contexto, READ_WRITE y membresia db_owner dentro de la base objetivo.</td></tr>
                 <tr><td>Target configurado</td><td>{{ preview.configuracion_reset.target_configurado or 'NO CONFIGURADO' }}</td><td>Muestra la base de datos configurada como destino del Factory Reset.</td></tr>
                 <tr><td>Target coincide con BD actual</td><td>{{ 'SI' if preview.configuracion_reset.target_coincide else 'NO' }}</td><td>Comprueba que el destino configurado sea exactamente la base de datos actual.</td></tr>
                 <tr><td>Allowlist configurada</td><td>{{ 'SI' if preview.configuracion_reset.allowlist_configurada else 'NO' }}</td><td>Verifica que exista una lista explícita de bases autorizadas.</td></tr>
@@ -117,13 +119,13 @@
         <p class="eyebrow">Confirmacion 2 de 2</p>
         <h3>Autorizar restablecimiento definitivo</h3>
         {% if preview.reset_destructivo_habilitado %}
-        <p>Escribe exactamente <strong>RESTABLECER APP SCHEDULER</strong>. La base anterior y la cuarentena filesystem se conservaran para rollback controlado.</p>
+        <p>Escribe exactamente <strong>RESTABLECER APP SCHEDULER</strong>. SQL se reconstruira dentro de APP_SCHEDULER_QA y los archivos se conservaran en cuarentena solo hasta confirmar el resultado.</p>
         <form
             method="post"
             action="{{ url_for('factory_reset.ejecutar') }}"
             class="requiere-confirmacion-form"
             data-confirm-title="Restablecer a estado base"
-            data-confirm-message="Esta es la confirmacion final. Se reconstruira la base activa y se retirara el estado operativo actual."
+            data-confirm-message="Esta es la confirmacion final. Se reconstruiran en una transaccion los objetos de la base activa y se retirara el estado operativo actual."
             data-confirm-ok="Si, restablecer a estado base"
             data-confirm-cancel="Cancelar"
             data-confirm-type="danger"
@@ -180,8 +182,8 @@
         </div>
         <ol class="factory-reset-etapas" aria-label="Etapas del restablecimiento">
             <li data-reset-stage="PREPARACION"><span></span>Preparacion segura</li>
-            <li data-reset-stage="BOOTSTRAP"><span></span>Instalacion base</li>
-            <li data-reset-stage="INTERCAMBIO"><span></span>Activacion</li>
+            <li data-reset-stage="FILESYSTEM"><span></span>Cuarentena runtime</li>
+            <li data-reset-stage="TRANSACCION"><span></span>Reset SQL in-place</li>
             <li data-reset-stage="VALIDACION"><span></span>Validacion final</li>
         </ol>
         <div class="factory-reset-aviso" data-factory-reset-advice>La aplicacion esta ocupada. No cierres esta ventana mientras finaliza el proceso.</div>

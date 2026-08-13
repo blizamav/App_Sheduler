@@ -12,7 +12,7 @@ from app.config import BASE_DIR, VALORES_PLANTILLA
 PREFIJO_APP_SQL = "APP_SCHEDULER"
 BASES_SISTEMA = {"master", "model", "msdb", "tempdb"}
 PATRON_IDENTIFICADOR = re.compile(r"^[A-Za-z0-9_]+$")
-TIPOS_BASE_TEMPORAL = ("NEW", "OLD", "FAILED")
+RUTA_RUNNER_IN_PLACE = BASE_DIR / "database" / "factory_reset" / "000_reset_in_place.sql"
 
 
 class ErrorFactoryResetSQL(RuntimeError):
@@ -20,7 +20,7 @@ class ErrorFactoryResetSQL(RuntimeError):
 
 
 def parsear_targets_permitidos_factory_reset(valor):
-    """Normaliza una allowlist exacta de bases; rechaza patrones e identificadores invalidos."""
+    """Normaliza una allowlist exacta; no admite patrones ni nombres de sistema."""
     permitidos = []
     vistos = set()
     for elemento in str(valor or "").split(","):
@@ -29,10 +29,9 @@ def parsear_targets_permitidos_factory_reset(valor):
             continue
         _validar_nombre_bd(nombre)
         normalizado = nombre.upper()
-        if normalizado in vistos:
-            continue
-        vistos.add(normalizado)
-        permitidos.append(nombre)
+        if normalizado not in vistos:
+            vistos.add(normalizado)
+            permitidos.append(nombre)
     return permitidos
 
 
@@ -44,7 +43,6 @@ def validar_configuracion_factory_reset_sql():
     destino = str(current_app.config.get("FACTORY_RESET_DB_TARGET") or "").strip()
     actual = str(current_app.config.get("DB_DATABASE") or "").strip()
     allowlist_valor = current_app.config.get("FACTORY_RESET_DB_ALLOWED_TARGETS")
-    prefijo_app = str(current_app.config.get("FACTORY_RESET_APP_NAME_PREFIX") or PREFIJO_APP_SQL).strip()
     bloqueos = []
     allowlist_invalida = False
     try:
@@ -57,6 +55,7 @@ def validar_configuracion_factory_reset_sql():
     actual_normalizado = actual.upper()
     target_coincide = bool(destino and actual and destino_normalizado == actual_normalizado)
     target_en_allowlist = bool(destino and destino_normalizado in allowlist_normalizada)
+
     if not current_app.config.get("FACTORY_RESET_HABILITADO", False):
         bloqueos.append("Factory Reset esta deshabilitado por configuracion.")
     if not ejecutable:
@@ -80,30 +79,21 @@ def validar_configuracion_factory_reset_sql():
         bloqueos.append("FACTORY_RESET_DB_TARGET no coincide exactamente con DB_DATABASE.")
     if destino and not target_en_allowlist:
         bloqueos.append("FACTORY_RESET_DB_TARGET no pertenece a FACTORY_RESET_DB_ALLOWED_TARGETS.")
-    if not prefijo_app or len(prefijo_app) > 100 or not re.fullmatch(r"[A-Za-z0-9_-]+", prefijo_app):
-        bloqueos.append("FACTORY_RESET_APP_NAME_PREFIX no es valido.")
+    if not RUTA_RUNNER_IN_PLACE.is_file():
+        bloqueos.append("El runner in-place de Factory Reset no esta disponible.")
+
     return {
         "disponible": not bloqueos,
         "bloqueos": bloqueos,
         "sqlcmd_disponible": bool(ejecutable),
-        "credencial_administrativa": bool(usuario and password),
+        "credencial_mantenimiento": bool(usuario and password),
         "target_configurado": destino or None,
         "target_coincide": target_coincide,
         "target_en_allowlist": target_en_allowlist,
         "allowlist_configurada": bool(targets_permitidos) and not allowlist_invalida,
         "targets_permitidos": targets_permitidos,
         "habilitado": bool(current_app.config.get("FACTORY_RESET_HABILITADO", False)),
-    }
-
-
-def derivar_bases_temporales_factory_reset(base_actual, id_operacion):
-    actual = _validar_nombre_bd(base_actual)
-    sufijo = "".join(caracter for caracter in str(id_operacion or "") if caracter.isalnum())[:12].upper()
-    if len(sufijo) != 12:
-        raise ValueError("Identificador de operacion Factory Reset no permitido.")
-    return {
-        tipo: _validar_nombre_bd(_nombre_derivado(actual, tipo, sufijo))
-        for tipo in TIPOS_BASE_TEMPORAL
+        "modo": "IN_PLACE",
     }
 
 
@@ -111,288 +101,96 @@ class EjecutorSQLFactoryReset:
     def __init__(self):
         validacion = validar_configuracion_factory_reset_sql()
         if not validacion["disponible"]:
-            raise ErrorFactoryResetSQL("Configuracion administrativa Factory Reset incompleta.")
+            raise ErrorFactoryResetSQL("Configuracion de mantenimiento Factory Reset incompleta.")
         self.sqlcmd = _resolver_sqlcmd()
         self.servidor = str(current_app.config["FACTORY_RESET_DB_SERVER"]).strip()
         self.usuario = str(current_app.config["FACTORY_RESET_DB_USER"]).strip()
         self.password = str(current_app.config["FACTORY_RESET_DB_PASSWORD"])
+        self.target = _validar_nombre_bd(current_app.config["FACTORY_RESET_DB_TARGET"])
         self.timeout = max(60, int(current_app.config.get("FACTORY_RESET_SQLCMD_TIMEOUT_SEGUNDOS", 900)))
-        self.prefijo_app = str(current_app.config.get("FACTORY_RESET_APP_NAME_PREFIX") or PREFIJO_APP_SQL).strip()[:100]
 
-    def existe_base(self, nombre_bd):
-        nombre = _validar_nombre_bd(nombre_bd)
-        salida = self.ejecutar_consulta(
-            f"SET NOCOUNT ON; SELECT CONCAT('FACTORY_EXISTS|', CASE WHEN DB_ID(N'{_literal(nombre)}') IS NULL THEN 0 ELSE 1 END);"
-        )
-        return "FACTORY_EXISTS|1" in salida
-
-    def validar_permisos_administrativos(self):
-        consulta = """
+    def validar_entorno_in_place(self):
+        target = _literal(self.target)
+        consulta = f"""
 SET NOCOUNT ON;
-SELECT CONCAT(
-    N'FACTORY_PERMISSIONS|',
-    ISNULL(IS_SRVROLEMEMBER(N'sysadmin'), 0), N'|',
-    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'CREATE ANY DATABASE'), 0), N'|',
-    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'ALTER ANY DATABASE'), 0), N'|',
-    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'VIEW SERVER STATE'), 0), N'|',
-    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'ALTER ANY CONNECTION'), 0), N'|',
-    ISNULL(IS_SRVROLEMEMBER(N'processadmin'), 0)
-);
+SELECT N'FACTORY_INPLACE_ENV|'
+    + CASE WHEN DB_NAME() = N'{target}' THEN N'1' ELSE N'0' END + N'|'
+    + CASE WHEN DATABASEPROPERTYEX(DB_NAME(), N'Updateability') = N'READ_WRITE' THEN N'1' ELSE N'0' END + N'|'
+    + CASE WHEN ISNULL(IS_ROLEMEMBER(N'db_owner'), 0) = 1 THEN N'1' ELSE N'0' END;
 """
-        salida = self.ejecutar_consulta(consulta, database="master")
+        salida = self.ejecutar_consulta(consulta)
         linea = next(
-            (item.strip() for item in salida.splitlines() if item.strip().startswith("FACTORY_PERMISSIONS|")),
+            (item.strip() for item in salida.splitlines() if item.strip().startswith("FACTORY_INPLACE_ENV|")),
             None,
         )
         if not linea:
-            raise ErrorFactoryResetSQL("No fue posible confirmar los privilegios administrativos Factory Reset.")
+            raise ErrorFactoryResetSQL("No fue posible confirmar el entorno in-place de Factory Reset.")
         partes = linea.split("|")
-        if len(partes) != 7 or any(valor not in {"0", "1"} for valor in partes[1:]):
-            raise ErrorFactoryResetSQL("La respuesta de privilegios administrativos no es valida.")
-        sysadmin, crear, alterar, ver_estado, alterar_conexion, processadmin = (
-            valor == "1" for valor in partes[1:]
-        )
-        puede_gestionar_sesiones = alterar_conexion or processadmin
-        disponible = sysadmin or (crear and alterar and ver_estado and puede_gestionar_sesiones)
+        if len(partes) != 4 or any(valor not in {"0", "1"} for valor in partes[1:]):
+            raise ErrorFactoryResetSQL("La respuesta del precheck in-place no es valida.")
+        contexto_correcto, lectura_escritura, db_owner = (valor == "1" for valor in partes[1:])
+        disponible = contexto_correcto and lectura_escritura and db_owner
         return {
             "disponible": disponible,
-            "sysadmin": sysadmin,
-            "crear_bases": sysadmin or crear,
-            "alterar_bases": sysadmin or alterar,
-            "ver_estado_servidor": sysadmin or ver_estado,
-            "gestionar_sesiones": sysadmin or puede_gestionar_sesiones,
+            "contexto_correcto": contexto_correcto,
+            "lectura_escritura": lectura_escritura,
+            "db_owner": db_owner,
             "mensaje": (
-                "La credencial administrativa tiene privilegios suficientes para Factory Reset."
+                "La cuenta SQL de mantenimiento puede reconstruir APP_SCHEDULER_QA in-place."
                 if disponible
-                else "La credencial administrativa no tiene privilegios suficientes para crear, intercambiar y eliminar bases de datos de forma segura."
+                else "La cuenta de SQL Server configurada para Factory Reset (FACTORY_RESET_DB_USER) debe pertenecer a db_owner exclusivamente en APP_SCHEDULER_QA. Esta cuenta es distinta del usuario de APP Scheduler."
             ),
         }
 
-    def listar_bases_residuales(self, base_actual):
-        actual = self._validar_base_actual_configurada(base_actual)
-        prefijo = f"{actual}__FACTORY_"
-        salida = self.ejecutar_consulta(
-            "SET NOCOUNT ON; "
-            "SELECT CONCAT(N'FACTORY_RESIDUAL|', name) "
-            "FROM sys.databases "
-            f"WHERE LEFT(UPPER(name), {len(prefijo)}) = N'{_literal(prefijo.upper())}' "
-            "ORDER BY name;"
-        )
-        return sorted({
-            linea.split("|", 1)[1].strip()
-            for linea in salida.splitlines()
-            if linea.strip().startswith("FACTORY_RESIDUAL|") and linea.strip().split("|", 1)[1].strip()
-        })
-
-    def listar_bases_temporales_operacion(self, base_actual, id_operacion):
-        derivadas = derivar_bases_temporales_factory_reset(base_actual, id_operacion)
-        residuales = {nombre.upper(): nombre for nombre in self.listar_bases_residuales(base_actual)}
-        return [nombre for nombre in derivadas.values() if nombre.upper() in residuales]
-
-    def eliminar_base_temporal_operacion(self, nombre_bd, base_actual, id_operacion):
-        actual = self._validar_base_actual_configurada(base_actual)
-        nombre = _validar_nombre_bd(nombre_bd)
-        permitidas = set(derivar_bases_temporales_factory_reset(actual, id_operacion).values())
-        if nombre.upper() == actual.upper() or nombre not in permitidas:
-            raise ErrorFactoryResetSQL("La base solicitada no pertenece al contexto temporal de la operacion.")
-        consulta = f"""
-SET NOCOUNT ON;
-IF DB_ID(N'{_literal(nombre)}') IS NULL
-BEGIN
-    SELECT N'FACTORY_DROP_OK|AUSENTE';
-    RETURN;
-END;
-IF N'{_literal(nombre)}' = N'{_literal(actual)}'
-    BEGIN ;THROW 51000, N'No se permite eliminar la base operativa.', 1; END;
-ALTER DATABASE [{nombre}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE [{nombre}];
-IF DB_ID(N'{_literal(nombre)}') IS NOT NULL
-    BEGIN ;THROW 51000, N'La base temporal no fue eliminada.', 1; END;
-SELECT N'FACTORY_DROP_OK|ELIMINADA';
-"""
-        salida = self.ejecutar_consulta(consulta, database="master")
-        if "FACTORY_DROP_OK|" not in salida:
-            raise ErrorFactoryResetSQL("La eliminacion de la base temporal no entrego confirmacion.")
-        return "FACTORY_DROP_OK|ELIMINADA" in salida
-
-    def ejecutar_bootstrap(self, nombre_bd, manifiesto):
-        nombre = _validar_nombre_bd(nombre_bd)
-        if self.existe_base(nombre):
-            raise ErrorFactoryResetSQL("La base temporal ya existe; no se reutiliza.")
-        for item in manifiesto["scripts"]:
-            ruta = (BASE_DIR / item["file"]).resolve()
-            if BASE_DIR not in ruta.parents or not ruta.is_file():
-                raise ErrorFactoryResetSQL("El manifiesto contiene un script no permitido.")
-            self.ejecutar_archivo(ruta, nombre)
-
-    def ejecutar_archivo(self, ruta, nombre_bd):
-        nombre = _validar_nombre_bd(nombre_bd)
-        ruta_resuelta = Path(ruta).resolve()
-        comando = self._comando_base("master") + ["-v", f"DB_NAME={nombre}", "-i", str(ruta_resuelta)]
-        return self._ejecutar(comando, script=ruta_resuelta.name)
-
-    def ejecutar_consulta(self, consulta, database="master"):
-        base = _validar_database_conexion(database)
-        comando = self._comando_base(base) + ["-Q", str(consulta), "-h", "-1", "-W", "-s", "|"]
-        return self._ejecutar(comando)
-
-    def validar_bootstrap(self, nombre_bd, ruta_validacion):
-        salida = self.ejecutar_archivo(ruta_validacion, nombre_bd)
-        if "BOOTSTRAP_ACTUAL" not in salida or "OK" not in salida:
-            raise ErrorFactoryResetSQL("La validacion 100 no confirmo un bootstrap valido.")
+    def ejecutar_reset_in_place(self, id_operacion, usuario, version_app):
+        runner = RUTA_RUNNER_IN_PLACE.resolve()
+        if not runner.is_file() or BASE_DIR not in runner.parents:
+            raise ErrorFactoryResetSQL("El runner in-place no es un archivo permitido.")
+        timeout_lock_ms = max(1000, min(self.timeout * 1000, 60000))
+        comando = self._comando_base(self.target) + [
+            "-v", f"DB_NAME={self.target}",
+            "-v", f"LOCK_TIMEOUT_MS={timeout_lock_ms}",
+            "-v", f"OPERATION_ID={_variable_sqlcmd(id_operacion, 80)}",
+            "-v", f"RESET_USER={_variable_sqlcmd(usuario, 100)}",
+            "-v", f"APP_VERSION={_variable_sqlcmd(version_app, 50)}",
+            "-i", str(runner),
+        ]
+        salida = self._ejecutar(comando, script=runner.name)
+        if "FACTORY_IN_PLACE_COMMIT_OK" not in salida:
+            raise ErrorFactoryResetSQL("El runner in-place no confirmo el COMMIT final.")
         return True
 
-    def listar_sesiones(self, nombre_bd):
-        nombre = _validar_nombre_bd(nombre_bd)
-        salida = self.ejecutar_consulta(
-            "SET NOCOUNT ON; "
-            "SELECT CONCAT('FACTORY_SESSION|', session_id, '|', "
-            "REPLACE(ISNULL(program_name, ''), '|', '/'), '|', REPLACE(ISNULL(host_name, ''), '|', '/')) "
-            f"FROM sys.dm_exec_sessions WHERE database_id = DB_ID(N'{_literal(nombre)}');"
-        )
-        sesiones = []
-        for linea in salida.splitlines():
-            linea = linea.strip()
-            if not linea.startswith("FACTORY_SESSION|"):
-                continue
-            partes = linea.split("|", 3)
-            sesiones.append({"session_id": int(partes[1]), "program_name": partes[2], "host_name": partes[3]})
-        return sesiones
-
-    def intercambiar_bases(self, actual, nueva, anterior):
-        actual = _validar_nombre_bd(actual)
-        nueva = _validar_nombre_bd(nueva)
-        anterior = _validar_nombre_bd(anterior)
-        sesiones = self.listar_sesiones(actual)
-        ajenas = [s for s in sesiones if not s["program_name"].upper().startswith(self.prefijo_app.upper())]
-        if ajenas:
-            raise ErrorFactoryResetSQL("Existen conexiones SQL ajenas a APP Scheduler; intercambio cancelado.")
+    def validar_resultado_final(self, id_operacion):
+        operacion = _literal(str(id_operacion or "")[:80])
         consulta = f"""
 SET NOCOUNT ON;
-SET LOCK_TIMEOUT 10000;
-IF DB_ID(N'{_literal(actual)}') IS NULL BEGIN ;THROW 51000, N'Base actual no disponible.', 1; END;
-IF DB_ID(N'{_literal(nueva)}') IS NULL BEGIN ;THROW 51000, N'Base temporal no disponible.', 1; END;
-IF DB_ID(N'{_literal(anterior)}') IS NOT NULL BEGIN ;THROW 51000, N'Nombre OLD ya existe.', 1; END;
-IF EXISTS (
-    SELECT 1 FROM sys.dm_exec_sessions
-    WHERE database_id = DB_ID(N'{_literal(actual)}')
-          AND LEFT(UPPER(ISNULL(program_name, N'')), {len(self.prefijo_app)}) <> N'{_literal(self.prefijo_app.upper())}'
-) BEGIN ;THROW 51000, N'Conexion ajena detectada antes del intercambio.', 1; END;
-DECLARE @kill nvarchar(max) = N'';
-SELECT @kill = @kill + N'KILL ' + CONVERT(nvarchar(20), session_id) + N';'
-FROM sys.dm_exec_sessions
-WHERE database_id = DB_ID(N'{_literal(actual)}')
-  AND LEFT(UPPER(ISNULL(program_name, N'')), {len(self.prefijo_app)}) = N'{_literal(self.prefijo_app.upper())}';
-IF LEN(@kill) > 0 EXEC sys.sp_executesql @kill;
-ALTER DATABASE [{actual}] SET SINGLE_USER;
-ALTER DATABASE [{actual}] MODIFY NAME = [{anterior}];
-ALTER DATABASE [{anterior}] SET MULTI_USER;
-ALTER DATABASE [{nueva}] SET SINGLE_USER;
-ALTER DATABASE [{nueva}] MODIFY NAME = [{actual}];
-ALTER DATABASE [{actual}] SET MULTI_USER;
-SELECT N'FACTORY_SWAP_OK';
-"""
-        salida = self.ejecutar_consulta(consulta)
-        if "FACTORY_SWAP_OK" not in salida:
-            raise ErrorFactoryResetSQL("El intercambio no entrego confirmacion.")
-
-    def rollback_intercambio(self, actual, nueva, anterior, fallida):
-        actual = _validar_nombre_bd(actual)
-        nueva = _validar_nombre_bd(nueva)
-        anterior = _validar_nombre_bd(anterior)
-        fallida = _validar_nombre_bd(fallida)
-        consulta = f"""
-SET NOCOUNT ON;
-SET LOCK_TIMEOUT 10000;
-IF DB_ID(N'{_literal(anterior)}') IS NOT NULL
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM sys.dm_exec_sessions
-        WHERE database_id = DB_ID(N'{_literal(actual)}')
-          AND LEFT(UPPER(ISNULL(program_name, N'')), {len(self.prefijo_app)}) <> N'{_literal(self.prefijo_app.upper())}'
-    ) BEGIN ;THROW 51000, N'Conexion ajena impide rollback.', 1; END;
-    DECLARE @kill nvarchar(max) = N'';
-    SELECT @kill = @kill + N'KILL ' + CONVERT(nvarchar(20), session_id) + N';'
-    FROM sys.dm_exec_sessions
-    WHERE database_id = DB_ID(N'{_literal(actual)}')
-      AND LEFT(UPPER(ISNULL(program_name, N'')), {len(self.prefijo_app)}) = N'{_literal(self.prefijo_app.upper())}';
-    IF LEN(@kill) > 0 EXEC sys.sp_executesql @kill;
-    IF DB_ID(N'{_literal(actual)}') IS NOT NULL
-    BEGIN
-        ALTER DATABASE [{actual}] SET SINGLE_USER;
-        ALTER DATABASE [{actual}] MODIFY NAME = [{fallida}];
-        ALTER DATABASE [{fallida}] SET MULTI_USER;
-    END;
-    ALTER DATABASE [{anterior}] SET SINGLE_USER;
-    ALTER DATABASE [{anterior}] MODIFY NAME = [{actual}];
-    ALTER DATABASE [{actual}] SET MULTI_USER;
-END;
-IF DB_ID(N'{_literal(actual)}') IS NULL
-    BEGIN ;THROW 51000, N'La base operativa no fue restaurada.', 1; END;
-IF DB_ID(N'{_literal(anterior)}') IS NOT NULL
-    BEGIN ;THROW 51000, N'La base OLD no fue restaurada completamente.', 1; END;
-SELECT N'FACTORY_ROLLBACK_OK';
-"""
-        salida = self.ejecutar_consulta(consulta)
-        if "FACTORY_ROLLBACK_OK" not in salida:
-            raise ErrorFactoryResetSQL("Rollback SQL sin confirmacion.")
-
-    def _validar_base_actual_configurada(self, base_actual):
-        actual = _validar_nombre_bd(base_actual)
-        configurada = _validar_nombre_bd(current_app.config.get("FACTORY_RESET_DB_TARGET"))
-        if actual.upper() != configurada.upper():
-            raise ErrorFactoryResetSQL("La base actual no coincide con el target Factory Reset configurado.")
-        return actual
-
-    def registrar_reset_completado(self, nombre_bd, usuario, id_operacion, version_app):
-        nombre = _validar_nombre_bd(nombre_bd)
-        usuario = _literal(str(usuario or "SUPER_ADMIN_ENV")[:100])
-        operacion = _literal(str(id_operacion)[:80])
-        version = _literal(str(version_app or "local")[:50])
-        consulta = f"""
-SET NOCOUNT ON;
-USE [{nombre}];
-INSERT INTO dbo.logs_sistema (usuario, accion, modulo, descripcion, valor_nuevo, nivel)
-VALUES (N'{usuario}', N'FACTORY_RESET_COMPLETADO', N'FACTORY_RESET',
-        N'APP Scheduler fue restablecido correctamente.', N'operation_id={operacion};version={version}', N'INFO');
-INSERT INTO dbo.auditoria_cambios
-    (usuario, accion, entidad, id_entidad, descripcion, valores_despues, resultado, modulo, activo)
-VALUES (N'{usuario}', N'FACTORY_RESET_COMPLETADO', N'SISTEMA', N'{operacion}',
-        N'Instalacion reconstruida desde bootstrap oficial.', N'version={version}', N'OK', N'Factory Reset', 1);
-SELECT N'FACTORY_AUDIT_OK';
-"""
-        salida = self.ejecutar_consulta(consulta)
-        if "FACTORY_AUDIT_OK" not in salida:
-            raise ErrorFactoryResetSQL("No se confirmo la auditoria post reset.")
-
-    def validar_resultado_final(self, nombre_bd, id_operacion):
-        nombre = _validar_nombre_bd(nombre_bd)
-        operacion = _literal(str(id_operacion)[:80])
-        consulta = f"""
-SET NOCOUNT ON;
-USE [{nombre}];
 IF (SELECT COUNT(*) FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id WHERE s.name=N'dbo') <> 33
     BEGIN ;THROW 51000, N'Cantidad de tablas invalida.', 1; END;
-IF (SELECT COUNT(*) FROM dbo.permisos WHERE activo=1) <> 52
-    BEGIN ;THROW 51000, N'Cantidad de permisos invalida.', 1; END;
+IF NOT EXISTS (SELECT 1 FROM dbo.configuracion_sistema WHERE clave=N'BOOTSTRAP_SQL' AND valor=N'19C.0' AND activo=1)
+    BEGIN ;THROW 51000, N'Marca BOOTSTRAP_SQL invalida.', 1; END;
 IF NOT EXISTS (SELECT 1 FROM dbo.auditoria_cambios WHERE accion=N'FACTORY_RESET_COMPLETADO' AND id_entidad=N'{operacion}')
     BEGIN ;THROW 51000, N'Auditoria Factory Reset ausente.', 1; END;
 IF EXISTS (SELECT 1 FROM dbo.configuracion_scheduler WHERE activo=1 AND (scheduler_activo<>0 OR permitir_ejecucion_automatica<>0))
     BEGIN ;THROW 51000, N'Scheduler no quedo deshabilitado.', 1; END;
 IF EXISTS (SELECT 1 FROM dbo.configuracion_mail_graph WHERE activo<>0)
     BEGIN ;THROW 51000, N'Mail Graph no quedo inactivo.', 1; END;
-SELECT N'FACTORY_FINAL_OK';
+SELECT N'FACTORY_IN_PLACE_FINAL_OK';
 """
         salida = self.ejecutar_consulta(consulta)
-        if "FACTORY_FINAL_OK" not in salida:
-            raise ErrorFactoryResetSQL("Validacion final sin confirmacion.")
+        if "FACTORY_IN_PLACE_FINAL_OK" not in salida:
+            raise ErrorFactoryResetSQL("La validacion final in-place no entrego confirmacion.")
+        return True
+
+    def ejecutar_consulta(self, consulta):
+        comando = self._comando_base(self.target) + ["-Q", str(consulta), "-h", "-1", "-W", "-s", "|"]
+        return self._ejecutar(comando)
 
     def _comando_base(self, database):
         comando = [
             self.sqlcmd,
             "-S", self.servidor,
             "-U", self.usuario,
-            "-d", database,
+            "-d", _validar_nombre_bd(database),
             "-b",
             "-r", "1",
             "-l", str(min(self.timeout, 120)),
@@ -426,13 +224,11 @@ SELECT N'FACTORY_FINAL_OK';
             entorno.pop("SQLCMDPASSWORD", None)
         salida = (resultado.stdout or "") + (resultado.stderr or "")
         if resultado.returncode != 0:
-            detalle = _sanitizar_salida_sqlcmd(
-                salida,
-                secretos=(self.password, self.usuario, self.servidor),
-            )
-            contexto = f"SCRIPT: {Path(script).name}; " if script else ""
+            detalle = _sanitizar_salida_sqlcmd(salida, secretos=(self.password, self.usuario, self.servidor))
+            scripts = re.findall(r"FACTORY_SCRIPT\|([^\s|]+)", salida)
+            script_fallido = Path(scripts[-1]).name if scripts else Path(script or "runner_in_place").name
             raise ErrorFactoryResetSQL(
-                f"{contexto}RETURNCODE: {resultado.returncode}; ERROR: {detalle or 'SQLCMD no entrego detalle.'}"
+                f"SCRIPT: {script_fallido}; RETURNCODE: {resultado.returncode}; ERROR: {detalle or 'SQLCMD no entrego detalle.'}"
             )
         return salida[-20000:]
 
@@ -454,20 +250,15 @@ def _validar_nombre_bd(valor):
     return nombre
 
 
-def _validar_database_conexion(valor):
-    nombre = str(valor or "").strip()
-    if nombre.lower() == "master":
-        return "master"
-    return _validar_nombre_bd(nombre)
-
-
 def _literal(valor):
     return str(valor).replace("'", "''")
 
 
-def _nombre_derivado(base, tipo, sufijo):
-    cola = f"__FACTORY_{tipo}_{sufijo}"
-    return base[: 128 - len(cola)] + cola
+def _variable_sqlcmd(valor, limite):
+    texto = str(valor or "").replace("\r", " ").replace("\n", " ").replace("'", "''")[:limite]
+    if not texto:
+        raise ErrorFactoryResetSQL("Variable SQLCMD de auditoria no valida.")
+    return texto
 
 
 def _bandera(valor, defecto=False):
@@ -487,10 +278,6 @@ def _sanitizar_salida_sqlcmd(valor, secretos=()):
         lambda coincidencia: f"{coincidencia.group(1)}=***",
         texto,
     )
-    texto = re.sub(
-        r"(?i)(login failed for user)\s+'[^']*'",
-        r"\1 '***'",
-        texto,
-    )
+    texto = re.sub(r"(?i)(login failed for user)\s+'[^']*'", r"\1 '***'", texto)
     lineas = [linea.strip() for linea in texto.splitlines() if linea.strip()]
     return " | ".join(lineas)[-4000:]

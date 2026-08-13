@@ -61,31 +61,26 @@ def generar_preview_factory_reset(usuario):
     from app.servicios.servicio_factory_reset_sql import validar_configuracion_factory_reset_sql
 
     configuracion_reset = validar_configuracion_factory_reset_sql()
-    residuos_sql = []
-    permisos_administrativos = {
+    entorno_in_place = {
         "disponible": False,
-        "mensaje": "Los privilegios administrativos no fueron evaluados.",
+        "contexto_correcto": False,
+        "lectura_escritura": False,
+        "db_owner": False,
+        "mensaje": "El entorno in-place no fue evaluado.",
     }
     if configuracion_reset["disponible"]:
         try:
             from app.servicios.servicio_factory_reset_sql import EjecutorSQLFactoryReset
 
             motor_sql = EjecutorSQLFactoryReset()
-            permisos_administrativos = motor_sql.validar_permisos_administrativos()
-            if permisos_administrativos["disponible"]:
-                residuos_sql = motor_sql.listar_bases_residuales(configuracion_reset["target_configurado"])
+            entorno_in_place = motor_sql.validar_entorno_in_place()
         except Exception as error:
-            errores.append(f"No fue posible validar privilegios Factory Reset: {error.__class__.__name__}.")
-            permisos_administrativos["mensaje"] = (
-                "No fue posible validar los privilegios de la credencial administrativa."
+            errores.append(f"No fue posible validar el entorno in-place: {error.__class__.__name__}.")
+            entorno_in_place["mensaje"] = (
+                "No fue posible validar la cuenta SQL de mantenimiento en la base objetivo."
             )
-    if configuracion_reset["disponible"] and not permisos_administrativos["disponible"]:
-        bloqueos.append(permisos_administrativos["mensaje"])
-    if residuos_sql:
-        bloqueos.append(
-            "Existen bases residuales de Factory Reset pendientes de recuperacion o limpieza: "
-            + ", ".join(residuos_sql)
-        )
+    if configuracion_reset["disponible"] and not entorno_in_place["disponible"]:
+        bloqueos.append(entorno_in_place["mensaje"])
 
     if lock["bloquea"]:
         bloqueos.append("Existe un lock global de Factory Reset activo o dudoso.")
@@ -117,8 +112,7 @@ def generar_preview_factory_reset(usuario):
         "bootstrap": manifiesto,
         "super_admin_env": super_admin_env,
         "configuracion_reset": configuracion_reset,
-        "permisos_administrativos": permisos_administrativos,
-        "bases_residuales_factory_reset": residuos_sql,
+        "entorno_in_place": entorno_in_place,
         "reset_destructivo_habilitado": not bloqueos and configuracion_reset["disponible"],
     }
     resumen_hash = _hash_preview(preview)
@@ -152,7 +146,7 @@ def validar_token_preview(token, usuario, resumen_hash=None, max_age=None):
 
 
 def validar_manifiesto_bootstrap():
-    ruta = BASE_DIR / "database" / "bootstrap" / "manifest.json"
+    ruta = BASE_DIR / "database" / "factory_reset" / "manifest.json"
     resultado = {
         "valido": False,
         "version": None,
@@ -171,6 +165,7 @@ def validar_manifiesto_bootstrap():
         faltantes = []
         rutas_validas = True
         hasher = hashlib.sha256(ruta.read_bytes())
+        archivos_control = [str(datos.get("runner") or ""), str(datos.get("cleanup_script") or "")]
         scripts_normalizados = []
         for archivo in archivos:
             relativa = Path(archivo)
@@ -192,22 +187,60 @@ def validar_manifiesto_bootstrap():
                 continue
             hasher.update(str(relativa).replace("\\", "/").encode("utf-8"))
             hasher.update(absoluta.read_bytes())
+        for archivo in archivos_control:
+            relativa = Path(archivo)
+            candidata = BASE_DIR / relativa
+            absoluta = candidata.resolve()
+            if (
+                not archivo
+                or relativa.is_absolute()
+                or ".." in relativa.parts
+                or BASE_DIR not in absoluta.parents
+                or absoluta.suffix.lower() != ".sql"
+                or not absoluta.is_file()
+            ):
+                rutas_validas = False
+                faltantes.append(relativa.name or "archivo_control")
+                continue
+            hasher.update(str(relativa).replace("\\", "/").encode("utf-8"))
+            hasher.update(absoluta.read_bytes())
         for item in scripts:
             scripts_normalizados.append({
                 "order": int(item["order"]),
                 "file": str(item["file"]),
                 "type": str(item.get("type") or "")[:30],
             })
-        orden_valido = (
-            ordenes == sorted(set(ordenes))
-            and bool(ordenes)
-            and ordenes[0] == 1
-            and ordenes[-1] == 100
-            and len(set(archivos)) == len(archivos)
+        orden_esperado = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 100]
+        orden_valido = ordenes == orden_esperado and len(set(archivos)) == len(archivos)
+        modo_valido = str(datos.get("mode") or "").lower() == "in_place"
+        excluye_creacion_bd = not any(Path(archivo).name.startswith("001_") for archivo in archivos)
+        runner_relativo = str(datos.get("runner") or "")
+        cleanup_relativo = str(datos.get("cleanup_script") or "")
+        contenido_runner = (
+            (BASE_DIR / runner_relativo).read_text(encoding="utf-8")
+            if runner_relativo and rutas_validas and not faltantes
+            else ""
+        )
+        inclusiones_esperadas = [cleanup_relativo, *archivos]
+        runner_valido = bool(
+            contenido_runner
+            and all(contenido_runner.count(f":r ./{archivo}") == 1 for archivo in inclusiones_esperadas)
+            and "database/release/001_crear_base_datos.sql" not in contenido_runner
+            and ":on error exit" in contenido_runner.lower()
+            and "BEGIN TRANSACTION" in contenido_runner
+            and "COMMIT TRANSACTION" in contenido_runner
+            and "sp_getapplock" in contenido_runner
         )
         resultado.update(
             {
-                "valido": bool(rutas_validas and orden_valido and not faltantes),
+                "valido": bool(
+                    rutas_validas
+                    and orden_valido
+                    and modo_valido
+                    and excluye_creacion_bd
+                    and runner_valido
+                    and not faltantes
+                ),
                 "version": str(datos.get("version") or "")[:30],
                 "cantidad_scripts": len(scripts),
                 "orden": ordenes,
@@ -216,7 +249,9 @@ def validar_manifiesto_bootstrap():
                 "scripts": scripts_normalizados,
             }
         )
-        resultado["mensaje"] = "Bootstrap disponible y ordenado." if resultado["valido"] else "Bootstrap incompleto o desordenado."
+        resultado["modo"] = str(datos.get("mode") or "").upper()
+        resultado["runner"] = str(datos.get("runner") or "")
+        resultado["mensaje"] = "Reset in-place disponible y ordenado." if resultado["valido"] else "Reset in-place incompleto o desordenado."
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         resultado["mensaje"] = "No fue posible validar manifest.json."
     return resultado

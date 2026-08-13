@@ -1,0 +1,23 @@
+{
+  "factory_reset": "APP_SCHEDULER_FACTORY_RESET_IN_PLACE_V1",
+  "version": "19C.0",
+  "mode": "in_place",
+  "runner": "database/factory_reset/000_reset_in_place.sql",
+  "cleanup_script": "database/factory_reset/001_eliminar_esquema_aplicativo.sql",
+  "scripts": [
+    {"order": 2, "file": "database/release/002_schema_final.sql"},
+    {"order": 3, "file": "database/release/003_seed_roles_permisos.sql"},
+    {"order": 4, "file": "database/release/004_seed_catalogos_base.sql"},
+    {"order": 5, "file": "database/release/005_seed_configuracion_inicial.sql"},
+    {"order": 6, "file": "database/release/006_seed_feriados_base.sql"},
+    {"order": 7, "file": "database/bootstrap/007_crear_notificaciones_evidencias.sql"},
+    {"order": 8, "file": "database/bootstrap/008_crear_configuracion_mail_graph.sql"},
+    {"order": 9, "file": "database/bootstrap/009_seed_configuracion_mail_graph.sql"},
+    {"order": 10, "file": "database/bootstrap/010_seed_permisos_mantenedores.sql"},
+    {"order": 11, "file": "database/bootstrap/011_seed_permiso_factory_reset.sql"},
+    {"order": 100, "file": "database/bootstrap/100_validacion_bootstrap_actual.sql"}
+  ],
+  "excluded": [
+    "database/release/001_crear_base_datos.sql"
+  ]
+}

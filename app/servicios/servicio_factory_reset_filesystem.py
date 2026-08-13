@@ -80,6 +80,35 @@ def rollback_roots_factory_reset(operaciones):
     return {"ok": not errores, "errores": errores}
 
 
+def eliminar_cuarentena_factory_reset(operaciones):
+    """Elimina solo la cuarentena generada por la operacion ya confirmada."""
+    errores = []
+    control = _resolver_control()
+    factory_backups = (control / "factory_backups").resolve()
+    padres = set()
+    for item in operaciones:
+        backup = item["backup"]
+        try:
+            backup_resuelto = backup.resolve()
+            if factory_backups not in backup_resuelto.parents or backup_resuelto == factory_backups:
+                raise ErrorFactoryResetFilesystem("Cuarentena fuera del root permitido.")
+            if backup.is_symlink():
+                raise ErrorFactoryResetFilesystem("Cuarentena symlink rechazada.")
+            padres.add(backup.parent)
+            if backup.exists():
+                _validar_arbol_sin_symlinks(backup)
+                shutil.rmtree(backup)
+        except Exception as error:
+            errores.append(f"{item['nombre']}:{error.__class__.__name__}")
+    for padre in padres:
+        try:
+            if padre.is_dir() and not any(padre.iterdir()):
+                padre.rmdir()
+        except OSError:
+            errores.append("cuarentena:OSError")
+    return {"ok": not errores, "errores": errores}
+
+
 def validar_roots_vacios(operaciones):
     for item in operaciones:
         root = item["root"]

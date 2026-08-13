@@ -1,27 +1,99 @@
 # Factory Reset
 
-## Estado
+## Arquitectura vigente
 
-Fase 19D implementa el orquestador real de Factory Reset con defensa fail-closed. El endpoint destructivo existe, pero permanece inutilizable mientras `FACTORY_RESET_HABILITADO=false` o falte cualquier prerrequisito administrativo.
+Desde Fase 19F, Factory Reset opera **in-place** y de forma transaccional dentro de la unica base autorizada: `APP_SCHEDULER_QA`.
 
-Fase 19D.1 valido el flujo contra SQL Server real exclusivamente sobre bases `APP_SCHEDULER_FACTORY_*` y roots de `%TEMP%`. Se comprobaron dos resets consecutivos, blue-green, conservacion `OLD`, auditoria inicial, login `SUPER_ADMIN_ENV`, rollback post intercambio, fallo bootstrap aislado y rechazo de una sesion ajena sin cerrarla. `APP_SCHEDULER_QA` y `APP_SCHEDULER` no fueron targets ni se modificaron. La validacion tecnica no reemplaza una autorizacion operativa explicita para QA o produccion.
+El diseno blue-green de Fases 19C-19E queda **DEPRECADO**. Ya no se crean, renombran ni eliminan bases `NEW`, `OLD` o `FAILED`; esas denominaciones solo describen el historial anterior y no pertenecen al flujo operativo vigente.
 
-## Autorización y confirmaciones
+## Seguridad y autorizacion
 
-Solo `SUPER_ADMIN` o `SUPER_ADMIN_ENV` con `FACTORY_RESET_EJECUTAR` o permiso global `*` puede acceder. El backend exige:
+La cuenta operativa normal es `user_scheduler`. Factory Reset utiliza una cuenta SQL separada de mantenimiento, configurada mediante `FACTORY_RESET_DB_USER`, que debe:
 
-* sesión privilegiada vigente;
-* CSRF válido y consumible;
-* preview firmado vigente y perteneciente al usuario actual;
-* hash del preview coincidente;
-* frase exacta `RESTABLECER APP SCHEDULER`;
-* lock disponible;
-* manifiesto sin cambios desde el preview;
+* poder conectarse al target autorizado;
+* pertenecer a `db_owner` en `APP_SCHEDULER_QA`;
+* no requiere `sysadmin`, `CREATE ANY DATABASE`, `ALTER ANY DATABASE`, `ALTER ANY CONNECTION` ni `processadmin`.
+
+La cuenta SQL de mantenimiento no corresponde al usuario que inicia sesion en APP Scheduler. La password se entrega a SQLCMD solo mediante `SQLCMDPASSWORD`; no se incluye en argumentos, UI, logs ni tokens.
+
+El precheck exige, antes de adquirir el lock externo:
+
+* `FACTORY_RESET_HABILITADO=true`;
+* SQLCMD disponible;
+* `FACTORY_RESET_DB_TARGET` igual a `DB_DATABASE`;
+* target incluido exactamente en `FACTORY_RESET_DB_ALLOWED_TARGETS`;
+* conexion directa a la base objetivo;
+* `DB_NAME()` coincidente, base `READ_WRITE` y cuenta miembro de `db_owner`;
+* cero ejecuciones o procesos de scripts activos;
+* lock externo disponible;
+* roots filesystem seguros;
 * `SUPER_ADMIN_ENV` disponible;
-* cero ejecuciones y procesos de scripts activos;
-* credencial SQL administrativa y SQLCMD disponibles;
-* target administrativo identico a `DB_DATABASE`;
-* target incluido de forma exacta en `FACTORY_RESET_DB_ALLOWED_TARGETS`.
+* manifiesto y runner in-place validos y sin cambios desde el preview.
+
+## Runner SQL in-place
+
+La fuente de orden es `database/factory_reset/manifest.json`. El runner unico es `database/factory_reset/000_reset_in_place.sql` y SQLCMD lo ejecuta en una sola conexion contra el target.
+
+Secuencia SQL:
+
+1. `:on error exit`, `SET XACT_ABORT ON` y timeout de locks.
+2. Validar contexto, `READ_WRITE` y `db_owner`.
+3. Abrir `BEGIN TRANSACTION`.
+4. Adquirir `sp_getapplock` exclusivo con propietario `Transaction`.
+5. Ejecutar `001_eliminar_esquema_aplicativo.sql`.
+6. Reutilizar `002..011` del bootstrap oficial.
+7. Ejecutar `100_validacion_bootstrap_actual.sql`.
+8. Registrar `FACTORY_RESET_COMPLETADO` en log y auditoria de la instalacion nueva.
+9. Ejecutar `COMMIT TRANSACTION` y emitir `FACTORY_IN_PLACE_COMMIT_OK`.
+
+`database/release/001_crear_base_datos.sql` esta excluido. El runner no contiene `CREATE DATABASE`, `DROP DATABASE`, renombre de base, `KILL` ni conexion a `master`.
+
+Los `GO` separan lotes dentro de la misma sesion SQLCMD; no crean conexiones nuevas. Ante error, `sqlcmd -b`, `:on error exit`, `XACT_ABORT` y el cierre de la conexion impiden declarar exito y revierten la transaccion no confirmada.
+
+## Esquema reconstruido
+
+`database/factory_reset/001_eliminar_esquema_aplicativo.sql` declara expresamente las 33 tablas conocidas. Antes de modificar, bloquea el reset si encuentra una tabla `dbo` desconocida o una FK que cruza el modelo conocido con un objeto desconocido.
+
+El script elimina las FK conocidas y luego las 33 tablas en orden controlado. Indices, defaults, checks y constraints desaparecen con sus tablas. Se conservan:
+
+* la base `APP_SCHEDULER_QA`;
+* usuarios y roles de base;
+* permisos de conexion;
+* el esquema `dbo`;
+* cualquier objeto desconocido, que provoca bloqueo en vez de eliminacion automatica.
+
+Los scripts 002..011 reconstruyen las 33 tablas y seeds base. La validacion 100 exige `BOOTSTRAP_SQL=19C.0`, scheduler deshabilitado, Mail Graph inactivo y los conteos base esperados.
+
+## Orquestacion y locks
+
+El flujo vigente es:
+
+1. `PRECHECK`.
+2. `LOCK_ADQUIRIDO`.
+3. `BLOQUEANDO_ACTIVIDAD`.
+4. `CUARENTENA_FILESYSTEM`.
+5. `ADQUIRIENDO_APPLOCK`.
+6. `EJECUTANDO_RESET_IN_PLACE`.
+7. `CONFIRMANDO_COMMIT`.
+8. `VALIDANDO_RESULTADO`.
+9. `LIMPIANDO_CUARENTENA`.
+10. `COMPLETADO` o `ERROR`.
+
+El lock externo en `RUTA_CONTROL_RUNTIME/factory_reset.lock` bloquea nuevas tareas en web y worker. El `sp_getapplock` protege la transaccion dentro de la base. No se cierran conexiones con `KILL`: una conexion que bloquee DDL provoca timeout, error y rollback.
+
+## Filesystem y fallos
+
+Antes de iniciar SQL, los roots `scripts`, `env_scripts`, `logs_tareas`, `logs_sistema` y `logs_worker` se copian a una cuarentena confinada y verificada por SHA-256. Luego los roots quedan creados y vacios.
+
+* Fallo antes o durante SQL, sin marcador de commit: SQL Server revierte la transaccion y el orquestador restaura el filesystem anterior.
+* Caida de SQLCMD antes del commit: el cierre de la unica sesion revierte la transaccion abierta.
+* Commit confirmado: no se intenta restaurar SQL ni reintroducir archivos antiguos.
+* Fallo posterior al commit: el lock queda en `FACTORY_RESET_ERROR` y exige revision manual.
+* Exito completo: se valida la instalacion, se elimina la cuarentena y se libera el lock.
+
+## UI y endpoints
+
+Se mantienen doble confirmacion, frase exacta `RESTABLECER APP SCHEDULER`, CSRF, preview firmado, overlay, progreso real y polling.
 
 Rutas:
 
@@ -30,174 +102,18 @@ Rutas:
 * `POST /administracion/factory-reset/ejecutar`.
 * `GET /administracion/factory-reset/estado`.
 
-No existe variante GET del endpoint destructivo.
+La UI identifica el modo `IN_PLACE`, aclara que no se crean otras bases y distingue la cuenta SQL de mantenimiento del usuario de APP Scheduler.
 
-## Experiencia visible
+## Diagnostico
 
-La accion se presenta como `Restablecer APP Scheduler a estado base` dentro de la zona administrativa critica. El flujo visible conserva las mismas defensas del backend:
+Ante fallo SQLCMD se conserva, de forma sanitizada:
 
-1. primera confirmacion para generar un preview no destructivo;
-2. preview firmado con impacto y bloqueos actuales;
-3. frase exacta `RESTABLECER APP SCHEDULER`;
-4. checkbox consciente y confirmacion corporativa final;
-5. bloqueo de doble envio;
-6. overlay con fase, mensaje y progreso reales consultados desde `/administracion/factory-reset/estado`.
+* script exacto alcanzado;
+* return code;
+* extracto de stdout/stderr.
 
-El overlay puede recuperar una operacion en curso mediante su `operation_id`. En error o rollback muestra un mensaje seguro y exige revision manual. No calcula porcentajes en frontend: utiliza exclusivamente los valores registrados por el orquestador.
+Passwords, usuarios y servidor configurados se sustituyen antes de registrar o devolver el error.
 
-## Kill switch y credencial administrativa
+## Validacion previa a uso real
 
-La conexión normal de APP Scheduler no requiere permisos `CREATE DATABASE`, `ALTER DATABASE` ni `DROP DATABASE`. El orquestador usa SQLCMD con una credencial externa separada. La contraseña se entrega al proceso exclusivamente mediante `SQLCMDPASSWORD`; no aparece en argumentos, logs, UI, token ni BD.
-
-```env
-FACTORY_RESET_HABILITADO=false
-FACTORY_RESET_DB_TARGET=
-FACTORY_RESET_DB_ALLOWED_TARGETS=
-FACTORY_RESET_DB_SERVER=
-FACTORY_RESET_DB_USER=
-FACTORY_RESET_DB_PASSWORD=
-FACTORY_RESET_DB_ENCRYPT=no
-FACTORY_RESET_DB_TRUST_SERVER_CERTIFICATE=yes
-FACTORY_RESET_SQLCMD=sqlcmd
-FACTORY_RESET_SQLCMD_TIMEOUT_SEGUNDOS=900
-FACTORY_RESET_APP_NAME_PREFIX=APP_SCHEDULER
-```
-
-`FACTORY_RESET_DB_TARGET` debe coincidir con `DB_DATABASE` y pertenecer explicitamente a `FACTORY_RESET_DB_ALLOWED_TARGETS`. La allowlist es obligatoria y separada por comas; se ignoran espacios y elementos vacios, se compara sin distinguir mayusculas/minusculas y no se admiten wildcard, regex ni prefijos. Una allowlist ausente, vacia o invalida bloquea el reset. No configurar ni habilitar estas variables hasta disponer de un target y una autorizacion especificos.
-
-Ejemplo de autorizacion exclusiva para un ambiente QA:
-
-```env
-FACTORY_RESET_DB_TARGET=APP_SCHEDULER_QA
-FACTORY_RESET_DB_ALLOWED_TARGETS=APP_SCHEDULER_QA
-```
-
-El preview expone de forma segura el target configurado, la coincidencia con la base actual, si existe allowlist y si el target esta autorizado. El endpoint y el orquestador vuelven a ejecutar el mismo validador central antes de cualquier operacion destructiva.
-
-## Lock y estados
-
-El lock externo continúa en `RUTA_CONTROL_RUNTIME/factory_reset.lock` y se comparte entre web y worker. Registra estado, fase, progreso, PID, host, origen y `operation_id`, sin secretos.
-
-Fases del orquestador:
-
-1. `PRECHECK`.
-2. `LOCK_ADQUIRIDO`.
-3. `BLOQUEANDO_ACTIVIDAD`.
-4. `CREANDO_BD_TEMPORAL`.
-5. `EJECUTANDO_BOOTSTRAP`.
-6. `VALIDANDO_BD_TEMPORAL`.
-7. `PREPARANDO_INTERCAMBIO`.
-8. `INTERCAMBIANDO_BD`.
-9. `LIMPIANDO_FILESYSTEM`.
-10. `VALIDANDO_RESULTADO`.
-11. `REGISTRANDO_RESET`.
-12. `COMPLETADO`, `ROLLBACK` o `ERROR`.
-
-El worker no inicia tareas con lock. Durante intercambio, limpieza, validación y rollback tampoco consulta heartbeat SQL. El middleware web responde `503` a rutas ajenas al control de Factory Reset mientras exista lock.
-
-Un lock dudoso, expirado o en error nunca se libera automáticamente.
-
-## Bootstrap
-
-`database/bootstrap/manifest.json` es la única fuente de orden. Python no mantiene una lista duplicada. El preview y el recálculo final verifican:
-
-* versión y orden;
-* orden inicial 1 y validación 100 al final;
-* rutas confinadas al repositorio;
-* archivos SQL existentes;
-* ausencia de duplicados;
-* hash SHA-256 conjunto del manifiesto y todos sus scripts.
-
-El token firmado incluye ese hash. Si cualquier script cambia después del preview, el reset se rechaza.
-
-## Blue-green SQL
-
-El reset no destruye primero la base actual. Para un `operation_id` genera nombres únicos:
-
-* `<ACTUAL>__FACTORY_NEW_<ID>`.
-* `<ACTUAL>__FACTORY_OLD_<ID>`.
-* `<ACTUAL>__FACTORY_FAILED_<ID>` para rollback.
-
-Secuencia:
-
-1. confirmar que la base actual existe y que NEW/OLD/FAILED no existen;
-2. ejecutar todos los scripts del manifiesto sobre NEW;
-3. ejecutar y validar el script 100 sobre NEW;
-4. rechazar cualquier sesión SQL ajena a APP Scheduler;
-5. cerrar únicamente sesiones identificadas por `DB_APPLICATION_NAME=APP_SCHEDULER`;
-6. renombrar ACTUAL a OLD y NEW al nombre oficial;
-7. conservar OLD;
-8. validar nuevamente script 100 sobre el nombre oficial.
-
-No se implementó `DROP DATABASE`. NEW fallida, OLD y FAILED se conservan para diagnóstico o rollback controlado.
-
-## Filesystem y rollback
-
-Roots operativos:
-
-* `scripts/`;
-* `env_scripts/`;
-* `logs/`;
-* `logs_tareas/`;
-* `logs_sistema/`.
-
-Cada árbol se valida sin symlinks, traversal, roots duplicados ni contención entre roots. Antes de limpiar se copia a:
-
-`RUTA_CONTROL_RUNTIME/factory_backups/<OPERATION_ID>/<ROOT>`
-
-La copia y el origen se comparan mediante SHA-256 de rutas y contenido. Solo después se elimina el contenido interno confinado. Los roots permanecen creados y vacíos. La cuarentena se conserva en 19D para rollback y no se elimina automáticamente.
-
-Si falla filesystem o una validación posterior, el orquestador restaura la cuarentena y recupera OLD como nombre oficial. Si el rollback no puede confirmarse, el lock queda `FACTORY_RESET_ERROR` y exige intervención manual.
-
-## Log externo y auditoría nueva
-
-Durante la operación se generan archivos sin secretos:
-
-* `factory_reset_<ID>.jsonl` con transiciones;
-* `factory_reset_<ID>.estado.json` con último estado;
-* `factory_reset_last_success.json` con la marca global de sesión.
-
-Después de validar BD y filesystem, la nueva instalación recibe sus primeros registros `FACTORY_RESET_COMPLETADO` en `logs_sistema` y `auditoria_cambios`. Se registra identidad segura, origen ENV/BD, `operation_id` y versión de app.
-
-La marca externa invalida todas las sesiones creadas antes del reset en su siguiente request. La sesión iniciadora se limpia inmediatamente y se redirige a `/login`.
-
-## Pruebas Fase 19D
-
-La suite `tests/test_factory_reset_19d.py` cubre con roots temporales y motor SQL simulado:
-
-* reset completo y segundo reset;
-* ejecución activa;
-* lock concurrente;
-* fallo bootstrap sin tocar la original;
-* fallo de intercambio con rollback;
-* fallo filesystem con rollback SQL;
-* path traversal;
-* autorización, CSRF, frase y token vencido;
-* worker sin SQL durante intercambio;
-* contraseña fuera de argumentos SQLCMD;
-* rechazo de sesión SQL ajena;
-* bloqueo web e invalidación de sesiones;
-* estado externo de progreso.
-
-Resultado local aislado: 14 pruebas aprobadas, incluida restauracion ante limpieza filesystem parcial y contrato POST exclusivo con invalidacion de sesion.
-
-Resultado SQL real Fase 19D.1:
-
-* `sqlcmd` (Go) oficial Microsoft `v1.10.0`, ejecutado de forma portatil desde `%TEMP%` y con SHA-256 verificado;
-* bootstrap `19C.0` y validacion 100 correctos;
-* primer y segundo reset correctos sobre `APP_SCHEDULER_FACTORY_SOURCE_TEST`;
-* dos bases `OLD` conservadas y online;
-* roots temporales vacios tras ambos resets;
-* `FACTORY_RESET_COMPLETADO` como primer registro de auditoria en cada instalacion nueva;
-* login `SUPER_ADMIN_ENV` correcto;
-* rollback real con datos y archivos restaurados;
-* fallo bootstrap antes del intercambio con `SOURCE` intacta y `NEW` aislada;
-* sesion SQL ajena conservada y operativa despues del aborto del intercambio.
-
-## Riesgos pendientes y Fase 19E
-
-* Probar timeout/reinicio del proceso web durante el reset.
-* Definir retención y eliminación autorizada de OLD/FAILED y cuarentenas.
-* Crear procedimiento operativo de recuperación de lock `ERROR`.
-* Revisar y retirar de forma autorizada las bases desechables conservadas por Fase 19D.1.
-* Evaluar por separado una autorizacion explicita para `APP_SCHEDULER_QA`; no queda implicita por esta prueba.
+La implementacion se valida con pruebas simuladas; estas no ejecutan SQL ni Factory Reset. Antes de habilitar QA se requiere una prueba controlada y respaldo externo de `APP_SCHEDULER_QA`, porque despues de un commit correcto no existe rollback automatico de datos.
