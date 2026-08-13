@@ -20,7 +20,11 @@ from app.servicios.servicio_factory_reset_filesystem import (
     preparar_roots_factory_reset,
 )
 from app.servicios.servicio_orquestador_factory_reset import ejecutar_factory_reset
-from app.servicios.servicio_factory_reset_sql import EjecutorSQLFactoryReset, ErrorFactoryResetSQL
+from app.servicios.servicio_factory_reset_sql import (
+    EjecutorSQLFactoryReset,
+    ErrorFactoryResetSQL,
+    derivar_bases_temporales_factory_reset,
+)
 from app.servicios.servicio_scheduler_worker import ejecutar_ciclo_worker
 
 
@@ -31,14 +35,15 @@ class MotorSQLSimulado:
         self.fallo = fallo
         self.auditoria = False
         self.rollback_ejecutado = False
+        self.bases_eliminadas = []
 
     def existe_base(self, nombre):
         return nombre in self.bases
 
     def ejecutar_bootstrap(self, nombre, _manifiesto):
+        self.bases.add(nombre)
         if self.fallo == "bootstrap":
             raise RuntimeError("fallo simulado")
-        self.bases.add(nombre)
 
     def validar_bootstrap(self, _nombre, _ruta):
         if self.fallo == "validacion":
@@ -58,6 +63,8 @@ class MotorSQLSimulado:
 
     def rollback_intercambio(self, actual, _nueva, anterior, fallida):
         self.rollback_ejecutado = True
+        if self.fallo == "rollback":
+            raise RuntimeError("rollback no confirmable")
         if actual in self.bases:
             self.bases.remove(actual)
             self.bases.add(fallida)
@@ -71,6 +78,24 @@ class MotorSQLSimulado:
     def validar_resultado_final(self, _nombre, _operacion):
         if not self.auditoria:
             raise RuntimeError("auditoria ausente")
+        if self.fallo in {"post_intercambio", "rollback"}:
+            raise RuntimeError("fallo posterior simulado")
+
+    def listar_bases_residuales(self, base_actual):
+        prefijo = f"{base_actual}__FACTORY_".upper()
+        return sorted(nombre for nombre in self.bases if nombre.upper().startswith(prefijo))
+
+    def eliminar_base_temporal_operacion(self, nombre, base_actual, id_operacion):
+        permitidas = set(derivar_bases_temporales_factory_reset(base_actual, id_operacion).values())
+        if nombre == base_actual or nombre not in permitidas:
+            raise ErrorFactoryResetSQL("base no permitida")
+        if self.fallo == "cleanup":
+            return False
+        if nombre in self.bases:
+            self.bases.remove(nombre)
+            self.bases_eliminadas.append(nombre)
+            return True
+        return False
 
 
 class FactoryReset19DTest(unittest.TestCase):
@@ -143,6 +168,8 @@ class FactoryReset19DTest(unittest.TestCase):
             self.assertTrue(primero["ok"])
             self.assertTrue(segundo["ok"])
             self.assertTrue(motor.auditoria)
+            self.assertEqual(motor.bases, {motor.actual})
+            self.assertTrue(any("__FACTORY_OLD_" in nombre for nombre in motor.bases_eliminadas))
             self.assertEqual(obtener_estado_factory_reset()["estado"], "NORMAL")
             for clave in ("RUTA_BASE_SCRIPTS", "RUTA_BASE_ENV_SCRIPTS", "RUTA_BASE_LOGS_TAREAS", "RUTA_BASE_LOGS_SISTEMA", "RUTA_BASE_LOGS_WORKER"):
                 self.assertEqual(list(Path(self.app.config[clave]).iterdir()), [])
@@ -174,6 +201,7 @@ class FactoryReset19DTest(unittest.TestCase):
                 resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
             self.assertFalse(resultado["ok"])
             self.assertIn(motor.actual, motor.bases)
+            self.assertEqual(motor.listar_bases_residuales(motor.actual), [])
             self.assertEqual(obtener_estado_factory_reset()["estado"], "FACTORY_RESET_ERROR")
 
     def test_fallo_intercambio_ejecuta_rollback(self):
@@ -185,6 +213,7 @@ class FactoryReset19DTest(unittest.TestCase):
             self.assertFalse(resultado["ok"])
             self.assertTrue(motor.rollback_ejecutado)
             self.assertIn(motor.actual, motor.bases)
+            self.assertEqual(motor.listar_bases_residuales(motor.actual), [])
 
     def test_fallo_filesystem_ejecuta_rollback_sql(self):
         with self.app.app_context():
@@ -198,6 +227,47 @@ class FactoryReset19DTest(unittest.TestCase):
             self.assertFalse(resultado["ok"])
             self.assertTrue(motor.rollback_ejecutado)
             self.assertIn(motor.actual, motor.bases)
+            self.assertEqual(motor.listar_bases_residuales(motor.actual), [])
+
+    def test_fallo_posterior_con_rollback_exitoso_elimina_failed_y_new(self):
+        with self.app.app_context():
+            motor = MotorSQLSimulado(fallo="post_intercambio")
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2]:
+                resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
+            self.assertFalse(resultado["ok"])
+            self.assertTrue(motor.rollback_ejecutado)
+            self.assertEqual(motor.bases, {motor.actual})
+
+    def test_rollback_fallido_conserva_recursos_de_recuperacion(self):
+        with self.app.app_context():
+            motor = MotorSQLSimulado(fallo="rollback")
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2]:
+                resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
+            self.assertFalse(resultado["ok"])
+            self.assertTrue(resultado["requiere_revision_manual"])
+            self.assertTrue(motor.listar_bases_residuales(motor.actual))
+            self.assertEqual(obtener_estado_factory_reset()["estado"], "FACTORY_RESET_ERROR")
+
+    def test_residuo_anterior_bloquea_nuevo_reset(self):
+        with self.app.app_context():
+            motor = MotorSQLSimulado()
+            motor.bases.add(f"{motor.actual}__FACTORY_OLD_OPERACIONVIEJA")
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2]:
+                resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
+            self.assertFalse(resultado["ok"])
+            self.assertIn("residuales", resultado["mensaje"])
+
+    def test_exito_requiere_cero_temporales(self):
+        with self.app.app_context():
+            motor = MotorSQLSimulado(fallo="cleanup")
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2]:
+                resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
+            self.assertFalse(resultado["ok"])
+            self.assertTrue(motor.listar_bases_residuales(motor.actual))
 
     def test_path_traversal_rechazado(self):
         with self.app.app_context():
@@ -340,6 +410,42 @@ class FactoryReset19DTest(unittest.TestCase):
             ):
                 with self.assertRaises(ErrorFactoryResetSQL):
                     motor.intercambiar_bases("APP_SCHEDULER_FACTORY_SOURCE_TEST", "TEMP_TEST", "OLD_TEST")
+
+    def test_drop_temporal_rechaza_base_operativa_y_nombre_ajeno(self):
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ):
+            motor = EjecutorSQLFactoryReset()
+            operacion = str(uuid4())
+            with patch.object(motor, "ejecutar_consulta", side_effect=AssertionError("No debe ejecutar SQL")):
+                with self.assertRaises(ErrorFactoryResetSQL):
+                    motor.eliminar_base_temporal_operacion(
+                        self.app.config["DB_DATABASE"],
+                        self.app.config["DB_DATABASE"],
+                        operacion,
+                    )
+                with self.assertRaises(ErrorFactoryResetSQL):
+                    motor.eliminar_base_temporal_operacion("BASE_AJENA", self.app.config["DB_DATABASE"], operacion)
+
+    def test_drop_temporal_usa_nombre_exactamente_derivado(self):
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ):
+            motor = EjecutorSQLFactoryReset()
+            operacion = str(uuid4())
+            temporal = derivar_bases_temporales_factory_reset(self.app.config["DB_DATABASE"], operacion)["OLD"]
+            with patch.object(motor, "ejecutar_consulta", return_value="FACTORY_DROP_OK|ELIMINADA") as consulta:
+                self.assertTrue(
+                    motor.eliminar_base_temporal_operacion(
+                        temporal,
+                        self.app.config["DB_DATABASE"],
+                        operacion,
+                    )
+                )
+            sql = consulta.call_args.args[0]
+            self.assertIn(f"DROP DATABASE [{temporal}]", sql)
+            self.assertNotIn(f"DROP DATABASE [{self.app.config['DB_DATABASE']}]", sql)
+            self.assertEqual(consulta.call_args.kwargs["database"], "master")
 
     def test_lock_bloquea_web_e_invalida_sesion_anterior(self):
         client = self.app.test_client()

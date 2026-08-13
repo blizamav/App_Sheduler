@@ -96,19 +96,19 @@
         <table>
             <thead><tr><th>Elemento</th><th>Estado</th><th>Detalle</th></tr></thead>
             <tbody>
-                <tr><td>Lock global</td><td><span class="badge {{ 'error' if preview.lock.bloquea else 'activo' }}">{{ preview.lock.estado }}</span></td><td>{{ preview.lock.mensaje }}</td></tr>
-                <tr><td>Worker</td><td>{{ preview.diagnostico.worker.estado }}</td><td>{{ 'Activo' if preview.diagnostico.worker.activo else 'Sin actividad confirmada' }}</td></tr>
-                <tr><td>Bootstrap SQL</td><td>{{ 'COINCIDE' if preview.bootstrap.version_coincide else 'REVISAR' }}</td><td>{{ preview.bootstrap.mensaje }}</td></tr>
-                <tr><td>Tareas candidatas</td><td>{{ preview.diagnostico.tareas_candidatas }}</td><td>Programaciones que podrian ser evaluadas por el worker.</td></tr>
-                <tr><td>SUPER_ADMIN_ENV</td><td>{{ preview.super_admin_env.estado }}</td><td>{{ preview.super_admin_env.mensaje }}</td></tr>
-                <tr><td>Motor SQLCMD</td><td>{{ 'LISTO' if preview.configuracion_reset.disponible else 'BLOQUEADO' }}</td><td>Credencial administrativa separada y target explicito.</td></tr>
-                <tr><td>Target configurado</td><td>{{ preview.configuracion_reset.target_configurado or 'NO CONFIGURADO' }}</td><td>Base solicitada para Factory Reset.</td></tr>
-                <tr><td>Target coincide con BD actual</td><td>{{ 'SI' if preview.configuracion_reset.target_coincide else 'NO' }}</td><td>Comparacion exacta normalizada sin patrones.</td></tr>
-                <tr><td>Allowlist configurada</td><td>{{ 'SI' if preview.configuracion_reset.allowlist_configurada else 'NO' }}</td><td>{{ preview.configuracion_reset.targets_permitidos|join(', ') if preview.configuracion_reset.targets_permitidos else 'Sin targets autorizados' }}</td></tr>
-                <tr><td>Target en allowlist</td><td>{{ 'AUTORIZADO' if preview.configuracion_reset.target_en_allowlist else 'BLOQUEADO' }}</td><td>La coincidencia debe ser completa; no se admiten wildcards.</td></tr>
-                <tr><td>Scripts Python</td><td>{{ preview.filesystem.archivos_py }}</td><td>Solo conteo; contenido no leido.</td></tr>
-                <tr><td>Archivos .env</td><td>{{ preview.filesystem.archivos_env }}</td><td>Solo conteo; contenido no leido.</td></tr>
-                <tr><td>Logs</td><td>{{ preview.filesystem.archivos_log }}</td><td>Archivos detectados en roots configurados.</td></tr>
+                <tr><td>Lock global</td><td><span class="badge {{ 'error' if preview.lock.bloquea else 'activo' }}">{{ preview.lock.estado }}</span></td><td>Verifica si existe un bloqueo global que impida ejecutar el Factory Reset.</td></tr>
+                <tr><td>Worker</td><td>{{ preview.diagnostico.worker.estado }}</td><td>Comprueba si el proceso programador mantiene actividad reciente.</td></tr>
+                <tr><td>Bootstrap SQL</td><td>{{ 'COINCIDE' if preview.bootstrap.version_coincide else 'REVISAR' }}</td><td>Compara la versión instalada en la BD actual con el bootstrap disponible en el repositorio.</td></tr>
+                <tr><td>Tareas candidatas</td><td>{{ preview.diagnostico.tareas_candidatas }}</td><td>Cuenta las tareas que podrían ser evaluadas por el worker.</td></tr>
+                <tr><td>SUPER_ADMIN_ENV</td><td>{{ preview.super_admin_env.estado }}</td><td>Verifica que exista acceso administrativo de recuperación configurado por entorno.</td></tr>
+                <tr><td>Motor SQLCMD</td><td>{{ 'LISTO' if preview.configuracion_reset.sqlcmd_disponible else 'BLOQUEADO' }}</td><td>Verifica que la herramienta administrativa SQLCMD esté disponible para ejecutar el Factory Reset.</td></tr>
+                <tr><td>Target configurado</td><td>{{ preview.configuracion_reset.target_configurado or 'NO CONFIGURADO' }}</td><td>Muestra la base de datos configurada como destino del Factory Reset.</td></tr>
+                <tr><td>Target coincide con BD actual</td><td>{{ 'SI' if preview.configuracion_reset.target_coincide else 'NO' }}</td><td>Comprueba que el destino configurado sea exactamente la base de datos actual.</td></tr>
+                <tr><td>Allowlist configurada</td><td>{{ 'SI' if preview.configuracion_reset.allowlist_configurada else 'NO' }}</td><td>Verifica que exista una lista explícita de bases autorizadas.</td></tr>
+                <tr><td>Target en allowlist</td><td>{{ 'AUTORIZADO' if preview.configuracion_reset.target_en_allowlist else 'BLOQUEADO' }}</td><td>Comprueba que la base destino esté incluida exactamente en la allowlist.</td></tr>
+                <tr><td>Scripts Python</td><td>{{ preview.filesystem.archivos_py }}</td><td>Cuenta los scripts Python detectados sin leer su contenido.</td></tr>
+                <tr><td>Archivos .env</td><td>{{ preview.filesystem.archivos_env }}</td><td>Cuenta los archivos de entorno detectados sin leer su contenido.</td></tr>
+                <tr><td>Logs</td><td>{{ preview.filesystem.archivos_log }}</td><td>Cuenta los archivos de log detectados en las rutas configuradas.</td></tr>
             </tbody>
         </table>
     </div>

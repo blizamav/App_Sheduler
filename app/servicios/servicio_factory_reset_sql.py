@@ -12,6 +12,7 @@ from app.config import BASE_DIR, VALORES_PLANTILLA
 PREFIJO_APP_SQL = "APP_SCHEDULER"
 BASES_SISTEMA = {"master", "model", "msdb", "tempdb"}
 PATRON_IDENTIFICADOR = re.compile(r"^[A-Za-z0-9_]+$")
+TIPOS_BASE_TEMPORAL = ("NEW", "OLD", "FAILED")
 
 
 class ErrorFactoryResetSQL(RuntimeError):
@@ -95,6 +96,17 @@ def validar_configuracion_factory_reset_sql():
     }
 
 
+def derivar_bases_temporales_factory_reset(base_actual, id_operacion):
+    actual = _validar_nombre_bd(base_actual)
+    sufijo = "".join(caracter for caracter in str(id_operacion or "") if caracter.isalnum())[:12].upper()
+    if len(sufijo) != 12:
+        raise ValueError("Identificador de operacion Factory Reset no permitido.")
+    return {
+        tipo: _validar_nombre_bd(_nombre_derivado(actual, tipo, sufijo))
+        for tipo in TIPOS_BASE_TEMPORAL
+    }
+
+
 class EjecutorSQLFactoryReset:
     def __init__(self):
         validacion = validar_configuracion_factory_reset_sql()
@@ -113,6 +125,53 @@ class EjecutorSQLFactoryReset:
             f"SET NOCOUNT ON; SELECT CONCAT('FACTORY_EXISTS|', CASE WHEN DB_ID(N'{_literal(nombre)}') IS NULL THEN 0 ELSE 1 END);"
         )
         return "FACTORY_EXISTS|1" in salida
+
+    def listar_bases_residuales(self, base_actual):
+        actual = self._validar_base_actual_configurada(base_actual)
+        prefijo = f"{actual}__FACTORY_"
+        salida = self.ejecutar_consulta(
+            "SET NOCOUNT ON; "
+            "SELECT CONCAT(N'FACTORY_RESIDUAL|', name) "
+            "FROM sys.databases "
+            f"WHERE LEFT(UPPER(name), {len(prefijo)}) = N'{_literal(prefijo.upper())}' "
+            "ORDER BY name;"
+        )
+        return sorted({
+            linea.split("|", 1)[1].strip()
+            for linea in salida.splitlines()
+            if linea.strip().startswith("FACTORY_RESIDUAL|") and linea.strip().split("|", 1)[1].strip()
+        })
+
+    def listar_bases_temporales_operacion(self, base_actual, id_operacion):
+        derivadas = derivar_bases_temporales_factory_reset(base_actual, id_operacion)
+        residuales = {nombre.upper(): nombre for nombre in self.listar_bases_residuales(base_actual)}
+        return [nombre for nombre in derivadas.values() if nombre.upper() in residuales]
+
+    def eliminar_base_temporal_operacion(self, nombre_bd, base_actual, id_operacion):
+        actual = self._validar_base_actual_configurada(base_actual)
+        nombre = _validar_nombre_bd(nombre_bd)
+        permitidas = set(derivar_bases_temporales_factory_reset(actual, id_operacion).values())
+        if nombre.upper() == actual.upper() or nombre not in permitidas:
+            raise ErrorFactoryResetSQL("La base solicitada no pertenece al contexto temporal de la operacion.")
+        consulta = f"""
+SET NOCOUNT ON;
+IF DB_ID(N'{_literal(nombre)}') IS NULL
+BEGIN
+    SELECT N'FACTORY_DROP_OK|AUSENTE';
+    RETURN;
+END;
+IF N'{_literal(nombre)}' = N'{_literal(actual)}'
+    BEGIN ;THROW 51000, N'No se permite eliminar la base operativa.', 1; END;
+ALTER DATABASE [{nombre}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [{nombre}];
+IF DB_ID(N'{_literal(nombre)}') IS NOT NULL
+    BEGIN ;THROW 51000, N'La base temporal no fue eliminada.', 1; END;
+SELECT N'FACTORY_DROP_OK|ELIMINADA';
+"""
+        salida = self.ejecutar_consulta(consulta, database="master")
+        if "FACTORY_DROP_OK|" not in salida:
+            raise ErrorFactoryResetSQL("La eliminacion de la base temporal no entrego confirmacion.")
+        return "FACTORY_DROP_OK|ELIMINADA" in salida
 
     def ejecutar_bootstrap(self, nombre_bd, manifiesto):
         nombre = _validar_nombre_bd(nombre_bd)
@@ -225,11 +284,22 @@ BEGIN
     ALTER DATABASE [{anterior}] MODIFY NAME = [{actual}];
     ALTER DATABASE [{actual}] SET MULTI_USER;
 END;
+IF DB_ID(N'{_literal(actual)}') IS NULL
+    BEGIN ;THROW 51000, N'La base operativa no fue restaurada.', 1; END;
+IF DB_ID(N'{_literal(anterior)}') IS NOT NULL
+    BEGIN ;THROW 51000, N'La base OLD no fue restaurada completamente.', 1; END;
 SELECT N'FACTORY_ROLLBACK_OK';
 """
         salida = self.ejecutar_consulta(consulta)
         if "FACTORY_ROLLBACK_OK" not in salida:
             raise ErrorFactoryResetSQL("Rollback SQL sin confirmacion.")
+
+    def _validar_base_actual_configurada(self, base_actual):
+        actual = _validar_nombre_bd(base_actual)
+        configurada = _validar_nombre_bd(current_app.config.get("FACTORY_RESET_DB_TARGET"))
+        if actual.upper() != configurada.upper():
+            raise ErrorFactoryResetSQL("La base actual no coincide con el target Factory Reset configurado.")
+        return actual
 
     def registrar_reset_completado(self, nombre_bd, usuario, id_operacion, version_app):
         nombre = _validar_nombre_bd(nombre_bd)
@@ -343,6 +413,11 @@ def _validar_database_conexion(valor):
 
 def _literal(valor):
     return str(valor).replace("'", "''")
+
+
+def _nombre_derivado(base, tipo, sufijo):
+    cola = f"__FACTORY_{tipo}_{sufijo}"
+    return base[: 128 - len(cola)] + cola
 
 
 def _bandera(valor, defecto=False):

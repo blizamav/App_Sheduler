@@ -61,6 +61,22 @@ def generar_preview_factory_reset(usuario):
     from app.servicios.servicio_factory_reset_sql import validar_configuracion_factory_reset_sql
 
     configuracion_reset = validar_configuracion_factory_reset_sql()
+    residuos_sql = []
+    if configuracion_reset["disponible"]:
+        try:
+            from app.servicios.servicio_factory_reset_sql import EjecutorSQLFactoryReset
+
+            residuos_sql = EjecutorSQLFactoryReset().listar_bases_residuales(
+                configuracion_reset["target_configurado"]
+            )
+        except Exception as error:
+            errores.append(f"No fue posible inventariar residuos Factory Reset: {error.__class__.__name__}.")
+            bloqueos.append("No fue posible validar residuos SQL de Factory Reset.")
+    if residuos_sql:
+        bloqueos.append(
+            "Existen bases residuales de Factory Reset pendientes de recuperacion o limpieza: "
+            + ", ".join(residuos_sql)
+        )
 
     if lock["bloquea"]:
         bloqueos.append("Existe un lock global de Factory Reset activo o dudoso.")
@@ -92,6 +108,7 @@ def generar_preview_factory_reset(usuario):
         "bootstrap": manifiesto,
         "super_admin_env": super_admin_env,
         "configuracion_reset": configuracion_reset,
+        "bases_residuales_factory_reset": residuos_sql,
         "reset_destructivo_habilitado": not bloqueos and configuracion_reset["disponible"],
     }
     resumen_hash = _hash_preview(preview)
