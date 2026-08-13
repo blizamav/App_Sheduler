@@ -5,11 +5,11 @@
 * Nombre del proyecto: APP Scheduler
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
-* Base de datos: SQL Server local `APP_SCHEDULER_QA` creada y validada manualmente; historial incremental en `database/migrations/`, release historico en `database/release/` y bootstrap limpio vigente preparado en `database/bootstrap/`.
-* Estado actual: Factory Reset blue-green con rollback, allowlist fail-closed y experiencia visible completa para restablecer APP Scheduler a estado base.
+* Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
+* Estado actual: Hito 0 de reconstruccion limpia cerrado; Hito 1 pendiente y no iniciado. La implementacion vigente queda como referencia y Factory Reset definitivo es in-place.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Cierre funcional y visual de Restablecer APP Scheduler a estado base.
-* Ultima actualizacion: 2026-08-12
+* Fase actual: Reconstruccion limpia - Hito 0 cerrado, esperando autorizacion para Hito 1.
+* Ultima actualizacion: 2026-08-13
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -20,13 +20,13 @@
 * Scheduler: Worker automatico separado implementado; validacion local de feriados implementada en Fase 10A; Fase 10B sincroniza feriados de forma manual hacia SQL Server; Fase 11A agrega panel operativo solo lectura, sin conectar internet al scheduler; Fase 11B agrega heartbeat en tabla dedicada; Fase 11D agrega eventos y omisiones del programador en tabla dedicada; Fase 11D.1 agrega resumen inteligente y retencion logica manual; Fase 11D.2 agrega historial filtrable de eventos; Fase 11F excluye tareas borradas operativamente de candidatos del scheduler; Fase 13A.1 evita persistir eventos ruidosos y agrega limpieza controlada; Fase 13A.1B agrega limpieza parametrizable con whitelist y previsualizacion.
 * Logs: Logs de tarea con timestamp por linea implementados en Fase 9C; logs avanzados pendientes.
 * Auditoria: Fase 12A implementa `auditoria_cambios`, `/auditoria` y servicio central `registrar_auditoria(...)`; Fase 12B amplia cobertura con acciones normalizadas, bloqueos `BLOQUEADO`, errores controlados `ERROR` y sanitizacion reforzada.
-* Docker/despliegue: Release SQL limpio listo; Fase 14A recomienda Docker Compose con servicios separados `web` y `worker`, con systemd como alternativa documental.
+* Docker/despliegue: Docker Compose mantiene servicios separados `web` y `worker`; ambos cargan explicitamente `.env.docker` para QA.
 * Logging worker: Fase 14B.1 implementa `logs/worker_console.log` como buffer visual reciente, usando logging estandar de Python, salida simultanea a consola, archivo unico, maximo 300 lineas y sin backups. Fase 14C expone ese buffer de forma segura mediante `/api/worker/consola`.
 * Seguridad: Secretos y credenciales fuera del repositorio mediante `.env`.
 * Seguridad `.env`: Nunca sobrescribir `.env` si ya existe; usar comandos seguros que copien `.env.example` solo cuando `.env` no existe.
-* Matriz de variables: `.env` es el archivo real para local y ejecucion fuera de Docker; `.env.docker` es opcional y recomendado para contenedores cuando se requiere separar escapes o valores; las plantillas oficiales versionadas son `.env.example` y `.env.docker.example`.
+* Matriz de variables: `.env` corresponde a LOCAL y `.env.docker` corresponde obligatoriamente a Docker QA; las plantillas oficiales versionadas son `.env.example` y `.env.docker.example`.
 * Versiones de scripts: La primera version gestionaba estados `ACTIVA`, `DISPONIBLE`, `REEMPLAZADA`, `INACTIVA` sin borrado fisico directo; desde Papelera operativa la eliminacion permanente autorizada elimina archivos operativos `.py` y `.env` conservando historial protegido.
-* Evidencia futura: se emitira por `stdout` entre delimitadores oficiales; no se creara JSON fisico persistente y no se guardara el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
+* Evidencia: se emite por `stdout` entre delimitadores oficiales; no se crea JSON fisico persistente y no se guarda el JSON completo en BD. Si `Enviar evidencia` esta activo y el bloque no aparece, corresponde alerta interna y no correo al cliente.
 * Modelo evidencias/notificaciones: configuracion recomendada por `tarea`, evidencia minima por `ejecucion`, destinatarios separados, intentos de envio separados y secretos Graph exclusivamente por variables de entorno.
 * Backend notificaciones: API JSON protegida por permisos de tareas para consultar, guardar y desactivar configuracion de notificaciones por tarea; no envia correos.
 * UI notificaciones: `/tareas/<id>/editar` permite consultar, guardar y desactivar configuracion de evidencia/alertas y destinatarios mediante la API existente; desde Fase 15G muestra validacion estatica del script compatible.
@@ -78,14 +78,27 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Resolver/validar conexion OK desde `/diagnostico/bd` en el entorno local del usuario si aparece error de driver/red/cifrado.
-* Pendiente 2: Ejecutar migracion 011 en SQL Server local antes de usar ejecuciones automaticas si aun no fue aplicada.
-* Pendiente 3: Ejecutar migracion 013 y seeds 009/010 en SQL Server local antes de probar `/feriados/sincronizar` con usuarios de base de datos.
-* Pendiente 4: Mantener pruebas controladas del worker antes de uso operativo.
-* Pendiente 5: Resolver conectividad ODBC del host local Windows para eliminar el `08001` al usar `.env`.
-* Pendiente 6: Mantener Docker QA como flujo operativo validado usando `DOCKER_ENV_FILE=.env.docker`.
+* Pendiente 1: Iniciar Hito 1 solo mediante autorizacion explicita, usando el inventario y la arquitectura aprobados.
+* Pendiente 2: Definir en Hito 2 el contrato persistente del motor unico de ejecucion propiedad del worker.
+* Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
+* Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
+* Pendiente 5: Resolver el estado de error del Factory Reset actual solo mediante procedimiento autorizado; no relanzarlo automaticamente.
+* Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-13 - Reconstruccion limpia / Hito 0
+
+* Revision: se inspeccionaron documentacion, codigo Flask, worker, SQL, Docker, configuracion, UI, pruebas e historial Git relevante.
+* Linea base: 84 reglas HTTP, 33 tablas de bootstrap y 52 permisos activos.
+* Inventario: se clasificaron funcionalidades y componentes como conservar, reimplementar, refactorizar, deprecar o descartar.
+* Arquitectura: se propuso un paquete modular limpio, repositorios con unidad de trabajo, web sin hilos de ejecucion, motor unico en worker, seguridad transversal y Factory Reset in-place.
+* Contradicciones: se registraron documentos obsoletos sobre blue-green, fallback Docker a `.env`, migraciones antiguas y capacidades llamadas futuras que ya existen.
+* Roadmap: se normalizo a Hitos 0-15; Hito 0 queda cerrado y Hito 1 permanece no iniciado.
+* README: se elimino el listado historico enganoso y se dejo una portada breve con arquitectura, entornos, SQL y fuentes maestras vigentes.
+* Validacion: se comprobo que `.env` y `.env.docker` siguen ignorados y que no contienen seguimiento Git.
+* Alcance: no se modifico codigo funcional, SQL, secretos ni `database/release/`; no se ejecuto SQL ni Factory Reset.
+* Separacion Git: el fix T-SQL previo se valido y versiono en un commit independiente antes del cierre documental.
 
 ### 2026-08-12 - Cierre UX / Restablecer APP Scheduler a estado base
 

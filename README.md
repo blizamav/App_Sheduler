@@ -1,140 +1,66 @@
 # APP Scheduler
 
-Aplicacion web Flask para programar, ejecutar, monitorear y auditar tareas Python orientadas a equipos de TI.
+APP Scheduler es una aplicacion web interna para administrar, programar, ejecutar, monitorear y auditar procesos Python orientados a equipos de TI.
 
-## Estado actual
+## Estado del proyecto
 
-El estado local confirmado por commit llega hasta Fase 17D. Queda pendiente el push al repositorio remoto y la normalizacion documental final de Fase 17X.
+El runtime actual permanece operativo como referencia mientras se realiza una reconstruccion limpia y controlada.
 
-La fuente formal del roadmap es `docs/ROADMAP.md`; el detalle cronologico se mantiene en `docs/CHANGELOG.md` y `log_codex.md`.
+* Hito 0 - Inventario y arquitectura: CERRADO.
+* Hito 1 - Base del proyecto y configuracion: PENDIENTE, no iniciado.
 
-* Fase 1: estructura base, documentacion, login inicial desde `.env` y layout base.
-* Fase 2: diseno UI/UX base, responsive y corporativo.
-* Fase 3A: propuesta de modelo SQL Server.
-* Ajuste Fase 3A: versionamiento de scripts con maximo 3 versiones.
-* Fase 3B: scripts SQL Server versionados.
-* Fase 3C: validacion manual de scripts SQL en SQL Server local.
-* Fase 3D: conexion Flask con SQL Server desde `.env` y diagnostico controlado.
-* Fase 4: usuarios, roles y permisos iniciales con login hibrido.
-* Fase 4.1: mejoras UX del modulo usuarios, filtros y confirmaciones.
-* Fase 4.2: modal corporativo reutilizable para confirmaciones.
-* Fase 4.3: definicion tecnica de ejecucion segura, detencion manual y `.env` por script.
-* Fase 5: mantenedores de clientes, categorias y tipos.
-* Fase 5.1: eliminacion controlada en mantenedores.
-* Fase 6: tareas con programacion base, sin ejecucion real ni scheduler.
-* Fase 7: gestion de scripts, versiones v1-v3 y `.env` por version.
-* Fase 8: ejecucion manual con consola, logs y detencion controlada.
-* Fase 9A: configuracion operativa del scheduler en base de datos, sin worker automatico.
-* Fase 9B: worker automatico separado, evaluacion de programaciones y ejecuciones automaticas.
-* Fase 9C: timestamps por linea en logs de ejecucion.
-* Fase 9D: historial de ejecuciones agrupado por ano, mes y dia con filtros y paginacion.
-* Fase 10A: calendario local de feriados en base de datos, sin API externa.
-* Fase 10B: sincronizacion controlada desde Nager.Date con reglas locales de irrenunciables.
-* Fase 11A: panel operativo del scheduler para monitoreo de solo lectura.
-* Fase 11A.1: panel principal general con metricas reales y accesos operativos.
-* Fase 11B: heartbeat del worker scheduler y visualizacion en panel operativo.
-* Fase 11C: modernizacion visual UI/UX general sin cambios funcionales.
-* Fase 11D: registro de eventos y omisiones del programador en tabla dedicada.
-* Fase 11D.1: resumen inteligente de eventos del programador.
-* Fase 11D.2: historial filtrable de eventos del programador.
-* Fase 11E: control de ejecuciones huerfanas por verificacion de PID.
-* Fase 11F: borrado operativo seguro con snapshots historicos.
-* Fase 11G: papelera operativa, restauracion y eliminacion permanente segura.
+Fuentes maestras de la reconstruccion:
 
-## Stack actual
+* [Inventario Maestro](docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md)
+* [Arquitectura de Reconstruccion](docs/ARQUITECTURA_RECONSTRUCCION.md)
+* [Roadmap](docs/ROADMAP.md)
 
-* Python
-* Flask
-* HTML
-* CSS
-* JavaScript
-* SQL Server
-* pyodbc
-* python-dotenv
-* Docker Compose o systemd pendiente para QA y produccion en Fase 13
+La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-## Funcionalidades actuales
+## Capacidades de referencia
 
-* Login inicial desde variables de entorno.
-* Panel principal general con metricas reales en `/panel`.
-* Layout corporativo responsive.
-* Documentacion tecnica en `docs/`.
-* Scripts SQL versionados.
-* Base `APP_SCHEDULER_QA` validada en SQL Server local.
-* Conexion Flask-SQL Server mediante `.env`.
-* Ruta de diagnostico de base de datos para `LOCAL` y `QA`: `/diagnostico/bd`.
-* Login hibrido: administrador inicial desde `.env` y usuarios desde SQL Server.
-* Administracion basica de usuarios en `/usuarios`.
-* Mantenedores de clientes en `/clientes`.
-* Mantenedores de categorias en `/categorias`.
-* Mantenedores de tipos en `/tipos`.
-* Eliminacion controlada en mantenedores solo si no existen dependencias.
-* Modulo de tareas en `/tareas`.
-* Programacion base declarativa: manual, diaria, semanal, mensual y fecha especifica.
-* Gestion de scripts por tarea.
-* Versionamiento de scripts hasta v3.
-* Asociacion de `.env` por version sin mostrar contenido.
-* Ejecucion manual de version activa.
-* Consola visual de ejecucion con polling.
-* Detencion manual de ejecucion.
-* Configuracion operativa del scheduler en `/scheduler/configuracion`.
-* Worker separado ejecutable con `python scheduler_worker.py`.
-* Ejecucion automatica con anti-duplicados por `clave_programacion`.
-* Listado basico de ejecuciones en `/ejecuciones`.
-* Logs de ejecucion con formato `YYYY-MM-DD HH:mm:ss | NIVEL | mensaje`.
-* Historial `/ejecuciones` agrupado por ano, mes y dia, con filtros y paginacion server-side.
-* Calendario local de feriados en `/feriados`.
-* Sincronizacion manual de feriados desde Nager.Date con vista previa.
-* Reglas locales para calcular feriados irrenunciables de Chile.
-* Scheduler consulta feriados locales para respetar `ejecutar_en_feriados`.
-* Panel operativo del scheduler en `/scheduler/panel`.
-* Heartbeat del worker en tabla `scheduler_worker_heartbeat`.
-* Eventos recientes del programador en tabla `scheduler_eventos`, visibles desde `/scheduler/panel`.
-* Historial filtrable de eventos del programador en `/scheduler/eventos`.
-* Control de ejecuciones huerfanas desde consola.
-* Borrado operativo seguro con `eliminado_operativo` y snapshots historicos.
-* Papelera operativa en `/papelera` para restaurar registros como inactivos o eliminarlos permanentemente de tablas operativas cuando sea seguro.
-* TOP 6 ultimas ejecuciones en panel principal.
-* Interfaz modernizada con sidebar, botones, cards, tablas, formularios, modales, toasts, consola y paneles visualmente pulidos.
-* Filtros de usuarios por estado, rol y busqueda general.
-* Confirmaciones para activar/deshabilitar usuarios.
-* Roles y permisos iniciales desde base de datos.
-* Logs de sistema iniciales para login y cambios de usuarios.
-* Definicion tecnica de `.env` por script y detencion manual de ejecuciones.
+El sistema actual incluye:
 
-## Roadmap vigente
+* autenticacion hibrida con `SUPER_ADMIN_ENV` y usuarios SQL;
+* roles, permisos, usuarios y mantenedores;
+* tareas, programaciones, scripts y hasta tres versiones;
+* `.env` por version de script sin persistir secretos en la base;
+* ejecucion manual y automatica, consola, logs y detencion;
+* scheduler y worker separado con heartbeat y eventos;
+* papelera, auditoria, feriados, evidencias y Microsoft Graph;
+* Factory Reset in-place sobre la base autorizada.
 
-El roadmap queda reorganizado en bloques:
+Estas capacidades constituyen requisitos de reconstruccion, no una declaracion de que el nuevo runtime ya fue implementado.
 
-* Fase 11: robustez operativa interna.
-* Fase 12: auditoria.
-* Fase 13: operacion y despliegue.
-* Fase 14: mantenimiento avanzado.
+## Arquitectura vigente
 
-Pendiente critico inmediato:
+Stack principal:
 
-* Fase 11H: purga controlada.
-* Fase 11I: revision integral post-borrado.
-* Fase 12A: modulo Auditoria base.
+* Python y Flask;
+* Jinja, HTML, CSS y JavaScript;
+* SQL Server mediante `pyodbc`;
+* servicios separados `web` y `worker`;
+* Docker Compose para QA.
 
-Pendiente operativo:
+Reglas centrales:
 
-* Scripts para levantar web y worker.
-* Worker como servicio.
-* Preparacion QA/produccion.
-* Estrategia de backups.
-* Estrategia de retencion automatica.
+* unica base del aplicativo: `APP_SCHEDULER_QA`;
+* `user_scheduler` para operacion normal con minimo privilegio;
+* `user_scheduler_mantenimiento` para mantenimiento estructural, con `db_owner` solo en `APP_SCHEDULER_QA`;
+* la cuenta de mantenimiento no requiere `sysadmin`, `CREATE ANY DATABASE`, `ALTER ANY DATABASE` ni `CONTROL SERVER`;
+* Factory Reset es in-place; la arquitectura blue-green esta deprecada;
+* `database/release/` es publicado, protegido y de solo lectura.
 
-Pendiente mejora:
+## Entornos
 
-* Exportacion de eventos.
-* Notificaciones.
-* Reportes.
-* Dashboard avanzado.
+* `.env`: ejecucion LOCAL.
+* `.env.docker`: ejecucion QA mediante Docker.
 
-Ver detalle en `docs/ROADMAP.md`.
+Docker carga explicitamente `.env.docker`. No existe fallback automatico hacia `.env`.
 
-## Ejecucion local en Windows
+Los archivos reales no se versionan. Las plantillas son `.env.example` y `.env.docker.example`. Nunca sobrescribas un archivo `.env` existente.
+
+## Ejecucion local de referencia
 
 ```powershell
 python -m venv .venv
@@ -144,182 +70,41 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env y
 python run.py
 ```
 
-En CMD:
+El worker se ejecuta en otro proceso:
 
-```cmd
-if not exist .env copy .env.example .env
+```powershell
+python scheduler_worker.py
 ```
 
-Luego abrir:
+## Docker QA
 
-```text
-http://127.0.0.1:5000
-```
+Configura manualmente `.env.docker` a partir de su plantilla sin sobrescribir valores existentes. Luego valida la composicion antes de levantar servicios:
 
-Para diagnostico de base de datos, iniciar sesion y abrir:
-
-```text
-http://127.0.0.1:5000/diagnostico/bd
-```
-
-## Variables de entorno
-
-El archivo `.env` no se sube a Git. El archivo `.env.example` sirve como plantilla.
-
-No ejecutes `copy .env.example .env` si ya existe `.env`, porque sobrescribe credenciales locales. Si `.env` fue sobrescrito, reconstruyelo manualmente con tus valores reales; no inventar ni publicar credenciales.
-
-Variables principales:
-
-```env
-APP_ENV=LOCAL
-APP_SECRET_KEY=CAMBIAR_EN_ENV_REAL
-APP_HOST=127.0.0.1
-APP_PORT=5000
-
-DB_SERVER=
-DB_DATABASE=APP_SCHEDULER_QA
-DB_USER=
-DB_PASSWORD=
-DB_DRIVER=ODBC Driver 17 for SQL Server
-
-USUARIO_ADMIN_DEFECTO=blizama
-PASSWORD_ADMIN_DEFECTO=CAMBIAR_EN_ENV_REAL
-
-RUTA_BASE_SCRIPTS=scripts
-RUTA_BASE_ENV_SCRIPTS=env_scripts
-RUTA_BASE_LOGS_TAREAS=logs_tareas
-RUTA_BASE_LOGS_SISTEMA=logs_sistema
-MAX_SCRIPT_SIZE_MB=5
-MAX_ENV_SIZE_KB=100
+```powershell
+docker compose config --quiet
+docker compose up --build
 ```
 
 ## Base de datos
 
-Los scripts SQL Server estan en:
+Los canales SQL tienen responsabilidades distintas:
 
-```text
-database/migrations/
-database/seeds/
-```
+* `database/release/`: release publicado y protegido.
+* `database/bootstrap/`: instalacion limpia y validacion vigente.
+* `database/factory_reset/`: reconstruccion in-place controlada.
+* `database/migrations/`: correctivos incrementales especificos.
+* `database/legacy_pre_release_13B/`: historia, no fuente ejecutable vigente.
 
-Orden documentado:
-
-1. `database/migrations/001_crear_base_datos.sql`
-2. `database/migrations/002_crear_catalogos.sql`
-3. `database/migrations/003_crear_tablas_seguridad.sql`
-4. `database/migrations/004_crear_tablas_negocio.sql`
-5. `database/migrations/005_crear_tablas_ejecucion_logs.sql`
-6. `database/migrations/006_crear_indices.sql`
-7. `database/seeds/001_datos_iniciales_catalogos.sql`
-8. `database/seeds/002_roles_permisos_iniciales.sql`
-9. `database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql`
-10. `database/seeds/003_permisos_mantenedores.sql`
-11. `database/migrations/008_ajustar_tareas_y_programaciones_base.sql`
-12. `database/seeds/004_permisos_tareas.sql`
-13. `database/seeds/005_permisos_scripts.sql`
-14. `database/migrations/009_corregir_nombre_script_contenedor.sql`
-15. `database/seeds/006_permisos_ejecuciones.sql`
-16. `database/migrations/010_crear_configuracion_scheduler.sql`
-17. `database/seeds/007_permisos_scheduler.sql`
-18. `database/migrations/011_agregar_control_scheduler_ejecuciones.sql`
-19. `database/migrations/012_crear_calendario_feriados.sql`
-20. `database/seeds/008_permisos_feriados.sql`
-21. `database/migrations/013_crear_reglas_feriados_irrenunciables.sql`
-22. `database/seeds/009_reglas_irrenunciables_chile.sql`
-23. `database/seeds/010_permisos_sincronizacion_feriados.sql`
-24. `database/migrations/014_crear_scheduler_worker_heartbeat.sql`
-25. `database/migrations/015_crear_eventos_programador.sql`
-26. `database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql`
-
-La base `APP_SCHEDULER_QA` ya fue creada y validada manualmente en SQL Server local. El usuario inicial de la aplicacion sigue validandose desde `.env`; no se crea `blizama` en base de datos todavia.
-
-Fase 4.3 agrega una migracion propuesta, no ejecutada automaticamente:
-
-```text
-database/migrations/007_agregar_control_ejecucion_y_env_scripts.sql
-```
-
-Esta migracion prepara rutas `.env` por version de script y campos para detencion manual de ejecuciones.
-
-Fase 6 agrega scripts incrementales, no ejecutados automaticamente:
-
-```text
-database/migrations/008_ajustar_tareas_y_programaciones_base.sql
-database/seeds/004_permisos_tareas.sql
-```
-
-Ejecutalos manualmente en SSMS antes de usar persistencia completa del modulo `/tareas`.
-
-Fase 7 no requiere migracion nueva si la migracion 007 ya fue aplicada. Solo agrega permisos:
-
-```text
-database/seeds/005_permisos_scripts.sql
-```
-
-Ejecutalo manualmente en SSMS para usuarios de base de datos. El administrador desde `.env` puede acceder sin seed.
-
-Fase 9B agrega control de ejecuciones automaticas:
-
-```text
-database/migrations/011_agregar_control_scheduler_ejecuciones.sql
-```
-
-Ejecutalo manualmente en SSMS antes de levantar el worker automatico.
-
-Fase 11B agrega heartbeat del worker:
-
-```text
-database/migrations/014_crear_scheduler_worker_heartbeat.sql
-```
-
-Ejecutalo manualmente en SSMS antes de validar el estado del worker en `/scheduler/panel`.
-
-Fase 11D agrega eventos del programador:
-
-```text
-database/migrations/015_crear_eventos_programador.sql
-```
-
-Ejecutalo manualmente en SSMS antes de validar `/scheduler/panel` y `/scheduler/eventos`.
-
-Fase 11F agrega borrado operativo seguro con snapshots:
-
-```text
-database/migrations/016_agregar_snapshots_historial_borrado_operativo.sql
-```
-
-Ejecutalo manualmente en SSMS antes de usar borrado operativo seguro en datos con historial.
-
-## Worker automatico
-
-La app web y el scheduler son procesos separados:
-
-```powershell
-python run.py
-python scheduler_worker.py
-```
-
-Para una prueba controlada de un solo ciclo:
-
-```powershell
-python scheduler_worker.py --once
-```
-
-Con heartbeat, `--once` actualiza `scheduler_worker_heartbeat`, registra el ultimo ciclo y marca salida controlada como `DETENIDO`. En loop, `python scheduler_worker.py` actualiza `fecha_ultimo_heartbeat` periodicamente.
-
-El worker lee `configuracion_scheduler` desde SQL Server. Para ejecutar tareas automaticas, activa desde `/scheduler/configuracion`: `scheduler_activo`, `permitir_ejecucion_automatica` y deja `modo_mantenimiento` desactivado.
+No ejecutes SQL destructivo, migraciones o Factory Reset sobre QA sin diagnostico, revision y autorizacion explicita.
 
 ## Documentacion
 
-* `docs/README_PROYECTO.md`
-* `docs/ARQUITECTURA.md`
-* `docs/BASE_DATOS.md`
-* `docs/MODULOS.md`
-* `docs/FLUJOS.md`
-* `docs/SEGURIDAD.md`
-* `docs/DESPLIEGUE.md`
-* `docs/ROADMAP.md`
-* `docs/CHANGELOG.md`
-* `log_codex.md`
+La documentacion tecnica se encuentra en `docs/`. Para continuar el trabajo se debe leer primero:
 
-`log_codex.md` es la memoria tecnica del proyecto y debe leerse antes de continuar nuevas fases.
+1. `docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md`
+2. `docs/ARQUITECTURA_RECONSTRUCCION.md`
+3. `docs/ROADMAP.md`
+4. `docs/CHANGELOG.md`
+5. `log_codex.md`
+
+El historial detallado permanece en `docs/CHANGELOG.md` y `log_codex.md`; el README describe solamente el estado vigente.

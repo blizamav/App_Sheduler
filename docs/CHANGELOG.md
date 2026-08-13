@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-13 - Hito 0 reconstruccion: inventario y arquitectura
+
+### Documentado
+
+* Se creo el Inventario Maestro de Reconstruccion con la linea base de funcionalidades, modulos, tablas, permisos, rutas, configuracion, integraciones, UI y deuda tecnica.
+* Se clasificaron los componentes como `CONSERVAR`, `REIMPLEMENTAR`, `REFACTORIZAR`, `DEPRECAR` o `DESCARTAR`.
+* Se definio la arquitectura objetivo: Flask modular, SQL Server con repositorios y unidad de trabajo, worker propietario del motor de ejecucion, seguridad transversal y Factory Reset in-place.
+* `ROADMAP.md` se normalizo a Hitos 0-15, separando completado, actual y pendiente sin presentar fases diagnosticas como arquitectura oficial.
+* `README.md` se reemplazo por una portada breve y vigente que diferencia el runtime de referencia de la reconstruccion, declara Hito 0 cerrado e Hito 1 no iniciado.
+
+### Hallazgos
+
+* La documentacion historica aun mezcla Factory Reset blue-green, fallback Docker a `.env` y fases ya superadas con el runtime vigente.
+* La ejecucion desde hilos web, la cobertura automatizada transversal insuficiente, CSRF no centralizado y los archivos CSS/JS monoliticos son deuda prioritaria de la reconstruccion.
+* Se confirmaron 84 reglas HTTP, 33 tablas del bootstrap y 52 permisos activos como linea base verificable.
+
+### Alcance
+
+* No se implemento funcionalidad, no se ejecuto SQL ni Factory Reset y no se modificaron `.env`, `.env.docker` o `database/release/`.
+* El fix previo del runner Factory Reset y sus pruebas se versiono en un commit tecnico separado antes del commit documental.
+
 ## 2026-08-12 - Cierre UX Restablecer a estado base
 
 ### Mejorado
