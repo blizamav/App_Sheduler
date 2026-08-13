@@ -28,7 +28,9 @@ IF EXISTS (
     WHERE s.name = N'dbo'
       AND NOT EXISTS (SELECT 1 FROM @tablas_app a WHERE a.nombre = t.name)
 )
-    ;THROW 51000, N'La base contiene tablas dbo desconocidas; el reset in-place se cancela sin eliminarlas.', 1;
+BEGIN
+    THROW 51000, N'La base contiene tablas dbo desconocidas; el reset in-place se cancela sin eliminarlas.', 1;
+END;
 
 IF EXISTS (
     SELECT 1
@@ -47,7 +49,9 @@ IF EXISTS (
         AND NOT (sp.name = N'dbo' AND EXISTS (SELECT 1 FROM @tablas_app a WHERE a.nombre = tp.name))
     )
 )
-    ;THROW 51000, N'Existe una dependencia FK desconocida sobre el modelo APP Scheduler.', 1;
+BEGIN
+    THROW 51000, N'Existe una dependencia FK desconocida sobre el modelo APP Scheduler.', 1;
+END;
 
 DECLARE @sql nvarchar(max) = N'';
 SELECT @sql = @sql
@@ -118,5 +122,7 @@ IF EXISTS (
           N'notificaciones_envios', N'configuracion_mail_graph'
       )
 )
-    ;THROW 51000, N'No fue posible retirar completamente el modelo APP Scheduler.', 1;
+BEGIN
+    THROW 51000, N'No fue posible retirar completamente el modelo APP Scheduler.', 1;
+END;
 GO

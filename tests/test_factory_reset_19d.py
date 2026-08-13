@@ -121,6 +121,14 @@ class FactoryResetInPlaceTest(unittest.TestCase):
         self.assertNotIn("CREATE DATABASE", contenido)
         self.assertNotIn("DROP DATABASE", contenido)
         self.assertNotIn("ALTER DATABASE", contenido)
+        self.assertNotRegex(contenido, r"(?m)^\s*;THROW\b")
+        self.assertEqual(contenido.count("\n    THROW 51000,"), 4)
+        self.assertGreaterEqual(contenido.count("\nBEGIN\n    THROW 51000,"), 4)
+
+    def test_sql_factory_reset_no_usa_throw_como_sentencia_vacia_de_if(self):
+        for archivo in (BASE_DIR / "database/factory_reset").glob("*.sql"):
+            contenido = archivo.read_text(encoding="utf-8").upper()
+            self.assertNotRegex(contenido, r"(?m)^\s*;THROW\b", msg=archivo.name)
 
     def test_limpieza_sql_declara_33_tablas_y_no_borra_base(self):
         contenido = (BASE_DIR / "database/factory_reset/001_eliminar_esquema_aplicativo.sql").read_text(encoding="utf-8")

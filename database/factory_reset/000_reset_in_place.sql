@@ -9,11 +9,17 @@ SET XACT_ABORT ON;
 SET LOCK_TIMEOUT $(LOCK_TIMEOUT_MS);
 
 IF DB_NAME() <> N'$(DB_NAME)'
-    ;THROW 51000, N'El contexto de base no coincide con el target autorizado.', 1;
+BEGIN
+    THROW 51000, N'El contexto de base no coincide con el target autorizado.', 1;
+END;
 IF DATABASEPROPERTYEX(DB_NAME(), N'Updateability') <> N'READ_WRITE'
-    ;THROW 51000, N'La base objetivo no esta en modo READ_WRITE.', 1;
+BEGIN
+    THROW 51000, N'La base objetivo no esta en modo READ_WRITE.', 1;
+END;
 IF ISNULL(IS_ROLEMEMBER(N'db_owner'), 0) <> 1
-    ;THROW 51000, N'La cuenta SQL de mantenimiento no pertenece a db_owner en la base objetivo.', 1;
+BEGIN
+    THROW 51000, N'La cuenta SQL de mantenimiento no pertenece a db_owner en la base objetivo.', 1;
+END;
 
 BEGIN TRANSACTION;
 
@@ -24,7 +30,9 @@ EXEC @resultado_applock = sys.sp_getapplock
     @LockOwner = N'Transaction',
     @LockTimeout = $(LOCK_TIMEOUT_MS);
 IF @resultado_applock < 0
-    ;THROW 51000, N'No fue posible adquirir el bloqueo exclusivo interno de Factory Reset.', 1;
+BEGIN
+    THROW 51000, N'No fue posible adquirir el bloqueo exclusivo interno de Factory Reset.', 1;
+END;
 GO
 
 PRINT N'FACTORY_SCRIPT|001_eliminar_esquema_aplicativo.sql';
