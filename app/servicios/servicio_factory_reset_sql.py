@@ -126,6 +126,48 @@ class EjecutorSQLFactoryReset:
         )
         return "FACTORY_EXISTS|1" in salida
 
+    def validar_permisos_administrativos(self):
+        consulta = """
+SET NOCOUNT ON;
+SELECT CONCAT(
+    N'FACTORY_PERMISSIONS|',
+    ISNULL(IS_SRVROLEMEMBER(N'sysadmin'), 0), N'|',
+    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'CREATE ANY DATABASE'), 0), N'|',
+    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'ALTER ANY DATABASE'), 0), N'|',
+    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'VIEW SERVER STATE'), 0), N'|',
+    ISNULL(HAS_PERMS_BY_NAME(NULL, NULL, N'ALTER ANY CONNECTION'), 0), N'|',
+    ISNULL(IS_SRVROLEMEMBER(N'processadmin'), 0)
+);
+"""
+        salida = self.ejecutar_consulta(consulta, database="master")
+        linea = next(
+            (item.strip() for item in salida.splitlines() if item.strip().startswith("FACTORY_PERMISSIONS|")),
+            None,
+        )
+        if not linea:
+            raise ErrorFactoryResetSQL("No fue posible confirmar los privilegios administrativos Factory Reset.")
+        partes = linea.split("|")
+        if len(partes) != 7 or any(valor not in {"0", "1"} for valor in partes[1:]):
+            raise ErrorFactoryResetSQL("La respuesta de privilegios administrativos no es valida.")
+        sysadmin, crear, alterar, ver_estado, alterar_conexion, processadmin = (
+            valor == "1" for valor in partes[1:]
+        )
+        puede_gestionar_sesiones = alterar_conexion or processadmin
+        disponible = sysadmin or (crear and alterar and ver_estado and puede_gestionar_sesiones)
+        return {
+            "disponible": disponible,
+            "sysadmin": sysadmin,
+            "crear_bases": sysadmin or crear,
+            "alterar_bases": sysadmin or alterar,
+            "ver_estado_servidor": sysadmin or ver_estado,
+            "gestionar_sesiones": sysadmin or puede_gestionar_sesiones,
+            "mensaje": (
+                "La credencial administrativa tiene privilegios suficientes para Factory Reset."
+                if disponible
+                else "La credencial administrativa no tiene privilegios suficientes para crear, intercambiar y eliminar bases de datos de forma segura."
+            ),
+        }
+
     def listar_bases_residuales(self, base_actual):
         actual = self._validar_base_actual_configurada(base_actual)
         prefijo = f"{actual}__FACTORY_"
@@ -185,8 +227,9 @@ SELECT N'FACTORY_DROP_OK|ELIMINADA';
 
     def ejecutar_archivo(self, ruta, nombre_bd):
         nombre = _validar_nombre_bd(nombre_bd)
-        comando = self._comando_base("master") + ["-v", f"DB_NAME={nombre}", "-i", str(Path(ruta).resolve())]
-        return self._ejecutar(comando)
+        ruta_resuelta = Path(ruta).resolve()
+        comando = self._comando_base("master") + ["-v", f"DB_NAME={nombre}", "-i", str(ruta_resuelta)]
+        return self._ejecutar(comando, script=ruta_resuelta.name)
 
     def ejecutar_consulta(self, consulta, database="master"):
         base = _validar_database_conexion(database)
@@ -361,7 +404,7 @@ SELECT N'FACTORY_FINAL_OK';
             comando.append("-C")
         return comando
 
-    def _ejecutar(self, comando):
+    def _ejecutar(self, comando, script=None):
         entorno = os.environ.copy()
         entorno["SQLCMDPASSWORD"] = self.password
         try:
@@ -383,7 +426,14 @@ SELECT N'FACTORY_FINAL_OK';
             entorno.pop("SQLCMDPASSWORD", None)
         salida = (resultado.stdout or "") + (resultado.stderr or "")
         if resultado.returncode != 0:
-            raise ErrorFactoryResetSQL(f"SQLCMD finalizo con error ({resultado.returncode}).")
+            detalle = _sanitizar_salida_sqlcmd(
+                salida,
+                secretos=(self.password, self.usuario, self.servidor),
+            )
+            contexto = f"SCRIPT: {Path(script).name}; " if script else ""
+            raise ErrorFactoryResetSQL(
+                f"{contexto}RETURNCODE: {resultado.returncode}; ERROR: {detalle or 'SQLCMD no entrego detalle.'}"
+            )
         return salida[-20000:]
 
 
@@ -424,3 +474,23 @@ def _bandera(valor, defecto=False):
     if valor is None:
         return defecto
     return str(valor).strip().lower() in {"1", "true", "yes", "si", "y"}
+
+
+def _sanitizar_salida_sqlcmd(valor, secretos=()):
+    texto = str(valor or "")
+    for secreto in secretos:
+        secreto = str(secreto or "")
+        if secreto:
+            texto = re.sub(re.escape(secreto), "***", texto, flags=re.IGNORECASE)
+    texto = re.sub(
+        r"(?i)\b(password|pwd|client_secret|secret|token|sqlcmdpassword|user|usuario)\b\s*[:=]\s*[^\s;]+",
+        lambda coincidencia: f"{coincidencia.group(1)}=***",
+        texto,
+    )
+    texto = re.sub(
+        r"(?i)(login failed for user)\s+'[^']*'",
+        r"\1 '***'",
+        texto,
+    )
+    lineas = [linea.strip() for linea in texto.splitlines() if linea.strip()]
+    return " | ".join(lineas)[-4000:]

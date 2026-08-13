@@ -23,6 +23,7 @@ from app.servicios.servicio_factory_reset_filesystem import (
 )
 from app.servicios.servicio_factory_reset_sql import (
     EjecutorSQLFactoryReset,
+    ErrorFactoryResetSQL,
     derivar_bases_temporales_factory_reset,
     validar_configuracion_factory_reset_sql,
 )
@@ -161,7 +162,8 @@ def ejecutar_factory_reset(datos_preview, usuario, origen_usuario="BD", ejecutor
             "cuarentena_filesystem": True,
         }
     except Exception as error:
-        mensaje_seguro = f"Factory Reset no pudo completarse ({error.__class__.__name__})."
+        detalle_sql = f" {error}" if isinstance(error, ErrorFactoryResetSQL) else ""
+        mensaje_seguro = f"Factory Reset no pudo completarse ({error.__class__.__name__}).{detalle_sql}"
         registrar_evento_factory_reset(
             contexto.id_operacion,
             "ERROR",
@@ -232,6 +234,17 @@ def _precheck_final(datos_preview, lock_propio=None, ejecutor=None):
     configuracion = validar_configuracion_factory_reset_sql()
     if not configuracion["disponible"]:
         return {"ok": False, "mensaje": configuracion["bloqueos"][0], "manifiesto": None}
+    try:
+        motor = ejecutor or EjecutorSQLFactoryReset()
+        permisos = motor.validar_permisos_administrativos()
+    except Exception:
+        return {
+            "ok": False,
+            "mensaje": "No fue posible validar los privilegios de la credencial administrativa.",
+            "manifiesto": None,
+        }
+    if not permisos["disponible"]:
+        return {"ok": False, "mensaje": permisos["mensaje"], "manifiesto": None}
     lock = obtener_estado_factory_reset()
     if lock["bloquea"] and lock.get("id_operacion") != lock_propio:
         return {"ok": False, "mensaje": "Existe un lock Factory Reset activo o dudoso.", "manifiesto": None}
@@ -251,7 +264,6 @@ def _precheck_final(datos_preview, lock_propio=None, ejecutor=None):
     if diagnostico["pids_vivos_registrados"] or diagnostico["procesos_hijos_conocidos"]:
         return {"ok": False, "mensaje": "Existen procesos de scripts activos.", "manifiesto": manifiesto}
     try:
-        motor = ejecutor or EjecutorSQLFactoryReset()
         residuos = motor.listar_bases_residuales(current_app.config.get("FACTORY_RESET_DB_TARGET"))
     except Exception:
         return {"ok": False, "mensaje": "No fue posible validar residuos SQL de Factory Reset.", "manifiesto": manifiesto}

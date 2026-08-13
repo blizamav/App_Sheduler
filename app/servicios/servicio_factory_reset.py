@@ -62,16 +62,25 @@ def generar_preview_factory_reset(usuario):
 
     configuracion_reset = validar_configuracion_factory_reset_sql()
     residuos_sql = []
+    permisos_administrativos = {
+        "disponible": False,
+        "mensaje": "Los privilegios administrativos no fueron evaluados.",
+    }
     if configuracion_reset["disponible"]:
         try:
             from app.servicios.servicio_factory_reset_sql import EjecutorSQLFactoryReset
 
-            residuos_sql = EjecutorSQLFactoryReset().listar_bases_residuales(
-                configuracion_reset["target_configurado"]
-            )
+            motor_sql = EjecutorSQLFactoryReset()
+            permisos_administrativos = motor_sql.validar_permisos_administrativos()
+            if permisos_administrativos["disponible"]:
+                residuos_sql = motor_sql.listar_bases_residuales(configuracion_reset["target_configurado"])
         except Exception as error:
-            errores.append(f"No fue posible inventariar residuos Factory Reset: {error.__class__.__name__}.")
-            bloqueos.append("No fue posible validar residuos SQL de Factory Reset.")
+            errores.append(f"No fue posible validar privilegios Factory Reset: {error.__class__.__name__}.")
+            permisos_administrativos["mensaje"] = (
+                "No fue posible validar los privilegios de la credencial administrativa."
+            )
+    if configuracion_reset["disponible"] and not permisos_administrativos["disponible"]:
+        bloqueos.append(permisos_administrativos["mensaje"])
     if residuos_sql:
         bloqueos.append(
             "Existen bases residuales de Factory Reset pendientes de recuperacion o limpieza: "
@@ -108,6 +117,7 @@ def generar_preview_factory_reset(usuario):
         "bootstrap": manifiesto,
         "super_admin_env": super_admin_env,
         "configuracion_reset": configuracion_reset,
+        "permisos_administrativos": permisos_administrativos,
         "bases_residuales_factory_reset": residuos_sql,
         "reset_destructivo_habilitado": not bloqueos and configuracion_reset["disponible"],
     }

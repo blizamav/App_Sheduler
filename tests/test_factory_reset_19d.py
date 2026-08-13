@@ -13,7 +13,7 @@ from app.servicios.servicio_control_runtime import (
     registrar_marca_factory_reset_completado,
     actualizar_lock_factory_reset,
 )
-from app.servicios.servicio_factory_reset import validar_manifiesto_bootstrap
+from app.servicios.servicio_factory_reset import generar_preview_factory_reset, validar_manifiesto_bootstrap
 from app.servicios.servicio_factory_reset_filesystem import (
     ErrorFactoryResetFilesystem,
     limpiar_roots_factory_reset,
@@ -29,19 +29,35 @@ from app.servicios.servicio_scheduler_worker import ejecutar_ciclo_worker
 
 
 class MotorSQLSimulado:
-    def __init__(self, actual="APP_SCHEDULER_FACTORY_SOURCE_TEST", fallo=None):
+    def __init__(self, actual="APP_SCHEDULER_FACTORY_SOURCE_TEST", fallo=None, permisos=True):
         self.bases = {actual}
         self.actual = actual
         self.fallo = fallo
         self.auditoria = False
         self.rollback_ejecutado = False
         self.bases_eliminadas = []
+        self.permisos = permisos
 
     def existe_base(self, nombre):
         return nombre in self.bases
 
+    def validar_permisos_administrativos(self):
+        return {
+            "disponible": self.permisos,
+            "mensaje": (
+                "Privilegios suficientes."
+                if self.permisos
+                else "La credencial administrativa no tiene privilegios suficientes."
+            ),
+        }
+
     def ejecutar_bootstrap(self, nombre, _manifiesto):
         self.bases.add(nombre)
+        if self.fallo == "bootstrap_sql":
+            raise ErrorFactoryResetSQL(
+                "SCRIPT: 001_crear_base_datos.sql; RETURNCODE: 1; "
+                "ERROR: CREATE DATABASE permission denied in database 'master'."
+            )
         if self.fallo == "bootstrap":
             raise RuntimeError("fallo simulado")
 
@@ -183,6 +199,55 @@ class FactoryReset19DTest(unittest.TestCase):
             self.assertFalse(resultado["ok"])
             self.assertEqual(obtener_estado_factory_reset()["estado"], "NORMAL")
 
+    def test_credencial_sin_create_alter_bloquea_antes_del_lock(self):
+        with self.app.app_context():
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2]:
+                resultado = ejecutar_factory_reset(
+                    self._preview(),
+                    "admin",
+                    "ENV",
+                    MotorSQLSimulado(permisos=False),
+                )
+            self.assertFalse(resultado["ok"])
+            self.assertIn("privilegios suficientes", resultado["mensaje"])
+            self.assertEqual(obtener_estado_factory_reset()["estado"], "NORMAL")
+
+    def test_preview_bloqueado_por_privilegios_administrativos_insuficientes(self):
+        permisos = {
+            "disponible": False,
+            "mensaje": "La credencial administrativa no tiene privilegios suficientes.",
+        }
+        motor = MotorSQLSimulado(permisos=False)
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset.obtener_conteos_factory_reset", return_value={}
+        ), patch(
+            "app.servicios.servicio_factory_reset.obtener_version_bootstrap_sql", return_value=None
+        ), patch(
+            "app.servicios.servicio_factory_reset._diagnosticar_operacion",
+            return_value={
+                "ejecuciones_activas": [],
+                "total_ejecuciones_activas": 0,
+                "pids_vivos_registrados": 0,
+                "procesos_hijos_conocidos": 0,
+                "worker": {"detectado": True, "estado": "ACTIVO", "activo": True},
+                "tareas_candidatas": 0,
+            },
+        ), patch(
+            "app.servicios.servicio_factory_reset.validar_super_admin_env", return_value={"disponible": True}
+        ), patch(
+            "app.servicios.servicio_factory_reset_sql.validar_configuracion_factory_reset_sql",
+            return_value={"disponible": True, "bloqueos": [], "target_configurado": motor.actual},
+        ), patch(
+            "app.servicios.servicio_factory_reset_sql.EjecutorSQLFactoryReset", return_value=motor
+        ), patch.object(
+            motor, "validar_permisos_administrativos", return_value=permisos
+        ):
+            preview = generar_preview_factory_reset("admin")
+        self.assertEqual(preview["estado"], "BLOQUEADO")
+        self.assertFalse(preview["reset_destructivo_habilitado"])
+        self.assertIn(permisos["mensaje"], preview["bloqueos"])
+
     def test_segundo_reset_simultaneo_rechazado(self):
         with self.app.app_context():
             preview = self._preview()
@@ -203,6 +268,21 @@ class FactoryReset19DTest(unittest.TestCase):
             self.assertIn(motor.actual, motor.bases)
             self.assertEqual(motor.listar_bases_residuales(motor.actual), [])
             self.assertEqual(obtener_estado_factory_reset()["estado"], "FACTORY_RESET_ERROR")
+
+    def test_error_sqlcmd_sanitizado_llega_al_log_externo(self):
+        with self.app.app_context():
+            motor = MotorSQLSimulado(fallo="bootstrap_sql")
+            parches = self._parches_precheck()
+            with parches[0], parches[1], parches[2], patch(
+                "app.servicios.servicio_orquestador_factory_reset.registrar_evento_factory_reset"
+            ) as registrar:
+                resultado = ejecutar_factory_reset(self._preview(), "admin", "ENV", motor)
+            self.assertFalse(resultado["ok"])
+            mensajes = " ".join(str(llamada) for llamada in registrar.call_args_list)
+            self.assertIn("SCRIPT: 001_crear_base_datos.sql", mensajes)
+            self.assertIn("CREATE DATABASE permission denied", mensajes)
+            self.assertNotIn("secret-test", mensajes)
+            self.assertNotIn("admin-test", mensajes)
 
     def test_fallo_intercambio_ejecuta_rollback(self):
         with self.app.app_context():
@@ -410,6 +490,61 @@ class FactoryReset19DTest(unittest.TestCase):
             ):
                 with self.assertRaises(ErrorFactoryResetSQL):
                     motor.intercambiar_bases("APP_SCHEDULER_FACTORY_SOURCE_TEST", "TEMP_TEST", "OLD_TEST")
+
+    def test_permisos_sysadmin_habilitan_factory_reset(self):
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ):
+            motor = EjecutorSQLFactoryReset()
+            with patch.object(motor, "ejecutar_consulta", return_value="FACTORY_PERMISSIONS|1|0|0|0|0|0"):
+                permisos = motor.validar_permisos_administrativos()
+            self.assertTrue(permisos["disponible"])
+            self.assertTrue(permisos["sysadmin"])
+
+    def test_permisos_equivalentes_habilitan_factory_reset(self):
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ):
+            motor = EjecutorSQLFactoryReset()
+            with patch.object(motor, "ejecutar_consulta", return_value="FACTORY_PERMISSIONS|0|1|1|1|1|0"):
+                permisos = motor.validar_permisos_administrativos()
+            self.assertTrue(permisos["disponible"])
+            self.assertTrue(permisos["gestionar_sesiones"])
+
+    def test_permisos_incompletos_bloquean_factory_reset(self):
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ):
+            motor = EjecutorSQLFactoryReset()
+            with patch.object(motor, "ejecutar_consulta", return_value="FACTORY_PERMISSIONS|0|0|0|1|0|0"):
+                permisos = motor.validar_permisos_administrativos()
+            self.assertFalse(permisos["disponible"])
+            self.assertNotIn("admin-test", permisos["mensaje"])
+
+    def test_fallo_sqlcmd_informa_script_y_sanitiza_salida(self):
+        class ResultadoError:
+            returncode = 1
+            stdout = "password=secret-test usuario=admin-test servidor=sql-test\n"
+            stderr = "CREATE DATABASE permission denied in database 'master'.\n"
+
+        with self.app.app_context(), patch(
+            "app.servicios.servicio_factory_reset_sql._resolver_sqlcmd", return_value="sqlcmd-test"
+        ), patch(
+            "app.servicios.servicio_factory_reset_sql.subprocess.run", return_value=ResultadoError()
+        ):
+            motor = EjecutorSQLFactoryReset()
+            with self.assertRaises(ErrorFactoryResetSQL) as contexto:
+                motor.ejecutar_archivo(
+                    Path("database/release/001_crear_base_datos.sql"),
+                    self.app.config["DB_DATABASE"],
+                )
+        mensaje = str(contexto.exception)
+        self.assertIn("SCRIPT: 001_crear_base_datos.sql", mensaje)
+        self.assertIn("RETURNCODE: 1", mensaje)
+        self.assertIn("CREATE DATABASE permission denied", mensaje)
+        self.assertNotIn("secret-test", mensaje)
+        self.assertNotIn("admin-test", mensaje)
+        self.assertNotIn("sql-test", mensaje)
 
     def test_drop_temporal_rechaza_base_operativa_y_nombre_ajeno(self):
         with self.app.app_context(), patch(
