@@ -280,6 +280,7 @@ class ConfiguracionAplicacion:
             "SESSION_COOKIE_HTTPONLY": True,
             "SESSION_COOKIE_SECURE": self.session_cookie_secure,
             "SESSION_COOKIE_SAMESITE": self.session_cookie_samesite,
+            "SESSION_REFRESH_EACH_REQUEST": False,
             "CSRF_TTL_SEGUNDOS": self.csrf_ttl_segundos,
             "DB_SERVER": self.db_server,
             "DB_DATABASE": self.db_database,

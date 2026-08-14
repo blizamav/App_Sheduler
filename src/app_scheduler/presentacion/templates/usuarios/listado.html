@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/seguridad.css') }}">{% endblock %}
+
+{% block contenido %}
+<header class="encabezado-pagina">
+    <div><p class="eyebrow">Seguridad</p><h1>Usuarios</h1><p class="texto-secundario">{{ resultado.total }} registros disponibles</p></div>
+    <a class="boton primario" href="{{ url_for('usuarios.nuevo') }}">Crear usuario</a>
+</header>
+
+<form class="barra-filtros" method="get">
+    <label class="campo"><span>Buscar</span><input name="buscar" value="{{ filtros.buscar }}" placeholder="Usuario, nombre o correo"></label>
+    <label class="campo"><span>Estado</span><select name="estado"><option value="">Todos</option><option value="activo" {% if filtros.estado == 'activo' %}selected{% endif %}>Activos</option><option value="inactivo" {% if filtros.estado == 'inactivo' %}selected{% endif %}>Inactivos</option></select></label>
+    <label class="campo"><span>Rol</span><select name="rol"><option value="">Todos</option>{% for rol in roles %}<option value="{{ rol.id_rol }}" {% if filtros.rol == rol.id_rol %}selected{% endif %}>{{ rol.nombre_rol }}</option>{% endfor %}</select></label>
+    <button class="boton secundario" type="submit">Filtrar</button>
+    <a class="boton secundario" href="{{ url_for('usuarios.listado') }}">Limpiar</a>
+</form>
+
+<div class="tabla-contenedor">
+    <table class="tabla-base">
+        <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Ultimo acceso</th><th>Acciones</th></tr></thead>
+        <tbody>
+        {% for item in resultado.elementos %}
+        <tr>
+            <td><strong>{{ item.usuario.usuario }}</strong><small>{{ item.usuario.email or 'Sin correo' }}</small></td>
+            <td>{{ item.usuario.nombre_completo }}</td>
+            <td><span class="badge info">{{ item.rol_principal.nombre_rol if item.rol_principal else 'Sin rol' }}</span></td>
+            <td><span class="badge {{ 'activo' if item.usuario.activo else 'error' }}">{{ 'Activo' if item.usuario.activo else 'Inactivo' }}</span></td>
+            <td>{{ item.usuario.ultimo_login.strftime('%Y-%m-%d %H:%M') if item.usuario.ultimo_login else 'Sin acceso' }}</td>
+            <td class="acciones-tabla">
+                <a class="boton secundario compacto" href="{{ url_for('usuarios.editar', id_usuario=item.usuario.id_usuario) }}">Editar</a>
+                <form method="post" action="{{ url_for('usuarios.estado', id_usuario=item.usuario.id_usuario) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="activo" value="{{ '0' if item.usuario.activo else '1' }}">
+                    <button class="boton {{ 'peligro' if item.usuario.activo else 'secundario' }} compacto" type="submit" data-confirmar data-titulo="{{ 'Desactivar usuario' if item.usuario.activo else 'Activar usuario' }}" data-mensaje="El cambio se aplicara inmediatamente a su acceso.">{{ 'Desactivar' if item.usuario.activo else 'Activar' }}</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}<tr><td colspan="6" class="estado-vacio">No hay usuarios para los filtros seleccionados.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if resultado.total_paginas > 1 %}
+<nav class="paginacion" aria-label="Paginacion">
+    {% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('usuarios.listado', pagina=resultado.pagina-1, estado=filtros.estado, rol=filtros.rol, buscar=filtros.buscar) }}">Anterior</a>{% endif %}
+    <span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>
+    {% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('usuarios.listado', pagina=resultado.pagina+1, estado=filtros.estado, rol=filtros.rol, buscar=filtros.buscar) }}">Siguiente</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-14 - Hito 3: autenticacion, usuarios, roles y permisos
+
+### Cerrado
+
+* Se implemento login hibrido aislado: `SUPER_ADMIN_ENV` desde configuracion segura y usuarios activos SQL con hashes Werkzeug compatibles.
+* La sesion conserva identidad minima, se rota en login/logout y reconstruye roles/permisos efectivos de usuarios SQL en cada request.
+* Se incorporaron autorizacion backend, CSRF en escrituras, destino `next` local y mensajes de login sin enumeracion.
+* Se implementaron listado, filtros, creacion, edicion, password opcional, activacion/desactivacion y asignacion transaccional de rol.
+* Se preservaron jerarquia de `SUPER_ADMIN`, proteccion del ultimo administrador y prohibicion de auto desactivacion.
+* Roles y permisos se muestran como matriz de solo lectura obtenida del catalogo vigente; no se agregaron permisos ni se modifico bootstrap.
+* Auditoria usa columnas canonicas y excluye passwords, hashes, tokens y secretos.
+* Se agregaron templates responsive y pruebas de login, logout, sesion, CSRF, autorizacion, usuarios, rollback y sanitizacion. Resultado final: 69 pruebas reconstruidas y 95 pruebas totales aprobadas.
+* El cierre formal agrega pruebas explicitas para revocar una sesion abierta tras desactivar la cuenta, separar `SUPER_ADMIN` de `SUPER_ADMIN_ENV` y confirmar que la identidad de entorno no falsea la proteccion del ultimo administrador SQL.
+* Validaciones adicionales aprobadas: `compileall`, 33 templates, 3 archivos JavaScript, Docker Compose, build de imagenes `web`/`worker` y bootstraps `--check` sin SQL.
+* No se modificaron `app/`, `run.py`, `scheduler_worker.py`, `.env`, `.env.docker`, `database/release/` ni `database/bootstrap/`; no se ejecuto SQL ni Factory Reset.
+* Hito 3 queda cerrado formalmente. Hito 4 no fue iniciado.
+
 ## 2026-08-14 - Hito 2: persistencia y repositorios fundacionales
 
 ### Cerrado

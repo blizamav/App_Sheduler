@@ -13,17 +13,27 @@ def _app(configuracion):
     )
 
 
-def test_fabrica_renderiza_shell_y_no_registra_modulos_funcionales(configuracion):
+def test_fabrica_registra_hito_3_y_protege_panel(configuracion):
     app = _app(configuracion)
     cliente = app.test_client()
 
     respuesta = cliente.get("/")
 
-    assert respuesta.status_code == 200
-    assert b"Base t\xc3\xa9cnica" in respuesta.data
-    assert b'name="csrf-token"' in respuesta.data
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/login?next=/")
     reglas = {regla.rule for regla in app.url_map.iter_rules()}
-    assert reglas == {"/", "/salud", "/static-reconstruccion/<path:filename>"}
+    assert reglas == {
+        "/",
+        "/login",
+        "/logout",
+        "/salud",
+        "/seguridad/roles-permisos",
+        "/static-reconstruccion/<path:filename>",
+        "/usuarios/",
+        "/usuarios/<int:id_usuario>/editar",
+        "/usuarios/<int:id_usuario>/estado",
+        "/usuarios/nuevo",
+    }
 
 
 def test_healthcheck_no_requiere_sql(configuracion):
@@ -62,7 +72,7 @@ def test_csrf_acepta_token_de_sesion(configuracion):
         return jsonify({"estado": "OK"})
 
     cliente = app.test_client()
-    cliente.get("/")
+    cliente.get("/login")
     with cliente.session_transaction() as sesion:
         token = sesion["_csrf"]["token"]
 

@@ -6,6 +6,8 @@ from collections.abc import Mapping
 
 from flask import Flask
 
+from app_scheduler.compartido.autorizacion import iniciar_autorizacion
+from app_scheduler.compartido.base_datos import ProveedorConexionesSQLServer
 from app_scheduler.compartido.logging import configurar_logging
 from app_scheduler.configuracion import ConfiguracionAplicacion
 from app_scheduler.extensiones import iniciar_extensiones
@@ -14,8 +16,9 @@ from app_scheduler.extensiones import iniciar_extensiones
 def crear_aplicacion(
     configuracion: ConfiguracionAplicacion | None = None,
     *,
-    validar_capacidad: str = "web",
+    validar_capacidad: str = "autenticacion",
     ajustes: Mapping[str, object] | None = None,
+    proveedor_sql=None,
 ) -> Flask:
     """Crea un runtime aislado y testeable sin registrar modulos historicos."""
     configuracion = configuracion or ConfiguracionAplicacion.desde_entorno()
@@ -43,9 +46,29 @@ def crear_aplicacion(
 
     iniciar_extensiones(app)
 
+    proveedor_sql = proveedor_sql or ProveedorConexionesSQLServer(configuracion)
+    from app_scheduler.modulos.autenticacion.casos_uso import ServicioAutenticacion
+    from app_scheduler.modulos.usuarios.casos_uso import ServicioUsuarios
+
+    servicio_autenticacion = ServicioAutenticacion(
+        configuracion,
+        proveedor_sql,
+        logger=app.logger,
+    )
+    app.extensions["proveedor_sql"] = proveedor_sql
+    app.extensions["servicio_autenticacion"] = servicio_autenticacion
+    app.extensions["servicio_usuarios"] = ServicioUsuarios(proveedor_sql)
+    iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
+
     from app_scheduler.modulos.base.rutas import bp_base
+    from app_scheduler.modulos.autenticacion.rutas import bp_autenticacion
+    from app_scheduler.modulos.seguridad.rutas import bp_seguridad
+    from app_scheduler.modulos.usuarios.rutas import bp_usuarios
 
     app.register_blueprint(bp_base)
+    app.register_blueprint(bp_autenticacion)
+    app.register_blueprint(bp_usuarios)
+    app.register_blueprint(bp_seguridad)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

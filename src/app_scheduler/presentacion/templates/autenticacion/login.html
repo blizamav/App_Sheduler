@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block titulo %}Iniciar sesion | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/seguridad.css') }}">{% endblock %}
+
+{% block contenido_publico %}
+<section class="login-panel" aria-labelledby="tituloLogin">
+    <header class="login-marca">
+        <span class="marca-sigla">AS</span>
+        <div><strong>APP Scheduler</strong><span>Control operativo TI</span></div>
+    </header>
+    <div class="login-cuerpo">
+        <p class="eyebrow">Acceso seguro</p>
+        <h1 id="tituloLogin">Iniciar sesion</h1>
+        <p class="texto-secundario">Ingresa tus credenciales de APP Scheduler.</p>
+        <form class="formulario" method="post" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ siguiente }}">
+            <label class="campo"><span>Usuario</span><input name="usuario" autocomplete="username" maxlength="100" required autofocus></label>
+            <label class="campo"><span>Contrasena</span><input type="password" name="password" autocomplete="current-password" required></label>
+            <button class="boton primario ancho" type="submit">Ingresar</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -9,7 +9,8 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 0 - Inventario y arquitectura: CERRADO.
 * Hito 1 - Base del proyecto y configuracion: CERRADO.
 * Hito 2 - Base de datos y repositorios funcionales: CERRADO.
-* Hito 3 - Autenticacion, usuarios, roles y permisos: PENDIENTE, no iniciado.
+* Hito 3 - Autenticacion, usuarios, roles y permisos: CERRADO.
+* Hito 4 - Clientes, categorias y tipos: NO INICIADO.
 
 Fuentes maestras de la reconstruccion:
 
@@ -20,7 +21,17 @@ Fuentes maestras de la reconstruccion:
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; no contiene todavia modulos funcionales ni reemplaza las rutas vigentes.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 3 incorpora login, sesion, autorizacion y usuarios sin reemplazar las rutas historicas vigentes.
+
+Validacion aislada del Hito 3:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m pytest -q tests/reconstruccion
+python -m app_scheduler.web --check
+```
+
+El detalle funcional y la matriz de permisos estan en [Autenticacion y usuarios de la reconstruccion](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md).
 
 ## Capacidades de referencia
 

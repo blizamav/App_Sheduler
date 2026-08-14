@@ -1,0 +1,12 @@
+{% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% if mensajes %}
+    <section class="alertas" aria-live="polite">
+        {% for categoria, mensaje in mensajes %}
+        <div class="alerta {{ categoria }}" data-alerta>
+            <span>{{ mensaje }}</span>
+            <button class="boton-icono compacto" type="button" data-alerta-cerrar aria-label="Cerrar mensaje">X</button>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+{% endwith %}

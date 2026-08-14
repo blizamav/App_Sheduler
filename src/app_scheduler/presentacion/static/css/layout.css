@@ -113,6 +113,26 @@
     font-weight: 700;
 }
 
+.topbar-identidad span:last-child {
+    display: grid;
+}
+
+.topbar-identidad small {
+    color: var(--color-texto-suave);
+    font-size: .68rem;
+    font-weight: 600;
+}
+
+.topbar-acciones {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-4);
+}
+
+.boton-menu {
+    min-width: 4.5rem;
+}
+
 .estado-dot {
     width: 9px;
     height: 9px;
@@ -171,5 +191,9 @@
     .encabezado-pagina {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .topbar-identidad {
+        display: none;
     }
 }

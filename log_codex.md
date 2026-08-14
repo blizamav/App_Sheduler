@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0, 1 y 2 cerrados; Hito 3 no iniciado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0, 1, 2 y 3 cerrados; Hito 4 no iniciado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 2 cerrado, sin cutover.
+* Fase actual: Reconstruccion limpia - Hito 3 cerrado, sin cutover.
 * Ultima actualizacion: 2026-08-14
 
 ## 2. Decisiones tecnicas vigentes
@@ -63,7 +63,7 @@
 ## 3. Estructura actual del proyecto
 
 * Runtime historico activo: `app/`, `run.py` y `scheduler_worker.py`.
-* Runtime reconstruido aislado: `src/app_scheduler/`, con infraestructura transversal de Hito 1 y sin modulos funcionales activos.
+* Runtime reconstruido aislado: `src/app_scheduler/`, con infraestructura Hitos 1-2 y seguridad funcional de Hito 3.
 * Pruebas: `tests/reconstruccion/` para la nueva base y pruebas historicas Factory Reset bajo `tests/`.
 * SQL: release protegido, bootstrap limpio, Factory Reset in-place, correctivos incrementales y legado historico separados bajo `database/`.
 * Archivos principales: `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, plantillas de entorno, Docker, documentacion maestra y bitacora.
@@ -81,7 +81,7 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Esperar autorizacion explicita antes de iniciar Hito 3.
+* Pendiente 1: No iniciar Hito 4 sin autorizacion explicita.
 * Pendiente 2: El contrato persistente del motor unico se definira con su modulo; Hito 2 no crea una tabla anticipada sin caso de uso aprobado.
 * Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
 * Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
@@ -89,6 +89,22 @@
 * Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 3
+
+* Arquitectura: modulos aislados de autenticacion, usuarios y seguridad sobre la fabrica, CSRF, identidad, UoW y repositorios existentes.
+* Autenticacion: prioridad `SUPER_ADMIN_ENV`, fallback a usuarios SQL activos, hash Werkzeug compatible, mensaje generico y ultimo login transaccional.
+* Sesion: rotacion mediante limpieza completa, payload minimo y recarga por request de roles/permisos SQL; logout sin identidad residual.
+* Usuarios: listado paginado/filtrado, alta, edicion, password opcional, activacion/desactivacion y un rol operativo activo por usuario.
+* Seguridad: `PANEL_VER` y `USUARIOS_ADMIN` validados en backend, jerarquia `SUPER_ADMIN`, open redirect bloqueado y CSRF en todo POST.
+* Cierre critico: tests demuestran revocacion de sesion al desactivar usuario y separacion estricta entre rol SQL `SUPER_ADMIN` e identidad `SUPER_ADMIN_ENV`; esta ultima no cuenta como administrador interno.
+* Roles/permisos: matriz vigente de solo lectura; sin editor de catalogo ni cambios a seeds/bootstrap.
+* Auditoria: eventos de login/logout/usuarios con columnas canonicas y sanitizacion recursiva de secretos.
+* UI: login corporativo, shell con identidad/logout, usuarios responsive, formularios, filtros y matriz de acceso.
+* Pruebas: 69 pruebas reconstruidas y 95 totales aprobadas; `compileall`, 33 templates, 3 JavaScript, Compose, builds Docker web/worker y checks de entrypoints aprobados sin SQL real.
+* UI: validacion aislada en 1440x900 y 390x844 para login, usuarios, crear, editar y matriz; sin overflow global, con sidebar movil y scroll interno de tabla operativos.
+* Alcance protegido: `app/`, `run.py`, `scheduler_worker.py`, `.env`, `.env.docker`, `database/release/` y `database/bootstrap/` intactos; no se ejecuto SQL, Factory Reset ni Hito 4.
+* Estado: Hito 3 cerrado formalmente; runtime historico activo, reconstruccion aislada y Hito 4 no iniciado.
 
 ### 2026-08-14 - Reconstruccion limpia / Hito 2
 

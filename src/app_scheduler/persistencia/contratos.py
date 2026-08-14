@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Protocol, TypeVar
+from typing import Protocol, Sequence, TypeVar
 
 from app_scheduler.persistencia.modelos import (
     CredencialUsuario,
@@ -12,6 +12,7 @@ from app_scheduler.persistencia.modelos import (
     Permiso,
     Rol,
     Usuario,
+    EventoAuditoria,
 )
 
 
@@ -31,11 +32,33 @@ class RepositorioUsuariosContrato(Protocol):
         *,
         activo: bool | None = None,
         busqueda: str | None = None,
+        id_rol: int | None = None,
     ) -> Pagina[Usuario]: ...
 
     def actualizar_ultimo_login(
         self, id_usuario: int, fecha: datetime, actor: str
     ) -> bool: ...
+
+    def crear(
+        self,
+        usuario: str,
+        nombre_completo: str,
+        email: str | None,
+        password_hash: str,
+        activo: bool,
+        actor: str,
+    ) -> int: ...
+
+    def actualizar(
+        self,
+        id_usuario: int,
+        nombre_completo: str,
+        email: str | None,
+        actor: str,
+        password_hash: str | None = None,
+    ) -> bool: ...
+
+    def cambiar_estado(self, id_usuario: int, activo: bool, actor: str) -> bool: ...
 
 
 class RepositorioSeguridadContrato(Protocol):
@@ -46,6 +69,16 @@ class RepositorioSeguridadContrato(Protocol):
     def obtener_roles_usuario(self, id_usuario: int) -> tuple[Rol, ...]: ...
 
     def obtener_permisos_efectivos(self, id_usuario: int) -> tuple[Permiso, ...]: ...
+
+    def asignar_rol_usuario(self, id_usuario: int, id_rol: int, actor: str) -> None: ...
+
+    def obtener_roles_por_usuarios(
+        self, ids_usuarios: Sequence[int]
+    ) -> dict[int, tuple[Rol, ...]]: ...
+
+
+class RepositorioAuditoriaContrato(Protocol):
+    def registrar(self, evento: EventoAuditoria) -> int: ...
 
 
 class RepositorioCatalogoContrato(Protocol[T]):

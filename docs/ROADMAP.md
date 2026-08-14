@@ -43,15 +43,17 @@ Inventariar el modelo limpio de 33 tablas y consolidar DTO, mapeadores, transacc
 
 Validacion final: delta QA 462/bootstrap 456 reconciliado como seis columnas de auditoria reemplazadas; 22 pruebas nuevas de Hito 2 y 71 pruebas totales aprobadas.
 
-## Pendiente
-
 ### Hito 3 - Autenticacion, usuarios, roles y permisos
 
-Estado: NO INICIADO.
+Estado: CERRADO.
 
-Reimplementar login hibrido, `SUPER_ADMIN_ENV`, usuarios SQL y matriz de autorizacion backend.
+Login hibrido, `SUPER_ADMIN_ENV`, usuarios SQL, sesion minima, autorizacion backend, administracion de usuarios, consulta de roles/permisos y auditoria canonica implementados y validados en `src/app_scheduler/`. La reconstruccion sigue aislada y no existe cutover.
+
+## Pendiente
 
 ### Hito 4 - Clientes, categorias y tipos
+
+Estado: NO INICIADO.
 
 Reimplementar mantenedores, estados, validaciones, dependencias y auditoria.
 

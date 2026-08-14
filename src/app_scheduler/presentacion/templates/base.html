@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/componentes.css') }}">
     {% block estilos %}{% endblock %}
 </head>
-<body>
+{% set identidad_sesion = identidad_actual() %}
+<body class="{% if not identidad_sesion %}pagina-login{% endif %}">
+    {% if identidad_sesion %}
     <div class="app-shell" data-app-shell>
         <div class="sidebar-overlay" data-sidebar-cerrar></div>
         <aside class="sidebar" id="sidebarPrincipal" aria-label="Navegacion principal">
@@ -22,11 +24,22 @@
                 </a>
             </header>
             <nav class="navegacion">
-                <p class="navegacion-grupo">Sistema</p>
-                <a class="navegacion-enlace activo" href="{{ url_for('base.inicio') }}" aria-current="page">
-                    <span class="navegacion-icono" aria-hidden="true">▦</span>
-                    <span>Base tecnica</span>
+                <p class="navegacion-grupo">Operacion</p>
+                <a class="navegacion-enlace {% if request.endpoint == 'base.inicio' %}activo{% endif %}" href="{{ url_for('base.inicio') }}">
+                    <span class="navegacion-icono" aria-hidden="true">P</span>
+                    <span>Panel</span>
                 </a>
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
+                <p class="navegacion-grupo">Administracion</p>
+                <a class="navegacion-enlace {% if request.blueprint == 'usuarios' %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}">
+                    <span class="navegacion-icono" aria-hidden="true">U</span>
+                    <span>Usuarios</span>
+                </a>
+                <a class="navegacion-enlace {% if request.blueprint == 'seguridad' %}activo{% endif %}" href="{{ url_for('seguridad.roles_permisos') }}">
+                    <span class="navegacion-icono" aria-hidden="true">R</span>
+                    <span>Roles y permisos</span>
+                </a>
+                {% endif %}
             </nav>
             <footer class="sidebar-footer">
                 <span class="badge info">Reconstruccion</span>
@@ -36,31 +49,31 @@
 
         <main class="contenido">
             <header class="topbar">
-                <button class="boton-icono" type="button" data-sidebar-abrir aria-label="Abrir navegacion">☰</button>
-                <div class="topbar-identidad">
-                    <span class="estado-dot" aria-hidden="true"></span>
-                    <span>{{ config.APP_ENV }}</span>
+                <button class="boton secundario compacto boton-menu" type="button" data-sidebar-abrir aria-label="Abrir navegacion">Menu</button>
+                <div class="topbar-acciones">
+                    <div class="topbar-identidad">
+                        <span class="estado-dot" aria-hidden="true"></span>
+                        <span><strong>{{ identidad_sesion.nombre }}</strong><small>{{ identidad_sesion.tipo_identidad|replace('_', ' ')|title }}</small></span>
+                    </div>
+                    <form method="post" action="{{ url_for('autenticacion.logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="boton secundario compacto" type="submit">Cerrar sesion</button>
+                    </form>
                 </div>
             </header>
 
-            {% with mensajes = get_flashed_messages(with_categories=true) %}
-                {% if mensajes %}
-                <section class="alertas" aria-live="polite">
-                    {% for categoria, mensaje in mensajes %}
-                    <div class="alerta {{ categoria }}" data-alerta>
-                        <span>{{ mensaje }}</span>
-                        <button class="boton-icono compacto" type="button" data-alerta-cerrar aria-label="Cerrar mensaje">×</button>
-                    </div>
-                    {% endfor %}
-                </section>
-                {% endif %}
-            {% endwith %}
-
+            {% include 'base/mensajes.html' %}
             <div class="pagina">
                 {% block contenido %}{% endblock %}
             </div>
         </main>
     </div>
+    {% else %}
+    <main class="login-shell">
+        {% include 'base/mensajes.html' %}
+        {% block contenido_publico %}{% endblock %}
+    </main>
+    {% endif %}
 
     <div class="modal-overlay" data-modal aria-hidden="true">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">

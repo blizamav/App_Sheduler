@@ -46,6 +46,17 @@
     border-color: var(--color-borde);
 }
 
+.boton.peligro {
+    color: #ffffff;
+    background: var(--color-peligro);
+}
+
+.boton.compacto {
+    min-height: 34px;
+    padding: 5px 10px;
+    font-size: .8rem;
+}
+
 .badge {
     display: inline-flex;
     width: fit-content;

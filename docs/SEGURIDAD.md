@@ -11,7 +11,24 @@ Hito 1 incorpora en `src/app_scheduler/` la base de seguridad del nuevo runtime,
 * Configuracion validada por capacidad: operaciones normales no requieren ni usan la cuenta de mantenimiento.
 * `user_scheduler` queda reservado a operacion normal; `user_scheduler_mantenimiento` se valida solo al habilitar Factory Reset y debe ser `db_owner` exclusivamente en `APP_SCHEDULER_QA`.
 
-Esta infraestructura no implementa aun login, usuarios o matriz funcional del runtime reconstruido; corresponden a Hito 3. El runtime historico mantiene su comportamiento hasta el cutover autorizado.
+Hito 3 reutiliza esta infraestructura para login, usuarios y matriz funcional dentro del runtime reconstruido. El runtime historico mantiene su comportamiento hasta el cutover autorizado.
+
+## Hito 3 - Seguridad reconstruida
+
+* El login valida primero `SUPER_ADMIN_ENV` desde configuracion y luego el usuario interno SQL.
+* Usuario inexistente, password incorrecto, cuenta inactiva o bloqueada reciben el mismo mensaje publico.
+* Los hashes Werkzeug existentes se verifican con `check_password_hash`; las altas/cambios usan `generate_password_hash`.
+* Password y hash no se guardan en sesion, auditoria, respuesta ni representacion de DTO.
+* La sesion se limpia al autenticar y al salir. Solo conserva tipo, ID y login; permisos SQL se recargan desde la base.
+* Una cuenta SQL desactivada, bloqueada o retirada pierde acceso en el siguiente request protegido.
+* Todos los POST usan el CSRF global del Hito 1 y `next` acepta solo destinos locales.
+* `/usuarios/*` y `/seguridad/roles-permisos` validan `USUARIOS_ADMIN` en backend.
+* No se implementa editor arbitrario del catalogo de permisos ni eliminacion de usuarios en Hito 3.
+* No existe rate limit distribuido vigente. Queda documentado como deuda legitima de hardening; el modelo conserva `intentos_fallidos`.
+
+`SUPER_ADMIN_ENV` es una identidad web de recuperacion, no `user_scheduler`, no `user_scheduler_mantenimiento` y no un login SQL. Puede iniciar sesion si SQL no esta disponible, pero las pantallas que consultan SQL seguiran respondiendo con error controlado.
+
+El rol SQL `SUPER_ADMIN` y `SUPER_ADMIN_ENV` no son intercambiables: el primero pertenece a `usuarios_roles`; el segundo tiene `id_usuario = None`. La proteccion del ultimo `SUPER_ADMIN` cuenta exclusivamente usuarios internos activos, incluso cuando la operacion la realiza `SUPER_ADMIN_ENV`.
 
 ## Manejo de sesiones
 

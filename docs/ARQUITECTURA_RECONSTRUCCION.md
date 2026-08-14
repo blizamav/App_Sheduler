@@ -184,6 +184,15 @@ Se conserva login hibrido:
 4. Cada ruta/caso de uso exige permisos backend.
 5. La UI solo refleja permisos ya concedidos; ocultar un control no autoriza.
 
+Implementacion Hito 3:
+
+* `modulos/autenticacion/` coordina login/logout y no contiene SQL directo.
+* `modulos/usuarios/` concentra validacion, hashing, jerarquia y UoW para usuario + rol + auditoria.
+* `compartido/autorizacion.py` conserva una sola identidad inmutable y una sola familia de decoradores.
+* La cookie guarda solo tipo, `id_usuario` y login; roles/permisos de usuarios SQL se recargan en cada request protegido.
+* `SUPER_ADMIN_ENV` se reconstruye desde configuracion y puede autenticar aunque falle la auditoria SQL; los modulos que requieren datos continuan dependiendo de SQL Server.
+* `RepositorioAuditoria` escribe exclusivamente las columnas canonicas de `auditoria_cambios`.
+
 Hardening del Hito 1:
 
 * CSRF global en toda operacion mutable, incluidas APIs de sesion;
@@ -337,7 +346,7 @@ Cada recurso temporal tendra propietario, ubicacion, criterio de retiro y limpie
 * Forma exacta de la cola persistente de ejecuciones, a cerrar con el modulo del motor unico.
 * Estrategia de migracion/cutover desde QA historica cuando los modulos reconstruidos esten completos.
 * Retencion cuantificada de logs/evidencias/auditoria.
-* Matriz funcional exacta de roles/permisos como contrato del Hito 3; Hito 2 ya consulta el catalogo real sin codificarlo por memoria.
+* Retencion y rate limiting distribuido para autenticacion quedan como hardening posterior; Hito 3 conserva intentos fallidos del modelo vigente sin introducir infraestructura externa.
 
 ## Criterio para cerrar Hito 1
 
@@ -345,4 +354,4 @@ Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime recons
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 permanece no iniciado.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 quedo cerrado con autenticacion, usuarios, roles/permisos y auditoria implementados en el runtime aislado; Hito 4 no fue iniciado.

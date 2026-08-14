@@ -86,6 +86,25 @@ class Permiso:
 
 
 @dataclass(frozen=True, slots=True)
+class EventoAuditoria:
+    usuario: str
+    accion: str
+    entidad: str
+    id_usuario: int | None = None
+    id_entidad: str | None = None
+    nombre_entidad: str | None = None
+    descripcion: str | None = None
+    valores_antes: str | None = None
+    valores_despues: str | None = None
+    ip_origen: str | None = None
+    user_agent: str | None = None
+    resultado: str = "OK"
+    modulo: str = "SEGURIDAD"
+    ruta: str | None = None
+    metodo_http: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class Cliente:
     id_cliente: int
     nombre: str
