@@ -1,0 +1,40 @@
+.catalogos-filtros {
+    grid-template-columns: minmax(240px, 2fr) minmax(150px, 1fr) auto auto;
+}
+
+.tabla-catalogos {
+    min-width: 920px;
+}
+
+.tabla-catalogos td:nth-child(2) {
+    min-width: 220px;
+    max-width: 380px;
+    color: var(--color-texto-suave);
+}
+
+.formulario-catalogo {
+    max-width: 900px;
+}
+
+.formulario-catalogo textarea {
+    width: 100%;
+    min-height: 108px;
+    padding: 10px 11px;
+    resize: vertical;
+    color: var(--color-texto);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-sm);
+    background: var(--color-superficie);
+    font: inherit;
+}
+
+.campo small {
+    color: var(--color-texto-suave);
+    font-size: .76rem;
+}
+
+@media (max-width: 760px) {
+    .catalogos-filtros {
+        grid-template-columns: 1fr;
+    }
+}

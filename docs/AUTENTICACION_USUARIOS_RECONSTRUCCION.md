@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-Hito 3 esta cerrado en `src/app_scheduler/`. El runtime historico sigue activo; no existe cutover y Hito 4 no fue iniciado.
+Hito 3 esta cerrado en `src/app_scheduler/`. El runtime historico sigue activo y no existe cutover. Hito 4 se cerro posteriormente reutilizando esta seguridad; Hito 5 no fue iniciado.
 
 Incluye login, logout, sesion, identidad, autorizacion, usuarios, asignacion de rol, consulta de roles/permisos y auditoria de seguridad. No incluye mantenedores, tareas, scripts, scheduler, Graph, papelera ni Factory Reset.
 

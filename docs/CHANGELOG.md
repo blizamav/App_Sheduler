@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-14 - Hito 4: clientes, categorias y tipos
+
+### Cerrado
+
+* Estado: CERRADO; Hito 5 no iniciado.
+* Se extendieron los tres repositorios fundacionales con paginacion, filtros parametrizados, alta, edicion y cambio de estado, sin commits internos.
+* Se agrego `modulos/catalogos/` con especificaciones cerradas para las tres tablas, validacion de longitudes, normalizacion historica, unicidad fisica y traduccion segura de conflictos SQL.
+* Las escrituras coordinan repositorio y auditoria canonica en una sola UoW con rollback integral.
+* Se registraron doce rutas protegidas por `CLIENTES_*`, `CATEGORIAS_*` y `TIPOS_*`; los POST usan CSRF transversal y allowlist de campos editables.
+* Se incorporaron listados, filtros, paginacion, formularios, estados, confirmaciones y navegacion responsive segun permisos.
+* La UI se valido en 1440x900 y 390x844: sin overflow global, tabla con scroll interno, filtros responsive y sidebar movil operativo.
+* La Papelera global no se implemento: los registros retirados siguen excluidos y la unicidad considera filas retiradas para respetar el constraint real.
+* Se agregaron 23 pruebas. `python -m pytest -q tests/reconstruccion` aprueba 92 casos aislados; la metrica oficial `python -m pytest -q` aprueba 118 casos totales sin SQL real ni datos QA.
+* El cierre formal reconcilio el contrato SQL, la matriz exacta de permisos bootstrap, `activo` frente a `eliminado_operativo`, las FK futuras hacia tareas y las validaciones tecnicas.
+* `app/`, `run.py`, `scheduler_worker.py`, `.env`, `.env.docker`, Docker y los tres canales SQL protegidos permanecen intactos.
+
 ## 2026-08-14 - Hito 3: autenticacion, usuarios, roles y permisos
 
 ### Cerrado

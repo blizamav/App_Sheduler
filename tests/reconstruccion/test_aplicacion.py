@@ -13,7 +13,7 @@ def _app(configuracion):
     )
 
 
-def test_fabrica_registra_hito_3_y_protege_panel(configuracion):
+def test_fabrica_registra_hito_4_y_protege_panel(configuracion):
     app = _app(configuracion)
     cliente = app.test_client()
 
@@ -27,12 +27,24 @@ def test_fabrica_registra_hito_3_y_protege_panel(configuracion):
         "/login",
         "/logout",
         "/salud",
+        "/categorias/",
+        "/categorias/<int:id_registro>/editar",
+        "/categorias/<int:id_registro>/estado",
+        "/categorias/nuevo",
+        "/clientes/",
+        "/clientes/<int:id_registro>/editar",
+        "/clientes/<int:id_registro>/estado",
+        "/clientes/nuevo",
         "/seguridad/roles-permisos",
         "/static-reconstruccion/<path:filename>",
         "/usuarios/",
         "/usuarios/<int:id_usuario>/editar",
         "/usuarios/<int:id_usuario>/estado",
         "/usuarios/nuevo",
+        "/tipos/",
+        "/tipos/<int:id_registro>/editar",
+        "/tipos/<int:id_registro>/estado",
+        "/tipos/nuevo",
     }
 
 

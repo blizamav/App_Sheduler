@@ -30,6 +30,21 @@ Hito 3 reutiliza esta infraestructura para login, usuarios y matriz funcional de
 
 El rol SQL `SUPER_ADMIN` y `SUPER_ADMIN_ENV` no son intercambiables: el primero pertenece a `usuarios_roles`; el segundo tiene `id_usuario = None`. La proteccion del ultimo `SUPER_ADMIN` cuenta exclusivamente usuarios internos activos, incluso cuando la operacion la realiza `SUPER_ADMIN_ENV`.
 
+## Hito 4 - Seguridad de catalogos
+
+Estado: CERRADO.
+
+* Clientes usa `CLIENTES_VER`, `CLIENTES_CREAR`, `CLIENTES_EDITAR` y `CLIENTES_ESTADO`.
+* Categorias usa `CATEGORIAS_VER`, `CATEGORIAS_CREAR`, `CATEGORIAS_EDITAR` y `CATEGORIAS_ESTADO`.
+* Tipos usa `TIPOS_VER`, `TIPOS_CREAR`, `TIPOS_EDITAR` y `TIPOS_ESTADO`.
+* `SUPER_ADMIN` y `ADMIN` reciben administracion completa desde bootstrap; `TI` recibe solo lectura; `TERCERO` no recibe permisos de estos catalogos.
+* Cada ruta valida el permiso exacto en backend. El sidebar y los botones solo reflejan esa decision.
+* Todos los POST usan CSRF global; un token valido no reemplaza un permiso ausente.
+* Los formularios mapean solo `nombre` y `descripcion`; IDs, estado, Papelera y campos de auditoria enviados por el navegador se ignoran.
+* SQL usa placeholders y fragmentos dinamicos limitados a tres especificaciones internas inmutables.
+* Los conflictos UNIQUE se convierten en mensajes funcionales sin SQLSTATE, constraint ni detalle ODBC.
+* La auditoria usa solo columnas canonicas y comparte transaccion con el cambio funcional.
+
 ## Manejo de sesiones
 
 Fase 1 usa sesiones Flask protegidas por `APP_SECRET_KEY`.

@@ -48,6 +48,7 @@ def crear_aplicacion(
 
     proveedor_sql = proveedor_sql or ProveedorConexionesSQLServer(configuracion)
     from app_scheduler.modulos.autenticacion.casos_uso import ServicioAutenticacion
+    from app_scheduler.modulos.catalogos.casos_uso import ServicioCatalogos
     from app_scheduler.modulos.usuarios.casos_uso import ServicioUsuarios
 
     servicio_autenticacion = ServicioAutenticacion(
@@ -57,16 +58,19 @@ def crear_aplicacion(
     )
     app.extensions["proveedor_sql"] = proveedor_sql
     app.extensions["servicio_autenticacion"] = servicio_autenticacion
+    app.extensions["servicio_catalogos"] = ServicioCatalogos(proveedor_sql)
     app.extensions["servicio_usuarios"] = ServicioUsuarios(proveedor_sql)
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
     from app_scheduler.modulos.autenticacion.rutas import bp_autenticacion
+    from app_scheduler.modulos.catalogos.rutas import bp_catalogos
     from app_scheduler.modulos.seguridad.rutas import bp_seguridad
     from app_scheduler.modulos.usuarios.rutas import bp_usuarios
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
+    app.register_blueprint(bp_catalogos)
     app.register_blueprint(bp_usuarios)
     app.register_blueprint(bp_seguridad)
     app.logger.info(

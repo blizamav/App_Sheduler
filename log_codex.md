@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0, 1, 2 y 3 cerrados; Hito 4 no iniciado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0, 1, 2, 3 y 4 cerrados. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 3 cerrado, sin cutover.
+* Fase actual: Reconstruccion limpia - Hito 4 cerrado, sin cutover; Hito 5 no iniciado.
 * Ultima actualizacion: 2026-08-14
 
 ## 2. Decisiones tecnicas vigentes
@@ -63,7 +63,7 @@
 ## 3. Estructura actual del proyecto
 
 * Runtime historico activo: `app/`, `run.py` y `scheduler_worker.py`.
-* Runtime reconstruido aislado: `src/app_scheduler/`, con infraestructura Hitos 1-2 y seguridad funcional de Hito 3.
+* Runtime reconstruido aislado: `src/app_scheduler/`, con infraestructura Hitos 1-2, seguridad funcional de Hito 3 y catalogos base de Hito 4.
 * Pruebas: `tests/reconstruccion/` para la nueva base y pruebas historicas Factory Reset bajo `tests/`.
 * SQL: release protegido, bootstrap limpio, Factory Reset in-place, correctivos incrementales y legado historico separados bajo `database/`.
 * Archivos principales: `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, plantillas de entorno, Docker, documentacion maestra y bitacora.
@@ -81,7 +81,7 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: No iniciar Hito 4 sin autorizacion explicita.
+* Pendiente 1: Esperar autorizacion antes de iniciar Hito 5.
 * Pendiente 2: El contrato persistente del motor unico se definira con su modulo; Hito 2 no crea una tabla anticipada sin caso de uso aprobado.
 * Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
 * Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
@@ -89,6 +89,20 @@
 * Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 4
+
+* Fuente de verdad: esquema bootstrap/release de `clientes`, `categorias` y `tipos`, mantenedor historico, permisos bootstrap y documentacion de Papelera revisados sin ejecutar SQL.
+* Persistencia: repositorios Hito 2 extendidos con listado paginado, filtros, alta, edicion y estado; SQL explicito/parametrizado y cero commits internos.
+* Casos de uso: validacion backend, longitudes reales, normalizacion NFKD historica, duplicados incluida Papelera y mensajes seguros para conflictos UNIQUE.
+* Transacciones: dato y auditoria canonica comparten UoW; fallo de persistencia o auditoria produce rollback.
+* Seguridad: doce rutas con permisos exactos, CSRF transversal, allowlist de campos, `SUPER_ADMIN_ENV` por permisos efectivos comunes y sin excepciones por catalogo.
+* UI: listados, filtros, paginacion, formularios, estados, confirmaciones y sidebar condicional para Clientes, Categorias y Tipos.
+* Validacion visual: 1440x900 y 390x844 sin overflow global; tabla con scroll interno, filtros apilados y sidebar movil verificados con servidor aislado ya retirado.
+* Pruebas: 23 pruebas nuevas. El comando acotado `python -m pytest -q tests/reconstruccion` aprueba 92 casos; la metrica oficial de cierre `python -m pytest -q` aprueba 118 casos totales sin SQL real ni datos QA.
+* Limites: sin eliminacion operativa/permanente ni Papelera global; Hito 5 no iniciado.
+* Cierre: contrato SQL, permisos bootstrap exactos, seguridad, transacciones, auditoria, FK hacia tareas, UI responsive y housekeeping reconciliados.
+* Alcance protegido: runtime historico, `.env`, `.env.docker`, Docker, release, bootstrap y Factory Reset intactos; no se ejecuto SQL ni se modifico QA.
 
 ### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 3
 

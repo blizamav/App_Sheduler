@@ -29,8 +29,9 @@
                     <span class="navegacion-icono" aria-hidden="true">P</span>
                     <span>Panel</span>
                 </a>
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('CLIENTES_VER') or identidad_sesion.tiene_permiso('CATEGORIAS_VER') or identidad_sesion.tiene_permiso('TIPOS_VER') %}
                 <p class="navegacion-grupo">Administracion</p>
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
                 <a class="navegacion-enlace {% if request.blueprint == 'usuarios' %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}">
                     <span class="navegacion-icono" aria-hidden="true">U</span>
                     <span>Usuarios</span>
@@ -39,6 +40,25 @@
                     <span class="navegacion-icono" aria-hidden="true">R</span>
                     <span>Roles y permisos</span>
                 </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('CLIENTES_VER') %}
+                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.clientes_') %}activo{% endif %}" href="{{ url_for('catalogos.clientes_listado') }}">
+                    <span class="navegacion-icono" aria-hidden="true">C</span>
+                    <span>Clientes</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('CATEGORIAS_VER') %}
+                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.categorias_') %}activo{% endif %}" href="{{ url_for('catalogos.categorias_listado') }}">
+                    <span class="navegacion-icono" aria-hidden="true">G</span>
+                    <span>Categorias</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('TIPOS_VER') %}
+                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.tipos_') %}activo{% endif %}" href="{{ url_for('catalogos.tipos_listado') }}">
+                    <span class="navegacion-icono" aria-hidden="true">T</span>
+                    <span>Tipos</span>
+                </a>
+                {% endif %}
                 {% endif %}
             </nav>
             <footer class="sidebar-footer">

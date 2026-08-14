@@ -129,6 +129,54 @@ def test_catalogos_buscan_clave_fisica_incluyendo_papelera(
     assert parametros == ("REGISTRO",)
 
 
+@pytest.mark.parametrize(
+    ("repositorio", "tabla"),
+    [
+        (RepositorioClientes, "clientes"),
+        (RepositorioCategorias, "categorias"),
+        (RepositorioTipos, "tipos"),
+    ],
+)
+def test_catalogos_listan_paginado_con_filtros_parametrizados(repositorio, tabla):
+    conexion = ConexionProgramada(
+        ResultadoSQL(fila=(1,)),
+        ResultadoSQL(filas=[(9, "Registro", "REGISTRO", None, 0, FECHA, None, 1)]),
+    )
+
+    pagina = repositorio(conexion).listar_paginado(
+        Paginacion(pagina=2, por_pagina=25), activo=True, busqueda="A%_"
+    )
+
+    sql_total, parametros_total = conexion.ejecuciones[0]
+    sql_lista, parametros_lista = conexion.ejecuciones[1]
+    assert pagina.total == 1 and pagina.pagina == 2
+    assert f"FROM dbo.{tabla}" in sql_total and f"FROM dbo.{tabla}" in sql_lista
+    assert "A%_" not in sql_total and "A%_" not in sql_lista
+    assert parametros_total == (1, "%A~%~_%", "%A~%~_%")
+    assert parametros_lista == (*parametros_total, 25, 25)
+    assert "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY" in sql_lista
+
+
+def test_catalogo_crea_actualiza_y_cambia_estado_sin_commit_interno():
+    conexion = ConexionProgramada(
+        ResultadoSQL(fila=(12,)),
+        ResultadoSQL(rowcount=1),
+        ResultadoSQL(rowcount=1),
+    )
+    repositorio = RepositorioClientes(conexion)
+
+    identificador = repositorio.crear("Cliente", "CLIENTE", "Descripcion", "actor")
+    actualizado = repositorio.actualizar(12, "Cliente 2", "CLIENTE 2", None, "actor")
+    cambiado = repositorio.cambiar_estado(12, False, "actor")
+
+    assert identificador == 12 and actualizado is True and cambiado is True
+    assert conexion.commits == 0
+    assert conexion.ejecuciones[0][1] == ("Cliente", "CLIENTE", "Descripcion", "actor")
+    assert conexion.ejecuciones[1][1] == ("Cliente 2", "CLIENTE 2", None, "actor", 12)
+    assert conexion.ejecuciones[2][1] == (0, "actor", 12)
+    assert all("SELECT *" not in sql.upper() for sql, _ in conexion.ejecuciones)
+
+
 def test_repositorio_no_confirma_y_uow_coordina_commit():
     conexion = ConexionProgramada(ResultadoSQL(rowcount=1))
     proveedor = ProveedorProgramado(conexion)

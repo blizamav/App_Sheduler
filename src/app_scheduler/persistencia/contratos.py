@@ -89,3 +89,30 @@ class RepositorioCatalogoContrato(Protocol[T]):
     def listar(
         self, *, solo_activos: bool = False, incluir_eliminados: bool = False
     ) -> tuple[T, ...]: ...
+
+    def listar_paginado(
+        self,
+        paginacion: Paginacion,
+        *,
+        activo: bool | None = None,
+        busqueda: str | None = None,
+    ) -> Pagina[T]: ...
+
+    def crear(
+        self,
+        nombre: str,
+        nombre_normalizado: str,
+        descripcion: str | None,
+        actor: str,
+    ) -> int: ...
+
+    def actualizar(
+        self,
+        identificador: int,
+        nombre: str,
+        nombre_normalizado: str,
+        descripcion: str | None,
+        actor: str,
+    ) -> bool: ...
+
+    def cambiar_estado(self, identificador: int, activo: bool, actor: str) -> bool: ...

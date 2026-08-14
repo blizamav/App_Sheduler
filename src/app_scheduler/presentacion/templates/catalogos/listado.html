@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block titulo %}{{ config.plural }} | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/catalogos.css') }}">{% endblock %}
+
+{% block contenido %}
+{% set identidad = identidad_actual() %}
+<header class="encabezado-pagina">
+    <div>
+        <p class="eyebrow">Catalogos base</p>
+        <h1>{{ config.plural }}</h1>
+        <p class="texto-secundario">{{ resultado.total }} registros operativos</p>
+    </div>
+    {% if identidad.tiene_permiso(config.permiso_crear) %}
+    <a class="boton primario" href="{{ url_for('catalogos.' ~ config.clave ~ '_nuevo') }}">Crear {{ config.singular }}</a>
+    {% endif %}
+</header>
+
+<form class="barra-filtros catalogos-filtros" method="get">
+    <label class="campo"><span>Buscar</span><input name="buscar" value="{{ filtros.buscar }}" maxlength="150" placeholder="Nombre o descripcion"></label>
+    <label class="campo"><span>Estado</span><select name="estado"><option value="">Todos</option><option value="activo" {% if filtros.estado == 'activo' %}selected{% endif %}>Activos</option><option value="inactivo" {% if filtros.estado == 'inactivo' %}selected{% endif %}>Inactivos</option></select></label>
+    <button class="boton secundario" type="submit">Filtrar</button>
+    <a class="boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Limpiar</a>
+</form>
+
+<div class="tabla-contenedor">
+    <table class="tabla-base tabla-catalogos">
+        <thead><tr><th>Nombre</th><th>Descripcion</th><th>Estado</th><th>Creacion</th><th>Actualizacion</th><th>Acciones</th></tr></thead>
+        <tbody>
+        {% for item in resultado.elementos %}
+        {% set id_registro = item|attr(config.atributo_id) %}
+        <tr>
+            <td><strong>{{ item.nombre }}</strong></td>
+            <td>{{ item.descripcion or 'Sin descripcion' }}</td>
+            <td><span class="badge {{ 'activo' if item.activo else 'error' }}">{{ 'Activo' if item.activo else 'Inactivo' }}</span></td>
+            <td>{{ item.fecha_creacion.strftime('%Y-%m-%d %H:%M') if item.fecha_creacion else '-' }}</td>
+            <td>{{ item.fecha_actualizacion.strftime('%Y-%m-%d %H:%M') if item.fecha_actualizacion else 'Sin cambios' }}</td>
+            <td class="acciones-tabla">
+                {% if identidad.tiene_permiso(config.permiso_editar) %}
+                <a class="boton secundario compacto" href="{{ url_for('catalogos.' ~ config.clave ~ '_editar', id_registro=id_registro) }}">Editar</a>
+                {% endif %}
+                {% if identidad.tiene_permiso(config.permiso_estado) %}
+                <form method="post" action="{{ url_for('catalogos.' ~ config.clave ~ '_estado', id_registro=id_registro) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="activo" value="{{ '0' if item.activo else '1' }}">
+                    <button class="boton {{ 'peligro' if item.activo else 'secundario' }} compacto" type="submit" data-confirmar data-titulo="{{ 'Desactivar' if item.activo else 'Activar' }} {{ config.singular }}" data-mensaje="{{ 'El registro dejara de estar disponible para nuevas tareas.' if item.activo else 'El registro volvera a estar disponible para nuevas tareas.' }}">{{ 'Desactivar' if item.activo else 'Activar' }}</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="estado-vacio">No hay registros para mostrar.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if resultado.total_paginas > 1 %}
+<nav class="paginacion" aria-label="Paginacion">
+    {% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado', pagina=resultado.pagina-1, estado=filtros.estado, buscar=filtros.buscar) }}">Anterior</a>{% endif %}
+    <span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>
+    {% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado', pagina=resultado.pagina+1, estado=filtros.estado, buscar=filtros.buscar) }}">Siguiente</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

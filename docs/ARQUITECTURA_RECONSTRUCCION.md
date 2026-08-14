@@ -193,6 +193,14 @@ Implementacion Hito 3:
 * `SUPER_ADMIN_ENV` se reconstruye desde configuracion y puede autenticar aunque falle la auditoria SQL; los modulos que requieren datos continuan dependiendo de SQL Server.
 * `RepositorioAuditoria` escribe exclusivamente las columnas canonicas de `auditoria_cambios`.
 
+Implementacion Hito 4:
+
+* `modulos/catalogos/` concentra especificaciones cerradas y casos de uso para clientes, categorias y tipos; no acepta tablas o columnas desde HTTP.
+* Los repositorios fundacionales se extienden con paginacion, filtros y escrituras parametrizadas, siempre sin commit interno.
+* Cada alta, edicion o cambio de estado comparte UoW con `RepositorioAuditoria`; un fallo de cualquier parte revierte la operacion completa.
+* Las doce rutas conservan permisos por modulo/accion y reciben CSRF desde la proteccion transversal.
+* `eliminado_operativo` se respeta como frontera con la futura Papelera, que no se implementa en este hito.
+
 Hardening del Hito 1:
 
 * CSRF global en toda operacion mutable, incluidas APIs de sesion;
@@ -354,4 +362,4 @@ Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime recons
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 quedo cerrado con autenticacion, usuarios, roles/permisos y auditoria implementados en el runtime aislado; Hito 4 no fue iniciado.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 quedo cerrado con autenticacion, usuarios, roles/permisos y auditoria implementados en el runtime aislado. Hito 4 quedo cerrado con clientes, categorias y tipos sobre la persistencia y seguridad comunes; Hito 5 no fue iniciado.

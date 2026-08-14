@@ -14,7 +14,7 @@ Estado: Hito 1 cerrado; runtime historico aun activo.
 | Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
 | Worker base | Validar configuracion y contrato de motor unico | No expone rutas | No ejecuta SQL | Implementado sin scheduler/motor |
 
-El paquete nuevo vive en `src/app_scheduler/`. Hito 3 registra autenticacion, usuarios y consulta de seguridad. Mantenedores, tareas, scripts, ejecuciones, scheduler, feriados, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+El paquete nuevo vive en `src/app_scheduler/`. Hito 3 registra autenticacion, usuarios y consulta de seguridad; Hito 4 incorpora clientes, categorias y tipos. Tareas, scripts, ejecuciones, scheduler, feriados, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
 
 ## Reconstruccion - persistencia Hito 2
 
@@ -26,7 +26,7 @@ Estado: CERRADO. La persistencia fundacional es reutilizada por Hito 3 sin crear
 | DTO/mapeadores | Usuario, credencial aislada, rol, permiso, cliente, categoria, tipo y paginacion | Hitos 3-4 | Persistencia preparada; modulo no implementado |
 | Usuarios | Obtener por ID/login, listar y persistir ultimo login sin commit propio | Hito 3 | Repositorio implementado; login no migrado |
 | Seguridad | Roles, permisos, asociaciones y permisos efectivos sin N+1 | Hito 3 | Repositorio implementado; gestion no migrada |
-| Catalogos | Lectura por ID, clave fisica, estado y Papelera | Hito 4 | Repositorios implementados; CRUD no migrado |
+| Catalogos | Lectura, paginacion, filtros y escrituras sin commit propio | Hito 4 | Repositorios reutilizados y extendidos |
 | Operacion | Relaciones tareas-scripts-versiones-programaciones-ejecuciones | Hitos 5-7 | Solo inventario; sin repositorios vacios |
 
 Detalle: `docs/PERSISTENCIA_RECONSTRUCCION.md`.
@@ -43,7 +43,20 @@ Estado: CERRADO.
 | Roles/permisos | `/seguridad/roles-permisos` | Consulta de matriz vigente; catalogo base de solo lectura | Reconstruido |
 | Auditoria de seguridad | Sin ruta propia en Hito 3 | Eventos canonicos de login, logout y cambios de usuario | Reconstruido |
 
-El permiso `USUARIOS_ADMIN` protege todas las operaciones administrativas. `SUPER_ADMIN_ENV` tiene permisos efectivos totales como identidad de recuperacion, pero no es usuario SQL ni usuario persistido. Clientes, categorias, tipos y modulos posteriores siguen pendientes. Detalle: `docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md`.
+El permiso `USUARIOS_ADMIN` protege todas las operaciones administrativas de seguridad. `SUPER_ADMIN_ENV` tiene permisos efectivos totales como identidad de recuperacion, pero no es usuario SQL ni usuario persistido. Detalle: `docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md`.
+
+## Reconstruccion - catalogos Hito 4
+
+Estado: CERRADO.
+
+| Modulo | Rutas aisladas | Alcance | Estado |
+| --- | --- | --- | --- |
+| Clientes | `/clientes/`, nuevo, editar y estado | Listado paginado, filtros, alta, edicion y activacion/desactivacion | Reconstruido |
+| Categorias | `/categorias/`, nuevo, editar y estado | Listado paginado, filtros, alta, edicion y activacion/desactivacion | Reconstruido |
+| Tipos | `/tipos/`, nuevo, editar y estado | Listado paginado, filtros, alta, edicion y activacion/desactivacion | Reconstruido |
+| Auditoria | Sin ruta propia en Hito 4 | Eventos canonicos dentro de la misma UoW que cada escritura | Reconstruido |
+
+Los tres catalogos reutilizan `RepositorioClientes`, `RepositorioCategorias` y `RepositorioTipos`, la UoW, CSRF, identidad, permisos y auditoria vigentes. La eliminacion operativa, restauracion y eliminacion permanente quedan reservadas al Hito 9; los listados ya excluyen `eliminado_operativo = 1` y la validacion de unicidad considera tambien Papelera. Detalle: `docs/CATALOGOS_RECONSTRUCCION.md`.
 
 ## Estado de normalizacion 17X
 

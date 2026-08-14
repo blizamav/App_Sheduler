@@ -49,15 +49,17 @@ Estado: CERRADO.
 
 Login hibrido, `SUPER_ADMIN_ENV`, usuarios SQL, sesion minima, autorizacion backend, administracion de usuarios, consulta de roles/permisos y auditoria canonica implementados y validados en `src/app_scheduler/`. La reconstruccion sigue aislada y no existe cutover.
 
-## Pendiente
-
 ### Hito 4 - Clientes, categorias y tipos
 
-Estado: NO INICIADO.
+Estado: CERRADO.
 
-Reimplementar mantenedores, estados, validaciones, dependencias y auditoria.
+Clientes, categorias y tipos disponen de listados paginados, filtros, alta, edicion, estado, permisos backend, CSRF y auditoria canonica en el runtime aislado. El contrato SQL, los permisos bootstrap, las transacciones, la UI responsive y las pruebas quedaron reconciliados. No se implemento Papelera global ni eliminacion permanente.
+
+## Pendiente
 
 ### Hito 5 - Tareas, scripts, versiones y `.env`
+
+Estado: NO INICIADO.
 
 Reimplementar agregado de tarea, maximo tres versiones, version activa, archivos seguros y configuracion por version.
 
