@@ -7,7 +7,8 @@ APP Scheduler es una aplicacion web interna para administrar, programar, ejecuta
 El runtime actual permanece operativo como referencia mientras se realiza una reconstruccion limpia y controlada.
 
 * Hito 0 - Inventario y arquitectura: CERRADO.
-* Hito 1 - Base del proyecto y configuracion: PENDIENTE, no iniciado.
+* Hito 1 - Base del proyecto y configuracion: CERRADO.
+* Hito 2 - Base de datos y repositorios funcionales: PENDIENTE, no iniciado.
 
 Fuentes maestras de la reconstruccion:
 
@@ -16,6 +17,8 @@ Fuentes maestras de la reconstruccion:
 * [Roadmap](docs/ROADMAP.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
+
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; no contiene todavia modulos funcionales ni reemplaza las rutas vigentes.
 
 ## Capacidades de referencia
 
@@ -75,6 +78,16 @@ El worker se ejecuta en otro proceso:
 ```powershell
 python scheduler_worker.py
 ```
+
+Validacion no funcional del runtime reconstruido:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m app_scheduler.web --check
+python -m app_scheduler.worker.aplicacion --check
+```
+
+Las opciones `--check` validan configuracion y bootstrap sin abrir puertos, consultar SQL o iniciar scheduler.
 
 ## Docker QA
 

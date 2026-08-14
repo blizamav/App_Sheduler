@@ -229,7 +229,7 @@ Modelo operativo:
 - `web`: ejecuta `python run.py`
 - `worker`: ejecuta `python scheduler_worker.py`
 - ambos usan el mismo helper de conexion SQL
-- por defecto ambos leen `.env`, pero Docker puede apuntar a otro archivo mediante `DOCKER_ENV_FILE`
+- ambos cargan `.env.docker` explicitamente dentro de Docker
 - ambos comparten `logs/`, `logs_tareas/`, `logs_sistema/`, `scripts/` y `env_scripts/`
 
 Reglas:
@@ -239,7 +239,7 @@ Reglas:
 - no usar replicas mayores a `1` para `worker`;
 - `logs/worker_console.log` debe quedar visible para `web` y escribible por `worker`.
 - si una variable sensible contiene `$`, Docker Compose puede requerir escape en el archivo usado por contenedores; documentar el ajuste por ambiente y no reutilizarlo automaticamente como configuracion local.
-- si se necesita escape distinto para Docker, usar `DOCKER_ENV_FILE` apuntando a un archivo separado basado en `.env.docker.example`.
+- si se necesita escape distinto para Docker, configurarlo solo en `.env.docker`, basado en `.env.docker.example`.
 
 Comandos operativos recomendados:
 
@@ -270,14 +270,14 @@ Validacion minima esperada:
 
 Validacion real Fase 14F.4 antes de tocar `worker`:
 
-- `DOCKER_ENV_FILE=.env.docker` quedo validado como flujo oficial.
+- `.env.docker` quedo validado como archivo oficial para Docker QA.
 - `web` conecto correctamente a SQL Server con el helper real de la app.
 - login y `/panel` quedaron validados en Docker.
 - `worker` no se levanto en esa fase porque la regla exigia autorizacion adicional despues de confirmar conexion y web.
 
 Validacion real Fase 14F.5:
 
-- `DOCKER_ENV_FILE=.env.docker` se uso explicitamente para `web` y `worker`.
+- `.env.docker` se uso para `web` y `worker`.
 - Se confirmo que el problema `SIN_SENAL` no era caida real del worker, sino comparacion entre heartbeat SQL en hora local y contenedor Docker en UTC.
 - `docker-compose.yml` ahora inyecta `TZ` desde `ZONA_HORARIA` para ambos servicios.
 - `app/servicios/servicio_worker_heartbeat.py` interpreta fechas del heartbeat segun `ZONA_HORARIA`, no segun la zona implicita del contenedor.
@@ -289,7 +289,7 @@ Validacion real Fase 14F.5:
 
 Validacion final Fase 14G:
 
-- Se repite validacion completa usando `$env:DOCKER_ENV_FILE='.env.docker'`.
+- Se repite validacion completa usando `.env.docker`.
 - `web` valida login y `/panel` sin `08001`, sin `18456` y sin placeholder visible.
 - `worker` valida inicio continuo, heartbeat, configuracion y resumen de ciclo sin traceback.
 - `logs/worker_console.log` confirma buffer visual reciente correcto.

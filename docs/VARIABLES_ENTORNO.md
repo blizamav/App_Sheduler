@@ -18,7 +18,7 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 |---|---|---|
 | `.env` | No | Archivo real para ejecucion local y tambien para web/worker fuera de Docker. |
 | `.env.example` | Si | Plantilla base para local, QA o produccion sin contenedor. |
-| `.env.docker` | No | Archivo real opcional para contenedores cuando Docker requiere valores distintos, por ejemplo escape de `$` en passwords. |
+| `.env.docker` | No | Archivo real obligatorio para Docker QA; se mantiene separado de LOCAL. |
 | `.env.docker.example` | Si | Plantilla base para `.env.docker`. |
 
 ## Archivos no oficiales
@@ -32,7 +32,7 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 |---|---|---|
 | Local Windows | `.env` | `app/config.py` carga `BASE_DIR/.env`. |
 | QA sin Docker | `.env` | La app web y `scheduler_worker.py` leen variables del proceso y pueden apoyarse en `BASE_DIR/.env`. |
-| Docker local o QA | `.env.docker` recomendado | `docker-compose.yml` usa `DOCKER_ENV_FILE`; si no se define, cae a `.env`. |
+| Docker local o QA | `.env.docker` | `docker-compose.yml` lo declara explicitamente; no existe fallback a `.env`. |
 | Produccion sin Docker | `.env` | Archivo real administrado por el ambiente. |
 | Produccion con Docker | `.env.docker` recomendado | Mantiene separadas las necesidades de Docker frente al uso local. |
 
@@ -47,6 +47,11 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 | `APP_HOST` | No | No | Host de Flask. En Docker `web` fuerza `0.0.0.0`. | `127.0.0.1` |
 | `APP_PORT` | No | No | Puerto de Flask. | `5000` |
 | `APP_DEBUG` | No | No | Activa debug de Flask. | `False` en codigo, `True` en `.env.example` |
+| `APP_VERSION` | No | No | Version visible/operativa del runtime reconstruido. | `reconstruccion-local` |
+| `SESSION_COOKIE_SECURE` | No | No | Exige HTTPS para la cookie de sesion. | `false` en LOCAL/QA actual |
+| `SESSION_COOKIE_SAMESITE` | No | No | Politica SameSite de la cookie Flask. | `Lax` |
+| `CSRF_TTL_SEGUNDOS` | No | No | Vigencia del token CSRF transversal. | `3600` |
+| `LOG_LEVEL` | No | No | Nivel base del logging reconstruido. | `INFO` |
 
 ### SQL Server
 
@@ -102,7 +107,7 @@ La migracion 020 ya fue ejecutada manualmente en `APP_SCHEDULER_QA`. Con `GRAPH_
 
 * `app/config.py` ejecuta `load_dotenv(BASE_DIR / ".env", override=False)`.
 * Si una variable ya viene inyectada por el proceso, `load_dotenv(..., override=False)` no la pisa.
-* En Docker, `docker-compose.yml` inyecta variables por `env_file`; por eso `DOCKER_ENV_FILE` resuelve que archivo entra al contenedor.
+* En Docker, `docker-compose.yml` inyecta `.env.docker` explicitamente mediante `env_file`.
 * En Docker, `TZ` debe alinearse con `ZONA_HORARIA` para que el monitor del worker, los logs y la hora visible del contenedor hablen el mismo huso horario operativo.
 * `app/database/conexion.py` usa solo valores ya cargados en `current_app.config`.
 
@@ -126,24 +131,13 @@ Si faltan o siguen con valores de plantilla, la app debe responder con advertenc
 * No ejecutar `copy .env.example .env` a ciegas.
 * En PowerShell, copiar solo si `.env` no existe.
 * No reutilizar automaticamente `.env` local para Docker si la password contiene `$`.
-* Para levantar contenedores de forma consistente, exportar antes `DOCKER_ENV_FILE=.env.docker` y mantener ese flujo en comandos `docker compose`.
+* Para levantar contenedores, configurar manualmente `.env.docker`; no se exporta una variable selectora.
 * Mantener separados los archivos reales por ambiente.
 * No documentar ni commitear credenciales reales.
 
 ## Validacion real Fase 14F.4
 
-Resultado validado en Docker usando:
-
-```powershell
-$env:DOCKER_ENV_FILE=".env.docker"
-```
-
-Y desde Fase 14F.5:
-
-```powershell
-$env:DOCKER_ENV_FILE=".env.docker"
-$env:ZONA_HORARIA="America/Santiago"
-```
+Resultado historico: Fases 14F.4/14F.5 usaron una variable selectora para validar `.env.docker`. Esa seleccion quedo deprecada; actualmente Compose carga `.env.docker` de forma fija y `TZ` se deriva de `ZONA_HORARIA`.
 
 Con ese flujo:
 
@@ -170,11 +164,7 @@ Regla aplicada:
 
 ## Validacion real Fase 14G
 
-Confirmado en Docker usando:
-
-```powershell
-$env:DOCKER_ENV_FILE=".env.docker"
-```
+Confirmado originalmente con selector de archivo; el flujo vigente usa `.env.docker` directamente desde Compose.
 
 Resultado:
 

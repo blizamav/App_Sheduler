@@ -1,0 +1,43 @@
+.banda-estado {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-md);
+    background: var(--color-superficie);
+    box-shadow: var(--sombra-suave);
+}
+
+.banda-estado > div {
+    display: grid;
+    min-width: 0;
+    gap: var(--espacio-1);
+    padding: var(--espacio-5);
+}
+
+.banda-estado > div + div {
+    border-left: 1px solid var(--color-borde);
+}
+
+.banda-estado span {
+    color: var(--color-texto-suave);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.banda-estado strong {
+    overflow-wrap: anywhere;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 700px) {
+    .banda-estado {
+        grid-template-columns: 1fr;
+    }
+
+    .banda-estado > div + div {
+        border-top: 1px solid var(--color-borde);
+        border-left: 0;
+    }
+}

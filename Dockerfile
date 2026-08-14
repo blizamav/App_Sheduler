@@ -23,6 +23,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/opt/mssql-tools18/bin:${PATH}"
+ENV PYTHONPATH="/app/src"
 
 COPY requirements.txt ./
 RUN pip install --upgrade pip \

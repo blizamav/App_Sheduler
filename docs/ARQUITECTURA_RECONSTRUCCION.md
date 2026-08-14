@@ -2,7 +2,25 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Es el objetivo para los Hitos 1-15 y no representa aun un cambio de runtime.
+Arquitectura maestra aprobada al cerrar Hito 0. Hito 1 implementa sus cimientos en un runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+
+## Implementacion Hito 1
+
+Mapa de transicion aplicado:
+
+| Actual | Runtime reconstruido | Estado |
+| --- | --- | --- |
+| `app/__init__.py` | `src/app_scheduler/aplicacion.py` | Fabrica reimplementada y aislada. |
+| `app/config.py` | `src/app_scheduler/configuracion.py` | Tipado, validacion por capacidad y secretos fuera de mensajes. |
+| `app/database/conexion.py` | `compartido/base_datos.py` | Proveedor inyectable, conexiones cortas y errores controlados. |
+| Commit/rollback disperso | `compartido/unidad_trabajo.py` | Transaccion explicita y cierre garantizado. |
+| CSRF especifico Factory Reset | `compartido/csrf.py` | Politica global para `POST`, `PUT`, `PATCH` y `DELETE`. |
+| Manejo local de errores | `compartido/errores.py` | Jerarquia y respuestas HTML/JSON seguras. |
+| Logging por servicios | `compartido/logging.py` | Formato comun y sanitizacion base. |
+| CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
+| Hilos web para ejecucion | `worker/contratos.py` | Solo contrato comun; motor real bloqueado hasta Hito 7. |
+
+No se copiaron rutas funcionales, repositorios de tablas, scheduler, motor de ejecucion, Graph, feriados, papelera ni Factory Reset. Los entrypoints `run.py` y `scheduler_worker.py` siguen apuntando exclusivamente al runtime historico.
 
 ## Principios
 
@@ -306,6 +324,6 @@ Cada recurso temporal tendra propietario, ubicacion, criterio de retiro y limpie
 * Retencion cuantificada de logs/evidencias/auditoria.
 * Matriz exacta de roles/permisos como contrato automatizado.
 
-## Criterio para iniciar Hito 1
+## Criterio para cerrar Hito 1
 
-Hito 1 puede comenzar unicamente con autorizacion explicita posterior al cierre de Hito 0. Solo creara la base del nuevo paquete, configuracion, seguridad transversal y arnes de pruebas; no migrara aun reglas de negocio ni ejecutara SQL sobre QA.
+Hito 1 queda cerrado formalmente con su versionado controlado. El runtime reconstruido permanece aislado, el runtime historico sigue activo y Hito 2 permanece no iniciado hasta nueva autorizacion.

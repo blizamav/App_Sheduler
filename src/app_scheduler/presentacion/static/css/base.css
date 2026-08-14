@@ -1,0 +1,61 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    background: var(--color-fondo);
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    color: var(--color-texto);
+    background: var(--color-fondo);
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+a {
+    color: inherit;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    margin-bottom: var(--espacio-2);
+    font-size: clamp(1.6rem, 3vw, 2.15rem);
+    line-height: 1.15;
+    letter-spacing: 0;
+}
+
+:focus-visible {
+    outline: 3px solid rgba(24, 168, 216, 0.42);
+    outline-offset: 2px;
+}
+
+.eyebrow {
+    margin-bottom: var(--espacio-1);
+    color: var(--color-primario);
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.texto-secundario {
+    color: var(--color-texto-suave);
+}

@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-14 - Cierre formal Hito 1
+
+* Se concilio el inventario exacto de 52 archivos: 14 modificados y 38 nuevos, distribuidos entre arquitectura, tests, configuracion versionable, Docker y documentacion.
+* Se repitieron las validaciones de cierre: 49 pruebas aprobadas, `compileall`, JavaScript, templates, Docker Compose, build Docker, auditoria preventiva de secretos y `git diff --check` sin errores.
+* Se confirmo que el runtime reconstruido sigue aislado en `src/app_scheduler/`; `app/`, `run.py`, `scheduler_worker.py`, `docker-compose.yml`, `.env`, `.env.docker` y `database/release/` permanecen intactos.
+* Hito 1 queda cerrado formalmente. Hito 2 no fue iniciado y requiere autorizacion explicita.
+
+## 2026-08-13 - Hito 1: cimientos tecnicos de reconstruccion
+
+### Implementado
+
+* Nuevo runtime aislado en `src/app_scheduler/`, con fabrica Flask, extensiones y bootstrap web/worker sin activar modulos funcionales.
+* Configuracion tipada por ambiente y capacidad, defaults seguros, validacion de la unica base `APP_SCHEDULER_QA` y mensajes sin valores secretos.
+* Conexion SQL Server inyectable, repositorio tecnico explicito y unidad de trabajo con commit, rollback y cierre visibles.
+* Jerarquia de errores con respuestas HTML/JSON seguras, logging estructurado sanitizado, fundamento de autorizacion y CSRF transversal para toda escritura HTTP.
+* Shell Jinja aislado con identidad visual vigente, tokens CSS, layout/componentes separados y JavaScript modular.
+* Contrato comun para futuras solicitudes manuales/automaticas; el motor real permanece bloqueado hasta Hito 7.
+* `pyproject.toml`, dependencias de desarrollo y 23 pruebas nuevas de configuracion, Flask, CSRF, errores, persistencia, logging y worker base.
+
+### Validado
+
+* Suite reconstruida: 23 pruebas aprobadas; suite completa: 49 pruebas aprobadas.
+* Arranque LOCAL `web --check` y `worker --check`, `compileall`, templates y sintaxis JavaScript aprobados.
+* `docker compose config --quiet`, build de `web`/`worker` y ambos bootstraps QA en contenedores efimeros aprobados.
+* Inspeccion visual desktop 1440x900 y movil 390x844; se corrigio un desbordamiento del contenido junto al sidebar y se confirmo sidebar movil sin scroll horizontal.
+
+### Compatibilidad y alcance
+
+* `run.py`, `scheduler_worker.py` y las rutas historicas permanecen activos; no hubo cutover ni doble escritura.
+* No se implementaron modulos funcionales, scheduler, ejecuciones, Factory Reset nuevo ni repositorios anticipados por tabla.
+* No se ejecuto SQL, no se abrio conexion SQL, no se modificaron `.env`, `.env.docker` o `database/release/` y no se crearon bases.
+* Hito 1 queda listo para revision, sin staging, commit o push; Hito 2 no fue iniciado.
+
 ## 2026-08-13 - Hito 0 reconstruccion: inventario y arquitectura
 
 ### Documentado

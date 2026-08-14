@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block titulo %}APP Scheduler{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/componentes.css') }}">
+    {% block estilos %}{% endblock %}
+</head>
+<body>
+    <div class="app-shell" data-app-shell>
+        <div class="sidebar-overlay" data-sidebar-cerrar></div>
+        <aside class="sidebar" id="sidebarPrincipal" aria-label="Navegacion principal">
+            <header class="sidebar-header">
+                <a class="marca" href="{{ url_for('base.inicio') }}" aria-label="APP Scheduler">
+                    <span class="marca-sigla">AS</span>
+                    <span>APP Scheduler<small>Control TI</small></span>
+                </a>
+            </header>
+            <nav class="navegacion">
+                <p class="navegacion-grupo">Sistema</p>
+                <a class="navegacion-enlace activo" href="{{ url_for('base.inicio') }}" aria-current="page">
+                    <span class="navegacion-icono" aria-hidden="true">▦</span>
+                    <span>Base tecnica</span>
+                </a>
+            </nav>
+            <footer class="sidebar-footer">
+                <span class="badge info">Reconstruccion</span>
+                <small>Runtime aislado</small>
+            </footer>
+        </aside>
+
+        <main class="contenido">
+            <header class="topbar">
+                <button class="boton-icono" type="button" data-sidebar-abrir aria-label="Abrir navegacion">☰</button>
+                <div class="topbar-identidad">
+                    <span class="estado-dot" aria-hidden="true"></span>
+                    <span>{{ config.APP_ENV }}</span>
+                </div>
+            </header>
+
+            {% with mensajes = get_flashed_messages(with_categories=true) %}
+                {% if mensajes %}
+                <section class="alertas" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                    <div class="alerta {{ categoria }}" data-alerta>
+                        <span>{{ mensaje }}</span>
+                        <button class="boton-icono compacto" type="button" data-alerta-cerrar aria-label="Cerrar mensaje">×</button>
+                    </div>
+                    {% endfor %}
+                </section>
+                {% endif %}
+            {% endwith %}
+
+            <div class="pagina">
+                {% block contenido %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" data-modal aria-hidden="true">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+            <div class="modal-icono" data-modal-icono>!</div>
+            <div>
+                <p class="eyebrow" data-modal-tipo>Confirmacion</p>
+                <h2 id="modalTitulo" data-modal-titulo>Confirmar accion</h2>
+                <p data-modal-mensaje>Confirma si deseas continuar.</p>
+                <div class="modal-acciones">
+                    <button class="boton secundario" type="button" data-modal-cancelar>Cancelar</button>
+                    <button class="boton primario" type="button" data-modal-confirmar>Confirmar</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="{{ url_for('static', filename='js/core.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

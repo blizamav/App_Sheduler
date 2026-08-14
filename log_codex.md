@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hito 0 de reconstruccion limpia cerrado; Hito 1 pendiente y no iniciado. La implementacion vigente queda como referencia y Factory Reset definitivo es in-place.
+* Estado actual: Hito 1 cerrado formalmente; Hito 2 no iniciado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 0 cerrado, esperando autorizacion para Hito 1.
-* Ultima actualizacion: 2026-08-13
+* Fase actual: Reconstruccion limpia - Hito 1 cerrado, sin cutover.
+* Ultima actualizacion: 2026-08-14
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -62,8 +62,11 @@
 
 ## 3. Estructura actual del proyecto
 
-* Carpetas principales: `app/`, `app/templates/`, `app/static/`, `docs/`, `database/migrations/`, `database/seeds/`.
-* Archivos principales: `run.py`, `requirements.txt`, `.env.example`, `.env.docker.example`, `.gitignore`, `README.md`, `log_codex.md`.
+* Runtime historico activo: `app/`, `run.py` y `scheduler_worker.py`.
+* Runtime reconstruido aislado: `src/app_scheduler/`, con infraestructura transversal de Hito 1 y sin modulos funcionales activos.
+* Pruebas: `tests/reconstruccion/` para la nueva base y pruebas historicas Factory Reset bajo `tests/`.
+* SQL: release protegido, bootstrap limpio, Factory Reset in-place, correctivos incrementales y legado historico separados bajo `database/`.
+* Archivos principales: `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, plantillas de entorno, Docker, documentacion maestra y bitacora.
 * Modulos implementados: Login inicial, panel principal general con metricas reales, layout responsive, configuracion centralizada, modelo SQL Server con versionamiento de scripts, scripts SQL versionados ejecutados manualmente en SQL Server local, modulo inicial de conexion SQL Server, diagnostico local/QA, usuarios/roles/permisos iniciales, mejoras UX Fase 4.1, modal de confirmacion Fase 4.2, definicion tecnica Fase 4.3, mantenedores base Fase 5, eliminacion controlada Fase 5.1, tareas con programacion base Fase 6, resumen de confirmacion Fase 6.1, deteccion de cambios reales Fase 6.2, gestion de scripts/versiones/env Fase 7, mensajes contextuales Fase 7.1, bloque de script activo Fase 7.2, simplificacion visual Fase 7.3, eliminacion diferenciada Fase 7.4, separacion contenedor/archivo Fase 7.5, ejecucion manual Fase 8, configuracion scheduler Fase 9A, worker automatico Fase 9B, timestamps en logs Fase 9C, historial agrupado Fase 9D, calendario local de feriados Fase 10A, sincronizacion Nager.Date controlada Fase 10B, panel operativo scheduler Fase 11A, heartbeat del worker Fase 11B, modernizacion visual Fase 11C, eventos del programador Fase 11D, historial filtrable Fase 11D.2, borrado operativo seguro Fase 11F, papelera operativa Fase 11G, desacople historico Fase 11H, revision post-borrado Fase 11I, disponibilidad visible/diagnosticable de ejecucion manual en `/tareas`, auditoria base Fase 12A, correccion 12A.1 de detalle/roles, validacion transversal de duplicados Fase 12A.2, cobertura ampliada de auditoria Fase 12B, cierre garantizado de ejecucion manual Fase 12B.1A, sincronizacion visual de consola Fase 12B.1B, modernizacion responsive Fase 12B.1D, eliminacion permanente masiva segura en Papelera, rediseno visual profundo del shell Fase 12B.1E, correccion premium del shell Fase 12B.1F, validacion inicial 12B.2 del worker automatico con correcciones acotadas de cierre/heartbeat, release SQL limpio Fase 13A, optimizacion/limpieza de eventos Fase 13A.1, limpieza parametrizable Fase 13A.1B y buffer visual limitado del worker Fase 14B.1.
 * Modulos pendientes: Fase 12C Auditoria extendida, Fase 13B+ operacion/despliegue, Fase 14F+ operacion avanzada del worker y Fase 15B+ modelo/captura/envio de evidencias.
 
@@ -78,14 +81,38 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Iniciar Hito 1 solo mediante autorizacion explicita, usando el inventario y la arquitectura aprobados.
-* Pendiente 2: Definir en Hito 2 el contrato persistente del motor unico de ejecucion propiedad del worker.
+* Pendiente 1: Esperar autorizacion explicita antes de iniciar Hito 2.
+* Pendiente 2: Definir en Hito 2 el contrato persistente del motor unico de ejecucion propiedad del worker; Hito 1 solo dejo el contrato de dominio.
 * Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
 * Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
 * Pendiente 5: Resolver el estado de error del Factory Reset actual solo mediante procedimiento autorizado; no relanzarlo automaticamente.
 * Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 1
+
+* Inventario: 52 archivos exactos conciliados, correspondientes a 14 modificados y 38 nuevos; los cuatro grupos nuevos resumidos por Git eran `pyproject.toml`, `requirements-dev.txt`, `src/` y `tests/reconstruccion/`.
+* Validacion: suite completa de 49 pruebas, `compileall`, sintaxis JavaScript, templates, Compose, build Docker, auditoria de secretos y `git diff --check` aprobados.
+* Compatibilidad: `app/`, `run.py`, `scheduler_worker.py` y `docker-compose.yml` siguen siendo el runtime activo y no recibieron cambios.
+* Seguridad: `.env`, `.env.docker` y `database/release/` intactos; no se ejecuto SQL ni Factory Reset y no se crearon recursos persistentes.
+* Estado: Hito 1 cerrado formalmente; Hito 2 no iniciado.
+
+### 2026-08-13 - Reconstruccion limpia / Hito 1
+
+* Transicion: se creo `src/app_scheduler/` como runtime aislado; `run.py` y `scheduler_worker.py` siguen usando exclusivamente `app/`.
+* Flask: fabrica testeable, registro central de extensiones, healthcheck sin SQL y bootstrap independiente para web.
+* Configuracion: dataclass inmutable, conversion segura de booleanos/enteros, validacion por capacidad y soporte explicito LOCAL/QA sin cargar `.env.docker` desde Python.
+* Persistencia: proveedor `pyodbc` inyectable, cadena ODBC confinada, conexiones cortas, repositorio de diagnostico minimo y unidad de trabajo explicita.
+* Seguridad: CSRF global en metodos mutables, cookies base endurecidas, identidad/permisos preparados y errores web/API seguros.
+* Logging: formato comun con timestamp, nivel, modulo, evento y mensaje; sanitizacion de claves y secretos conocidos.
+* Frontend: shell Jinja base, tokens visuales vigentes, CSS separado y JavaScript modular; no se migraron pantallas funcionales.
+* Worker: bootstrap `--check` y contrato unico manual/automatico; motor bloqueado expresamente hasta Hito 7.
+* Tests: 23 nuevos y 49 totales aprobados; `compileall`, JS, Jinja, Docker Compose y build aprobados.
+* Visual: escritorio y movil revisados; se corrigio el ancho del contenido y el sidebar movil quedo sin overflow horizontal.
+* Docker: imagenes normales `app_scheduler-web` y `app_scheduler-worker` reconstruidas; contenedores efimeros `--rm` finalizaron sin residuos.
+* Seguridad/alcance: no se leyeron valores en respuestas, no se ejecutaron consultas SQL, no se modificaron `.env`, `.env.docker` ni `database/release/`.
+* Git: sin staging, commit o push; Hito 1 queda en revision y Hito 2 no iniciado.
 
 ### 2026-08-13 - Reconstruccion limpia / Hito 0
 

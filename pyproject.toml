@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "app-scheduler-reconstruccion"
+version = "0.1.0"
+description = "Runtime reconstruido de APP Scheduler"
+requires-python = ">=3.11"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+app_scheduler = [
+    "presentacion/templates/**/*.html",
+    "presentacion/static/**/*.css",
+    "presentacion/static/**/*.js",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

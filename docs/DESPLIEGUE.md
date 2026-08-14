@@ -35,7 +35,7 @@ Mapa oficial de archivos:
 
 * Local Windows: `.env`
 * QA/Produccion sin Docker: `.env`
-* Docker local/QA/Produccion: `.env.docker` recomendado mediante `DOCKER_ENV_FILE`
+* Docker local/QA: `.env.docker` obligatorio y declarado directamente en Compose
 * Plantillas versionadas: `.env.example` y `.env.docker.example`
 
 Referencia detallada de variables:
@@ -46,16 +46,15 @@ docs/VARIABLES_ENTORNO.md
 
 ## Docker Compose con archivo dedicado
 
-Para contenedores, el flujo oficial es usar un archivo real separado y explicitarlo en la sesion antes de levantar servicios:
+Para contenedores, el flujo oficial usa un archivo real separado declarado directamente por Compose:
 
 ```powershell
-$env:DOCKER_ENV_FILE=".env.docker"
 docker compose up -d --build web worker
 ```
 
 Consideraciones:
 
-* Si no se define `DOCKER_ENV_FILE`, `docker-compose.yml` cae a `.env`.
+* `docker-compose.yml` no usa `.env` como fallback para `env_file`.
 * Si la password SQL contiene `$`, Docker puede requerir escape distinto al flujo local; por eso `.env.docker` debe mantenerse separado de `.env`.
 * Desde Fase 14F.5, `docker-compose.yml` inyecta `TZ` desde `ZONA_HORARIA` para alinear hora de contenedor, logs y monitor del worker con la zona operativa.
 * Convencion vigente: el proyecto sigue operando con hora local de SQL Server; Docker no debe reinterpretarla como UTC en el monitor.
@@ -63,7 +62,7 @@ Consideraciones:
 Validacion final Fase 14G:
 
 * Docker QA queda validado como flujo operativo real del proyecto.
-* `DOCKER_ENV_FILE=.env.docker` pasa a ser uso obligatorio para la validacion contenedorizada.
+* `.env.docker` es obligatorio para la validacion contenedorizada.
 * `web` y `worker` validaron conexion SQL, login, `/panel`, monitor `ACTIVO`, detencion `DETENIDO` y cierre limpio.
 * El host local Windows sigue presentando `08001` en este ambiente al leer SQL Server desde `.env`; por lo tanto, local no queda homologado como entorno operativo final mientras no se resuelva esa conectividad ODBC del host.
 
@@ -243,16 +242,15 @@ Uso recomendado para separar local y Docker sin tocar `.env` real:
 
 ```powershell
 Copy-Item .env.docker.example .env.docker
-$env:DOCKER_ENV_FILE = ".env.docker"
 docker compose up -d web
 ```
 
 Notas:
 
-* `docker-compose.yml` acepta `DOCKER_ENV_FILE` y, si no existe, sigue usando `.env`.
+* `docker-compose.yml` carga `.env.docker` explicitamente y no selecciona otro archivo por variable.
 * `.env.docker` no debe versionarse.
 * Si la password real contiene `$$`, en Docker puede requerir escape `$$$$` para que dentro del contenedor llegue `$$`.
-* Fase 14F.4 valido el flujo correcto con `$env:DOCKER_ENV_FILE=".env.docker"`: helper SQL real OK, `web` OK, login OK y `/panel` OK.
+* Fase 14F.4 valido el flujo Docker; la seleccion posterior se fijo directamente en `.env.docker`.
 * Hallazgo de esa validacion: `APP_SECRET_KEY` en `.env.docker` sigue con valor de plantilla o vacio; debe corregirse manualmente en el archivo real antes de uso sostenido.
 
 ## Roadmap operativo

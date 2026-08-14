@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titulo %}Base tecnica | APP Scheduler{% endblock %}
+
+{% block estilos %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/base-tecnica.css') }}">
+{% endblock %}
+
+{% block contenido %}
+<header class="encabezado-pagina">
+    <div>
+        <p class="eyebrow">APP Scheduler</p>
+        <h1>Base técnica</h1>
+        <p class="texto-secundario">Entorno {{ ambiente }} · versión {{ version }}</p>
+    </div>
+    <span class="badge activo">Disponible</span>
+</header>
+
+<section class="banda-estado" aria-label="Estado del runtime">
+    <div>
+        <span>Aplicación</span>
+        <strong>Operativa</strong>
+    </div>
+    <div>
+        <span>Seguridad</span>
+        <strong>CSRF activo</strong>
+    </div>
+    <div>
+        <span>Persistencia</span>
+        <strong>Encapsulada</strong>
+    </div>
+</section>
+{% endblock %}

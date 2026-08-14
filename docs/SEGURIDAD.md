@@ -1,5 +1,18 @@
 # Seguridad
 
+## Fundamento transversal de reconstruccion
+
+Hito 1 incorpora en `src/app_scheduler/` la base de seguridad del nuevo runtime, aun aislado del historico:
+
+* CSRF global para `POST`, `PUT`, `PATCH` y `DELETE`, con token de sesion, TTL y comparacion constante.
+* Cookies Flask `HttpOnly`, `SameSite` configurable y `Secure` configurable segun terminacion TLS.
+* Identidad de sesion inmutable y autorizacion backend preparada para permisos exactos.
+* Respuestas HTML/JSON sin detalle tecnico sensible y logging interno sanitizado.
+* Configuracion validada por capacidad: operaciones normales no requieren ni usan la cuenta de mantenimiento.
+* `user_scheduler` queda reservado a operacion normal; `user_scheduler_mantenimiento` se valida solo al habilitar Factory Reset y debe ser `db_owner` exclusivamente en `APP_SCHEDULER_QA`.
+
+Esta infraestructura no implementa aun login, usuarios o matriz funcional del runtime reconstruido; corresponden a Hito 3. El runtime historico mantiene su comportamiento hasta el cutover autorizado.
+
 ## Manejo de sesiones
 
 Fase 1 usa sesiones Flask protegidas por `APP_SECRET_KEY`.

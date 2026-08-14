@@ -1,0 +1,28 @@
+:root {
+    --color-fondo: #eef3f8;
+    --color-superficie: #ffffff;
+    --color-superficie-suave: #f7faff;
+    --color-texto: #142033;
+    --color-texto-suave: #64748b;
+    --color-borde: #dbe5f2;
+    --color-primario: #0d4fa8;
+    --color-primario-oscuro: #061a33;
+    --color-acento: #18a8d8;
+    --color-exito: #138a4b;
+    --color-peligro: #d71920;
+    --color-advertencia: #b87503;
+    --sombra-suave: 0 10px 28px rgba(15, 39, 78, 0.08);
+    --sombra-elevada: 0 22px 64px rgba(15, 39, 78, 0.18);
+    --radio-sm: 6px;
+    --radio-md: 8px;
+    --radio-lg: 10px;
+    --sidebar-ancho: 272px;
+    --topbar-alto: 64px;
+    --transicion: 180ms ease;
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-5: 24px;
+    --espacio-6: 32px;
+}

@@ -1,5 +1,18 @@
 # UI/UX
 
+## Base visual de reconstruccion
+
+Hito 1 conserva la identidad aprobada en un shell aislado bajo `src/app_scheduler/presentacion/`:
+
+* `tokens.css`: azul profundo, superficies blancas, grises, cyan moderado y estados semanticos.
+* `base.css`: tipografia, foco y reglas globales.
+* `layout.css`: sidebar, topbar, contenido y responsive.
+* `componentes.css`: botones, badges, alertas, modal y estados de error.
+* `modulos/base-tecnica.css`: unico estilo especifico visible de Hito 1.
+* `js/core.js` y `js/componentes/modal.js`: patron modular sin copiar `app.js` completo.
+
+Se valido 1440x900 y 390x844. El sidebar movil abre sin overflow horizontal. No se migraron pantallas funcionales ni se cambio la interfaz del runtime historico.
+
 ## Lineamientos visuales
 
 Estilo moderno, sobrio, corporativo y futurista moderado. La interfaz debe sentirse como una herramienta interna de control TI: clara, rapida de escanear, con jerarquia visual y sin efectos que reduzcan legibilidad.

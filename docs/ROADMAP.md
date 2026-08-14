@@ -22,21 +22,26 @@ Estado: CERRADO.
 * Factory Reset blue-green confirmado como deprecado; in-place confirmado como arquitectura vigente.
 * No se inicio implementacion funcional, no se ejecuto SQL y no se modificaron secretos.
 
-## Actual
+### Hito 1 - Base del proyecto y configuracion
 
-### Hito 1 pendiente de inicio
+Estado: CERRADO.
 
-La arquitectura esta definida, pero Hito 1 no ha comenzado. Requiere autorizacion explicita y no autoriza SQL destructivo, cambios en `database/release/` ni Factory Reset real.
+* Paquete aislado `src/app_scheduler/` con fabrica Flask y bootstrap web/worker.
+* Configuracion tipada y validada por capacidad para LOCAL y QA Docker.
+* Errores centralizados, logging sanitizado, sesiones endurecidas y CSRF global.
+* Conexion SQL Server inyectable, repositorio tecnico minimo y unidad de trabajo explicita.
+* Shell visual base, tokens CSS y JavaScript modular sin migrar pantallas funcionales.
+* 23 pruebas nuevas; suite completa de 49 pruebas aprobada.
+* Build Docker y bootstraps efimeros web/worker aprobados sin SQL.
+* Runtime historico permanece activo; no hubo cutover.
 
 ## Pendiente
 
-### Hito 1 - Base del proyecto y configuracion
-
-Crear paquete limpio, fabrica Flask, configuracion validada, manejo de errores, sesiones, CSRF transversal y arnes de pruebas.
-
 ### Hito 2 - Base de datos y repositorios
 
-Consolidar diccionario de datos, conexion, unidad de trabajo, repositorios y contrato persistente de solicitudes de ejecucion.
+Estado: NO INICIADO.
+
+Consolidar diccionario de datos, conexion, unidad de trabajo, repositorios y contrato persistente de solicitudes de ejecucion. Requiere autorizacion explicita para iniciar.
 
 ### Hito 3 - Autenticacion, usuarios, roles y permisos
 

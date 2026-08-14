@@ -1,12 +1,28 @@
 # Modulos
 
+## Reconstruccion - infraestructura transversal
+
+Estado: Hito 1 cerrado; runtime historico aun activo.
+
+| Componente | Objetivo | Rutas | Persistencia | Estado |
+| --- | --- | --- | --- | --- |
+| Fabrica Flask | Crear app testeable, extensiones y errores sin imports circulares | `/`, `/salud` solo en runtime aislado | No consulta SQL | Implementado |
+| Configuracion | Tipar y validar LOCAL/QA por capacidad | No aplica | Entrega parametros SQL, no conecta | Implementado |
+| Seguridad transversal | CSRF global, identidad y base de permisos | Protege toda escritura futura | No aplica | Implementado como fundamento |
+| Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Implementado sin repositorios funcionales |
+| Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
+| Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
+| Worker base | Validar configuracion y contrato de motor unico | No expone rutas | No ejecuta SQL | Implementado sin scheduler/motor |
+
+El paquete nuevo vive en `src/app_scheduler/`. No registra usuarios, mantenedores, tareas, scripts, ejecuciones, scheduler, feriados, Graph, papelera, auditoria ni Factory Reset. Esos modulos se incorporaran por hitos.
+
 ## Estado de normalizacion 17X
 
 El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, Fase 17C y Fase 17D quedaron cerradas localmente por commits separados, sin cambios de base de datos. Queda pendiente el push al repositorio remoto.
 
 ## Bootstrap limpio
 
-Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos e incorpora infraestructura preventiva. Fase 19D agrega el orquestador blue-green real, todavía pendiente de validación destructiva sobre SQL Server desechable.
+Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos. El orquestador blue-green historico de Fase 19D fue reemplazado en Fase 19F por Factory Reset in-place.
 
 La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
 
@@ -85,7 +101,7 @@ La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<
 * Fase 14D.3: correccion de estados reales del programador para distinguir `DETENIDO`, `ADVERTENCIA`, `SIN SENAL` y `NO DISPONIBLE` segun heartbeat real y detencion explicita.
 * Fase 14E: operacion del worker como proceso separado con `Dockerfile`, `docker-compose.yml`, volumenes compartidos de runtime y comandos documentados para `web` y `worker`.
 * Fase 14F.1: diagnostico seguro del panel principal, con alertas visibles por bloque fallido y logging tecnico controlado cuando SQL Server no responde.
-* Fase 14F.2: normalizacion segura de la cadena SQL Server ODBC con parametros explicitos `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`, resumen seguro de conexion y soporte opcional `DOCKER_ENV_FILE`.
+* Fase 14F.2: normalizacion segura de la cadena SQL Server ODBC con parametros explicitos `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE` y `DB_TIMEOUT`. El soporte posterior `DOCKER_ENV_FILE` quedo deprecado; Docker usa `.env.docker` explicitamente.
 * Fase 15A.1: contrato documental de evidencia por `stdout`, con delimitadores oficiales, validacion estatica requerida y regla de no guardar JSON fisico persistente ni JSON completo en BD.
 * Fase 15B: modelo documental minimo para evidencias y notificaciones, separando configuracion por tarea, destinatarios, evidencia por ejecucion e intentos de envio Graph.
 * Fase 15D: backend minimo de configuracion de notificaciones por tarea, con servicio, repositorio y API JSON protegida por permisos de tareas.
