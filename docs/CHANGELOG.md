@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-14 - Hito 2: persistencia y repositorios fundacionales
+
+### Cerrado
+
+* Se inventario el contrato limpio de 33 tablas desde el manifest y DDL bootstrap vigentes, sin modificar `database/release/` ni consultar SQL Server.
+* Se agregaron DTO inmutables, paginacion SQL Server, mapeadores explicitos y protocolos para futuros casos de uso.
+* Se implementaron repositorios de usuarios, seguridad, clientes, categorias y tipos sobre la conexion/UoW de Hito 1.
+* Permisos efectivos se resuelven en una consulta; los repositorios usan placeholders `?`, columnas explicitas y no realizan commit.
+* Se reforzo la traduccion segura de errores DB-API y el acceso explicito a la conexion activa de la UoW.
+* Se agregaron pruebas con fakes y contratos estaticos de tablas, columnas, relaciones y reglas de versionamiento.
+* Se reconcilio el delta QA historica 462/bootstrap limpio 456: seis columnas antiguas de `auditoria_cambios` fueron reemplazadas por `fecha_evento`, `entidad`, `id_entidad`, `valores_antes`, `valores_despues` e `ip_origen`.
+* La migracion historica 018 copiaba los datos a las columnas canonicas y conservaba los originales solo por compatibilidad; ninguna funcionalidad vigente depende de ellos en una base limpia.
+* Resultado final: 22 pruebas nuevas de Hito 2 y 71 pruebas totales aprobadas.
+* No se activaron rutas, login, CRUD, scheduler ni otros modulos; Hito 3 no fue iniciado.
+* Contrato definitivo confirmado: 33 tablas y 456 columnas; Hito 2 cerrado y Hito 3 no iniciado.
+
 ## 2026-08-14 - Cierre formal Hito 1
 
 * Se concilio el inventario exacto de 52 archivos: 14 modificados y 38 nuevos, distribuidos entre arquitectura, tests, configuracion versionable, Docker y documentacion.

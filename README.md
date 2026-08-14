@@ -8,13 +8,15 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 
 * Hito 0 - Inventario y arquitectura: CERRADO.
 * Hito 1 - Base del proyecto y configuracion: CERRADO.
-* Hito 2 - Base de datos y repositorios funcionales: PENDIENTE, no iniciado.
+* Hito 2 - Base de datos y repositorios funcionales: CERRADO.
+* Hito 3 - Autenticacion, usuarios, roles y permisos: PENDIENTE, no iniciado.
 
 Fuentes maestras de la reconstruccion:
 
 * [Inventario Maestro](docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md)
 * [Arquitectura de Reconstruccion](docs/ARQUITECTURA_RECONSTRUCCION.md)
 * [Roadmap](docs/ROADMAP.md)
+* [Persistencia de la Reconstruccion](docs/PERSISTENCIA_RECONSTRUCCION.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 

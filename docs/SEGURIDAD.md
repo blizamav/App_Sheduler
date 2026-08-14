@@ -635,6 +635,22 @@ Fase 4 agrega registro inicial en `logs_sistema` para:
 
 Los logs no deben exponer passwords, hashes ni credenciales de conexion.
 
+## Persistencia segura de la reconstruccion
+
+Hito 2 establece estas reglas para todos los repositorios nuevos:
+
+* parametros de datos exclusivamente mediante `?` de `pyodbc`;
+* columnas y ordenamientos dinamicos solo desde allowlists internas;
+* sin `SELECT *`, SQL en rutas, conexiones globales o commits ocultos;
+* `password_hash` solo en el DTO de credencial y fuera de su representacion textual;
+* errores DB-API traducidos sin SQL, parametros, texto libre del driver ni connection strings;
+* cuenta ordinaria `DB_USER`; la cuenta de mantenimiento no participa en repositorios;
+* unica base validada: `APP_SCHEDULER_QA`.
+
+Los tests usan fakes y lectura estatica de DDL; no consultan ni modifican QA.
+
+La reconciliacion de auditoria confirma que las seis columnas legacy de QA son aliases reemplazados. El contrato limpio usa solo `fecha_evento`, `entidad`, `id_entidad`, `valores_antes`, `valores_despues` e `ip_origen`; no se conserva doble escritura en el runtime reconstruido.
+
 ## Recomendaciones
 
 Cambiar `APP_SECRET_KEY` y `PASSWORD_ADMIN_DEFECTO` antes de ejecutar en entornos compartidos.

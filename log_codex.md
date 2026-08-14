@@ -6,9 +6,9 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hito 1 cerrado formalmente; Hito 2 no iniciado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0, 1 y 2 cerrados; Hito 3 no iniciado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 1 cerrado, sin cutover.
+* Fase actual: Reconstruccion limpia - Hito 2 cerrado, sin cutover.
 * Ultima actualizacion: 2026-08-14
 
 ## 2. Decisiones tecnicas vigentes
@@ -81,14 +81,25 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Esperar autorizacion explicita antes de iniciar Hito 2.
-* Pendiente 2: Definir en Hito 2 el contrato persistente del motor unico de ejecucion propiedad del worker; Hito 1 solo dejo el contrato de dominio.
+* Pendiente 1: Esperar autorizacion explicita antes de iniciar Hito 3.
+* Pendiente 2: El contrato persistente del motor unico se definira con su modulo; Hito 2 no crea una tabla anticipada sin caso de uso aprobado.
 * Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
 * Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
 * Pendiente 5: Resolver el estado de error del Factory Reset actual solo mediante procedimiento autorizado; no relanzarlo automaticamente.
 * Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-14 - Reconstruccion limpia / Hito 2
+
+* Modelo: inventario estatico de las 33 tablas, 25 FK y relaciones principales desde el bootstrap limpio vigente; no se consulto QA.
+* Persistencia: DTO inmutables, mapeadores explicitos, paginacion y contratos para usuarios, seguridad y catalogos.
+* Repositorios: usuarios, roles/permisos efectivos, clientes, categorias y tipos sobre la UoW de Hito 1, sin commit interno.
+* Seguridad: SQL parametrizado, `SELECT` con columnas conocidas, hash aislado y errores DB-API sanitizados.
+* Reconciliacion: las seis columnas adicionales de QA pertenecen a `auditoria_cambios` y fueron reemplazadas uno a uno por columnas canonicas en la migracion historica 018; el contrato limpio definitivo permanece en 33 tablas y 456 columnas.
+* Tests: 22 nuevas y 71 totales aprobadas. Fakes DB-API y contratos estaticos contra 002/007/008 detectan drift de tablas, columnas, relaciones, auditoria legacy y versionamiento.
+* Alcance: sin rutas, UI, login, CRUD funcional, SQL real, migraciones ni cambios al runtime historico; Hito 3 no iniciado.
+* Estado: Hito 2 cerrado formalmente; Hito 3 no iniciado.
 
 ### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 1
 

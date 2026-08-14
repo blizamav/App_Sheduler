@@ -9,12 +9,27 @@ Estado: Hito 1 cerrado; runtime historico aun activo.
 | Fabrica Flask | Crear app testeable, extensiones y errores sin imports circulares | `/`, `/salud` solo en runtime aislado | No consulta SQL | Implementado |
 | Configuracion | Tipar y validar LOCAL/QA por capacidad | No aplica | Entrega parametros SQL, no conecta | Implementado |
 | Seguridad transversal | CSRF global, identidad y base de permisos | Protege toda escritura futura | No aplica | Implementado como fundamento |
-| Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Implementado sin repositorios funcionales |
+| Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Base Hito 1 implementada |
 | Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
 | Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
 | Worker base | Validar configuracion y contrato de motor unico | No expone rutas | No ejecuta SQL | Implementado sin scheduler/motor |
 
 El paquete nuevo vive en `src/app_scheduler/`. No registra usuarios, mantenedores, tareas, scripts, ejecuciones, scheduler, feriados, Graph, papelera, auditoria ni Factory Reset. Esos modulos se incorporaran por hitos.
+
+## Reconstruccion - persistencia Hito 2
+
+Estado: CERRADO. Persistencia disponible sin activar modulos funcionales ni rutas; Hito 3 no iniciado.
+
+| Componente | Alcance implementado | Modulo futuro | Estado funcional |
+| --- | --- | --- | --- |
+| Modelo SQL | Inventario verificable de 33 tablas y 456 columnas desde bootstrap 002/007/008/100 | Todos | Contrato cerrado; seis aliases legacy de auditoria reconciliados, sin migraciones |
+| DTO/mapeadores | Usuario, credencial aislada, rol, permiso, cliente, categoria, tipo y paginacion | Hitos 3-4 | Persistencia preparada; modulo no implementado |
+| Usuarios | Obtener por ID/login, listar y persistir ultimo login sin commit propio | Hito 3 | Repositorio implementado; login no migrado |
+| Seguridad | Roles, permisos, asociaciones y permisos efectivos sin N+1 | Hito 3 | Repositorio implementado; gestion no migrada |
+| Catalogos | Lectura por ID, clave fisica, estado y Papelera | Hito 4 | Repositorios implementados; CRUD no migrado |
+| Operacion | Relaciones tareas-scripts-versiones-programaciones-ejecuciones | Hitos 5-7 | Solo inventario; sin repositorios vacios |
+
+Detalle: `docs/PERSISTENCIA_RECONSTRUCCION.md`.
 
 ## Estado de normalizacion 17X
 

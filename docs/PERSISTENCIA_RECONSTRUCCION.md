@@ -1,0 +1,157 @@
+# Persistencia de la reconstruccion
+
+## Estado y fuente de verdad
+
+Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. No activa rutas ni sustituye `app/`, `run.py` o `scheduler_worker.py`.
+
+El contrato se extrajo estaticamente, sin consultar QA, desde:
+
+1. `database/bootstrap/manifest.json`.
+2. `database/release/002_schema_final.sql` (solo lectura).
+3. `database/bootstrap/007_crear_notificaciones_evidencias.sql`.
+4. `database/bootstrap/008_crear_configuracion_mail_graph.sql`.
+5. `database/bootstrap/100_validacion_bootstrap_actual.sql`.
+
+Contrato limpio vigente: 33 tablas `dbo`, 456 columnas, 25 FK, 38 CHECK, 117 DEFAULT y 119 indices. No existen vistas, procedures, funciones ni triggers propios en el bootstrap.
+
+## Inventario tecnico de las 33 tablas
+
+La columna `Claves/reglas` resume UNIQUE, indices filtrados y CHECK relevantes. Las columnas enumeradas son las que definen el contrato funcional principal; el DDL conserva el detalle completo de las 456 columnas.
+
+| Tabla | Proposito | PK | FK | Claves/reglas y columnas clave | Modulo consumidor |
+| --- | --- | --- | --- | --- | --- |
+| `cat_estados_tarea` | Estados validos de tarea | `id_estado_tarea` | - | UNIQUE `codigo`; `nombre`, `activo` | Tareas |
+| `cat_estados_ejecucion` | Estados de ejecucion y log | `id_estado_ejecucion` | - | UNIQUE `codigo`; `nombre`, `activo` | Ejecuciones |
+| `cat_tipos_programacion` | Tipos de agenda | `id_tipo_programacion` | - | UNIQUE `codigo`; `nombre`, `activo` | Programador |
+| `cat_niveles_log` | Niveles tecnicos de log | `id_nivel_log` | - | UNIQUE `codigo`; `nombre`, `activo` | Observabilidad |
+| `cat_tipos_tarea` | Tarea manual o programada | `id_tipo_tarea` | - | UNIQUE `codigo`; `nombre`, `activo` | Tareas |
+| `cat_estados_version_script` | Ciclo de vida de versiones | `id_estado_version_script` | - | UNIQUE `codigo`; ACTIVA/DISPONIBLE/REEMPLAZADA/INACTIVA | Scripts |
+| `usuarios` | Identidad SQL de la aplicacion | `id_usuario` | - | UNIQUE `usuario`; `password_hash`, bloqueo, Papelera y `activo` | Autenticacion/Usuarios |
+| `roles` | Roles funcionales | `id_rol` | - | UNIQUE `codigo_rol`; `es_sistema`, `activo` | Seguridad |
+| `permisos` | Permisos por modulo/accion | `id_permiso` | - | UNIQUE `codigo_permiso` y (`modulo`,`accion`) | Seguridad |
+| `usuarios_roles` | Asociacion usuario-rol | `id_usuario_rol` | `id_usuario -> usuarios`; `id_rol -> roles` | UNIQUE (`id_usuario`,`id_rol`); `activo` | Seguridad |
+| `roles_permisos` | Matriz rol-permiso | `id_rol_permiso` | `id_rol -> roles`; `id_permiso -> permisos` | UNIQUE (`id_rol`,`id_permiso`); `permitido`, `activo` | Seguridad |
+| `clientes` | Catalogo de clientes | `id_cliente` | - | UNIQUE `nombre_normalizado`; Papelera y `activo` | Mantenedores/Tareas |
+| `categorias` | Catalogo de categorias | `id_categoria` | - | UNIQUE `nombre_normalizado`; Papelera y `activo` | Mantenedores/Tareas |
+| `tipos` | Catalogo de tipos | `id_tipo` | - | UNIQUE `nombre_normalizado`; Papelera y `activo` | Mantenedores/Tareas |
+| `tareas` | Proceso programable | `id_tarea` | cliente, categoria, tipo y catalogos de tipo/estado | IDs de contexto, `tipo_tarea`, `estado_tarea`, proximas fechas, Papelera | Tareas/Programador |
+| `programaciones` | Agenda de una tarea | `id_programacion` | `id_tarea -> tareas`; tipo -> catalogo | CHECK intervalo, dia 1-31 y modo; fechas, horas, zona, feriados | Programador |
+| `scripts` | Contenedor logico 1:1 con tarea | `id_script` | `id_tarea -> tareas`; `id_version_activa -> scripts_versiones` diferida | UNIQUE `id_tarea`; `id_version_activa`, Papelera | Scripts |
+| `scripts_versiones` | Archivo/version fisica | `id_version` | `id_script -> scripts`; estado -> catalogo | UNIQUE (`id_script`,`numero_version`), CHECK 1-3, unica activa filtrada; hash/rutas/env | Scripts |
+| `configuracion_sistema` | Configuracion no secreta y marcas de version | `id_configuracion` | - | UNIQUE `clave`; `valor`, `tipo_dato`, `es_sensible`, `activo` | Plataforma |
+| `ejecuciones` | Historial de ejecucion | `id_ejecucion` | estado -> catalogo | CHECK origen/duracion; clave automatica unica filtrada; `id_tarea`, `id_script`, `id_version`, snapshots | Ejecuciones/Worker |
+| `logs_tareas` | Log tecnico por ejecucion | `id_log` | `id_ejecucion -> ejecuciones`; estado final -> catalogo | CHECK duracion; rutas de log, codigo salida, error | Ejecuciones |
+| `logs_sistema` | Eventos generales del sistema | `id` | nivel -> catalogo | CHECK nivel; actor, accion, modulo, valores e IP | Observabilidad |
+| `auditoria_cambios` | Trazabilidad funcional con actor/contexto | `id_auditoria` | - | `accion`, `entidad`, antes/despues, resultado, ruta y metodo | Auditoria transversal |
+| `configuracion_scheduler` | Configuracion global del programador | `id_configuracion` | - | Una fila activa filtrada; CHECK intervalo 10-3600 y concurrencia 1-20 | Programador |
+| `scheduler_worker_heartbeat` | Estado de vida por worker | `id_worker` | - | Nombre activo unico filtrado; CHECK estados y contadores | Worker/Observabilidad |
+| `scheduler_eventos` | Decisiones y omisiones del scheduler | `id_evento` | - | CHECK tipo/decision/origen; snapshots, clave, motivo, `activo` | Programador |
+| `feriados` | Calendario local | `id_feriado` | - | Fecha/pais activo unico filtrado; CHECK pais/origen | Calendario/Programador |
+| `reglas_feriados_irrenunciables` | Reglas locales mes/dia | `id_regla` | - | Pais/mes/dia activo unico filtrado; CHECK rangos | Calendario |
+| `notificaciones_config_tarea` | Politica de evidencia/alerta por tarea | `id_config_notificacion` | `id_tarea -> tareas` | Una config activa por tarea; CHECK `STDOUT_V1` | Notificaciones |
+| `notificaciones_destinatarios` | Destinatarios TO/CC/BCC | `id_destinatario` | config -> `notificaciones_config_tarea` | Un destinatario activo por config/tipo/canal/email; CHECK tipo/canal/email | Notificaciones |
+| `evidencias_ejecucion` | Metadata minima de evidencia stdout | `id_evidencia` | `id_ejecucion -> ejecuciones` | UNIQUE `id_ejecucion`; CHECK estados/cantidades; hash sin JSON completo | Evidencias |
+| `notificaciones_envios` | Intentos de envio Graph | `id_envio` | ejecucion, evidencia y auto-FK de reintento | CHECK tipo/estado/intento/status; unico envio exitoso de cliente | Notificaciones |
+| `configuracion_mail_graph` | Configuracion global Mail Graph sin secret | `id_config_mail` | - | UNIQUE `MAIL_GRAPH`; una activa filtrada; secret solo `ENV`; scope/remitente validados | Configuracion/Graph |
+
+## Relaciones principales
+
+```text
+usuarios -> usuarios_roles -> roles -> roles_permisos -> permisos
+
+clientes ----+
+categorias --+-> tareas -> programaciones
+tipos -------+       |
+                     +-> scripts -> scripts_versiones
+                     |       ^          |
+                     |       +-- id_version_activa
+                     |
+                     +-> notificaciones_config_tarea -> notificaciones_destinatarios
+
+ejecuciones -> logs_tareas
+     |
+     +-> evidencias_ejecucion -> notificaciones_envios
+     +----------------------------> notificaciones_envios
+```
+
+`ejecuciones.id_tarea`, `id_script` e `id_version` son anulables y no tienen FK en el esquema final para preservar historia despues de eliminaciones permanentes. La trazabilidad queda en esos IDs cuando existen y en snapshots. `scheduler_eventos` aplica la misma estrategia sin FK operativa.
+
+## Arquitectura aplicada
+
+* `compartido/base_datos.py`: proveedor inyectable, conexiones cortas, `autocommit=False` y timeouts.
+* `compartido/unidad_trabajo.py`: transaccion explicita; `confirmar`, `revertir`, rollback por defecto y cierre garantizado.
+* `persistencia/repositorio.py`: ejecucion DB-API comun, cierre de cursor y traduccion segura de errores.
+* `persistencia/modelos.py`: DTO inmutables y patron comun de paginacion.
+* `persistencia/mapeadores.py`: conversion explicita por contrato de columnas; un cambio de forma produce `ErrorPersistencia`.
+* `persistencia/contratos.py`: protocolos para desacoplar futuros casos de uso.
+* Repositorios funcionales: usuarios, seguridad y catalogos.
+
+No existe conexion global, ORM, session implícita ni commit dentro de repositorios.
+
+## Repositorios disponibles
+
+| Repositorio | Operaciones Hito 2 | Uso posterior |
+| --- | --- | --- |
+| `RepositorioUsuarios` | obtener por ID, credencial por identificador, listar paginado/filtrado y actualizar ultimo login | Hito 3 |
+| `RepositorioSeguridad` | listar roles/permisos, roles de usuario y permisos efectivos en una consulta | Hito 3 |
+| `RepositorioClientes` | obtener, buscar por clave fisica y listar por estado | Hito 4 |
+| `RepositorioCategorias` | obtener, buscar por clave fisica y listar por estado | Hito 4 |
+| `RepositorioTipos` | obtener, buscar por clave fisica y listar por estado | Hito 4 |
+
+La consulta de credencial es la unica que selecciona `password_hash`; el DTO `Usuario` no lo contiene y `CredencialUsuario` lo excluye de `repr`. Buscar un catalogo por `nombre_normalizado` incluye Papelera para respetar la restriccion fisica UNIQUE.
+
+No se crearon repositorios vacios para tareas, scripts, versiones, programaciones o ejecuciones. Sus contratos y relaciones ya estan inventariados; se implementaran con sus casos de uso.
+
+## Convenciones SQL
+
+1. Esquema explicito `dbo` y columnas enumeradas; no `SELECT *`.
+2. Valores siempre mediante placeholders `?` de `pyodbc`.
+3. Fragmentos dinamicos solo desde opciones internas cerradas; nunca desde texto del usuario.
+4. Ordenamientos fijos o mediante allowlist cuando se incorporen ordenes seleccionables.
+5. Fechas permanecen como `datetime`, `date` o `time` hasta presentacion.
+6. `bit` se convierte explicitamente a `bool`; estados se conservan como codigos SQL vigentes.
+7. Listados crecientes usan `ORDER BY ... OFFSET ? ROWS FETCH NEXT ? ROWS ONLY` y conteo separado.
+8. Los repositorios no hacen commit. El caso de uso confirma la UoW completa.
+
+## Transacciones y errores
+
+Lectura simple: repositorio con conexion de vida controlada. Operacion compuesta: una `UnidadTrabajoSQL` comparte la misma conexion entre repositorios, confirma una sola vez y revierte ante error o salida sin confirmacion.
+
+Las excepciones DB-API se convierten en `ErrorPersistencia`. El detalle conserva operacion, clase tecnica y SQLSTATE valido, pero no SQL completo, parametros, connection string ni texto libre del driver.
+
+La auditoria futura se invocara desde el caso de uso dentro de la misma UoW, con actor y contexto. No se genera automaticamente desde helpers SQL. Secretos Graph, passwords y contenido `.env` permanecen en variables/archivos de entorno, no en configuracion SQL.
+
+## Estrategia de pruebas
+
+* Fakes DB-API programables conservan SQL, parametros, rowcount, cursores y limites transaccionales.
+* Tests de mapeo detectan columnas faltantes y evitan exponer hashes por representacion.
+* Tests de repositorio verifican placeholders, paginacion SQL Server, ausencia de N+1 para permisos y cero commits ocultos.
+* Tests de contrato parsean estaticamente 002/007/008 y exigen las 33 tablas, columnas consumidas, relaciones y reglas de versiones.
+* No se crea BBDD temporal ni se consulta QA.
+
+Hito 2 agrega 22 pruebas; la suite completa queda en 71 pruebas aprobadas.
+
+## Reconciliacion QA historica 462 vs bootstrap limpio 456
+
+La diferencia se origino al ejecutar sobre la tabla antigua `database/legacy_pre_release_13B/migrations/018_crear_o_ajustar_auditoria_cambios.sql`. Esa migracion agrego las columnas canonicas, copio hacia ellas la informacion anterior y mantuvo las columnas legacy para no borrar historial. Una instalacion limpia crea directamente el contrato canonico en `database/release/002_schema_final.sql`, por lo que no necesita los seis aliases.
+
+| Tabla | Columna QA adicional | Tipo historico | Origen y reemplazo | Uso historico | Uso actual | Estado | Decision y justificacion |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `auditoria_cambios` | `fecha_hora` | `datetime2(0) NOT NULL` | Migracion 005; copiada a `fecha_evento` por 018 | Fecha original del evento | Solo fallback de compatibilidad | REEMPLAZADA | Excluir del contrato limpio; `fecha_evento` conserva semantica y DEFAULT |
+| `auditoria_cambios` | `tabla_afectada` | `nvarchar(100) NOT NULL` | Migracion 005; copiada a `entidad` por 018 | Nombre de tabla auditada | Solo fallback de compatibilidad | REEMPLAZADA | Excluir; `entidad` es la columna canonica consumida |
+| `auditoria_cambios` | `id_registro` | `nvarchar(100) NOT NULL` | Migracion 005; copiada a `id_entidad` por 018 | Identificador auditado | Solo fallback de compatibilidad | REEMPLAZADA | Excluir; `id_entidad` admite identificadores equivalentes |
+| `auditoria_cambios` | `valor_anterior` | `nvarchar(max) NULL` | Migracion 005; copiada a `valores_antes` por 018 | Snapshot anterior | Solo fallback de compatibilidad | REEMPLAZADA | Excluir; `valores_antes` es el contrato vigente |
+| `auditoria_cambios` | `valor_nuevo` | `nvarchar(max) NULL` | Migracion 005; copiada a `valores_despues` por 018 | Snapshot posterior | Solo fallback de compatibilidad | REEMPLAZADA | Excluir; `valores_despues` es el contrato vigente |
+| `auditoria_cambios` | `ip` | `varchar(45) NULL` | Migracion 005; convertida a `ip_origen` por 018 | IP de origen | Solo fallback de compatibilidad | REEMPLAZADA | Excluir; `ip_origen nvarchar(100)` amplia capacidad |
+
+Evidencia adicional: `app/repositorios/repositorio_auditoria.py` prefiere siempre las columnas canonicas y usa las legacy solo cuando aquellas no existen; al registrar sobre una QA historica escribe ambas para compatibilidad. No hay funcionalidad vigente que requiera las seis columnas en una base limpia. El DEFAULT e indices legacy asociados a `fecha_hora`, `tabla_afectada` e `id_registro` tampoco forman parte del contrato canonico.
+
+Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. El contrato definitivo permanece en 33 tablas y 456 columnas. No se modificaron bootstrap, release, migraciones ni QA.
+
+## Deuda documentada
+
+* La compatibilidad de auditoria 462/456 quedo reconciliada; el detalle y la decision contractual se mantienen en la seccion anterior.
+* `scripts.id_version_activa` y `scripts_versiones.es_activa` requieren consistencia transaccional del servicio de scripts.
+* Las UNIQUE fisicas de usuarios/catalogos/versiones incluyen registros en Papelera; los servicios deben distinguir activo, inactivo y eliminado antes de escribir.
+* El modelo no incluye views/procedures para paginacion o seguridad; las consultas permanecen explicitas en repositorios.
+* El contrato persistente del futuro motor unico de ejecucion se definira cuando se implemente el modulo correspondiente; Hito 2 no inventa una tabla nueva.

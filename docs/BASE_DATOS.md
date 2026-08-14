@@ -1,5 +1,21 @@
 # Base de datos
 
+## Persistencia de la reconstruccion
+
+Hito 2 usa como fuente de verdad el bootstrap limpio actual: 33 tablas definidas por `database/release/002_schema_final.sql` y extensiones `database/bootstrap/007-008`, validadas estaticamente contra `100_validacion_bootstrap_actual.sql`.
+
+La nueva capa bajo `src/app_scheduler/persistencia/` usa `pyodbc`, SQL explicito parametrizado, DTO inmutables, mapeadores y la unidad de trabajo de Hito 1. No se modifico el esquema, no se ejecuto SQL y no se consulto QA.
+
+Inventario y convenciones vigentes: `docs/PERSISTENCIA_RECONSTRUCCION.md`.
+
+### Contrato definitivo y delta de QA historica
+
+El contrato limpio definitivo contiene 33 tablas y 456 columnas. Las 462 columnas observadas previamente en QA no representan seis capacidades faltantes: corresponden a `fecha_hora`, `tabla_afectada`, `id_registro`, `valor_anterior`, `valor_nuevo` e `ip` de `auditoria_cambios`.
+
+La migracion historica 018 copio esas columnas, respectivamente, a `fecha_evento`, `entidad`, `id_entidad`, `valores_antes`, `valores_despues` e `ip_origen`, y mantuvo los originales para preservar compatibilidad con datos existentes. El release limpio crea solo las columnas canonicas. Todas las adicionales quedan clasificadas como REEMPLAZADAS; ninguna funcionalidad vigente depende de ellas en una instalacion limpia.
+
+La reconciliacion fue estatica contra DDL, migraciones y codigo historico. No se consulto ni modifico QA, y `database/release/` y `database/bootstrap/` permanecieron intactos.
+
 ## Estado
 
 Base `APP_SCHEDULER_QA` creada y validada manualmente en SQL Server local. Migraciones 001-010 y seeds 001-007 ejecutados localmente. La migracion 012 y el seed 008 de Fase 10A fueron ejecutados y validados localmente para feriados. Fase 10B agrega migracion 013 y seeds 009/010, pendientes de ejecucion manual en SSMS. Fase 11B agrega migracion 014 para heartbeat del worker, pendiente de ejecucion manual. Fase 11D agrega migracion 015 para eventos y omisiones del programador, pendiente de ejecucion manual. Fase 11F agrega migracion 016 para borrado operativo seguro y snapshots, pendiente de ejecucion manual. Fase 11G agrega seed 011 para permisos de papelera, pendiente de ejecucion manual. Fase 11H agrega migracion 017 para desacople historico, pendiente de ejecucion manual. Fase 12A agrega migracion 018 y seed 012 para auditoria, pendientes de ejecucion manual.

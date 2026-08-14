@@ -2,7 +2,7 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hito 1 implementa sus cimientos en un runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hito 1 implemento sus cimientos y Hito 2 cerro la persistencia funcional en el mismo runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
 
 ## Implementacion Hito 1
 
@@ -21,6 +21,21 @@ Mapa de transicion aplicado:
 | Hilos web para ejecucion | `worker/contratos.py` | Solo contrato comun; motor real bloqueado hasta Hito 7. |
 
 No se copiaron rutas funcionales, repositorios de tablas, scheduler, motor de ejecucion, Graph, feriados, papelera ni Factory Reset. Los entrypoints `run.py` y `scheduler_worker.py` siguen apuntando exclusivamente al runtime historico.
+
+## Implementacion Hito 2
+
+La infraestructura Hito 1 se extiende, no se reemplaza:
+
+| Capa | Implementacion | Limite |
+| --- | --- | --- |
+| Contrato SQL | Inventario de 33 tablas y tests contra DDL bootstrap | Sin cambiar esquema ni consultar QA |
+| Modelos | DTO inmutables y paginacion | Sin ORM ni entidades activas complejas |
+| Mapeo | Columnas explicitas a atributos Python | Sin mapper generico magico |
+| Repositorios | Usuarios, seguridad y catalogos | Sin CRUD web ni repositorios vacios por tabla |
+| Transaccion | `UnidadTrabajoSQL` compartida por repositorios | Commit solo desde caso de uso |
+| Errores | Traduccion DB-API con operacion/clase/SQLSTATE | Sin SQL, parametros o secretos en mensajes |
+
+El mapa completo, relaciones, convenciones y deuda quedan en `docs/PERSISTENCIA_RECONSTRUCCION.md`.
 
 ## Principios
 
@@ -317,13 +332,17 @@ Cada recurso temporal tendra propietario, ubicacion, criterio de retiro y limpie
 * Docker QA usa `.env.docker` sin fallback.
 * Release publicado no se modifica.
 
-### Pendientes del Hito 2
+### Pendientes posteriores a Hito 2
 
-* Forma exacta de la cola persistente de ejecuciones.
-* Versionado SQL de la reconstruccion y estrategia de migracion desde QA actual.
+* Forma exacta de la cola persistente de ejecuciones, a cerrar con el modulo del motor unico.
+* Estrategia de migracion/cutover desde QA historica cuando los modulos reconstruidos esten completos.
 * Retencion cuantificada de logs/evidencias/auditoria.
-* Matriz exacta de roles/permisos como contrato automatizado.
+* Matriz funcional exacta de roles/permisos como contrato del Hito 3; Hito 2 ya consulta el catalogo real sin codificarlo por memoria.
 
 ## Criterio para cerrar Hito 1
 
-Hito 1 queda cerrado formalmente con su versionado controlado. El runtime reconstruido permanece aislado, el runtime historico sigue activo y Hito 2 permanece no iniciado hasta nueva autorizacion.
+Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime reconstruido permanecio aislado y Hito 2 se inicio posteriormente mediante autorizacion expresa.
+
+## Criterio para cerrar Hito 2
+
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 permanece no iniciado.

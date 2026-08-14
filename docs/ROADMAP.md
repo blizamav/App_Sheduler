@@ -35,15 +35,19 @@ Estado: CERRADO.
 * Build Docker y bootstraps efimeros web/worker aprobados sin SQL.
 * Runtime historico permanece activo; no hubo cutover.
 
-## Pendiente
-
 ### Hito 2 - Base de datos y repositorios
 
-Estado: NO INICIADO.
+Estado: CERRADO.
 
-Consolidar diccionario de datos, conexion, unidad de trabajo, repositorios y contrato persistente de solicitudes de ejecucion. Requiere autorizacion explicita para iniciar.
+Inventariar el modelo limpio de 33 tablas y consolidar DTO, mapeadores, transacciones y repositorios fundacionales sobre la infraestructura de Hito 1. No activa modulos web ni consulta QA.
+
+Validacion final: delta QA 462/bootstrap 456 reconciliado como seis columnas de auditoria reemplazadas; 22 pruebas nuevas de Hito 2 y 71 pruebas totales aprobadas.
+
+## Pendiente
 
 ### Hito 3 - Autenticacion, usuarios, roles y permisos
+
+Estado: NO INICIADO.
 
 Reimplementar login hibrido, `SUPER_ADMIN_ENV`, usuarios SQL y matriz de autorizacion backend.
 

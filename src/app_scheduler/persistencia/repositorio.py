@@ -6,27 +6,102 @@ from collections.abc import Sequence
 from typing import Any
 
 from app_scheduler.compartido.base_datos import ConexionDBAPI
+from app_scheduler.compartido.errores import ErrorPersistencia
+
+
+def _codigo_sql_seguro(error: Exception) -> str | None:
+    """Extrae solo SQLSTATE; nunca serializa argumentos completos del driver."""
+    if not getattr(error, "args", None):
+        return None
+    codigo = str(error.args[0]).strip().upper()
+    if len(codigo) == 5 and codigo.isalnum():
+        return codigo
+    return None
 
 
 class RepositorioSQL:
     def __init__(self, conexion: ConexionDBAPI):
         self.conexion = conexion
 
-    def ejecutar_uno(self, sql: str, parametros: Sequence[Any] = ()):
-        cursor = self.conexion.cursor()
+    def _error(self, error: Exception, operacion: str) -> ErrorPersistencia:
+        codigo = _codigo_sql_seguro(error)
+        sufijo = f" SQLSTATE={codigo}." if codigo else "."
+        return ErrorPersistencia(
+            detalle_tecnico=(
+                f"Fallo de persistencia en {operacion}: "
+                f"{error.__class__.__name__}{sufijo}"
+            )
+        )
+
+    def ejecutar_uno(
+        self,
+        sql: str,
+        parametros: Sequence[Any] = (),
+        *,
+        operacion: str = "consulta_unica",
+    ):
+        cursor = None
         try:
+            cursor = self.conexion.cursor()
             cursor.execute(sql, tuple(parametros))
             return cursor.fetchone()
+        except ErrorPersistencia:
+            raise
+        except Exception as error:
+            raise self._error(error, operacion) from error
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
 
-    def ejecutar_lista(self, sql: str, parametros: Sequence[Any] = ()) -> list[Any]:
-        cursor = self.conexion.cursor()
+    def ejecutar_lista(
+        self,
+        sql: str,
+        parametros: Sequence[Any] = (),
+        *,
+        operacion: str = "consulta_lista",
+    ) -> list[Any]:
+        cursor = None
         try:
+            cursor = self.conexion.cursor()
             cursor.execute(sql, tuple(parametros))
             return list(cursor.fetchall())
+        except ErrorPersistencia:
+            raise
+        except Exception as error:
+            raise self._error(error, operacion) from error
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
+    def ejecutar_escalar(
+        self,
+        sql: str,
+        parametros: Sequence[Any] = (),
+        *,
+        operacion: str = "consulta_escalar",
+    ) -> Any:
+        fila = self.ejecutar_uno(sql, parametros, operacion=operacion)
+        return None if fila is None else fila[0]
+
+    def ejecutar(
+        self,
+        sql: str,
+        parametros: Sequence[Any] = (),
+        *,
+        operacion: str = "escritura",
+    ) -> int:
+        cursor = None
+        try:
+            cursor = self.conexion.cursor()
+            cursor.execute(sql, tuple(parametros))
+            return int(cursor.rowcount)
+        except ErrorPersistencia:
+            raise
+        except Exception as error:
+            raise self._error(error, operacion) from error
+        finally:
+            if cursor is not None:
+                cursor.close()
 
 
 class RepositorioDiagnosticoSQL(RepositorioSQL):
