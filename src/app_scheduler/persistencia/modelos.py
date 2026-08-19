@@ -138,3 +138,56 @@ class Tipo:
     fecha_creacion: datetime
     fecha_actualizacion: datetime | None
     activo: bool
+
+
+@dataclass(frozen=True, slots=True)
+class Tarea:
+    id_tarea: int
+    nombre_tarea: str
+    descripcion: str | None
+    observacion_tecnica: str | None
+    id_cliente: int
+    cliente: str
+    id_categoria: int
+    categoria: str
+    id_tipo: int
+    tipo: str
+    tipo_tarea: str
+    estado_tarea: str
+    permite_ejecucion_manual: bool
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime | None
+    activo: bool
+
+
+@dataclass(frozen=True, slots=True)
+class Script:
+    id_script: int
+    id_tarea: int
+    nombre_script: str
+    descripcion: str | None
+    id_version_activa: int | None
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime | None
+    activo: bool
+
+
+@dataclass(frozen=True, slots=True)
+class VersionScript:
+    id_version: int
+    id_script: int
+    numero_version: int
+    nombre_archivo: str
+    ruta_fisica: str
+    ruta_relativa: str
+    hash_archivo: str
+    estado_version: str
+    es_activa: bool
+    requiere_env: bool
+    ruta_env_fisica: str | None
+    ruta_env_relativa: str | None
+    usuario_carga: str
+    fecha_carga: datetime
+    observacion: str | None
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime | None

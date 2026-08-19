@@ -55,13 +55,13 @@ Estado: CERRADO.
 
 Clientes, categorias y tipos disponen de listados paginados, filtros, alta, edicion, estado, permisos backend, CSRF y auditoria canonica en el runtime aislado. El contrato SQL, los permisos bootstrap, las transacciones, la UI responsive y las pruebas quedaron reconciliados. No se implemento Papelera global ni eliminacion permanente.
 
-## Pendiente
-
 ### Hito 5 - Tareas, scripts, versiones y `.env`
 
-Estado: NO INICIADO.
+Estado: CERRADO.
 
-Reimplementar agregado de tarea, maximo tres versiones, version activa, archivos seguros y configuracion por version.
+Se reconstruyeron tareas manuales, listado y filtros, scripts logicos 1:1, tres slots de version, unica version activa, reemplazo explicito solo sin referencias, carga `.py` validada y `.env` por version. SQL, auditoria y filesystem se coordinan con UoW y compensacion. No se persiste usuario ejecutor: `ejecuciones.usuario_ejecucion` se resolvera con el contexto manual/automatico del Hito 6. No se implementaron programaciones ni ejecucion.
+
+## Pendiente
 
 ### Hito 6 - Programaciones, scheduler y worker
 

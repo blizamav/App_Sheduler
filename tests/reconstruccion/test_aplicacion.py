@@ -13,7 +13,7 @@ def _app(configuracion):
     )
 
 
-def test_fabrica_registra_hito_4_y_protege_panel(configuracion):
+def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
     app = _app(configuracion)
     cliente = app.test_client()
 
@@ -45,6 +45,18 @@ def test_fabrica_registra_hito_4_y_protege_panel(configuracion):
         "/tipos/<int:id_registro>/editar",
         "/tipos/<int:id_registro>/estado",
         "/tipos/nuevo",
+        "/tareas/",
+        "/tareas/nueva",
+        "/tareas/<int:id_tarea>/editar",
+        "/tareas/<int:id_tarea>/estado",
+        "/tareas/<int:id_tarea>/scripts",
+        "/tareas/<int:id_tarea>/scripts/versiones",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/activar",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/desactivar",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/descargar",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/env",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/env/quitar",
+        "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/reemplazar",
     }
 
 

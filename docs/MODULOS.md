@@ -14,7 +14,7 @@ Estado: Hito 1 cerrado; runtime historico aun activo.
 | Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
 | Worker base | Validar configuracion y contrato de motor unico | No expone rutas | No ejecuta SQL | Implementado sin scheduler/motor |
 
-El paquete nuevo vive en `src/app_scheduler/`. Hito 3 registra autenticacion, usuarios y consulta de seguridad; Hito 4 incorpora clientes, categorias y tipos. Tareas, scripts, ejecuciones, scheduler, feriados, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+El paquete nuevo vive en `src/app_scheduler/`. Hito 3 registra autenticacion, usuarios y consulta de seguridad; Hito 4 incorpora clientes, categorias y tipos; Hito 5 incorpora tareas y scripts versionados. Ejecuciones, scheduler, feriados, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
 
 ## Reconstruccion - persistencia Hito 2
 
@@ -30,6 +30,19 @@ Estado: CERRADO. La persistencia fundacional es reutilizada por Hito 3 sin crear
 | Operacion | Relaciones tareas-scripts-versiones-programaciones-ejecuciones | Hitos 5-7 | Solo inventario; sin repositorios vacios |
 
 Detalle: `docs/PERSISTENCIA_RECONSTRUCCION.md`.
+
+## Reconstruccion - tareas y scripts Hito 5
+
+Estado: CERRADO.
+
+| Modulo | Rutas aisladas | Alcance | Estado |
+| --- | --- | --- | --- |
+| Tareas | `/tareas/`, nueva, editar y estado | Tarea manual, filtros, catalogos activos, estado y auditoria | Reconstruido |
+| Scripts | `/tareas/<id>/scripts` | Contenedor logico 1:1, descarga `.py` y resumen de slots | Reconstruido |
+| Versiones | Subir, reemplazar, activar y desactivar por `id_version` | Slots v1-v3; una activa; historia protegida | Reconstruido |
+| `.env` por version | Guardar o retirar por `id_version` | Archivo externo a BD; contenido no recuperable desde UI | Reconstruido |
+
+No existe ruta global `/scripts/`. Hito 5 no crea programaciones, no ejecuta codigo y no persiste un usuario ejecutor en `tareas`. Detalle: `docs/TAREAS_SCRIPTS_RECONSTRUCCION.md`.
 
 ## Reconstruccion - seguridad Hito 3
 

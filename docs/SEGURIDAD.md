@@ -45,6 +45,19 @@ Estado: CERRADO.
 * Los conflictos UNIQUE se convierten en mensajes funcionales sin SQLSTATE, constraint ni detalle ODBC.
 * La auditoria usa solo columnas canonicas y comparte transaccion con el cambio funcional.
 
+## Hito 5 - Seguridad de tareas y scripts
+
+* Rutas y botones usan exclusivamente permisos `TAREAS_*` y `SCRIPTS_*` ya presentes en bootstrap.
+* Todos los cambios son POST y quedan protegidos por CSRF y autorizacion backend.
+* Los formularios usan allowlist; no aceptan ejecutor, rutas, hash, estado de version, Papelera ni campos de auditoria desde el navegador.
+* Los archivos `.py` se limitan por `MAX_SCRIPT_SIZE_MB`, deben ser UTF-8, extension `.py` y sintaxis valida mediante `ast.parse`; nunca se importan ni ejecutan.
+* El `.env` se limita por `MAX_ENV_SIZE_KB`, valida lineas `KEY=VALUE`, vive fuera de la BD y nunca se devuelve, registra ni audita.
+* Las rutas se construyen desde metadata persistida, se confinan a roots configurados y rechazan traversal, rutas absolutas y symlinks inseguros.
+* Las escrituras usan temporales del mismo volumen, reemplazo atomico y compensacion antes del commit SQL. Los tests usan roots temporales, nunca `scripts/` ni `env_scripts/` reales.
+* No se permite descargar `.env`; la descarga `.py` exige `SCRIPTS_VER` y una ruta persistida confinada.
+* La version activa no se reemplaza ni desactiva. Un slot con referencias en `ejecuciones` queda protegido.
+* `dbo.tareas` no persiste usuario ejecutor. Hito 6 definira la identidad efectiva de ejecucion sin reutilizar campos ajenos.
+
 ## Manejo de sesiones
 
 Fase 1 usa sesiones Flask protegidas por `APP_SECRET_KEY`.

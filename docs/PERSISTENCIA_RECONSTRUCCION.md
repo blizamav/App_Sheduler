@@ -100,7 +100,7 @@ No existe conexion global, ORM, session implícita ni commit dentro de repositor
 
 La consulta de credencial es la unica que selecciona `password_hash`; el DTO `Usuario` no lo contiene y `CredencialUsuario` lo excluye de `repr`. Buscar un catalogo por `nombre_normalizado` incluye Papelera para respetar la restriccion fisica UNIQUE.
 
-No se crearon repositorios vacios para tareas, scripts, versiones, programaciones o ejecuciones. Sus contratos y relaciones ya estan inventariados; se implementaran con sus casos de uso.
+Hito 5 agrega `RepositorioTareas` y `RepositorioScripts` con DTO/mapeadores explicitos para `tareas`, `scripts` y `scripts_versiones`. Los repositorios no hacen commit. Programaciones y ejecuciones conservan solo su inventario hasta el hito correspondiente.
 
 ## Convenciones SQL
 
@@ -151,7 +151,10 @@ Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. El contra
 ## Deuda documentada
 
 * La compatibilidad de auditoria 462/456 quedo reconciliada; el detalle y la decision contractual se mantienen en la seccion anterior.
-* `scripts.id_version_activa` y `scripts_versiones.es_activa` requieren consistencia transaccional del servicio de scripts.
+* `scripts.id_version_activa` y `scripts_versiones.es_activa` se actualizan en una unica UoW; el indice filtrado sigue siendo la garantia fisica de una sola activa.
+* El maximo de tres se controla por slots libres en servicio y por `CHECK(numero_version BETWEEN 1 AND 3)` mas `UNIQUE(id_script, numero_version)`.
+* Un slot no activo solo puede reemplazarse cuando `ejecuciones.id_version` no lo referencia. El esquema limpio no contiene otra columna funcional que apunte a `scripts_versiones.id_version`.
+* La clave funcional de tarea (`nombre_tarea`, cliente, categoria y tipo) se valida en servicio, pero no tiene UNIQUE fisico en el esquema vigente; una carrera concurrente extrema queda como deuda legitima sin migracion autorizada.
 * Las UNIQUE fisicas de usuarios/catalogos/versiones incluyen registros en Papelera; los servicios deben distinguir activo, inactivo y eliminado antes de escribir.
 * El modelo no incluye views/procedures para paginacion o seguridad; las consultas permanecen explicitas en repositorios.
 * El contrato persistente del futuro motor unico de ejecucion se definira cuando se implemente el modulo correspondiente; Hito 2 no inventa una tabla nueva.

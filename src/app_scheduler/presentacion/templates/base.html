@@ -29,6 +29,12 @@
                     <span class="navegacion-icono" aria-hidden="true">P</span>
                     <span>Panel</span>
                 </a>
+                {% if identidad_sesion.tiene_permiso('TAREAS_VER') %}
+                <a class="navegacion-enlace {% if request.blueprint in ('tareas', 'scripts') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}">
+                    <span class="navegacion-icono" aria-hidden="true">T</span>
+                    <span>Tareas y scripts</span>
+                </a>
+                {% endif %}
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('CLIENTES_VER') or identidad_sesion.tiene_permiso('CATEGORIAS_VER') or identidad_sesion.tiene_permiso('TIPOS_VER') %}
                 <p class="navegacion-grupo">Administracion</p>
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}

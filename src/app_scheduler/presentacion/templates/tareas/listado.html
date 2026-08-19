@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Tareas | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/tareas-scripts.css') }}">{% endblock %}
+{% block contenido %}
+{% set identidad = identidad_actual() %}
+<header class="encabezado-pagina">
+  <div><p class="eyebrow">Procesos</p><h1>Tareas</h1><p class="texto-secundario">{{ resultado.total }} tareas operativas. La programacion se incorpora en el Hito 6.</p></div>
+  {% if identidad.tiene_permiso('TAREAS_CREAR') %}<a class="boton primario" href="{{ url_for('tareas.nueva') }}">Crear tarea</a>{% endif %}
+</header>
+<form class="barra-filtros tareas-filtros" method="get">
+  <label class="campo"><span>Buscar</span><input name="buscar" value="{{ filtros.buscar }}" maxlength="200" placeholder="Nombre o descripcion"></label>
+  <label class="campo"><span>Cliente</span><select name="id_cliente"><option value="">Todos</option>{% for id, nombre in catalogos.clientes %}<option value="{{ id }}" {% if filtros.id_cliente == id %}selected{% endif %}>{{ nombre }}</option>{% endfor %}</select></label>
+  <label class="campo"><span>Estado</span><select name="estado"><option value="">Todos</option>{% for estado in ('ACTIVA','INACTIVA','SUSPENDIDA') %}<option value="{{ estado }}" {% if filtros.estado == estado %}selected{% endif %}>{{ estado|title }}</option>{% endfor %}</select></label>
+  <button class="boton secundario" type="submit">Filtrar</button><a class="boton secundario" href="{{ url_for('tareas.listado') }}">Limpiar</a>
+</form>
+<div class="tabla-contenedor"><table class="tabla-base tabla-tareas"><thead><tr><th>Tarea</th><th>Clasificacion</th><th>Estado</th><th>Actualizacion</th><th>Acciones</th></tr></thead><tbody>
+{% for tarea in resultado.elementos %}<tr>
+  <td><strong>{{ tarea.nombre_tarea }}</strong><small class="texto-bloque">{{ tarea.descripcion or 'Sin descripcion' }}</small></td>
+  <td>{{ tarea.cliente }}<small class="texto-bloque">{{ tarea.categoria }} / {{ tarea.tipo }}</small></td>
+  <td><span class="badge {{ 'activo' if tarea.estado_tarea == 'ACTIVA' else ('advertencia' if tarea.estado_tarea == 'SUSPENDIDA' else 'error') }}">{{ tarea.estado_tarea }}</span></td>
+  <td>{{ (tarea.fecha_actualizacion or tarea.fecha_creacion).strftime('%Y-%m-%d %H:%M') }}</td>
+  <td class="acciones-tabla">
+    {% if identidad.tiene_permiso('SCRIPTS_VER') %}<a class="boton secundario compacto" href="{{ url_for('scripts.detalle', id_tarea=tarea.id_tarea) }}">Scripts</a>{% endif %}
+    {% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="boton secundario compacto" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea) }}">Editar</a>{% endif %}
+    {% if identidad.tiene_permiso('TAREAS_ESTADO') %}<form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="estado" value="{{ 'INACTIVA' if tarea.estado_tarea == 'ACTIVA' else 'ACTIVA' }}"><button class="boton secundario compacto" data-confirmar data-titulo="Cambiar estado" data-mensaje="Se actualizara el estado operativo de la tarea.">{{ 'Inactivar' if tarea.estado_tarea == 'ACTIVA' else 'Activar' }}</button></form>{% endif %}
+    {% if tarea.estado_tarea == 'ACTIVA' and identidad.tiene_permiso('TAREAS_SUSPENDER') %}<form method="post" action="{{ url_for('tareas.estado', id_tarea=tarea.id_tarea) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="estado" value="SUSPENDIDA"><button class="boton secundario compacto" data-confirmar data-titulo="Suspender tarea" data-mensaje="La tarea quedara suspendida hasta que se active nuevamente.">Suspender</button></form>{% endif %}
+  </td>
+</tr>{% else %}<tr><td colspan="5" class="estado-vacio">No hay tareas para mostrar.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion">{% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('tareas.listado', pagina=resultado.pagina-1, buscar=filtros.buscar, estado=filtros.estado, id_cliente=filtros.id_cliente) }}">Anterior</a>{% endif %}<span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>{% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('tareas.listado', pagina=resultado.pagina+1, buscar=filtros.buscar, estado=filtros.estado, id_cliente=filtros.id_cliente) }}">Siguiente</a>{% endif %}</nav>{% endif %}
+{% endblock %}

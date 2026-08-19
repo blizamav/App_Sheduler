@@ -50,6 +50,8 @@ def crear_aplicacion(
     from app_scheduler.modulos.autenticacion.casos_uso import ServicioAutenticacion
     from app_scheduler.modulos.catalogos.casos_uso import ServicioCatalogos
     from app_scheduler.modulos.usuarios.casos_uso import ServicioUsuarios
+    from app_scheduler.modulos.tareas.casos_uso import ServicioTareas
+    from app_scheduler.modulos.scripts.casos_uso import ServicioScripts
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -60,6 +62,8 @@ def crear_aplicacion(
     app.extensions["servicio_autenticacion"] = servicio_autenticacion
     app.extensions["servicio_catalogos"] = ServicioCatalogos(proveedor_sql)
     app.extensions["servicio_usuarios"] = ServicioUsuarios(proveedor_sql)
+    app.extensions["servicio_tareas"] = ServicioTareas(proveedor_sql)
+    app.extensions["servicio_scripts"] = ServicioScripts(proveedor_sql, configuracion)
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
@@ -67,12 +71,16 @@ def crear_aplicacion(
     from app_scheduler.modulos.catalogos.rutas import bp_catalogos
     from app_scheduler.modulos.seguridad.rutas import bp_seguridad
     from app_scheduler.modulos.usuarios.rutas import bp_usuarios
+    from app_scheduler.modulos.tareas.rutas import bp_tareas
+    from app_scheduler.modulos.scripts.rutas import bp_scripts
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
     app.register_blueprint(bp_catalogos)
     app.register_blueprint(bp_usuarios)
     app.register_blueprint(bp_seguridad)
+    app.register_blueprint(bp_tareas)
+    app.register_blueprint(bp_scripts)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

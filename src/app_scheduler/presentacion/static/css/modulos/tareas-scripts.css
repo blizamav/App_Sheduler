@@ -1,0 +1,28 @@
+.tareas-filtros { grid-template-columns: minmax(220px, 2fr) minmax(160px, 1fr) minmax(140px, 1fr) auto auto; }
+.tabla-tareas { min-width: 900px; }
+.texto-bloque { display: block; margin-top: 4px; color: var(--color-texto-suave); }
+.formulario-tarea, .carga-version { max-width: 1050px; }
+.formulario textarea, .panel-detalle textarea { width: 100%; padding: 10px 11px; resize: vertical; color: var(--color-texto); border: 1px solid var(--color-borde); border-radius: var(--radio-sm); background: var(--color-superficie); font: inherit; }
+.grid-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.campo-ancho { grid-column: 1 / -1; }
+.resumen-versiones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.panel-operativo { display: grid; gap: 5px; padding: 18px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
+.panel-operativo strong { font-size: 1.05rem; }
+.panel-operativo small { color: var(--color-texto-suave); }
+.carga-version { margin-bottom: 18px; }
+.versiones-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tarjeta-version { min-width: 0; padding: 18px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); box-shadow: var(--sombra-suave); }
+.badge.advertencia { color: var(--color-advertencia); background: #fff7e8; }
+.tarjeta-version.version-activa { border-top: 3px solid var(--color-exito); }
+.tarjeta-version > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tarjeta-version h2 { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 1rem; }
+.datos-version { display: grid; gap: 8px; margin: 16px 0; }
+.datos-version div { display: flex; justify-content: space-between; gap: 12px; }
+.datos-version dt { color: var(--color-texto-suave); }
+.datos-version dd { margin: 0; text-align: right; }
+.acciones-version { display: flex; flex-wrap: wrap; gap: 7px; }
+.panel-detalle { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-borde); }
+.panel-detalle summary { cursor: pointer; font-weight: 700; }
+.panel-detalle form { display: grid; gap: 10px; margin-top: 12px; }
+@media (max-width: 1050px) { .versiones-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .tareas-filtros, .grid-tres, .resumen-versiones { grid-template-columns: 1fr; } }

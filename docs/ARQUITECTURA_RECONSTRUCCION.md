@@ -220,6 +220,18 @@ Como SQL Server y filesystem no comparten transaccion distribuida:
 3. mover/promover archivos con nombres determinados;
 4. confirmar SQL;
 5. compensar filesystem si SQL falla;
+
+Hito 5 implementa este limite en `modulos/tareas`, `modulos/scripts`,
+`persistencia/repositorio_tareas.py`, `persistencia/repositorio_scripts.py` y
+`compartido/filesystem.py`. Los archivos se preparan en el mismo volumen,
+se promueven atomicamente dentro de la UoW y se restauran si SQL o auditoria
+fallan antes del commit. Los roots y nombres se derivan de configuracion y
+metadata validada; el request nunca entrega una ruta fisica.
+
+En este hito toda tarea nueva es `MANUAL`; programaciones y ejecucion siguen
+fuera de alcance. `dbo.tareas` no contiene ejecutor. La identidad efectiva se
+registrara en `ejecuciones.usuario_ejecucion` cuando Hito 6 defina el contexto
+de ejecucion manual y automatica.
 6. auditar resultado y limpiar temporales.
 
 Todas las rutas se resuelven contra raices configuradas y se rechazan traversal, symlinks inseguros, raices contenidas y nombres fuera de contrato.
@@ -358,8 +370,8 @@ Cada recurso temporal tendra propietario, ubicacion, criterio de retiro y limpie
 
 ## Criterio para cerrar Hito 1
 
-Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime reconstruido permanecio aislado y Hito 2 se inicio posteriormente mediante autorizacion expresa.
+Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime reconstruido permanecio aislado y los hitos posteriores se iniciaron mediante autorizacion expresa.
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hito 3 quedo cerrado con autenticacion, usuarios, roles/permisos y auditoria implementados en el runtime aislado. Hito 4 quedo cerrado con clientes, categorias y tipos sobre la persistencia y seguridad comunes; Hito 5 no fue iniciado.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3, 4 y 5 quedaron cerrados; Hito 6 no fue iniciado.

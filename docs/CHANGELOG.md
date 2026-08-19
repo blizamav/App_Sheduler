@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-18 - Hito 5: tareas, scripts, versiones y `.env`
+
+### Cerrado
+
+* Se agregaron tareas manuales con listado, filtros, alta, edicion, estado, catalogos activos, permisos, CSRF y auditoria en UoW.
+* Se reconstruyeron scripts logicos 1:1 y tres slots v1-v3, version activa unica, descarga `.py`, activacion/desactivacion y reemplazo explicito solo para slots no activos sin referencias en `ejecuciones`.
+* Se incorporo filesystem confinado con validacion AST/UTF-8/tamano, SHA-256, temporales, promocion atomica, respaldo y compensacion SQL/filesystem.
+* `.env` se administra por version como archivo externo; se valida `KEY=VALUE`, no se persiste ni expone contenido y puede retirarse de forma compensada.
+* La UI explica slots, bloqueos e historial y se adapta a desktop/movil sin iniciar Hito 6.
+* `dbo.tareas` no contiene ejecutor; la identidad efectiva queda diferida al contexto de ejecucion y `ejecuciones.usuario_ejecucion`.
+* Se agregaron 32 casos: `tests/reconstruccion` aprueba 123 y omite 1 prueba de symlink por restricciones del host Windows; la suite completa aprueba 149 y omite esa misma prueba. La cobertura explicita incluye cambio v1-v2, unica activa, version inexistente, transicion invalida, rollback de activacion y descarga negativa.
+* El cierre del 2026-08-19 valido Compose, construyo correctamente las imagenes `web` y `worker` y comprobo en un contenedor Linux efimero que un symlink externo es rechazado. No se levantaron servicios ni se cargaron variables operativas.
+* La inspeccion visual automatizada no se completo por un fallo interno del conector de navegador; queda como validacion manual pendiente.
+* No se modificaron runtime historico, SQL protegido, `.env`, `.env.docker` ni QA; no se ejecuto SQL ni Factory Reset y Hito 6 no fue iniciado.
+
 ## 2026-08-14 - Hito 4: clientes, categorias y tipos
 
 ### Cerrado

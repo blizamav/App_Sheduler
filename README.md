@@ -11,7 +11,8 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 2 - Base de datos y repositorios funcionales: CERRADO.
 * Hito 3 - Autenticacion, usuarios, roles y permisos: CERRADO.
 * Hito 4 - Clientes, categorias y tipos: CERRADO.
-* Hito 5 - Tareas, scripts, versiones y `.env`: NO INICIADO.
+* Hito 5 - Tareas, scripts, versiones y `.env`: CERRADO.
+* Hito 6 - Programaciones, scheduler y worker: NO INICIADO.
 
 Fuentes maestras de la reconstruccion:
 
@@ -22,9 +23,9 @@ Fuentes maestras de la reconstruccion:
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 4 agrega clientes, categorias y tipos sobre la seguridad y persistencia ya reconstruidas, sin reemplazar las rutas historicas vigentes.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 5 agrega tareas manuales, scripts, tres slots de version y `.env` por version sin reemplazar las rutas historicas vigentes.
 
-Validacion aislada acumulada hasta Hito 4:
+Validacion aislada acumulada hasta Hito 5:
 
 ```powershell
 $env:PYTHONPATH="src"
@@ -33,10 +34,10 @@ python -m pytest -q
 python -m app_scheduler.web --check
 ```
 
-La suite aislada `tests/reconstruccion` contiene 92 casos. La metrica oficial de
-cierre es la suite completa del repositorio: 118 pruebas aprobadas.
+Los conteos finales de pruebas se registran en `docs/CHANGELOG.md` al completar
+la validacion tecnica del hito.
 
-El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md) y [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md).
+El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md), [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md) y [Tareas y scripts](docs/TAREAS_SCRIPTS_RECONSTRUCCION.md).
 
 ## Capacidades de referencia
 

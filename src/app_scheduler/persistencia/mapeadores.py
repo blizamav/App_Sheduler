@@ -13,7 +13,27 @@ from app_scheduler.persistencia.modelos import (
     Permiso,
     Rol,
     Tipo,
+    Tarea,
+    Script,
+    VersionScript,
     Usuario,
+)
+
+COLUMNAS_TAREA = (
+    "id_tarea", "nombre_tarea", "descripcion", "observacion_tecnica",
+    "id_cliente", "cliente", "id_categoria", "categoria", "id_tipo", "tipo",
+    "tipo_tarea", "estado_tarea", "permite_ejecucion_manual", "fecha_creacion",
+    "fecha_actualizacion", "activo",
+)
+COLUMNAS_SCRIPT = (
+    "id_script", "id_tarea", "nombre_script", "descripcion", "id_version_activa",
+    "fecha_creacion", "fecha_actualizacion", "activo",
+)
+COLUMNAS_VERSION_SCRIPT = (
+    "id_version", "id_script", "numero_version", "nombre_archivo", "ruta_fisica",
+    "ruta_relativa", "hash_archivo", "estado_version", "es_activa", "requiere_env",
+    "ruta_env_fisica", "ruta_env_relativa", "usuario_carga", "fecha_carga",
+    "observacion", "fecha_creacion", "fecha_actualizacion",
 )
 
 
@@ -168,4 +188,44 @@ def mapear_tipo(fila: Sequence[Any]) -> Tipo:
         fecha_creacion=datos["fecha_creacion"],
         fecha_actualizacion=datos["fecha_actualizacion"],
         activo=bool(datos["activo"]),
+    )
+
+
+def mapear_tarea(fila: Sequence[Any]) -> Tarea:
+    datos = fila_como_diccionario(fila, COLUMNAS_TAREA)
+    return Tarea(
+        id_tarea=datos["id_tarea"], nombre_tarea=datos["nombre_tarea"],
+        descripcion=datos["descripcion"], observacion_tecnica=datos["observacion_tecnica"],
+        id_cliente=datos["id_cliente"], cliente=datos["cliente"],
+        id_categoria=datos["id_categoria"], categoria=datos["categoria"],
+        id_tipo=datos["id_tipo"], tipo=datos["tipo"], tipo_tarea=datos["tipo_tarea"],
+        estado_tarea=datos["estado_tarea"],
+        permite_ejecucion_manual=bool(datos["permite_ejecucion_manual"]),
+        fecha_creacion=datos["fecha_creacion"], fecha_actualizacion=datos["fecha_actualizacion"],
+        activo=bool(datos["activo"]),
+    )
+
+
+def mapear_script(fila: Sequence[Any]) -> Script:
+    datos = fila_como_diccionario(fila, COLUMNAS_SCRIPT)
+    return Script(
+        id_script=datos["id_script"], id_tarea=datos["id_tarea"],
+        nombre_script=datos["nombre_script"], descripcion=datos["descripcion"],
+        id_version_activa=datos["id_version_activa"], fecha_creacion=datos["fecha_creacion"],
+        fecha_actualizacion=datos["fecha_actualizacion"], activo=bool(datos["activo"]),
+    )
+
+
+def mapear_version_script(fila: Sequence[Any]) -> VersionScript:
+    datos = fila_como_diccionario(fila, COLUMNAS_VERSION_SCRIPT)
+    return VersionScript(
+        id_version=datos["id_version"], id_script=datos["id_script"],
+        numero_version=datos["numero_version"], nombre_archivo=datos["nombre_archivo"],
+        ruta_fisica=datos["ruta_fisica"], ruta_relativa=datos["ruta_relativa"],
+        hash_archivo=datos["hash_archivo"], estado_version=datos["estado_version"],
+        es_activa=bool(datos["es_activa"]), requiere_env=bool(datos["requiere_env"]),
+        ruta_env_fisica=datos["ruta_env_fisica"], ruta_env_relativa=datos["ruta_env_relativa"],
+        usuario_carga=datos["usuario_carga"], fecha_carga=datos["fecha_carga"],
+        observacion=datos["observacion"], fecha_creacion=datos["fecha_creacion"],
+        fecha_actualizacion=datos["fecha_actualizacion"],
     )

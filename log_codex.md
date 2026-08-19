@@ -6,10 +6,10 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0, 1, 2, 3 y 4 cerrados. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0, 1, 2, 3, 4 y 5 cerrados. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 4 cerrado, sin cutover; Hito 5 no iniciado.
-* Ultima actualizacion: 2026-08-14
+* Fase actual: Reconstruccion limpia - Hito 5 cerrado, sin cutover; Hito 6 no iniciado.
+* Ultima actualizacion: 2026-08-19
 
 ## 2. Decisiones tecnicas vigentes
 
@@ -81,7 +81,7 @@
 
 ## 5. Pendientes
 
-* Pendiente 1: Esperar autorizacion antes de iniciar Hito 5.
+* Pendiente 1: Esperar autorizacion antes de iniciar Hito 6.
 * Pendiente 2: El contrato persistente del motor unico se definira con su modulo; Hito 2 no crea una tabla anticipada sin caso de uso aprobado.
 * Pendiente 3: Crear cobertura transversal de seguridad, repositorios, permisos, worker, filesystem y flujos HTTP.
 * Pendiente 4: Normalizar por hito la documentacion historica que aun contradice el runtime vigente.
@@ -89,6 +89,27 @@
 * Pendiente 6: Mantener preparacion productiva como hito posterior a QA, incluyendo WSGI, secretos, backups, retencion y observabilidad.
 
 ## 6. Historial de cambios
+
+### 2026-08-19 - Reconstruccion limpia / Cierre formal Hito 5
+
+* Inventario conciliado: 28 archivos exactos, 13 modificados y 15 nuevos, todos pertenecientes a Tareas, Scripts, filesystem, persistencia, presentacion, tests o documentacion.
+* Cobertura de cierre: se agregaron pruebas explicitas para activar v2, conservar una unica activa, rechazar version inexistente/transicion invalida, revertir activacion ante fallo de commit y bloquear descarga de `.env` o rutas externas.
+* Resultado: 123 pruebas reconstruidas aprobadas y 1 symlink omitida en Windows; suite completa con 149 aprobadas y la misma omision.
+* Docker: Compose valido, imagenes `web` y `worker` construidas y rechazo de symlink externo comprobado en un contenedor Linux efimero sin volumenes ni variables operativas.
+* Visual: el segundo intento de automatizacion responsive fallo antes de abrir la pagina por un error interno del conector; el servidor Flask aislado fue retirado y la inspeccion manual queda documentada como pendiente no bloqueante.
+* Decision: requisitos tecnicos de cierre aprobados; Hito 5 cerrado sin iniciar Hito 6.
+
+### 2026-08-18 - Reconstruccion limpia / Hito 5 listo para revision
+
+* Contrato: `tareas`, `scripts` y `scripts_versiones` implementados sin modificar esquema; tareas nuevas son manuales y no persisten usuario ejecutor.
+* Versiones: tres slots exactos, una activa por UoW, v4 bloqueada y reemplazo solo de slot no activo sin referencias en `ejecuciones.id_version`.
+* Filesystem: servicio confinado para `.py`/`.env`, limites configurados, AST sin ejecucion, SHA-256, temporales, reemplazo atomico y compensacion ante fallo SQL/auditoria/filesystem.
+* Seguridad: permisos bootstrap exactos, CSRF, allowlist de formularios, descarga solo `.py`, secretos `.env` excluidos de respuestas, logs y auditoria.
+* UI: tareas y administracion contextual `/tareas/<id>/scripts`, estados, slots, bloqueo por historia y formularios responsive.
+* Pruebas: 32 casos nuevos; 123 reconstruidas aprobadas, con 1 prueba de symlink omitida porque el host Windows no permite crear el enlace. La suite completa aprobo 149 pruebas y omitio ese mismo caso.
+* Validacion de cierre: Compose valido, build `web`/`worker` correcto y symlink externo rechazado en Linux. El conector de navegador fallo antes de la inspeccion responsive automatizada; no quedaron servidores ni recursos temporales del aplicativo.
+* Alcance protegido: `app/`, `run.py`, `scheduler_worker.py`, `.env`, `.env.docker`, `database/bootstrap/`, `database/release/` y `database/factory_reset/` intactos; QA no consultada ni modificada.
+* Proximo paso: revision formal de Hito 5. Hito 6 no iniciado.
 
 ### 2026-08-14 - Reconstruccion limpia / Cierre formal Hito 4
 
