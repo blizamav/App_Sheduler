@@ -1,11 +1,16 @@
-"""Bootstrap no funcional del worker reconstruido."""
+"""Punto de entrada del worker scheduler reconstruido."""
 
 from __future__ import annotations
 
 import argparse
+import signal
+from threading import Event
 
+from app_scheduler.compartido.base_datos import ProveedorConexionesSQLServer
 from app_scheduler.compartido.logging import configurar_logging
 from app_scheduler.configuracion import ConfiguracionAplicacion
+from app_scheduler.worker.scheduler import ServicioScheduler
+from app_scheduler.worker.servicio import ServicioWorker
 
 
 def preparar_worker(
@@ -27,15 +32,31 @@ def main() -> int:
         action="store_true",
         help="Valida configuracion e inicializacion sin iniciar scheduler ni ejecuciones.",
     )
+    parser.add_argument(
+        "--once", action="store_true",
+        help="Ejecuta un unico ciclo scheduler sin iniciar procesos de usuario.",
+    )
     argumentos = parser.parse_args()
-    logger = preparar_worker()
+    configuracion = ConfiguracionAplicacion.desde_entorno()
+    logger = preparar_worker(configuracion)
     if argumentos.check:
         logger.info("Worker base validado", extra={"evento": "WORKER_BASE_OK"})
         return 0
-    logger.warning(
-        "El worker funcional aun no esta habilitado en el runtime reconstruido.",
-        extra={"evento": "WORKER_NO_IMPLEMENTADO"},
+    proveedor = ProveedorConexionesSQLServer(configuracion)
+    detener = Event()
+    worker = ServicioWorker(
+        proveedor, ServicioScheduler(proveedor, configuracion), configuracion,
+        logger, detener=detener,
     )
+    if argumentos.once:
+        return 0 if worker.ejecutar_solo_un_ciclo() is not None else 1
+
+    def solicitar_detencion(_senal, _marco):
+        detener.set()
+
+    signal.signal(signal.SIGINT, solicitar_detencion)
+    signal.signal(signal.SIGTERM, solicitar_detencion)
+    worker.ejecutar()
     return 0
 
 

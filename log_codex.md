@@ -6,10 +6,25 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0, 1, 2, 3, 4 y 5 cerrados. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-6 cerrados. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 5 cerrado, sin cutover; Hito 6 no iniciado.
+* Fase actual: Reconstruccion limpia - Hito 6 cerrado, sin cutover; Hito 7 no iniciado.
 * Ultima actualizacion: 2026-08-19
+
+## 2026-08-19 - Hito 6 / Programaciones, scheduler y worker
+
+* Que se hizo: Se reconstruyeron programaciones, calculo temporal, scheduler deterministico, reserva automatica `PENDIENTE`, idempotencia SQL, calendario local, runtime lock, heartbeat, polling, detencion ordenada y UI dentro de Tareas.
+* Por que: Para separar administracion web de procesamiento worker y preparar un contrato unico que Hito 7 consumira sin duplicar motores.
+* Contrato: La automatica usa la version activa al disparar y congela `id_script`/`id_version`; `usuario_ejecucion` queda nulo y `nombre_worker` identifica al actor tecnico. `programaciones` no necesita usuario ni version persistidos; no hay migracion.
+* Decisiones: Una programacion activa por tarea se controla bajo lock transaccional; atrasos fuera de la ventana de polling se omiten; feriados provienen solo de SQL local; la UNIQUE de `clave_programacion` es la garantia de carrera.
+* DST: Las horas inexistentes se omiten, las ambiguas usan el primer `fold` y el calculo diario parte siempre de la regla civil para no derivar.
+* Archivos: Nuevo modulo `modulos/programaciones`, repositorios scheduler/heartbeat, servicios worker, templates/CSS/JS, pruebas y `docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md`; integracion acotada en fabrica, DTO y navegacion.
+* Seguridad: Permisos existentes `TAREAS_VER`, `TAREAS_EDITAR`, `TAREAS_ESTADO`; CSRF, allowlist, SQL parametrizado, lock fail-closed y secretos fuera de eventos/solicitudes.
+* Pruebas realizadas: 162 reconstruidas y 188 totales aprobadas, 1 symlink omitido en Windows y validado en Linux; compileall, 15 templates, 3 JavaScript, Compose, build final web/worker y checks efimeros aprobados. No se consulto SQL.
+* Inspeccion visual: Se levanto servidor fake sin SQL en puerto temporal; el conector de navegador fallo antes de navegar por error interno de confianza. El servidor fue detenido y el puerto confirmado libre.
+* Riesgos: Falta inspeccion visual manual y prueba de integracion SQL/QA; el runtime historico sigue activo hasta cutover.
+* Cierre: Inventario, contrato SQL, idempotencia, concurrencia, DST, `--once`, heartbeat, permisos, CSRF y limites Hito 6/7 reconciliados. Hito 7 no iniciado.
+* Proximo paso: Esperar autorizacion explicita antes de iniciar Hito 7.
 
 ## 2. Decisiones tecnicas vigentes
 

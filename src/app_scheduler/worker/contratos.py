@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import Protocol
 
@@ -20,6 +21,11 @@ class SolicitudEjecucion:
     origen: OrigenEjecucion
     actor: str
     id_programacion: int | None = None
+    fecha_programada: datetime | None = None
+    clave_programacion: str | None = None
+    usuario_ejecucion: str | None = None
+    nombre_worker: str | None = None
+    proxima_ejecucion: datetime | None = None
 
 
 class MotorEjecucion(Protocol):

@@ -1,0 +1,16 @@
+.acciones-encabezado { display: flex; flex-wrap: wrap; gap: 9px; }
+.panel-contexto { display: grid; grid-template-columns: repeat(2, minmax(140px, 220px)) minmax(240px, 1fr); gap: 18px; align-items: center; margin-bottom: 18px; padding: 16px 18px; border: 1px solid var(--color-borde); border-left: 3px solid var(--color-primario); border-radius: var(--radio-md); background: var(--color-superficie); }
+.panel-contexto div { display: grid; gap: 4px; }
+.panel-contexto span, .panel-contexto p { color: var(--color-texto-suave); }
+.panel-contexto p { margin: 0; }
+.tabla-programaciones { min-width: 980px; }
+.texto-bloque { display: block; margin-top: 4px; color: var(--color-texto-suave); }
+.formulario-programacion { max-width: 1060px; }
+.formulario-programacion textarea { width: 100%; padding: 10px 11px; resize: vertical; color: var(--color-texto); border: 1px solid var(--color-borde); border-radius: var(--radio-sm); background: var(--color-superficie); font: inherit; }
+.grid-dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grupo-intervalo { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.selector-dias { display: flex; grid-column: 1 / -1; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 14px; border: 1px solid var(--color-borde); border-radius: var(--radio-sm); }
+.selector-dias label, .opcion-check { display: inline-flex; align-items: center; gap: 7px; font-weight: 650; }
+.selector-dias input, .opcion-check input { width: 17px; height: 17px; accent-color: var(--color-primario); }
+[hidden] { display: none !important; }
+@media (max-width: 760px) { .panel-contexto, .grid-dos, .grupo-intervalo { grid-template-columns: 1fr; } .grupo-intervalo { grid-column: auto; } }

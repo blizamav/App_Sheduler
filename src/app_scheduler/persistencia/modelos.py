@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Generic, TypeVar
 
 from app_scheduler.compartido.errores import ErrorValidacion
@@ -191,3 +191,50 @@ class VersionScript:
     observacion: str | None
     fecha_creacion: datetime
     fecha_actualizacion: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class Programacion:
+    id_programacion: int
+    id_tarea: int
+    nombre_tarea: str
+    estado_tarea: str
+    tipo_programacion: str
+    modo_ejecucion_dia: str | None
+    hora_inicio: time | None
+    hora_termino: time | None
+    hora_ejecucion: time | None
+    intervalo_minutos: int | None
+    dias_semana: str | None
+    dia_mes: int | None
+    fecha_especifica: date | None
+    fechas_especificas: str | None
+    ejecutar_en_feriados: bool
+    zona_horaria: str
+    fecha_inicio_vigencia: date | None
+    fecha_fin_vigencia: date | None
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime | None
+    activo: bool
+    proxima_ejecucion: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CandidatoProgramacion:
+    programacion: Programacion
+    id_script: int | None
+    id_version: int | None
+    estado_version: str | None
+    script_activo: bool
+    version_activa: bool
+    proxima_ejecucion: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiguracionScheduler:
+    scheduler_activo: bool
+    intervalo_revision_segundos: int
+    max_ejecuciones_concurrentes: int
+    permitir_ejecucion_automatica: bool
+    modo_mantenimiento: bool
+    nombre_worker_principal: str | None

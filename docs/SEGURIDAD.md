@@ -56,7 +56,19 @@ Estado: CERRADO.
 * Las escrituras usan temporales del mismo volumen, reemplazo atomico y compensacion antes del commit SQL. Los tests usan roots temporales, nunca `scripts/` ni `env_scripts/` reales.
 * No se permite descargar `.env`; la descarga `.py` exige `SCRIPTS_VER` y una ruta persistida confinada.
 * La version activa no se reemplaza ni desactiva. Un slot con referencias en `ejecuciones` queda protegido.
-* `dbo.tareas` no persiste usuario ejecutor. Hito 6 definira la identidad efectiva de ejecucion sin reutilizar campos ajenos.
+* `dbo.tareas` no persiste usuario ejecutor. Hito 6 definio `usuario_ejecucion = NULL` para automaticas; Hito 7 resolvera la identidad manual sin reutilizar campos ajenos.
+
+## Hito 6 - Seguridad de programaciones y worker
+
+* Programaciones reutiliza permisos reales: `TAREAS_VER`, `TAREAS_EDITAR` y `TAREAS_ESTADO`; no agrega permisos ni seeds.
+* Todo POST usa CSRF global y allowlist. IDs de tarea/programacion provienen de la ruta; ejecutor, proxima ejecucion, auditoria y estado derivado no se aceptan desde el formulario.
+* La tarea se bloquea con `UPDLOCK, HOLDLOCK` al administrar la unica programacion activa. SQL usa placeholders y la UoW incluye auditoria.
+* La idempotencia automatica depende del indice unico filtrado de `clave_programacion`, no de un boolean local ni de un `SELECT` previo vulnerable a carreras.
+* El limite concurrente se revalida bajo `sp_getapplock` con owner transaccional antes del `INSERT`; no requiere `sysadmin`, locks de servidor ni una migracion.
+* El worker respeta scheduler apagado, automaticas deshabilitadas, mantenimiento, limite de concurrencia y lock de Factory Reset con lectura fail-closed.
+* Los feriados provienen solo de `dbo.feriados`; no hay trafico a Internet ni sincronizacion externa.
+* La solicitud automatica congela `id_script`/`id_version`, deja `usuario_ejecucion` nulo y no copia secretos ni contenido `.env`.
+* Hito 6 no llama `subprocess`, no ejecuta/importa scripts y no produce stdout/stderr. Esa frontera pertenece al Hito 7.
 
 ## Manejo de sesiones
 

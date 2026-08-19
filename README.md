@@ -12,7 +12,8 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 3 - Autenticacion, usuarios, roles y permisos: CERRADO.
 * Hito 4 - Clientes, categorias y tipos: CERRADO.
 * Hito 5 - Tareas, scripts, versiones y `.env`: CERRADO.
-* Hito 6 - Programaciones, scheduler y worker: NO INICIADO.
+* Hito 6 - Programaciones, scheduler y worker: CERRADO.
+* Hito 7 - Motor de ejecucion: NO INICIADO.
 
 Fuentes maestras de la reconstruccion:
 
@@ -23,9 +24,9 @@ Fuentes maestras de la reconstruccion:
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 5 agrega tareas manuales, scripts, tres slots de version y `.env` por version sin reemplazar las rutas historicas vigentes.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 6 incorpora programaciones y un worker que reserva ejecuciones automaticas `PENDIENTE`, pero no ejecuta scripts ni reemplaza los entrypoints historicos.
 
-Validacion aislada acumulada hasta Hito 5:
+Validacion aislada de cierre de Hito 6:
 
 ```powershell
 $env:PYTHONPATH="src"
@@ -34,10 +35,11 @@ python -m pytest -q
 python -m app_scheduler.web --check
 ```
 
-Los conteos finales de pruebas se registran en `docs/CHANGELOG.md` al completar
-la validacion tecnica del hito.
+El cierre aprobo 162 pruebas reconstruidas y 188 pruebas totales; una prueba de
+symlink se omite en Windows y esta validada en Linux. El detalle permanece en
+`docs/CHANGELOG.md`.
 
-El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md), [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md) y [Tareas y scripts](docs/TAREAS_SCRIPTS_RECONSTRUCCION.md).
+El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md), [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md), [Tareas y scripts](docs/TAREAS_SCRIPTS_RECONSTRUCCION.md) y [Programaciones y scheduler](docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md).
 
 ## Capacidades de referencia
 

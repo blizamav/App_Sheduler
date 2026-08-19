@@ -16,6 +16,7 @@ from app_scheduler.persistencia.modelos import (
     Tarea,
     Script,
     VersionScript,
+    Programacion,
     Usuario,
 )
 
@@ -34,6 +35,14 @@ COLUMNAS_VERSION_SCRIPT = (
     "ruta_relativa", "hash_archivo", "estado_version", "es_activa", "requiere_env",
     "ruta_env_fisica", "ruta_env_relativa", "usuario_carga", "fecha_carga",
     "observacion", "fecha_creacion", "fecha_actualizacion",
+)
+COLUMNAS_PROGRAMACION = (
+    "id_programacion", "id_tarea", "nombre_tarea", "estado_tarea",
+    "tipo_programacion", "modo_ejecucion_dia", "hora_inicio", "hora_termino",
+    "hora_ejecucion", "intervalo_minutos", "dias_semana", "dia_mes",
+    "fecha_especifica", "fechas_especificas", "ejecutar_en_feriados",
+    "zona_horaria", "fecha_inicio_vigencia", "fecha_fin_vigencia",
+    "fecha_creacion", "fecha_actualizacion", "activo",
 )
 
 
@@ -228,4 +237,28 @@ def mapear_version_script(fila: Sequence[Any]) -> VersionScript:
         usuario_carga=datos["usuario_carga"], fecha_carga=datos["fecha_carga"],
         observacion=datos["observacion"], fecha_creacion=datos["fecha_creacion"],
         fecha_actualizacion=datos["fecha_actualizacion"],
+    )
+
+
+def mapear_programacion(fila: Sequence[Any]) -> Programacion:
+    columnas = COLUMNAS_PROGRAMACION
+    if len(fila) == len(COLUMNAS_PROGRAMACION) + 1:
+        columnas += ("proxima_ejecucion",)
+    datos = fila_como_diccionario(fila, columnas)
+    return Programacion(
+        id_programacion=datos["id_programacion"], id_tarea=datos["id_tarea"],
+        nombre_tarea=datos["nombre_tarea"], estado_tarea=datos["estado_tarea"],
+        tipo_programacion=datos["tipo_programacion"],
+        modo_ejecucion_dia=datos["modo_ejecucion_dia"], hora_inicio=datos["hora_inicio"],
+        hora_termino=datos["hora_termino"], hora_ejecucion=datos["hora_ejecucion"],
+        intervalo_minutos=datos["intervalo_minutos"], dias_semana=datos["dias_semana"],
+        dia_mes=datos["dia_mes"], fecha_especifica=datos["fecha_especifica"],
+        fechas_especificas=datos["fechas_especificas"],
+        ejecutar_en_feriados=bool(datos["ejecutar_en_feriados"]),
+        zona_horaria=datos["zona_horaria"],
+        fecha_inicio_vigencia=datos["fecha_inicio_vigencia"],
+        fecha_fin_vigencia=datos["fecha_fin_vigencia"],
+        fecha_creacion=datos["fecha_creacion"],
+        fecha_actualizacion=datos["fecha_actualizacion"], activo=bool(datos["activo"]),
+        proxima_ejecucion=datos.get("proxima_ejecucion"),
     )

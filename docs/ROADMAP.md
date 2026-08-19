@@ -59,13 +59,15 @@ Clientes, categorias y tipos disponen de listados paginados, filtros, alta, edic
 
 Estado: CERRADO.
 
-Se reconstruyeron tareas manuales, listado y filtros, scripts logicos 1:1, tres slots de version, unica version activa, reemplazo explicito solo sin referencias, carga `.py` validada y `.env` por version. SQL, auditoria y filesystem se coordinan con UoW y compensacion. No se persiste usuario ejecutor: `ejecuciones.usuario_ejecucion` se resolvera con el contexto manual/automatico del Hito 6. No se implementaron programaciones ni ejecucion.
-
-## Pendiente
+Se reconstruyeron tareas manuales, listado y filtros, scripts logicos 1:1, tres slots de version, unica version activa, reemplazo explicito solo sin referencias, carga `.py` validada y `.env` por version. SQL, auditoria y filesystem se coordinan con UoW y compensacion. No se persiste usuario ejecutor en `tareas`: Hito 6 definio `NULL` para automaticas y Hito 7 resolvera el contexto manual. Hito 5 no implemento programaciones ni ejecucion.
 
 ### Hito 6 - Programaciones, scheduler y worker
 
-Reimplementar programaciones, candidatos, heartbeat, feriados, eventos y coordinacion de mantenimiento.
+Estado: CERRADO.
+
+Programaciones, calculo temporal IANA/DST, calendario local, reserva automatica idempotente, heartbeat y loop controlado fueron reconstruidos bajo `src/app_scheduler/`. El scheduler persiste una ejecucion `PENDIENTE` con la version activa congelada, pero no inicia procesos Python. El runtime historico sigue activo y Hito 7 no fue iniciado.
+
+## Pendiente
 
 ### Hito 7 - Motor de ejecucion manual y automatica
 

@@ -12,9 +12,9 @@ Estado: Hito 1 cerrado; runtime historico aun activo.
 | Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Base Hito 1 implementada |
 | Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
 | Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
-| Worker base | Validar configuracion y contrato de motor unico | No expone rutas | No ejecuta SQL | Implementado sin scheduler/motor |
+| Worker scheduler | Evaluar programaciones, reservar trabajo y mantener heartbeat | No expone rutas | SQL operativo; no ejecuta scripts | Reconstruido en Hito 6; motor pendiente Hito 7 |
 
-El paquete nuevo vive en `src/app_scheduler/`. Hito 3 registra autenticacion, usuarios y consulta de seguridad; Hito 4 incorpora clientes, categorias y tipos; Hito 5 incorpora tareas y scripts versionados. Ejecuciones, scheduler, feriados, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+El paquete nuevo vive en `src/app_scheduler/`. Hito 6 incorpora programaciones, calendario local, scheduler, reserva `PENDIENTE` y heartbeat. Motor real, consola, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
 
 ## Reconstruccion - persistencia Hito 2
 
@@ -43,6 +43,20 @@ Estado: CERRADO.
 | `.env` por version | Guardar o retirar por `id_version` | Archivo externo a BD; contenido no recuperable desde UI | Reconstruido |
 
 No existe ruta global `/scripts/`. Hito 5 no crea programaciones, no ejecuta codigo y no persiste un usuario ejecutor en `tareas`. Detalle: `docs/TAREAS_SCRIPTS_RECONSTRUCCION.md`.
+
+## Reconstruccion - programaciones y scheduler Hito 6
+
+Estado: CERRADO; Hito 7 no iniciado.
+
+| Modulo | Rutas/proceso | Alcance | Estado |
+| --- | --- | --- | --- |
+| Programaciones | `/tareas/<id>/programaciones/`, nueva, editar y estado | Tipos reales, vigencia, zona, feriados, proximo disparo y auditoria | Reconstruido |
+| Scheduler | Proceso worker | Elegibilidad, ventana de atraso, concurrencia, version activa y calendario local | Reconstruido sin ejecutar scripts |
+| Despacho | `SolicitudEjecucion` -> `ejecuciones` | Reserva `PENDIENTE`, clave unica e IDs de script/version congelados | Reconstruido |
+| Heartbeat | Proceso worker | Inicio, ciclo, espera, error recuperable y detencion | Reconstruido |
+| Motor de ejecucion | Hito 7 | Reclamar pendiente, subprocess, PID, stdout/stderr y cierre | No iniciado |
+
+Matriz de permisos reutilizada, sin seeds nuevos: `TAREAS_VER` lista; `TAREAS_EDITAR` crea/edita; `TAREAS_ESTADO` activa/desactiva. `SUPER_ADMIN`, `ADMIN` y `TI` disponen de esas acciones por bootstrap; `TERCERO` conserva solo lectura. Detalle: `docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md`.
 
 ## Reconstruccion - seguridad Hito 3
 

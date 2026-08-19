@@ -52,6 +52,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.usuarios.casos_uso import ServicioUsuarios
     from app_scheduler.modulos.tareas.casos_uso import ServicioTareas
     from app_scheduler.modulos.scripts.casos_uso import ServicioScripts
+    from app_scheduler.modulos.programaciones.casos_uso import ServicioProgramaciones
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -64,6 +65,9 @@ def crear_aplicacion(
     app.extensions["servicio_usuarios"] = ServicioUsuarios(proveedor_sql)
     app.extensions["servicio_tareas"] = ServicioTareas(proveedor_sql)
     app.extensions["servicio_scripts"] = ServicioScripts(proveedor_sql, configuracion)
+    app.extensions["servicio_programaciones"] = ServicioProgramaciones(
+        proveedor_sql, configuracion
+    )
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
@@ -73,6 +77,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.usuarios.rutas import bp_usuarios
     from app_scheduler.modulos.tareas.rutas import bp_tareas
     from app_scheduler.modulos.scripts.rutas import bp_scripts
+    from app_scheduler.modulos.programaciones.rutas import bp_programaciones
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
@@ -81,6 +86,7 @@ def crear_aplicacion(
     app.register_blueprint(bp_seguridad)
     app.register_blueprint(bp_tareas)
     app.register_blueprint(bp_scripts)
+    app.register_blueprint(bp_programaciones)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

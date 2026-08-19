@@ -30,7 +30,7 @@
                     <span>Panel</span>
                 </a>
                 {% if identidad_sesion.tiene_permiso('TAREAS_VER') %}
-                <a class="navegacion-enlace {% if request.blueprint in ('tareas', 'scripts') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}">
+                <a class="navegacion-enlace {% if request.blueprint in ('tareas', 'scripts', 'programaciones') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}">
                     <span class="navegacion-icono" aria-hidden="true">T</span>
                     <span>Tareas y scripts</span>
                 </a>

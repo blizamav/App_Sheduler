@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-19 - Hito 6: programaciones, scheduler y worker
+
+### Cerrado
+
+* Se reconstruyeron CRUD/estado de programaciones dentro de Tareas, validacion backend, proximo disparo, auditoria y UI responsive.
+* Se documento el contrato: version activa resuelta y congelada al despachar; automatica con `usuario_ejecucion = NULL` y actor tecnico en `nombre_worker`; no se requiere migracion.
+* El scheduler usa configuracion SQL, calendario local, ventana de polling, concurrencia y lock de Factory Reset.
+* La capacidad concurrente se revalida bajo `sp_getapplock` transaccional justo antes de reservar, evitando que dos workers superen el maximo con tareas diferentes.
+* El despachador reserva `ejecuciones.PENDIENTE` sin ejecutar scripts y usa la UNIQUE de `clave_programacion` como idempotencia concurrente.
+* El worker reconstruido incorpora loop controlado, `--once`, heartbeat y detencion por señales; web no inicia threads de ejecucion.
+* La politica DST omite horas civiles inexistentes, usa el primer `fold` para horas ambiguas y recalcula cada fecha desde la regla sin deriva progresiva.
+* Se agregaron 39 pruebas: `tests/reconstruccion` aprueba 162 y omite 1 prueba de symlink por restricciones del host Windows; la suite completa aprueba 188 y omite la misma prueba. El caso omitido es `test_almacen_rechaza_symlink_que_escapa` y esta validado en Linux.
+* `compileall`, 15 templates, 3 archivos JavaScript, Compose, build final de `web`/`worker` y bootstraps efimeros `--check` quedaron aprobados sin SQL.
+* La inspeccion visual automatizada se intento con un servidor fake sin SQL, pero el conector de navegador fallo antes de navegar por un error interno de confianza. El servidor se detuvo y el puerto temporal quedo libre; permanece validacion visual manual.
+* Hito 7 no fue iniciado: no existen subprocess, PID, stdout/stderr ni ejecucion manual real en el runtime reconstruido.
+* No se modificaron SQL protegido, runtime historico, `.env`, `.env.docker` ni QA; no se ejecuto SQL ni Factory Reset.
+
 ## 2026-08-18 - Hito 5: tareas, scripts, versiones y `.env`
 
 ### Cerrado

@@ -2,7 +2,21 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hito 1 implemento sus cimientos y Hito 2 cerro la persistencia funcional en el mismo runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-6 estan cerrados en el runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+
+## Implementacion Hito 6
+
+El proceso web administra programaciones y el proceso worker es el unico dueño del loop scheduler. El flujo reconstruido es:
+
+```text
+WEB -> caso de uso Programaciones -> SQL + auditoria
+WORKER -> scheduler -> SolicitudEjecucion -> reserva dbo.ejecuciones PENDIENTE
+Hito 7 -> futuro reclamo atomico -> motor unico manual/automatico
+```
+
+La version automatica se resuelve desde `scripts.id_version_activa` al disparar y su `id_version` queda congelado en `ejecuciones`. La automatica no inventa usuario aplicativo: `usuario_ejecucion = NULL`; `nombre_worker` y la clave de programacion identifican al solicitante tecnico. El worker no usa `subprocess`, no importa scripts y no lee el `.env` de una version.
+
+El calculo temporal usa `programaciones.zona_horaria` IANA y entrega `datetime2` local sin offset, compatible con el esquema. Una hora inexistente por DST se omite; una hora ambigua se reserva una sola vez usando el primer `fold`. Cada fecha se calcula desde la regla civil, sin deriva diaria. La politica historica de reinicio salta ocurrencias anteriores a la ventana de polling y avanza al siguiente disparo. El indice unico filtrado de `clave_programacion` resuelve carreras entre workers; el chequeo previo no es la garantia de idempotencia.
 
 ## Implementacion Hito 1
 
@@ -20,7 +34,7 @@ Mapa de transicion aplicado:
 | CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
 | Hilos web para ejecucion | `worker/contratos.py` | Solo contrato comun; motor real bloqueado hasta Hito 7. |
 
-No se copiaron rutas funcionales, repositorios de tablas, scheduler, motor de ejecucion, Graph, feriados, papelera ni Factory Reset. Los entrypoints `run.py` y `scheduler_worker.py` siguen apuntando exclusivamente al runtime historico.
+Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-6 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts y scheduler; motor de ejecucion, Graph, papelera y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
 
 ## Implementacion Hito 2
 
@@ -228,24 +242,24 @@ se promueven atomicamente dentro de la UoW y se restauran si SQL o auditoria
 fallan antes del commit. Los roots y nombres se derivan de configuracion y
 metadata validada; el request nunca entrega una ruta fisica.
 
-En este hito toda tarea nueva es `MANUAL`; programaciones y ejecucion siguen
-fuera de alcance. `dbo.tareas` no contiene ejecutor. La identidad efectiva se
-registrara en `ejecuciones.usuario_ejecucion` cuando Hito 6 defina el contexto
-de ejecucion manual y automatica.
+En Hito 5 toda tarea nueva era `MANUAL`; Hito 6 agrego programaciones y reserva
+automatica sin ejecutar procesos. `dbo.tareas` no contiene ejecutor. Una
+automatica reserva `ejecuciones.usuario_ejecucion = NULL`; Hito 7 definira el
+usuario efectivo de la solicitud manual.
 6. auditar resultado y limpiar temporales.
 
 Todas las rutas se resuelven contra raices configuradas y se rechazan traversal, symlinks inseguros, raices contenidas y nombres fuera de contrato.
 
 ## Scheduler, cola y worker
 
-El worker sera propietario de dos bucles coordinados:
+El worker reconstruido es propietario del loop scheduler de Hito 6 y sera propietario del motor de Hito 7:
 
-* programador: evalua calendarios y genera solicitudes automaticas;
-* ejecutor: reclama solicitudes manuales o automaticas y lanza procesos.
+* programador: implementado; evalua calendarios y reserva solicitudes automaticas `PENDIENTE`;
+* ejecutor: pendiente Hito 7; reclamara solicitudes manuales o automaticas y lanzara procesos.
 
-La web manual solo solicita ejecucion. No crea `threading.Thread` ni procesos Python. La solicitud persistente debe contener origen, tarea, script, version, actor y fecha. El worker la reclama de forma atomica y registra PID, salida y cierre.
+La futura web manual solo solicitara ejecucion. No creara `threading.Thread` ni procesos Python. `SolicitudEjecucion` contiene origen, tarea, script, version, actor y fecha; Hito 6 persiste la automatica en `ejecuciones` y Hito 7 implementara reclamo atomico, PID, salida y cierre.
 
-El contrato definitivo de cola se diseña en Hito 2. Preferencia: extender estados/columnas de `ejecuciones` si mantiene claridad; crear tabla de solicitudes solo si evita ambiguedad real. Debe incluir lease o marca de reclamo para recuperacion tras caida.
+El contrato de Hito 6 reutiliza `ejecuciones`: el scheduler crea una unica fila `PENDIENTE` con version congelada. Hito 7 debe definir el reclamo/lease y recuperacion tras caida sin crear una segunda fila para la misma solicitud.
 
 Reglas comunes:
 
@@ -374,4 +388,4 @@ Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime recons
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3, 4 y 5 quedaron cerrados; Hito 6 no fue iniciado.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3, 4, 5 y 6 quedaron cerrados; Hito 7 no fue iniciado.

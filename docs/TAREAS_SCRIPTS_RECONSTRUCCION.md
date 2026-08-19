@@ -3,9 +3,8 @@
 ## Estado y alcance
 
 Hito 5 esta cerrado en el runtime aislado `src/app_scheduler/`.
-Incluye tareas manuales, scripts logicos, tres slots de version, version activa,
-reemplazo controlado, archivos `.py` y `.env` por version. No incluye
-programaciones, scheduler, worker ni ejecucion de codigo.
+Hito 6 agrega programaciones y reserva automatica sin alterar las reglas de
+scripts. La ejecucion de codigo sigue fuera de alcance hasta Hito 7.
 
 ## Contrato SQL
 
@@ -89,11 +88,12 @@ de entorno.
 
 ## Usuario ejecutor
 
-`dbo.tareas` no posee `id_usuario_ejecutor` ni campo equivalente. Hito 5 no
-persiste un ejecutor ni reutiliza `observacion_tecnica`, usuarios de auditoria o
-JSON. `ejecuciones.usuario_ejecucion` registra al ejecutor real. El contrato
-manual/automatico se definira al disenar el contexto de ejecucion del Hito 6;
-si requiere persistencia adicional, se propondra una migracion formal.
+`dbo.tareas` no posee `id_usuario_ejecutor` ni campo equivalente. Hito 6 confirma
+que una automatica tampoco inventa ese usuario: reserva con
+`ejecuciones.usuario_ejecucion = NULL` y conserva el actor tecnico en
+`nombre_worker`. La version activa se resuelve al disparar y se congela mediante
+`ejecuciones.id_script` e `id_version`. La seleccion de usuario para una futura
+ejecucion manual pertenece al Hito 7.
 
 ## Pruebas y deuda legitima
 

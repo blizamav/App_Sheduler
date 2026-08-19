@@ -100,7 +100,11 @@ No existe conexion global, ORM, session implícita ni commit dentro de repositor
 
 La consulta de credencial es la unica que selecciona `password_hash`; el DTO `Usuario` no lo contiene y `CredencialUsuario` lo excluye de `repr`. Buscar un catalogo por `nombre_normalizado` incluye Papelera para respetar la restriccion fisica UNIQUE.
 
-Hito 5 agrega `RepositorioTareas` y `RepositorioScripts` con DTO/mapeadores explicitos para `tareas`, `scripts` y `scripts_versiones`. Los repositorios no hacen commit. Programaciones y ejecuciones conservan solo su inventario hasta el hito correspondiente.
+Hito 5 agrega `RepositorioTareas` y `RepositorioScripts`. Hito 6 agrega `RepositorioProgramaciones`, `RepositorioScheduler` y `RepositorioHeartbeat` con DTO/mapeadores explicitos. Los repositorios no hacen commit; los casos de uso y el despachador confirman la UoW.
+
+La reserva automatica inserta `ejecuciones` en `PENDIENTE` y actualiza `tareas.proxima_ejecucion` en una sola transaccion. `UX_ejecuciones_clave_programacion_automatica` es la garantia de concurrencia: una colision 2601/2627 se interpreta como ocurrencia ya reservada y no crea una segunda ejecucion. `id_script` e `id_version` quedan congelados; `usuario_ejecucion` es nulo y `nombre_worker` conserva el actor tecnico.
+
+No fue necesaria migracion: `programaciones` ya contiene frecuencia, modo, horas, fechas, feriados, zona y vigencia; `ejecuciones` ya contiene version, fecha/clave programada y worker; heartbeat, eventos, configuracion y feriados ya existen en el bootstrap limpio.
 
 ## Convenciones SQL
 
@@ -157,4 +161,4 @@ Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. El contra
 * La clave funcional de tarea (`nombre_tarea`, cliente, categoria y tipo) se valida en servicio, pero no tiene UNIQUE fisico en el esquema vigente; una carrera concurrente extrema queda como deuda legitima sin migracion autorizada.
 * Las UNIQUE fisicas de usuarios/catalogos/versiones incluyen registros en Papelera; los servicios deben distinguir activo, inactivo y eliminado antes de escribir.
 * El modelo no incluye views/procedures para paginacion o seguridad; las consultas permanecen explicitas en repositorios.
-* El contrato persistente del futuro motor unico de ejecucion se definira cuando se implemente el modulo correspondiente; Hito 2 no inventa una tabla nueva.
+* Hito 6 define `SolicitudEjecucion` comun y reserva automatica `PENDIENTE`; Hito 7 implementara el reclamo y motor unico sin crear un segundo contrato.
