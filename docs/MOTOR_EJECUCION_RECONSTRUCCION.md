@@ -4,7 +4,8 @@
 
 Hito 7 esta CERRADO. El motor vive solo en
 `src/app_scheduler/`; `app/`, `run.py` y `scheduler_worker.py` permanecen sin
-cutover. Hito 8 no se ha iniciado. No se modifico ni ejecuto SQL.
+cutover. Hito 8 cerro observabilidad y configuracion sin alterar este motor ni
+ejecutar scripts operativos. No se modifico el esquema SQL.
 
 ## Flujo unico
 

@@ -11,6 +11,7 @@ bp_tareas = Blueprint("tareas", __name__, url_prefix="/tareas")
 
 
 def _servicio(): return current_app.extensions["servicio_tareas"]
+def _servicio_evidencias(): return current_app.extensions["servicio_evidencias"]
 def _contexto(): return ContextoAuditoria(request.remote_addr, request.user_agent.string[:500] or None, request.path, request.method)
 def _entero(valor, default=None):
     try: return int(valor)
@@ -72,7 +73,20 @@ def editar(id_tarea):
             flash("Tarea actualizada correctamente.", "success")
             return redirect(url_for("tareas.listado"))
     return render_template("tareas/formulario.html", modo="editar", datos=datos,
-                           actual=actual, catalogos=_servicio().catalogos())
+                           actual=actual, catalogos=_servicio().catalogos(),
+                           evidencia=_servicio_evidencias().obtener_para_tarea(id_tarea))
+
+
+@bp_tareas.post("/<int:id_tarea>/evidencia")
+@permiso_requerido("TAREAS_EDITAR")
+def guardar_evidencia(id_tarea):
+    try:
+        _servicio_evidencias().guardar(id_tarea, request.form, identidad_actual(), _contexto())
+    except ErrorValidacion as error:
+        flash(error.mensaje, "error")
+    else:
+        flash("Configuracion de evidencia actualizada.", "success")
+    return redirect(url_for("tareas.editar", id_tarea=id_tarea))
 
 
 @bp_tareas.post("/<int:id_tarea>/estado")

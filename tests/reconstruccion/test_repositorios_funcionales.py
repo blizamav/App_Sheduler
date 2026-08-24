@@ -227,7 +227,7 @@ def test_error_sql_conserva_solo_sqlstate_seguro():
 
 
 def test_auditoria_inserta_solo_columnas_canonicas_y_no_confirma():
-    conexion = ConexionProgramada(ResultadoSQL(fila=(41,)))
+    conexion = ConexionProgramada(ResultadoSQL(fila=(0,)), ResultadoSQL(fila=(41,)))
     evento = crear_evento_auditoria(
         usuario="actor",
         id_usuario=7,
@@ -239,7 +239,7 @@ def test_auditoria_inserta_solo_columnas_canonicas_y_no_confirma():
 
     id_auditoria = RepositorioAuditoria(conexion).registrar(evento)
 
-    sql, parametros = conexion.ejecuciones[0]
+    sql, parametros = conexion.ejecuciones[1]
     assert id_auditoria == 41
     assert "fecha_hora" not in sql
     assert "tabla_afectada" not in sql
@@ -247,6 +247,21 @@ def test_auditoria_inserta_solo_columnas_canonicas_y_no_confirma():
     assert "valor_nuevo" not in sql
     assert "valores_antes" in sql and "valores_despues" in sql
     assert parametros[0:4] == ("actor", 7, "USUARIO_EDITADO", "usuarios")
+    assert conexion.commits == 0
+
+
+def test_auditoria_completa_aliases_legacy_cuando_existen():
+    conexion = ConexionProgramada(ResultadoSQL(fila=(1,)), ResultadoSQL(fila=(42,)))
+    evento = crear_evento_auditoria(
+        usuario="actor", accion="LOGIN_FALLIDO", entidad="autenticacion",
+        descripcion="Credenciales no validas.", resultado="ERROR",
+    )
+
+    assert RepositorioAuditoria(conexion).registrar(evento) == 42
+    sql, parametros = conexion.ejecuciones[1]
+    assert "tabla_afectada" in sql and "id_registro" in sql
+    assert "fecha_hora" in sql and "valor_anterior" in sql
+    assert parametros[-5:] == ("autenticacion", "-", None, None, None)
     assert conexion.commits == 0
 
 

@@ -28,6 +28,9 @@
         <symbol id="icono-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
         <symbol id="icono-contraer" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6M20 4v16"/></symbol>
         <symbol id="icono-flecha" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+        <symbol id="icono-estado" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6M5 21h14M5 3h14"/></symbol>
+        <symbol id="icono-logs" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4ZM8 8h8M8 12h8M8 16h5"/></symbol>
+        <symbol id="icono-configuracion" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6v.08h-4V20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H3.9v-4H4a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L7.06 4.2l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6v-.1h4V4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1h.1v4H20a1.7 1.7 0 0 0-.6 1Z"/></symbol>
     </svg>
     {% if identidad_sesion %}
     <div class="app-shell">
@@ -45,7 +48,7 @@
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-panel"></use></svg>
                     <span>Panel</span>
                 </a>
-                {% if identidad_sesion.tiene_permiso('TAREAS_VER') or identidad_sesion.tiene_permiso('SCRIPTS_VER') or identidad_sesion.tiene_permiso('EJECUCIONES_VER') %}
+                {% if identidad_sesion.tiene_permiso('TAREAS_VER') or identidad_sesion.tiene_permiso('SCRIPTS_VER') or identidad_sesion.tiene_permiso('EJECUCIONES_VER') or identidad_sesion.tiene_permiso('LOGS_VER') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
                 <p class="navegacion-grupo">Operacion</p>
                 {% if identidad_sesion.tiene_permiso('TAREAS_VER') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint in ('tareas', 'programaciones') %}activo active{% endif %}" href="{{ url_for('tareas.listado') }}" aria-label="Tareas" title="Tareas" {% if request.blueprint in ('tareas', 'programaciones') %}aria-current="page"{% endif %}>
@@ -63,6 +66,16 @@
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'ejecuciones' %}activo active{% endif %}" href="{{ url_for('ejecuciones.listado') }}" aria-label="Ejecuciones" title="Ejecuciones" {% if request.blueprint == 'ejecuciones' %}aria-current="page"{% endif %}>
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-ejecuciones"></use></svg>
                     <span>Ejecuciones</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.endpoint == 'operacion.estado' %}activo active{% endif %}" href="{{ url_for('operacion.estado') }}" aria-label="Estado del sistema" title="Estado del sistema">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-estado"></use></svg><span>Estado del sistema</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('LOGS_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.endpoint in ('operacion.logs', 'operacion.detalle_log') %}activo active{% endif %}" href="{{ url_for('operacion.logs') }}" aria-label="Logs del sistema" title="Logs del sistema">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-logs"></use></svg><span>Logs del sistema</span>
                 </a>
                 {% endif %}
                 {% endif %}
@@ -87,8 +100,9 @@
                 </a>
                 {% endif %}
                 {% endif %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
+                <p class="navegacion-grupo">Administracion</p>
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
-                <p class="navegacion-grupo">Seguridad</p>
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'usuarios' %}activo active{% endif %}" href="{{ url_for('usuarios.listado') }}" aria-label="Usuarios" title="Usuarios">
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-usuarios"></use></svg>
                     <span>Usuarios</span>
@@ -97,6 +111,12 @@
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-seguridad"></use></svg>
                     <span>Roles y permisos</span>
                 </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'configuracion_operativa' %}activo active{% endif %}" href="{{ url_for('configuracion_operativa.inicio') }}" aria-label="Configuracion" title="Configuracion">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-configuracion"></use></svg><span>Configuracion</span>
+                </a>
+                {% endif %}
                 {% endif %}
             </nav>
             <footer class="sidebar-footer">

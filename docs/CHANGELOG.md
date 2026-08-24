@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-24 - Cierre formal del Hito 8
+
+* Se incorporaron `/logs/` y `/logs/<id>` con `LOGS_VER`, filtros
+  parametrizados, paginacion de 25 filas, orden fijo y detalle autoescapado con
+  proteccion de secretos comunes; stdout/stderr sigue exclusivamente en
+  Ejecuciones.
+* `/operacion/estado` expone heartbeat, estado real del worker, scheduler,
+  mantenimiento, concurrencia y metricas SQL acotadas con
+  `SCHEDULER_CONFIG_VER`, sin iniciar ni controlar el proceso worker.
+* `/configuracion/` agrega matriz segura de `configuracion_sistema` con
+  `SCHEDULER_CONFIG_VER` y edicion tipada de cinco campos de
+  `configuracion_scheduler` mediante allowlist, rangos, CSRF,
+  `SCHEDULER_CONFIG_EDITAR`, UoW y auditoria.
+* La edicion de tareas completa la configuracion de evidencia existente y
+  valida el script activo con AST, lectura confinada y contrato `STDOUT_V1`, sin
+  `exec`, `eval`, importacion del script, Graph ni correo.
+* La integracion QA detecto que `auditoria_cambios` historica conserva aliases
+  legacy `NOT NULL`. El repositorio ahora escribe contrato canonico y legacy
+  solo cuando esas columnas existen; una instalacion limpia usa exclusivamente
+  el contrato canonico y no hubo cambios de schema.
+* Smoke real read-only contra `APP_SCHEDULER_QA`: contrato, logs,
+  observabilidad, configuracion, filesystem, login invalido y
+  `SUPER_ADMIN_ENV` aprobados. Login SQL valido no ejecutado por no disponer de
+  credencial autorizada. Escrituras confirmadas y residuos `QA_HITO8_*`: cero.
+* Validacion: 218 pruebas reconstruidas y 244 totales aprobadas, con un caso de
+  symlink omitido en Windows y cubierto en Linux. Compileall, Jinja, JavaScript,
+  rutas/imports, Compose, build web/worker, checks host/Linux y revision visual
+  1440x900, 390x844 y 844x390: OK.
+* Se cierra formalmente Hito 8. No se modificaron `database/`, `.env`,
+  `.env.docker`, `app/`, `run.py` ni `scheduler_worker.py`; no hubo SQL DDL/DML
+  confirmado, Factory Reset ni cutover. Hito 9 no fue iniciado.
+
 ## 2026-08-24 - Cierre formal definitivo del Hito 7
 
 * Se cerro el motor unico del worker para ejecuciones manuales y automaticas:

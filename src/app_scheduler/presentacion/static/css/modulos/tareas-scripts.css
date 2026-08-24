@@ -45,7 +45,16 @@
 .panel-detalle { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-borde); }
 .panel-detalle summary { cursor: pointer; font-weight: 700; }
 .panel-detalle form { display: grid; gap: 10px; margin-top: 12px; }
+.evidencia-configuracion { margin-top: 18px; }
+.evidencia-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.config-switches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.config-switches .form-check { min-height: 52px; margin: 0; padding: 14px 14px 14px 48px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie-suave); }
+.ayuda-evidencia { margin-top: 18px; border-top: 1px solid var(--color-borde); padding-top: 14px; }
+.ayuda-evidencia summary { cursor: pointer; color: var(--color-primario); font-weight: 700; }
+.ayuda-evidencia > div { margin-top: 12px; }
+.ayuda-evidencia pre { max-width: 100%; overflow: auto; padding: 14px; border-radius: var(--radio-md); color: #e7eef7; background: #102a42; }
 @media (max-width: 1200px) { .scripts-hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1050px) { .versiones-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .scripts-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scripts-hub-grid { grid-template-columns: 1fr; } }
-@media (max-width: 760px) { .tareas-filtros, .scripts-filtros, .grid-tres, .resumen-versiones { grid-template-columns: 1fr; } .script-hub-datos { grid-template-columns: 1fr; } .script-hub-datos > div { border-right: 0; border-bottom: 1px solid var(--color-borde); } .script-hub-datos > div:last-child { border-bottom: 0; } }
+@media (max-width: 900px) { .config-switches { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .tareas-filtros, .scripts-filtros, .grid-tres, .resumen-versiones { grid-template-columns: 1fr; } .script-hub-datos { grid-template-columns: 1fr; } .script-hub-datos > div { border-right: 0; border-bottom: 1px solid var(--color-borde); } .script-hub-datos > div:last-child { border-bottom: 0; } .evidencia-cabecera { flex-direction: column; } }

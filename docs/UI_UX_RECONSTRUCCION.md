@@ -3,7 +3,7 @@
 ## Estado y alcance
 
 Esta guia define el contrato visual transversal de `src/app_scheduler/` incluido
-en el cierre del Hito 7. Hito 8 no se ha iniciado y este gate no reemplaza el
+en el cierre del Hito 7 y extendido por el Hito 8 ya cerrado. Este hito no reemplaza el
 pulido final previsto para Hito 12.
 
 La base frontend es Flask + Jinja2 + HTML5 + Bootstrap 5.3.3 + CSS y JavaScript
@@ -32,6 +32,19 @@ una franja de iconos; la preferencia se conserva localmente y cada icono mantien
 nombre accesible y `title`. Bajo 992 px la navegacion se convierte en Offcanvas
 Bootstrap. El panel agrupa accesos reales por Operacion, Maestros y Seguridad;
 no inventa indicadores.
+
+Hito 8 agrega vistas Bootstrap integradas al mismo shell:
+
+* logs con filtros apilables, tabla con scroll local y detalle en bloques `pre`
+  de texto autoescapado;
+* cards de estado adaptables para worker, scheduler, mantenimiento y capacidad;
+* configuracion con switches, rangos visibles, confirmacion modal y matriz ancha
+  con scroll local;
+* evidencia en la edicion de tarea con estado compatible/requiere ajuste y ayuda
+  colapsable del contrato stdout.
+
+Los layouts usan todo el ancho disponible y cambian a una columna bajo 780 px;
+no generan overflow global en 390x844, 768 px, notebook ni 1440x900.
 
 La paleta evita mezclar azules desconectados: azul profundo identifica la
 navegacion, azul corporativo las acciones y cyan moderado solo el foco o detalle.

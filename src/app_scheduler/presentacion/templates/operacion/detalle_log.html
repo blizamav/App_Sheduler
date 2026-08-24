@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titulo %}Detalle de log | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/operacion.css') }}">{% endblock %}
+{% block contenido %}
+<nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('operacion.logs') }}">Logs del sistema</a></li><li class="breadcrumb-item active" aria-current="page">Evento {{ log.id }}</li></ol></nav>
+<header class="encabezado-pagina"><div><p class="eyebrow">Evento de sistema</p><h1>{{ log.accion }}</h1><p class="texto-secundario">{{ log.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') }} | {{ log.modulo }}</p></div><a class="btn btn-outline-secondary" href="{{ url_for('operacion.logs') }}">Volver</a></header>
+<section class="detalle-log card"><dl class="detalle-grid"><div><dt>Nivel</dt><dd><span class="badge {{ 'error' if log.nivel in ('ERROR','CRITICAL') else 'advertencia' if log.nivel == 'WARNING' else 'info' }}">{{ log.nivel }}</span></dd></div><div><dt>Usuario</dt><dd>{{ log.usuario or 'sistema' }}</dd></div><div><dt>IP</dt><dd>{{ log.ip or 'No registrada' }}</dd></div><div><dt>Agente</dt><dd>{{ log.user_agent or 'No registrado' }}</dd></div></dl><div class="detalle-bloque"><h2>Descripcion</h2><pre>{{ log.descripcion }}</pre></div>{% if log.valor_anterior %}<div class="detalle-bloque"><h2>Valor anterior seguro</h2><pre>{{ log.valor_anterior }}</pre></div>{% endif %}{% if log.valor_nuevo %}<div class="detalle-bloque"><h2>Valor nuevo seguro</h2><pre>{{ log.valor_nuevo }}</pre></div>{% endif %}</section>
+{% endblock %}

@@ -2,7 +2,7 @@
 
 ## Reconstruccion - infraestructura transversal
 
-Estado: Hitos 1-7 cerrados; Hito 8 no iniciado; runtime historico aun activo.
+Estado: Hitos 1-8 cerrados; Hito 9 no iniciado; runtime historico aun activo.
 
 | Componente | Objetivo | Rutas | Persistencia | Estado |
 | --- | --- | --- | --- | --- |
@@ -13,10 +13,13 @@ Estado: Hitos 1-7 cerrados; Hito 8 no iniciado; runtime historico aun activo.
 | Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
 | Presentacion base | Shell, sidebar agrupado, Panel por permisos, componentes, errores visibles y JS modular | `/` del runtime aislado | No aplica | Implementado y estabilizado en gate Hito 7 |
 | Worker scheduler | Evaluar programaciones, reservar, reclamar y ejecutar trabajo | No expone rutas | SQL, subprocess, logs y evidencia | Reconstruido; Hito 7 cerrado |
+| Observabilidad | Estado real y logs globales para TI | `/operacion/estado`, `/logs/`, `/logs/<id>` | `logs_sistema`, heartbeat, scheduler y ejecuciones | Hito 8 cerrado |
+| Configuracion operativa | Matriz segura y edicion scheduler | `/configuracion/` (`SCHEDULER_CONFIG_VER`), `POST /configuracion/scheduler` (`SCHEDULER_CONFIG_EDITAR`) | `configuracion_sistema`, `configuracion_scheduler`, auditoria | Hito 8 cerrado |
+| Evidencia por tarea | Activacion y validacion estatica | `POST /tareas/<id>/evidencia` | `notificaciones_config_tarea`, auditoria | Hito 8 implementado; Graph excluido |
 
 El paquete nuevo vive en `src/app_scheduler/`. Hito 7 agrega motor real, historial y consola. Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
 
-## Estado maestro al cierre del Hito 7
+## Estado maestro actual
 
 | Capacidad | Estado real | Observacion |
 | --- | --- | --- |
@@ -29,15 +32,15 @@ El paquete nuevo vive en `src/app_scheduler/`. Hito 7 agrega motor real, histori
 | Scheduler y worker | Completa | Reserva automatica, heartbeat y motor compartido |
 | Motor de ejecucion | Completa | Manual y automatica, claim, subprocess, timeout y detencion |
 | Ejecuciones, logs y consola | Completa en alcance Hito 7 | Historial, detalle, polling y archivo completo por ejecucion |
-| Logs de sistema y observabilidad | Parcial | Base tecnica existente; operacion transversal corresponde a Hito 8 |
-| Evidencias | Parcial | Captura stdout y metadata implementadas; configuracion avanzada y correo pendientes |
+| Logs de sistema y observabilidad | Completa en alcance Hito 8 | Consulta global, filtros, paginacion, detalle y estado worker/scheduler |
+| Evidencias | Completa salvo correo | Captura stdout, metadata, configuracion por tarea y validacion AST; Graph queda en Hito 10 |
 | Auditoria UI y Papelera | Pendiente | Planificadas para Hito 9 |
 | Feriados y sincronizacion externa | Parcial | Calendario local consumido; gestion/sincronizacion corresponden a Hito 10 |
 | Microsoft Graph y correos | Pendiente | Planificados para Hito 10 |
-| Configuracion operativa | Parcial | Configuracion scheduler disponible; consolidacion general en Hito 8 |
+| Configuracion operativa | Completa en alcance Hito 8 | Scheduler editable por allowlist; configuracion_sistema segura y solo lectura |
 | Factory Reset reconstruido | Pendiente | Planificado para Hito 11 |
 | UI/UX final | En progreso transversal | Gate Bootstrap cerrado; pulido global en Hito 12 |
-| QA SQL real y cutover | Pendiente | Hitos 14 y 15; el runtime historico sigue activo |
+| QA SQL real y cutover | Parcial | Smoke tecnico read-only Hito 8 aprobado; integracion funcional exhaustiva y cutover siguen en Hitos 14 y 15 |
 
 El gate transversal del Hito 7 mantiene login, Panel, navegacion, mantenedores,
 tareas, scripts, programaciones, ejecuciones y consola bajo Bootstrap 5.3.3

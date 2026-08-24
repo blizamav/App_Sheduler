@@ -90,6 +90,16 @@
     background: #fdebec;
 }
 
+.badge.advertencia {
+    color: #8a4b05;
+    background: #fff1d6;
+}
+
+.badge.inactivo {
+    color: #526172;
+    background: #e9eef3;
+}
+
 .alertas {
     position: fixed;
     top: calc(var(--topbar-alto) + var(--espacio-3));

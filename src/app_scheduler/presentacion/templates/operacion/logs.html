@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
+{% block titulo %}Logs del sistema | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/operacion.css') }}">{% endblock %}
+{% block contenido %}
+<header class="encabezado-pagina"><div><p class="eyebrow">Operacion</p><h1>Logs del sistema</h1><p class="texto-secundario">Eventos internos de APP Scheduler. La salida de procesos permanece en Ejecuciones.</p></div><a class="btn btn-outline-secondary" href="{{ url_for('operacion.estado') }}">Estado del sistema</a></header>
+<form class="barra-filtros logs-filtros" method="get">
+    <label class="campo"><span>Desde</span><input class="form-control" type="date" name="desde" value="{{ filtros.desde }}"></label>
+    <label class="campo"><span>Hasta</span><input class="form-control" type="date" name="hasta" value="{{ filtros.hasta }}"></label>
+    <label class="campo"><span>Nivel</span><select class="form-select" name="nivel"><option value="">Todos</option>{% for item in niveles %}<option value="{{ item }}" {% if filtros.nivel == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label class="campo"><span>Modulo</span><select class="form-select" name="modulo"><option value="">Todos</option>{% for item in modulos %}<option value="{{ item }}" {% if filtros.modulo == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label class="campo"><span>Evento</span><select class="form-select" name="evento"><option value="">Todos</option>{% for item in eventos %}<option value="{{ item }}" {% if filtros.evento == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label class="campo logs-busqueda"><span>Buscar</span><input class="form-control" name="buscar" maxlength="100" value="{{ filtros.buscar }}" placeholder="Mensaje, evento o usuario"></label>
+    <button class="btn btn-primary" type="submit">Filtrar</button><a class="btn btn-outline-secondary" href="{{ url_for('operacion.logs') }}">Limpiar</a>
+</form>
+<div class="tabla-contenedor logs-tabla" tabindex="0" aria-label="Resultados de logs del sistema">
+<table class="tabla-base"><thead><tr><th>Fecha/hora</th><th>Nivel</th><th>Modulo</th><th>Evento</th><th>Descripcion</th><th>Usuario</th><th>Detalle</th></tr></thead><tbody>
+{% for log in pagina.elementos %}<tr><td class="texto-nowrap">{{ log.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') }}</td><td><span class="badge {{ 'error' if log.nivel in ('ERROR','CRITICAL') else 'advertencia' if log.nivel == 'WARNING' else 'info' }}">{{ log.nivel }}</span></td><td>{{ log.modulo }}</td><td><strong>{{ log.accion }}</strong></td><td class="logs-mensaje">{{ log.descripcion }}</td><td>{{ log.usuario or 'sistema' }}</td><td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('operacion.detalle_log', id_log=log.id) }}">Ver</a></td></tr>
+{% else %}<tr><td class="estado-vacio" colspan="7">{{ estado_vacio('Sin eventos', 'No hay logs que coincidan con los filtros.', 'logs') }}</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="paginacion"><span>{{ pagina.total }} registros</span>{% if pagina.pagina > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('operacion.logs', pagina=pagina.pagina-1, desde=filtros.desde, hasta=filtros.hasta, nivel=filtros.nivel, modulo=filtros.modulo, evento=filtros.evento, buscar=filtros.buscar) }}">Anterior</a>{% endif %}<strong>{{ pagina.pagina }} / {{ pagina.total_paginas or 1 }}</strong>{% if pagina.pagina < pagina.total_paginas %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('operacion.logs', pagina=pagina.pagina+1, desde=filtros.desde, hasta=filtros.hasta, nivel=filtros.nivel, modulo=filtros.modulo, evento=filtros.evento, buscar=filtros.buscar) }}">Siguiente</a>{% endif %}</div>
+{% endblock %}

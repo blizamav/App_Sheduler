@@ -256,6 +256,77 @@ class ConfiguracionScheduler:
 
 
 @dataclass(frozen=True, slots=True)
+class ConfiguracionSchedulerOperativa:
+    id_configuracion: int
+    scheduler_activo: bool
+    intervalo_revision_segundos: int
+    max_ejecuciones_concurrentes: int
+    permitir_ejecucion_automatica: bool
+    modo_mantenimiento: bool
+    nombre_worker_principal: str | None
+    descripcion: str | None
+    fecha_actualizacion: datetime | None
+    usuario_actualizacion: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class HeartbeatWorker:
+    id_worker: int
+    nombre_worker: str
+    estado: str
+    fecha_inicio: datetime | None
+    fecha_ultimo_heartbeat: datetime | None
+    fecha_ultimo_ciclo: datetime | None
+    resultado_ultimo_ciclo: str | None
+    ultimo_error: str | None
+    ciclos_ejecutados: int
+    tareas_evaluadas_ultimo_ciclo: int
+    tareas_ejecutadas_ultimo_ciclo: int
+    tareas_omitidas_ultimo_ciclo: int
+    pid_proceso: int | None
+    host: str | None
+    version_app: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class LogSistema:
+    id: int
+    usuario: str | None
+    accion: str
+    modulo: str
+    descripcion: str
+    valor_anterior: str | None
+    valor_nuevo: str | None
+    ip: str | None
+    user_agent: str | None
+    fecha_hora: datetime
+    nivel: str
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiguracionSistema:
+    id_configuracion: int
+    clave: str
+    valor: str
+    tipo_dato: str
+    descripcion: str | None
+    es_sensible: bool
+    fecha_actualizacion: datetime | None
+    usuario_actualizacion: str | None
+    activo: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiguracionEvidenciaTarea:
+    id_config_notificacion: int | None
+    id_tarea: int
+    enviar_evidencia: bool
+    plantilla_evidencia: str
+    adjuntar_archivos_declarados: bool
+    adjuntar_log_tecnico: bool
+
+
+@dataclass(frozen=True, slots=True)
 class ContextoEjecucion:
     id_ejecucion: int
     id_tarea: int | None

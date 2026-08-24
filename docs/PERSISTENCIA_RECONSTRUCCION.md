@@ -2,7 +2,26 @@
 
 ## Estado y fuente de verdad
 
-Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y evidencia sin cambiar el DDL ni sustituir `app/`, `run.py` o `scheduler_worker.py`.
+Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y evidencia; Hito 8, ya cerrado, agrega consultas operativas y configuracion tipada sin cambiar el DDL ni sustituir `app/`, `run.py` o `scheduler_worker.py`.
+
+## Persistencia Hito 8
+
+* `RepositorioLogsSistema`: `COUNT` + `OFFSET/FETCH` de 25 filas, filtros
+  parametrizados y detalle por PK. Niveles reales: `INFO`, `WARNING`, `ERROR`,
+  `CRITICAL`.
+* `RepositorioOperacion`: lectura acotada de `configuracion_scheduler`, ultimo
+  heartbeat activo, metricas SQL agregadas y matriz `configuracion_sistema`.
+* La unica escritura global actualiza la fila activa de
+  `configuracion_scheduler` por PK y allowlist; auditoria y cambio comparten UoW.
+* `RepositorioEvidencias`: upsert funcional sobre la configuracion activa de
+  `notificaciones_config_tarea`, preservando el contrato `STDOUT_V1` y su indice
+  unico filtrado.
+* `RepositorioAuditoria` detecta dentro de la misma conexion si la QA historica
+  conserva columnas legacy `NOT NULL`. En base limpia escribe solo el contrato
+  canonico; en QA escribe simultaneamente columnas canonicas y aliases legacy,
+  sin cambiar DDL ni hacer depender al runtime nuevo de esas columnas antiguas.
+* No existe limpieza automatica de `logs_sistema`: no hay contrato vigente para
+  un job destructivo. Retencion queda documentada como deuda, sin borrar datos.
 
 ## Persistencia Hito 7
 

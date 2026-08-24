@@ -70,6 +70,9 @@ def crear_aplicacion(
     from app_scheduler.modulos.scripts.casos_uso import ServicioScripts
     from app_scheduler.modulos.programaciones.casos_uso import ServicioProgramaciones
     from app_scheduler.modulos.ejecuciones.casos_uso import ServicioEjecuciones
+    from app_scheduler.modulos.operacion.casos_uso import ServicioLogsSistema, ServicioObservabilidad
+    from app_scheduler.modulos.configuracion_operativa.casos_uso import ServicioConfiguracionOperativa
+    from app_scheduler.modulos.evidencias.casos_uso import ServicioEvidencias
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -88,6 +91,10 @@ def crear_aplicacion(
     app.extensions["servicio_ejecuciones"] = ServicioEjecuciones(
         proveedor_sql, configuracion
     )
+    app.extensions["servicio_logs_sistema"] = ServicioLogsSistema(proveedor_sql)
+    app.extensions["servicio_observabilidad"] = ServicioObservabilidad(proveedor_sql)
+    app.extensions["servicio_configuracion_operativa"] = ServicioConfiguracionOperativa(proveedor_sql)
+    app.extensions["servicio_evidencias"] = ServicioEvidencias(proveedor_sql, configuracion)
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
@@ -99,6 +106,8 @@ def crear_aplicacion(
     from app_scheduler.modulos.scripts.rutas import bp_scripts
     from app_scheduler.modulos.programaciones.rutas import bp_programaciones
     from app_scheduler.modulos.ejecuciones.rutas import bp_ejecuciones
+    from app_scheduler.modulos.operacion.rutas import bp_operacion
+    from app_scheduler.modulos.configuracion_operativa.rutas import bp_configuracion
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
@@ -109,6 +118,8 @@ def crear_aplicacion(
     app.register_blueprint(bp_scripts)
     app.register_blueprint(bp_programaciones)
     app.register_blueprint(bp_ejecuciones)
+    app.register_blueprint(bp_operacion)
+    app.register_blueprint(bp_configuracion)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

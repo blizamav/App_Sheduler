@@ -66,8 +66,14 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
         "/ejecuciones/<int:id_ejecucion>",
         "/ejecuciones/<int:id_ejecucion>/log",
         "/ejecuciones/<int:id_ejecucion>/detener",
-        "/tareas/<int:id_tarea>/ejecutar",
-    }
+            "/tareas/<int:id_tarea>/ejecutar",
+            "/tareas/<int:id_tarea>/evidencia",
+            "/operacion/estado",
+            "/logs/",
+            "/logs/<int:id_log>",
+            "/configuracion/",
+            "/configuracion/scheduler",
+        }
 
 
 def test_healthcheck_no_requiere_sql(configuracion):

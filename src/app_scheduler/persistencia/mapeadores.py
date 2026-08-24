@@ -19,6 +19,11 @@ from app_scheduler.persistencia.modelos import (
     VersionScript,
     Programacion,
     Usuario,
+    ConfiguracionEvidenciaTarea,
+    ConfiguracionSchedulerOperativa,
+    ConfiguracionSistema,
+    HeartbeatWorker,
+    LogSistema,
 )
 
 COLUMNAS_TAREA = (
@@ -281,4 +286,72 @@ def mapear_programacion(fila: Sequence[Any]) -> Programacion:
         fecha_creacion=datos["fecha_creacion"],
         fecha_actualizacion=datos["fecha_actualizacion"], activo=bool(datos["activo"]),
         proxima_ejecucion=datos.get("proxima_ejecucion"),
+    )
+
+
+def mapear_log_sistema(fila: Sequence[Any]) -> LogSistema:
+    datos = fila_como_diccionario(fila, (
+        "id", "usuario", "accion", "modulo", "descripcion", "valor_anterior",
+        "valor_nuevo", "ip", "user_agent", "fecha_hora", "nivel",
+    ))
+    return LogSistema(**datos)
+
+
+def mapear_configuracion_scheduler(fila: Sequence[Any]) -> ConfiguracionSchedulerOperativa:
+    datos = fila_como_diccionario(fila, (
+        "id_configuracion", "scheduler_activo", "intervalo_revision_segundos",
+        "max_ejecuciones_concurrentes", "permitir_ejecucion_automatica",
+        "modo_mantenimiento", "nombre_worker_principal", "descripcion",
+        "fecha_actualizacion", "usuario_actualizacion",
+    ))
+    return ConfiguracionSchedulerOperativa(
+        id_configuracion=int(datos["id_configuracion"]),
+        scheduler_activo=bool(datos["scheduler_activo"]),
+        intervalo_revision_segundos=int(datos["intervalo_revision_segundos"]),
+        max_ejecuciones_concurrentes=int(datos["max_ejecuciones_concurrentes"]),
+        permitir_ejecucion_automatica=bool(datos["permitir_ejecucion_automatica"]),
+        modo_mantenimiento=bool(datos["modo_mantenimiento"]),
+        nombre_worker_principal=datos["nombre_worker_principal"],
+        descripcion=datos["descripcion"],
+        fecha_actualizacion=datos["fecha_actualizacion"],
+        usuario_actualizacion=datos["usuario_actualizacion"],
+    )
+
+
+def mapear_heartbeat(fila: Sequence[Any]) -> HeartbeatWorker:
+    datos = fila_como_diccionario(fila, (
+        "id_worker", "nombre_worker", "estado", "fecha_inicio",
+        "fecha_ultimo_heartbeat", "fecha_ultimo_ciclo", "resultado_ultimo_ciclo",
+        "ultimo_error", "ciclos_ejecutados", "tareas_evaluadas_ultimo_ciclo",
+        "tareas_ejecutadas_ultimo_ciclo", "tareas_omitidas_ultimo_ciclo",
+        "pid_proceso", "host", "version_app",
+    ))
+    return HeartbeatWorker(**datos)
+
+
+def mapear_configuracion_sistema(fila: Sequence[Any]) -> ConfiguracionSistema:
+    datos = fila_como_diccionario(fila, (
+        "id_configuracion", "clave", "valor", "tipo_dato", "descripcion",
+        "es_sensible", "fecha_actualizacion", "usuario_actualizacion", "activo",
+    ))
+    return ConfiguracionSistema(
+        id_configuracion=int(datos["id_configuracion"]), clave=datos["clave"],
+        valor=datos["valor"], tipo_dato=datos["tipo_dato"],
+        descripcion=datos["descripcion"], es_sensible=bool(datos["es_sensible"]),
+        fecha_actualizacion=datos["fecha_actualizacion"],
+        usuario_actualizacion=datos["usuario_actualizacion"], activo=bool(datos["activo"]),
+    )
+
+
+def mapear_configuracion_evidencia(fila: Sequence[Any]) -> ConfiguracionEvidenciaTarea:
+    datos = fila_como_diccionario(fila, (
+        "id_config_notificacion", "id_tarea", "enviar_evidencia",
+        "plantilla_evidencia", "adjuntar_archivos_declarados", "adjuntar_log_tecnico",
+    ))
+    return ConfiguracionEvidenciaTarea(
+        id_config_notificacion=int(datos["id_config_notificacion"]),
+        id_tarea=int(datos["id_tarea"]), enviar_evidencia=bool(datos["enviar_evidencia"]),
+        plantilla_evidencia=datos["plantilla_evidencia"] or "STDOUT_V1",
+        adjuntar_archivos_declarados=bool(datos["adjuntar_archivos_declarados"]),
+        adjuntar_log_tecnico=bool(datos["adjuntar_log_tecnico"]),
     )

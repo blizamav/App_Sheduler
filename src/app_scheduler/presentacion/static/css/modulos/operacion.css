@@ -1,0 +1,31 @@
+.logs-filtros { grid-template-columns: repeat(5, minmax(130px, 1fr)) minmax(220px, 1.6fr) auto auto; }
+.logs-tabla { max-height: min(68vh, 760px); overflow: auto; }
+.logs-tabla .tabla-base { min-width: 1120px; }
+.logs-tabla thead { position: sticky; top: 0; z-index: 2; }
+.logs-mensaje { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.texto-nowrap { white-space: nowrap; }
+.detalle-log, .observabilidad-detalle { padding: 22px; border-color: var(--color-borde); box-shadow: var(--sombra-suave); }
+.detalle-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0 0 18px; overflow: hidden; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-borde); }
+.detalle-grid > div { min-width: 0; padding: 14px; background: var(--color-superficie); }
+.detalle-grid dt { color: var(--color-texto-suave); font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.detalle-grid dd { margin: 5px 0 0; overflow-wrap: anywhere; font-weight: 700; }
+.detalle-bloque { margin-top: 18px; }
+.detalle-bloque h2 { font-size: .9rem; }
+.detalle-bloque pre { max-height: 320px; margin: 0; overflow: auto; padding: 14px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); color: var(--color-texto); background: var(--color-superficie-suave); white-space: pre-wrap; overflow-wrap: anywhere; }
+.estado-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.estado-grid-secundario { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+.estado-card { min-width: 0; padding: 18px; border-color: var(--color-borde); box-shadow: var(--sombra-suave); }
+.estado-card > span { color: var(--color-texto-suave); font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.estado-card > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 6px; }
+.estado-card strong { min-width: 0; overflow-wrap: anywhere; font-size: 1rem; }
+.estado-card small { color: var(--color-texto-suave); }
+.observabilidad-detalle h2, .matriz-configuracion h2 { font-size: 1.1rem; }
+.matriz-configuracion { margin-top: 24px; }
+.matriz-configuracion > header { margin-bottom: 14px; }
+.tabla-configuracion { min-width: 1420px; }
+.valor-configuracion { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--bs-font-monospace); }
+.grid-configuracion { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.config-switches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.config-switches .form-check { min-height: 52px; margin: 0; padding: 14px 14px 14px 48px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie-suave); }
+@media (max-width: 1280px) { .logs-filtros { grid-template-columns: repeat(4, minmax(130px, 1fr)); } .estado-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 780px) { .logs-filtros, .detalle-grid, .estado-grid, .estado-grid-secundario, .grid-configuracion, .config-switches { grid-template-columns: 1fr; } .logs-busqueda { grid-column: auto; } }

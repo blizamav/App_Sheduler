@@ -2,7 +2,24 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-7 estan cerrados en el runtime aislado; el runtime historico sigue activo, Hito 8 no fue iniciado y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-8 estan cerrados en el runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+
+## Implementacion Hito 8
+
+La observabilidad global se separa de la consola de ejecucion:
+
+```text
+logs_sistema -> RepositorioLogsSistema -> /logs/ + detalle seguro
+configuracion_scheduler + heartbeat + ejecuciones -> /operacion/estado
+configuracion_sistema -> matriz solo lectura y valores sensibles protegidos
+notificaciones_config_tarea + script activo -> validacion AST -> configuracion por tarea
+```
+
+Las consultas de logs son parametrizadas, paginadas y con orden fijo en
+allowlist. La configuracion scheduler acepta solo cinco campos tipados y audita
+antes/despues en la misma UoW. La evidencia se valida con AST y lectura confinada
+del `.py`; nunca se importa, ejecuta ni evalua el script. No se agregaron tablas,
+jobs destructivos, Graph, Papelera, Factory Reset reconstruido ni entrypoints.
 
 ## Implementacion Hito 7
 
@@ -54,7 +71,7 @@ Mapa de transicion aplicado:
 | CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
 | Hilos web para ejecucion | `worker/contratos.py` y motor Hito 7 | Flask reserva; el worker reclama y ejecuta con el motor unico. |
 
-Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-7 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts, scheduler, motor de ejecucion, logs, consola y evidencia base. Graph, Papelera, observabilidad global y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
+Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-8 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts, scheduler, motor de ejecucion, logs, consola, evidencia base, observabilidad global y configuracion operativa. Graph, Papelera y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
 
 ## Implementacion Hito 2
 
@@ -430,7 +447,7 @@ Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime recons
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3-7 quedaron cerrados en el runtime aislado; la integracion SQL QA real y el cutover permanecen pendientes.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3-7 quedaron cerrados y Hito 8 completo su integracion tecnica read-only contra QA; el cutover permanece pendiente.
 
 ## Hub transversal de scripts
 

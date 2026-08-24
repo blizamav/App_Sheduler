@@ -1,5 +1,25 @@
 # Seguridad
 
+## Hito 8 - Observabilidad y configuracion operativa
+
+Estado: CERRADO.
+
+* `/logs/` y su detalle exigen `LOGS_VER`; el identificador se resuelve en
+  backend y no elude autorizacion. Jinja autoescape mantiene mensajes como texto.
+* Los filtros SQL usan parametros, pagina maxima de 25 filas y orden fijo. El
+  servicio protege patrones comunes de password, token y secret antes de renderizar.
+* `/operacion/estado` exige `SCHEDULER_CONFIG_VER` y solo expone estado tecnico,
+  contadores y metadata operacional real.
+* `/configuracion/` exige `SCHEDULER_CONFIG_VER`; su POST exige
+  `SCHEDULER_CONFIG_EDITAR` y CSRF global. La escritura ignora campos no
+  permitidos, valida enteros/rangos y audita en UoW.
+* `configuracion_sistema` no se edita: las filas sensibles muestran
+  `[PROTEGIDO]`. Secretos ENV no se trasladan a SQL ni a formularios.
+* La evidencia usa `TAREAS_EDITAR`, confinamiento de ruta y AST. No usa `exec`,
+  `eval`, import dinamico ni subprocess durante validacion estatica.
+* No se declara cumplimiento formal OWASP; se aplican controles concretos de
+  autorizacion, CSRF, XSS, SQL injection, mass assignment, IDOR y secretos.
+
 ## Gate UI/UX y controles OWASP aplicables - 2026-08-21
 
 El frontend reconstruido mantiene autoescape Jinja y evita `|safe`, handlers

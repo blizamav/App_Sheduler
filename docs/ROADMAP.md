@@ -84,19 +84,28 @@ El gate incorporo Bootstrap 5.3.3 local, navegacion responsive, hub global
 `/scripts`, correcciones visuales desktop/movil y disciplina OWASP aplicable sin
 declarar cumplimiento formal. La validacion de cierre aprueba 205 pruebas
 reconstruidas y 231 totales; una prueba de symlink queda omitida en Windows y
-esta cubierta en Linux. Hito 8 no fue iniciado.
-
-## Pendiente
+esta cubierta en Linux. Al cerrar ese hito, Hito 8 aun no habia sido iniciado.
 
 ### Hito 8 - Observabilidad, configuracion operativa e integracion tecnica QA
 
-Estado: NO INICIADO.
+Estado: CERRADO.
 
 Reimplementar `logs_sistema` global, observabilidad, panel/configuracion de
 Scheduler y Worker, configuracion pendiente de evidencias y configuracion de
 sistema relacionada. Incluir integracion tecnica temprana contra
 `APP_SCHEDULER_QA` para web, worker, filesystem, logs y evidencia. No duplicar
 stdout/stderr, consola ni captura base ya cerrados en Hito 7.
+
+Implementacion actual: navegador paginado de `logs_sistema`, detalle seguro,
+estado real de worker/scheduler, matriz de `configuracion_sistema` solo lectura,
+edicion tipada de `configuracion_scheduler` y configuracion de evidencia por
+tarea con validacion AST. El smoke real read-only contra `APP_SCHEDULER_QA`
+confirmo contrato y lecturas, login invalido controlado y cero residuos. El
+login SQL valido no se ejecuto al no existir una credencial de aplicacion
+autorizada para la prueba; `SUPER_ADMIN_ENV` si fue validado. Hito 9 permanece
+NO INICIADO.
+
+## Pendiente
 
 ### Hito 9 - Auditoria UI y Papelera
 

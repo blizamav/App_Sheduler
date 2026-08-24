@@ -6,10 +6,49 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-7 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-8 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 7 cerrado, sin cutover; Hito 8 no iniciado.
+* Fase actual: Reconstruccion limpia - Hito 8 cerrado, sin cutover; Hito 9 no iniciado.
 * Ultima actualizacion: 2026-08-24
+
+## 2026-08-24 - Cierre formal Hito 8: observabilidad, configuracion operativa e integracion QA
+
+* Fase: Hito 8 cerrado formalmente; Hito 9 no iniciado.
+* Observabilidad: se agregaron `/logs/`, `/logs/<id>` y
+  `/operacion/estado`, con permisos reales, SQL parametrizado, paginacion,
+  detalle seguro, heartbeat, scheduler, mantenimiento y metricas acotadas.
+* Configuracion: `/configuracion/` mantiene `configuracion_sistema` en solo
+  lectura y protege valores sensibles. `SCHEDULER_CONFIG_VER` autoriza lectura;
+  solo cinco campos tipados son editables con `SCHEDULER_CONFIG_EDITAR`,
+  allowlist, CSRF, UoW y auditoria canonica.
+* Evidencia: la tarea permite configurar los campos SQL existentes y exige
+  compatibilidad estatica `STDOUT_V1`; el analisis AST no ejecuta, importa ni
+  evalua codigo y la lectura del script queda confinada.
+* Compatibilidad QA: el login invalido revelo que las seis columnas legacy de
+  `auditoria_cambios` siguen `NOT NULL` en la base historica. El repositorio
+  detecta ese contrato dentro de la conexion y completa ambos juegos de
+  columnas; la base limpia conserva el INSERT canonico. No se modifico schema.
+* QA real: smoke Docker con `user_scheduler` contra `APP_SCHEDULER_QA` aprobo
+  contrato minimo, indices/FK, logs, heartbeat, scheduler, configuracion,
+  filesystem, login invalido y `SUPER_ADMIN_ENV`. El login SQL valido no se
+  ejecuto sin una credencial autorizada. No se iniciaron ciclos ni scripts.
+* Limpieza QA: cero escrituras confirmadas y cero residuos `QA_HITO8_*`; las
+  inserciones de auditoria usadas por la prueba de login se revirtieron en la
+  misma conexion.
+* UI/UX: vistas Bootstrap revisadas en 1440x900, 390x844 y 844x390; sin overflow
+  global, tablas con scroll local, sidebar movil operativo y consola del
+  navegador sin errores.
+* Pruebas: reconstruccion `218 passed, 1 skipped`; suite completa
+  `244 passed, 1 skipped`. El skip conocido es symlink Windows y esta cubierto
+  en Linux. Compileall, Jinja, JavaScript, imports/rutas, Compose, build y checks
+  web/worker: OK.
+* Protecciones: `database/`, runtime historico, `.env` y `.env.docker` intactos;
+  sin DDL/DML confirmado, Factory Reset, Graph, Papelera ni cutover.
+* Riesgos/deuda: no se probo login SQL valido por falta de credencial de
+  aplicacion autorizada; no existe politica destructiva de retencion; el worker
+  QA observado estaba `DETENIDO`. Integracion funcional exhaustiva y cutover
+  permanecen en hitos posteriores.
+* Proximo paso: esperar autorizacion expresa antes de iniciar Hito 9.
 
 ## 2026-08-24 - Cierre formal definitivo del Hito 7
 

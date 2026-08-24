@@ -14,7 +14,7 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 5 - Tareas, scripts, versiones y `.env`: CERRADO.
 * Hito 6 - Programaciones, scheduler y worker: CERRADO.
 * Hito 7 - Motor unico, logs y evidencias base: CERRADO.
-* Hito 8 - NO INICIADO.
+* Hito 8 - CERRADO: observabilidad, configuracion operativa e integracion QA.
 
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
@@ -26,6 +26,11 @@ Como ajuste transversal del mismo gate, el runtime reconstruido incorpora
 `/scripts`: un hub global paginado para localizar scripts por nombre, tarea o
 cliente y entrar al detalle versionado existente sin duplicar su CRUD.
 
+Hito 8 incorpora en el runtime aislado `/operacion/estado`, `/logs/` y
+`/configuracion/`, ademas de configuracion y validacion estatica de evidencia
+en la edicion de tareas. Usa exclusivamente tablas y permisos existentes; no
+modifica el esquema, no implementa correo/Graph y no realiza cutover.
+
 Fuentes maestras de la reconstruccion:
 
 * [Inventario Maestro](docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md)
@@ -33,16 +38,19 @@ Fuentes maestras de la reconstruccion:
 * [Roadmap](docs/ROADMAP.md)
 * [Persistencia de la Reconstruccion](docs/PERSISTENCIA_RECONSTRUCCION.md)
 * [UI/UX de la Reconstruccion](docs/UI_UX_RECONSTRUCCION.md)
+* [Observabilidad y configuracion](docs/OBSERVABILIDAD_CONFIGURACION_RECONSTRUCCION.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 7 agrega reserva manual, claim atomico y un motor worker comun para manual/automatica con subprocess, logs y evidencia, pero todavia no reemplaza los entrypoints historicos.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 7 agrega el motor comun y Hito 8 la observabilidad/configuracion operativa, pero todavia no reemplazan los entrypoints historicos.
 
-Validacion de cierre: 205 pruebas reconstruidas aprobadas y 1 omitida por la
-restriccion conocida de symlinks en Windows; suite completa con 231 aprobadas y
-la misma omision. No se realizo integracion SQL real ni cutover.
+Validacion actual: 218 pruebas reconstruidas aprobadas y 1 omitida por la
+restriccion conocida de symlinks en Windows; suite completa con 244 aprobadas y
+la misma omision. El smoke tecnico read-only contra `APP_SCHEDULER_QA` valido
+contrato, lecturas, observabilidad y login invalido sin dejar escrituras. No se
+realizo cutover.
 
-Validacion aislada de Hito 7:
+Validacion aislada del runtime reconstruido:
 
 ```powershell
 $env:PYTHONPATH="src"
