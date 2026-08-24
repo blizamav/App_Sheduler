@@ -7,8 +7,27 @@
 }
 
 .login-panel {
-    width: min(440px, 100%);
+    width: 100%;
     overflow: hidden;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-lg);
+    background: var(--color-superficie);
+    box-shadow: var(--sombra-elevada);
+}
+
+.login-contenedor {
+    display: grid;
+    width: min(440px, 100%);
+    gap: var(--espacio-3);
+}
+
+.pagina-login .alertas {
+    position: static;
+    width: 100%;
+}
+
+.pagina-login .estado-error {
+    padding: var(--espacio-6);
     border: 1px solid var(--color-borde);
     border-radius: var(--radio-lg);
     background: var(--color-superficie);
@@ -31,7 +50,7 @@
 
 .boton.ancho { width: 100%; }
 
-.formulario-usuario { max-width: 900px; }
+.formulario-usuario { width: 100%; max-width: none; }
 
 .resumen-roles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--espacio-3); margin-bottom: var(--espacio-6); }
 .resumen-roles article { display: grid; gap: 4px; padding: var(--espacio-4); border-left: 3px solid var(--color-primario); background: var(--color-superficie); box-shadow: var(--sombra-suave); }

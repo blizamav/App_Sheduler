@@ -13,7 +13,18 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 4 - Clientes, categorias y tipos: CERRADO.
 * Hito 5 - Tareas, scripts, versiones y `.env`: CERRADO.
 * Hito 6 - Programaciones, scheduler y worker: CERRADO.
-* Hito 7 - Motor de ejecucion: NO INICIADO.
+* Hito 7 - Motor unico, logs y evidencias base: CERRADO.
+* Hito 8 - NO INICIADO.
+
+El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
+base estructural, moderniza layout, navegacion, formularios, tablas, estados y
+consola, y corrige el flujo comun de confirmacion/Guardado. Tambien refuerza
+cabeceras de seguridad y mantiene CSRF, autorizacion y autoescape. El gate fue
+integrado al cierre del hito; no constituye uno nuevo ni declara finalizada la
+UI/UX global, cuyo pulido permanece en Hito 12.
+Como ajuste transversal del mismo gate, el runtime reconstruido incorpora
+`/scripts`: un hub global paginado para localizar scripts por nombre, tarea o
+cliente y entrar al detalle versionado existente sin duplicar su CRUD.
 
 Fuentes maestras de la reconstruccion:
 
@@ -21,12 +32,17 @@ Fuentes maestras de la reconstruccion:
 * [Arquitectura de Reconstruccion](docs/ARQUITECTURA_RECONSTRUCCION.md)
 * [Roadmap](docs/ROADMAP.md)
 * [Persistencia de la Reconstruccion](docs/PERSISTENCIA_RECONSTRUCCION.md)
+* [UI/UX de la Reconstruccion](docs/UI_UX_RECONSTRUCCION.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 6 incorpora programaciones y un worker que reserva ejecuciones automaticas `PENDIENTE`, pero no ejecuta scripts ni reemplaza los entrypoints historicos.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 7 agrega reserva manual, claim atomico y un motor worker comun para manual/automatica con subprocess, logs y evidencia, pero todavia no reemplaza los entrypoints historicos.
 
-Validacion aislada de cierre de Hito 6:
+Validacion de cierre: 205 pruebas reconstruidas aprobadas y 1 omitida por la
+restriccion conocida de symlinks en Windows; suite completa con 231 aprobadas y
+la misma omision. No se realizo integracion SQL real ni cutover.
+
+Validacion aislada de Hito 7:
 
 ```powershell
 $env:PYTHONPATH="src"
@@ -35,9 +51,13 @@ python -m pytest -q
 python -m app_scheduler.web --check
 ```
 
-El cierre aprobo 162 pruebas reconstruidas y 188 pruebas totales; una prueba de
-symlink se omite en Windows y esta validada en Linux. El detalle permanece en
-`docs/CHANGELOG.md`.
+El detalle tecnico del motor esta en
+[`docs/MOTOR_EJECUCION_RECONSTRUCCION.md`](docs/MOTOR_EJECUCION_RECONSTRUCCION.md).
+
+Todo cierre aplica un gate transversal de calidad en cuatro dimensiones:
+tecnica, funcional, visual y comparativa con el runtime historico cuando exista
+una superficie equivalente. Una pantalla funcionalmente rota o una regresion UX
+objetiva bloquea el cierre aunque las pruebas tecnicas sean verdes.
 
 El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md), [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md), [Tareas y scripts](docs/TAREAS_SCRIPTS_RECONSTRUCCION.md) y [Programaciones y scheduler](docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md).
 
@@ -48,6 +68,7 @@ El sistema actual incluye:
 * autenticacion hibrida con `SUPER_ADMIN_ENV` y usuarios SQL;
 * roles, permisos, usuarios y mantenedores;
 * tareas, programaciones, scripts y hasta tres versiones;
+* acceso global a scripts con estado, version activa, slots y metadata `.env`;
 * `.env` por version de script sin persistir secretos en la base;
 * ejecucion manual y automatica, consola, logs y detencion;
 * scheduler y worker separado con heartbeat y eventos;
@@ -61,7 +82,7 @@ Estas capacidades constituyen requisitos de reconstruccion, no una declaracion d
 Stack principal:
 
 * Python y Flask;
-* Jinja, HTML, CSS y JavaScript;
+* Jinja, HTML5, Bootstrap 5.3.3 local, CSS y JavaScript modular;
 * SQL Server mediante `pyodbc`;
 * servicios separados `web` y `worker`;
 * Docker Compose para QA.

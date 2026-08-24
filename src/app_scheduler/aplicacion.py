@@ -34,6 +34,22 @@ def crear_aplicacion(
     if ajustes:
         app.config.update(ajustes)
 
+    @app.after_request
+    def aplicar_cabeceras_seguridad(respuesta):
+        respuesta.headers["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+            "object-src 'none'; base-uri 'self'; form-action 'self'; "
+            "frame-ancestors 'none'"
+        )
+        respuesta.headers["X-Content-Type-Options"] = "nosniff"
+        respuesta.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        respuesta.headers["X-Frame-Options"] = "DENY"
+        respuesta.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), payment=()"
+        )
+        return respuesta
+
     logger = configurar_logging(
         "app_scheduler.web",
         configuracion.log_level,
@@ -53,6 +69,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.tareas.casos_uso import ServicioTareas
     from app_scheduler.modulos.scripts.casos_uso import ServicioScripts
     from app_scheduler.modulos.programaciones.casos_uso import ServicioProgramaciones
+    from app_scheduler.modulos.ejecuciones.casos_uso import ServicioEjecuciones
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -68,6 +85,9 @@ def crear_aplicacion(
     app.extensions["servicio_programaciones"] = ServicioProgramaciones(
         proveedor_sql, configuracion
     )
+    app.extensions["servicio_ejecuciones"] = ServicioEjecuciones(
+        proveedor_sql, configuracion
+    )
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
@@ -78,6 +98,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.tareas.rutas import bp_tareas
     from app_scheduler.modulos.scripts.rutas import bp_scripts
     from app_scheduler.modulos.programaciones.rutas import bp_programaciones
+    from app_scheduler.modulos.ejecuciones.rutas import bp_ejecuciones
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
@@ -87,6 +108,7 @@ def crear_aplicacion(
     app.register_blueprint(bp_tareas)
     app.register_blueprint(bp_scripts)
     app.register_blueprint(bp_programaciones)
+    app.register_blueprint(bp_ejecuciones)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

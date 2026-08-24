@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
+{% block titulo %}Scripts | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/tareas-scripts.css') }}">{% endblock %}
+{% block contenido %}
+{% set identidad = identidad_actual() %}
+<nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item active" aria-current="page">Scripts</li></ol></nav>
+<header class="encabezado-pagina">
+  <div><p class="eyebrow">Operacion</p><h1>Scripts</h1><p class="texto-secundario">Consulta y administra los scripts asociados a las tareas.</p></div>
+  {% if identidad.tiene_permiso('TAREAS_VER') %}<a class="btn btn-primary boton primario" href="{{ url_for('tareas.listado') }}">Ir a tareas</a>{% endif %}
+</header>
+<form class="barra-filtros scripts-filtros" method="get">
+  <label class="campo"><span>Buscar</span><input class="form-control" name="buscar" value="{{ filtros.buscar }}" maxlength="100" placeholder="Script, tarea o cliente"></label>
+  <label class="campo"><span>Estado</span><select class="form-select" name="estado"><option value="">Todos</option><option value="ACTIVO" {% if filtros.estado == 'ACTIVO' %}selected{% endif %}>Activos</option><option value="INACTIVO" {% if filtros.estado == 'INACTIVO' %}selected{% endif %}>Inactivos</option></select></label>
+  <label class="campo"><span>Version activa</span><select class="form-select" name="version_activa"><option value="">Todas</option>{% for numero in (1, 2, 3) %}<option value="{{ numero }}" {% if filtros.version_activa|string == numero|string %}selected{% endif %}>v{{ numero }}</option>{% endfor %}</select></label>
+  <button class="btn btn-primary boton primario" type="submit">Filtrar</button>
+  <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('scripts.listado') }}">Limpiar</a>
+</form>
+<div class="scripts-hub-meta"><strong>{{ resultado.total }}</strong><span>{{ 'script registrado' if resultado.total == 1 else 'scripts registrados' }}</span></div>
+{% if resultado.elementos %}
+<section class="scripts-hub-grid" aria-label="Scripts registrados">
+  {% for script in resultado.elementos %}
+  <article class="script-hub-card">
+    <header class="script-hub-cabecera">
+      <div><span class="eyebrow">Script logico</span><h2>{{ script.nombre_script }}</h2></div>
+      <span class="badge {{ 'activo' if script.activo else 'error' }}">{{ 'ACTIVO' if script.activo else 'INACTIVO' }}</span>
+    </header>
+    <div class="script-hub-contexto">
+      <strong>{{ script.nombre_tarea }}</strong>
+      <span>Cliente: {{ script.cliente }}</span>
+    </div>
+    <dl class="script-hub-datos">
+      <div><dt>Version activa</dt><dd>{% if script.numero_version_activa %}<strong>v{{ script.numero_version_activa }}</strong><small>{{ script.nombre_archivo_activo }}</small>{% else %}<span class="badge advertencia">SIN ACTIVA</span>{% endif %}</dd></div>
+      <div><dt>Slots</dt><dd><strong>{{ script.slots_ocupados }} / 3</strong><small>versiones ocupadas</small></dd></div>
+      <div><dt>Entorno</dt><dd><strong>{{ script.env_configurados }}</strong><small>{{ 'version configurada' if script.env_configurados == 1 else 'versiones configuradas' }}</small></dd></div>
+    </dl>
+    <footer class="script-hub-pie">
+      <span>Actualizado {{ script.ultima_modificacion.strftime('%Y-%m-%d %H:%M') }}</span>
+      <a class="btn btn-outline-primary boton secundario compacto" href="{{ url_for('scripts.detalle', id_tarea=script.id_tarea, origen='scripts') }}">Administrar</a>
+    </footer>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="estado-vacio scripts-vacio">{{ estado_vacio('No hay scripts registrados.', 'Los scripts se crean y versionan desde una tarea.', 'scripts', url_for('tareas.listado') if identidad.tiene_permiso('TAREAS_VER') else none, 'Ir a tareas') }}</section>
+{% endif %}
+{% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion"><a class="boton secundario compacto {% if resultado.pagina <= 1 %}disabled{% endif %}" {% if resultado.pagina > 1 %}href="{{ url_for('scripts.listado', pagina=resultado.pagina-1, buscar=filtros.buscar, estado=filtros.estado, version_activa=filtros.version_activa) }}"{% else %}aria-disabled="true"{% endif %}>Anterior</a><span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span><a class="boton secundario compacto {% if resultado.pagina >= resultado.total_paginas %}disabled{% endif %}" {% if resultado.pagina < resultado.total_paginas %}href="{{ url_for('scripts.listado', pagina=resultado.pagina+1, buscar=filtros.buscar, estado=filtros.estado, version_activa=filtros.version_activa) }}"{% else %}aria-disabled="true"{% endif %}>Siguiente</a></nav>{% endif %}
+{% endblock %}

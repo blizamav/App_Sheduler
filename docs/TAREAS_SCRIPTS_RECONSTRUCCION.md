@@ -4,7 +4,13 @@
 
 Hito 5 esta cerrado en el runtime aislado `src/app_scheduler/`.
 Hito 6 agrega programaciones y reserva automatica sin alterar las reglas de
-scripts. La ejecucion de codigo sigue fuera de alcance hasta Hito 7.
+scripts. Hito 7 ejecuta la version congelada con un motor unico; el runtime
+historico sigue activo y no existe cutover.
+
+Para manuales se usa exclusivamente `scripts.id_version_activa`, como en el
+contrato historico. La version, ruta y snapshots se congelan al reservar. El
+motor valida nuevamente que la ruta fisica persista dentro del root autorizado,
+pero no cambia a una version que se active despues.
 
 ## Contrato SQL
 
@@ -65,6 +71,7 @@ archivo anterior y se retiran temporal/nuevo. Tras commit se elimina el respaldo
 | `/tareas/nueva` | GET/POST | `TAREAS_CREAR` |
 | `/tareas/<id>/editar` | GET/POST | `TAREAS_EDITAR` |
 | `/tareas/<id>/estado` | POST | `TAREAS_ESTADO` |
+| `/scripts` | GET | `SCRIPTS_VER` |
 | `/tareas/<id>/scripts` | GET | `SCRIPTS_VER` |
 | `/tareas/<id>/scripts/versiones` | POST | `SCRIPTS_VERSIONAR` |
 | `.../<id_version>/reemplazar` | POST | `SCRIPTS_REEMPLAZAR` |
@@ -77,7 +84,8 @@ archivo anterior y se retiran temporal/nuevo. Tras commit se elimina el respaldo
 `SUPER_ADMIN` y `ADMIN` reciben todos estos permisos. `TI` recibe tareas
 operativas, carga/versionado/activacion/reemplazo y `.env`, pero bootstrap no le
 asigna `SCRIPTS_DESACTIVAR`. `TERCERO` recibe solo `TAREAS_VER`,
-`TAREAS_EJECUTAR` y `SCRIPTS_VER`; la ejecucion no existe aun en este runtime.
+`TAREAS_EJECUTAR` y `SCRIPTS_VER`; la ejecucion manual existe desde Hito 7 y
+requiere `EJECUCIONES_EJECUTAR` en la matriz efectiva del usuario.
 
 ## Auditoria
 
@@ -113,3 +121,15 @@ de navegador, sin dejar servidor temporal activo.
 Deuda deliberada: falta prueba de integracion contra SQL Server/QA y validacion
 manual visual con datos reales; no se realizan en Hito 5 sin autorizacion. La
 clave funcional de tarea no tiene UNIQUE fisico y se controla en servicio.
+
+## Acceso transversal desde el Hito 7
+
+El indice global `/scripts` permite buscar por script, tarea o cliente, filtrar
+por estado y version activa, y paginar resultados. Cada resultado muestra
+estado, version activa, slots ocupados, cantidad de versiones con `.env` y
+ultima actualizacion. No muestra rutas ni valores de entorno.
+
+La accion `Administrar` reutiliza `/tareas/<id_tarea>/scripts`; al entrar desde
+el hub, breadcrumb y retorno vuelven a `Scripts`. El detalle representa siempre
+v1, v2 y v3, incluidos los slots vacios. Crear un script sigue requiriendo una
+tarea: el hub no ofrece alta independiente ni altera la relacion 1:1.

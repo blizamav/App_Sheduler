@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Ejecucion #{{ ejecucion.id_ejecucion }} | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/ejecuciones.css') }}">{% endblock %}
+{% block contenido %}
+{% set identidad = identidad_actual() %}
+<nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('ejecuciones.listado') }}">Ejecuciones</a></li><li class="breadcrumb-item active" aria-current="page">Ejecucion #{{ ejecucion.id_ejecucion }}</li></ol></nav>
+<header class="encabezado-pagina">
+  <div><p class="eyebrow">Ejecucion #{{ ejecucion.id_ejecucion }}</p><h1>{{ ejecucion.nombre_tarea }}</h1><p class="texto-secundario">{{ ejecucion.nombre_archivo }} · v{{ ejecucion.version_script }} · {{ ejecucion.origen_ejecucion|title }}</p></div>
+  <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('ejecuciones.listado') }}">Volver</a>
+</header>
+<section class="ejecucion-resumen" data-ejecucion="{{ ejecucion.id_ejecucion }}" data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">
+  <div class="panel-operativo"><p class="eyebrow">Estado</p><strong data-estado>{{ ejecucion.estado_ejecucion|replace('_',' ') }}</strong><small data-resultado>{{ ejecucion.mensaje_error or 'Sin error registrado' }}</small></div>
+  <div class="panel-operativo"><p class="eyebrow">Proceso</p><strong>{{ ejecucion.nombre_worker or 'Pendiente de worker' }}</strong><small>PID {{ ejecucion.pid_proceso or '-' }}</small></div>
+  <div class="panel-operativo"><p class="eyebrow">Tiempo</p><strong>{{ ejecucion.duracion_segundos ~ ' segundos' if ejecucion.duracion_segundos is not none else 'En progreso' }}</strong><small>Salida {{ ejecucion.codigo_salida if ejecucion.codigo_salida is not none else '-' }}</small></div>
+  <div class="panel-operativo"><p class="eyebrow">Evidencia</p><strong>{{ ejecucion.estado_evidencia or 'NO REQUERIDA' }}</strong><small>Solo metadatos, hash y validacion</small></div>
+</section>
+{% if ejecucion.estado_ejecucion == 'EN_EJECUCION' and identidad.tiene_permiso('EJECUCIONES_DETENER') %}
+<form class="detencion-ejecucion" method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="campo"><span>Motivo opcional</span><input class="form-control" name="motivo" maxlength="500" placeholder="Motivo operativo de la detencion"></label><button class="btn btn-danger boton peligro" type="submit" data-confirmar data-titulo="Detener ejecucion" data-mensaje="El worker terminara exclusivamente el proceso que posee esta ejecucion." data-texto-procesando="Solicitando...">Solicitar detencion</button></form>
+{% endif %}
+<section class="consola-ejecucion">
+  <header><div><p class="eyebrow">Salida en tiempo real</p><h2>Consola y logs</h2></div><div class="consola-acciones"><label><input class="form-check-input" type="checkbox" data-autoscroll checked> Seguir salida</label><span class="badge info" data-polling>Sincronizando</span></div></header>
+  <pre data-consola aria-live="polite">Cargando log...</pre>
+</section>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', filename='js/ejecuciones.js') }}"></script>{% endblock %}

@@ -11,6 +11,8 @@ from app_scheduler.compartido.logging import configurar_logging
 from app_scheduler.configuracion import ConfiguracionAplicacion
 from app_scheduler.worker.scheduler import ServicioScheduler
 from app_scheduler.worker.servicio import ServicioWorker
+from app_scheduler.worker.cola import ProcesadorColaEjecuciones
+from app_scheduler.worker.motor import MotorEjecucionSubprocess
 
 
 def preparar_worker(
@@ -47,6 +49,14 @@ def main() -> int:
     worker = ServicioWorker(
         proveedor, ServicioScheduler(proveedor, configuracion), configuracion,
         logger, detener=detener,
+    )
+    motor = MotorEjecucionSubprocess(
+        proveedor, configuracion, logger, evento_detencion=detener,
+        timeout_segundos=configuracion.ejecucion_timeout_segundos,
+        espera_terminacion_segundos=configuracion.ejecucion_gracia_terminacion_segundos,
+    )
+    worker.procesador_ejecuciones = ProcesadorColaEjecuciones(
+        proveedor, configuracion, motor, worker.nombre_worker,
     )
     if argumentos.once:
         return 0 if worker.ejecutar_solo_un_ciclo() is not None else 1

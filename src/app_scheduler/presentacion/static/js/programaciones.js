@@ -2,10 +2,20 @@ function actualizarCampos(formulario) {
     const tipo = formulario.querySelector("[data-tipo-programacion]")?.value;
     const modo = formulario.querySelector("[data-modo-programacion]")?.value;
     formulario.querySelectorAll("[data-campo-tipo]").forEach((campo) => {
-        campo.hidden = campo.dataset.campoTipo !== tipo;
+        const oculto = campo.dataset.campoTipo !== tipo;
+        campo.hidden = oculto;
+        campo.setAttribute("aria-hidden", String(oculto));
+        campo.querySelectorAll("input, select, textarea").forEach((control) => {
+            control.disabled = oculto;
+        });
     });
     formulario.querySelectorAll("[data-campo-modo]").forEach((campo) => {
-        campo.hidden = campo.dataset.campoModo !== modo;
+        const oculto = campo.dataset.campoModo !== modo;
+        campo.hidden = oculto;
+        campo.setAttribute("aria-hidden", String(oculto));
+        campo.querySelectorAll("input, select, textarea").forEach((control) => {
+            control.disabled = oculto;
+        });
     });
 }
 

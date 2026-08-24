@@ -1,10 +1,10 @@
 {% with mensajes = get_flashed_messages(with_categories=true) %}
     {% if mensajes %}
-    <section class="alertas" aria-live="polite">
+    <section class="alertas toast-container" aria-live="polite" aria-atomic="true">
         {% for categoria, mensaje in mensajes %}
-        <div class="alerta {{ categoria }}" data-alerta>
+        <div class="alerta alert {{ 'alert-danger' if categoria == 'error' else ('alert-warning' if categoria == 'advertencia' else ('alert-success' if categoria in ('exito', 'success') else 'alert-info')) }} alert-dismissible fade show" role="alert" data-alerta>
             <span>{{ mensaje }}</span>
-            <button class="boton-icono compacto" type="button" data-alerta-cerrar aria-label="Cerrar mensaje">X</button>
+            <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
         </div>
         {% endfor %}
     </section>

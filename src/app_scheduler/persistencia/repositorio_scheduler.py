@@ -74,12 +74,25 @@ SELECT @resultado;""",
             cursor.execute(
                 """INSERT INTO dbo.ejecuciones
     (id_tarea, id_script, id_version, origen_ejecucion, estado_ejecucion,
-     fecha_hora_inicio, usuario_ejecucion, fecha_programada, clave_programacion, nombre_worker)
+     fecha_hora_inicio, usuario_ejecucion, fecha_programada, clave_programacion,
+     nombre_worker, id_tarea_original, nombre_tarea_snapshot, cliente_snapshot,
+     categoria_snapshot, tipo_snapshot, nombre_script_snapshot,
+     nombre_archivo_snapshot, version_script_snapshot, usuario_ejecucion_snapshot)
 OUTPUT INSERTED.id_ejecucion
-VALUES (?, ?, ?, 'AUTOMATICA', 'PENDIENTE', SYSDATETIME(), NULL, ?, ?, ?)""",
-                (solicitud.id_tarea, solicitud.id_script, solicitud.id_version,
-                 solicitud.fecha_programada, solicitud.clave_programacion,
-                 solicitud.nombre_worker),
+SELECT t.id_tarea, s.id_script, v.id_version, 'AUTOMATICA', 'PENDIENTE',
+       SYSDATETIME(), NULL, ?, ?, ?, t.id_tarea, t.nombre_tarea,
+       c.nombre_cliente, g.nombre_categoria, p.nombre_tipo, s.nombre_script,
+       v.nombre_archivo, CONVERT(nvarchar(50), v.numero_version), NULL
+FROM dbo.tareas t
+JOIN dbo.clientes c ON c.id_cliente = t.id_cliente
+JOIN dbo.categorias g ON g.id_categoria = t.id_categoria
+JOIN dbo.tipos p ON p.id_tipo = t.id_tipo
+JOIN dbo.scripts s ON s.id_script = ? AND s.id_tarea = t.id_tarea
+JOIN dbo.scripts_versiones v ON v.id_version = ? AND v.id_script = s.id_script
+WHERE t.id_tarea = ?""",
+                (solicitud.fecha_programada, solicitud.clave_programacion,
+                 solicitud.nombre_worker, solicitud.id_script,
+                 solicitud.id_version, solicitud.id_tarea),
             )
             fila = cursor.fetchone()
             return int(fila[0])

@@ -1,5 +1,49 @@
 # Seguridad
 
+## Gate UI/UX y controles OWASP aplicables - 2026-08-21
+
+El frontend reconstruido mantiene autoescape Jinja y evita `|safe`, handlers
+inline, `javascript:`, `eval`, `new Function` e insercion de datos no confiables
+con `innerHTML`. Bootstrap 5.3.3 se sirve localmente y la CSP permite solo
+recursos del mismo origen, sin `unsafe-inline` ni `unsafe-eval`.
+
+Las respuestas agregan CSP con `frame-ancestors 'none'`, `object-src 'none'`,
+`base-uri 'self'` y `form-action 'self'`, ademas de `nosniff`, DENY,
+Referrer-Policy y Permissions-Policy. CSRF sigue siendo global para escrituras;
+logout es POST. La sesion se limpia al autenticar y al salir, las cookies
+mantienen HttpOnly/SameSite y Secure depende del ambiente. La autorizacion,
+parametrizacion SQL, confinamiento de uploads y `shell=False` siguen siendo
+controles backend, independientes de la visibilidad de botones.
+
+Desde Hito 7, cada modulo nuevo debe revisar los riesgos OWASP que le apliquen:
+autorizacion backend, CSRF, XSS/autoescape, CSP, SQL parametrizado, command
+injection, uploads, sesiones, open redirect, secretos, errores, path traversal,
+IDOR/BOLA, mass assignment y headers seguros. Es una disciplina de ingenieria;
+el proyecto no declara certificacion ni cumplimiento formal de OWASP.
+
+## Hito 7 - Motor de ejecucion reconstruido
+
+* Manual y automatica usan un unico motor propiedad del worker; Flask nunca
+  inicia subprocess.
+* `shell=False`, argumentos fijos, ruta confinada, symlinks rechazados, cwd de la
+  version y grupo de proceso propio reducen inyeccion y procesos huerfanos.
+* El child no hereda secretos SQL, Factory Reset ni Graph. Solo recibe variables
+  OS permitidas y el `.env` de su version, sin modificar `os.environ`.
+* Claim y capacidad se serializan en SQL. La version automatica congelada no se
+  recalcula y la manual usa al usuario APP Scheduler como
+  `usuario_ejecucion`.
+* `POST` manual/detencion exige CSRF y permisos reales. El request no acepta PID,
+  comando, ruta, worker, usuario ni version.
+* La detencion se solicita en columnas explicitas de `ejecuciones`; el worker
+  propietario termina solo su process tree y persiste
+  `DETENIDA_MANUALMENTE`.
+* stdout/stderr TI se conservan completos en archivo. La app no agrega secretos;
+  si un script imprime voluntariamente uno, se considera salida explicita del
+  proceso y no se aplica masking destructivo.
+* Evidencia guarda metadata/hash, nunca JSON completo. Hito 7 no llama Graph.
+* Factory Reset y mantenimiento bloquean reservas/claims nuevos. No se relanza
+  automaticamente una ejecucion incierta tras crash.
+
 ## Fundamento transversal de reconstruccion
 
 Hito 1 incorpora en `src/app_scheduler/` la base de seguridad del nuevo runtime, aun aislado del historico:
@@ -12,6 +56,12 @@ Hito 1 incorpora en `src/app_scheduler/` la base de seguridad del nuevo runtime,
 * `user_scheduler` queda reservado a operacion normal; `user_scheduler_mantenimiento` se valida solo al habilitar Factory Reset y debe ser `db_owner` exclusivamente en `APP_SCHEDULER_QA`.
 
 Hito 3 reutiliza esta infraestructura para login, usuarios y matriz funcional dentro del runtime reconstruido. El runtime historico mantiene su comportamiento hasta el cutover autorizado.
+
+El gate de cierre del Hito 7 agrega regresiones HTTP para credenciales invalidas
+y errores 403/404/500. Las credenciales incorrectas conservan un mensaje unico,
+no enumeran usuarios y no exponen detalle tecnico. Las paginas de error muestran
+feedback seguro tanto sin sesion como con sesion; el detalle SQL, excepciones y
+secretos permanece solo en el registro interno sanitizado.
 
 ## Hito 3 - Seguridad reconstruida
 
@@ -56,7 +106,9 @@ Estado: CERRADO.
 * Las escrituras usan temporales del mismo volumen, reemplazo atomico y compensacion antes del commit SQL. Los tests usan roots temporales, nunca `scripts/` ni `env_scripts/` reales.
 * No se permite descargar `.env`; la descarga `.py` exige `SCRIPTS_VER` y una ruta persistida confinada.
 * La version activa no se reemplaza ni desactiva. Un slot con referencias en `ejecuciones` queda protegido.
-* `dbo.tareas` no persiste usuario ejecutor. Hito 6 definio `usuario_ejecucion = NULL` para automaticas; Hito 7 resolvera la identidad manual sin reutilizar campos ajenos.
+* `dbo.tareas` no persiste usuario ejecutor. Las automaticas conservan
+  `usuario_ejecucion = NULL`; las manuales registran al usuario autenticado de
+  APP Scheduler en `dbo.ejecuciones`, sin reutilizar campos ajenos.
 
 ## Hito 6 - Seguridad de programaciones y worker
 
@@ -68,7 +120,9 @@ Estado: CERRADO.
 * El worker respeta scheduler apagado, automaticas deshabilitadas, mantenimiento, limite de concurrencia y lock de Factory Reset con lectura fail-closed.
 * Los feriados provienen solo de `dbo.feriados`; no hay trafico a Internet ni sincronizacion externa.
 * La solicitud automatica congela `id_script`/`id_version`, deja `usuario_ejecucion` nulo y no copia secretos ni contenido `.env`.
-* Hito 6 no llama `subprocess`, no ejecuta/importa scripts y no produce stdout/stderr. Esa frontera pertenece al Hito 7.
+* Hito 6 no llama `subprocess`, no ejecuta/importa scripts y no produce
+  stdout/stderr. El motor comun implementado y cerrado en Hito 7 asume esa
+  frontera dentro del worker.
 
 ## Manejo de sesiones
 

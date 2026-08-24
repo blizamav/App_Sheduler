@@ -270,7 +270,8 @@ def test_repositorio_reserva_pendiente_parametrizada_sin_commit():
     assert RepositorioScheduler(conexion).reservar(solicitud) == 99
     sql, parametros = conexion.ejecuciones[0]
     assert "'PENDIENTE'" in sql and "usuario_ejecucion" in sql
-    assert parametros == (1, 2, 3, AHORA, "clave", "worker")
+    assert parametros == (AHORA, "clave", "worker", 2, 3, 1)
+    assert "nombre_tarea_snapshot" in sql and "v.id_version = ?" in sql
     assert conexion.commits == 0
 
 

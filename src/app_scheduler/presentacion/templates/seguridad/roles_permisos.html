@@ -3,14 +3,14 @@
 {% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/seguridad.css') }}">{% endblock %}
 
 {% block contenido %}
-<header class="encabezado-pagina"><div><p class="eyebrow">Seguridad</p><h1>Roles y permisos</h1><p class="texto-secundario">Matriz vigente definida por el bootstrap</p></div><span class="badge info">Solo lectura</span></header>
+<header class="encabezado-pagina"><div><p class="eyebrow">Seguridad</p><h1>Roles y permisos</h1><p class="texto-secundario">Matriz vigente definida por el bootstrap</p></div><span class="badge text-bg-info">Solo lectura</span></header>
 <section class="resumen-roles" aria-label="Resumen de roles">
-    {% for rol in resumen.roles %}<article><strong>{{ rol.nombre_rol }}</strong><span>{{ resumen.matriz.get(rol.codigo_rol, [])|length }} permisos</span><small>{{ rol.descripcion or rol.codigo_rol }}</small></article>{% endfor %}
+    {% for rol in resumen.roles %}<article class="card"><strong>{{ rol.nombre_rol }}</strong><span>{{ resumen.matriz.get(rol.codigo_rol, [])|length }} permisos</span><small>{{ rol.descripcion or rol.codigo_rol }}</small></article>{% endfor %}
 </section>
 {% for modulo, permisos in permisos_por_modulo.items() %}
 <section class="matriz-modulo">
     <header><h2>{{ modulo|replace('_', ' ')|title }}</h2><span>{{ permisos|length }} permisos</span></header>
-    <div class="tabla-contenedor"><table class="tabla-base matriz"><thead><tr><th>Permiso</th><th>Descripcion</th>{% for rol in resumen.roles %}<th>{{ rol.codigo_rol }}</th>{% endfor %}</tr></thead><tbody>
+    <div class="tabla-contenedor table-responsive"><table class="tabla-base matriz table table-hover align-middle mb-0"><thead><tr><th>Permiso</th><th>Descripcion</th>{% for rol in resumen.roles %}<th>{{ rol.codigo_rol }}</th>{% endfor %}</tr></thead><tbody>
     {% for permiso in permisos %}<tr><td><code>{{ permiso.codigo_permiso }}</code></td><td>{{ permiso.descripcion or permiso.accion }}</td>{% for rol in resumen.roles %}<td class="celda-permiso">{{ 'Si' if permiso.codigo_permiso in resumen.matriz.get(rol.codigo_rol, []) else '-' }}</td>{% endfor %}</tr>{% endfor %}
     </tbody></table></div>
 </section>

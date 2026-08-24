@@ -1,0 +1,8 @@
+{% macro estado_vacio(titulo, mensaje, icono='tareas', url=None, accion=None) -%}
+<div class="estado-vacio-contenido">
+    <span class="estado-vacio-icono" aria-hidden="true"><svg><use href="#icono-{{ icono }}"></use></svg></span>
+    <strong>{{ titulo }}</strong>
+    <span>{{ mensaje }}</span>
+    {% if url and accion %}<a class="btn btn-sm btn-primary mt-2" href="{{ url }}">{{ accion }}</a>{% endif %}
+</div>
+{%- endmacro %}

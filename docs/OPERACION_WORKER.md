@@ -1,12 +1,25 @@
 # Operacion del worker y consola de monitoreo
 
+## Runtime reconstruido Hito 7
+
+En `src/app_scheduler/`, el worker de Hito 6 fue extendido con una cola real y
+un motor unico. Despues de cada ciclo y una vez por segundo durante la espera,
+reclama `PENDIENTE` hasta el maximo concurrente, ejecuta el script congelado y
+cierra logs/evidencia/estado. El nombre de worker incluye host y PID para
+ownership diagnostico. `--once` espera el cierre de las ejecuciones reclamadas.
+
+`SIGTERM`/`SIGINT` activa un evento compartido: no se reclaman nuevas filas, los
+procesos propios se terminan y quedan `ERROR`, y el pool cierra antes del
+heartbeat `DETENIDO`. El runtime historico descrito en el resto del documento
+permanece activo hasta cutover.
+
 ## Proposito
 
 Este documento define el diseno operativo del `scheduler_worker.py` y la consola visual de monitoreo futura dentro de la app.
 
 Estado vigente: Fase 14E corrige la claridad visual del monitor del programador, agrega panel lateral redimensionable, elimina la mezcla con ejecuciones generales, separa detencion explicita versus ausencia de senal y deja preparada la operacion separada con Docker Compose. Fase 14F.1 agrega trazabilidad segura en `/panel` para detectar cuando el problema real es conectividad SQL Server y no el worker. Fase 14F.2 normaliza la cadena ODBC en `app/database/conexion.py` con `Encrypt`, `TrustServerCertificate` y `Connection Timeout` explicitos. Fase 14F.5 corrige el desfase horario Docker/SQL Server en el monitor y hace que `docker compose stop worker` deje una marca explicita `DETENIDO`. systemd sigue como alternativa documental.
 
-Fase 15A.1 agrega solo el contrato documental de evidencia por `stdout`. El worker y el servicio de ejecuciones aun no capturan ni interpretan bloques de evidencia; esa integracion queda pendiente para fases posteriores.
+Fase 15A.1 agrego el contrato historico de evidencia. El runtime reconstruido lo captura en Hito 7 sin enviar Graph; el runtime historico mantiene su implementacion vigente.
 
 ## Estado actual validado
 

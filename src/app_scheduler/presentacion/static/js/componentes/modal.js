@@ -1,43 +1,35 @@
 export function prepararModal() {
     const modal = document.querySelector("[data-modal]");
-    if (!modal) return;
+    if (!modal || !window.bootstrap?.Modal) return;
 
-    const cancelar = modal.querySelector("[data-modal-cancelar]");
     const confirmar = modal.querySelector("[data-modal-confirmar]");
-    let accionPendiente = null;
+    const instancia = window.bootstrap.Modal.getOrCreateInstance(modal);
+    let pendiente = null;
 
-    function cerrar() {
-        modal.classList.remove("abierto");
-        modal.setAttribute("aria-hidden", "true");
-        accionPendiente = null;
-    }
-
-    document.addEventListener("click", (evento) => {
-        const activador = evento.target.closest("[data-confirmar]");
-        if (!activador) return;
+    document.addEventListener("submit", (evento) => {
+        const formulario = evento.target;
+        const activador = evento.submitter;
+        if (!(formulario instanceof HTMLFormElement) || !(activador instanceof HTMLButtonElement) || !activador.matches("[data-confirmar]")) return;
+        if (formulario.dataset.confirmacionLista === "1") {
+            delete formulario.dataset.confirmacionLista;
+            return;
+        }
         evento.preventDefault();
-        accionPendiente = () => {
-            if (activador instanceof HTMLButtonElement && activador.form) {
-                activador.form.requestSubmit(activador);
-            }
-        };
+        pendiente = { formulario, activador };
         modal.querySelector("[data-modal-titulo]").textContent = activador.dataset.titulo || "Confirmar accion";
         modal.querySelector("[data-modal-mensaje]").textContent = activador.dataset.mensaje || "Confirma si deseas continuar.";
-        modal.classList.add("abierto");
-        modal.setAttribute("aria-hidden", "false");
-        cancelar.focus();
+        confirmar.className = `btn ${activador.classList.contains("peligro") || activador.classList.contains("btn-danger") ? "btn-danger" : "btn-primary"}`;
+        instancia.show();
     });
 
-    cancelar.addEventListener("click", cerrar);
     confirmar.addEventListener("click", () => {
-        const ejecutar = accionPendiente;
-        cerrar();
-        ejecutar?.();
+        if (!pendiente) return;
+        const { formulario, activador } = pendiente;
+        pendiente = null;
+        formulario.dataset.confirmacionLista = "1";
+        instancia.hide();
+        formulario.requestSubmit(activador);
     });
-    modal.addEventListener("click", (evento) => {
-        if (evento.target === modal) cerrar();
-    });
-    document.addEventListener("keydown", (evento) => {
-        if (evento.key === "Escape" && modal.classList.contains("abierto")) cerrar();
-    });
+
+    modal.addEventListener("hidden.bs.modal", () => { pendiente = null; });
 }

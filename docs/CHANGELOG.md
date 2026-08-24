@@ -1,5 +1,171 @@
 # Changelog
 
+## 2026-08-24 - Cierre formal definitivo del Hito 7
+
+* Se cerro el motor unico del worker para ejecuciones manuales y automaticas:
+  reserva `PENDIENTE`, claim atomico, subprocess confinado, PID, timeout,
+  detencion y estados finales sobre el contrato SQL vigente.
+* Los logs de ejecucion conservan stdout/stderr incremental con timestamp y
+  canal; historial, detalle, consola con polling y limite visual de 120 KB
+  quedaron integrados. La observabilidad global de `logs_sistema` corresponde a
+  Hito 8.
+* La evidencia base captura el contrato stdout 1.0 y persiste metadata/hash sin
+  guardar el JSON completo. Configuracion avanzada y envio Graph siguen
+  pendientes y no se presentan como terminados.
+* Se incorporaron el hub global `/scripts` con `SCRIPTS_VER`, Bootstrap 5.3.3
+  local y el gate transversal de navegacion, login/errores, sidebar, Offcanvas,
+  formularios, tablas, dropdowns y responsive.
+* Se reconciliaron README, arquitectura, inventario, persistencia, seguridad,
+  tareas/scripts, programaciones, motor, modulos, UI/UX y roadmap. Hitos 0-7
+  quedan cerrados; Hito 8 no fue iniciado y el runtime historico sigue activo.
+* Validacion: 205 pruebas de reconstruccion y 231 totales aprobadas; un caso de
+  symlink omitido en Windows y cubierto en Linux. `compileall`, Jinja, seis
+  JavaScript, imports/rutas, Compose, build `web`/`worker` y checks host/Linux
+  quedaron OK con configuracion ficticia y sin SQL.
+* Se comprobaron los 28 permisos consumidos por rutas contra los 52 permisos
+  activos del bootstrap. No se modificaron seeds, `database/`, `.env`,
+  `.env.docker`, runtime historico ni QA; no hubo SQL, Factory Reset ni cutover.
+
+## 2026-08-21 - Acceso transversal al modulo Scripts dentro del Gate Hito 7
+
+* Se agrego `GET /scripts`, protegido por `SCRIPTS_VER`, como indice global
+  paginado con busqueda por script, tarea o cliente y filtros de estado/version.
+* El listado muestra estado, version activa, slots ocupados, metadata `.env` y
+  ultima actualizacion sin exponer rutas ni secretos.
+* `Administrar` reutiliza el detalle existente de la tarea; breadcrumb, retorno
+  y redirecciones posteriores conservan el origen global.
+* El sidebar separa `Tareas` y `Scripts`, con estado activo coherente, y el
+  detalle representa siempre los tres slots v1/v2/v3.
+* Se agregaron pruebas de autenticacion, permiso, filtros, paginacion, estado
+  vacio, SQL parametrizado y minimizacion de datos.
+* Validacion: 205 pruebas reconstruidas y 231 totales aprobadas, con un caso de
+  symlink omitido en Windows; compileall, Jinja, JavaScript, Compose, build y
+  checks efimeros `web`/`worker` aprobados. El smoke HTTP de `/scripts` retorna
+  200 con el enlace contextual esperado.
+* No se modificaron SQL, `.env`, `.env.docker`, runtime historico, staging,
+  commits ni push. Hito 7 permanece abierto; Hito 8 no fue iniciado.
+
+## 2026-08-21 - Correccion visual posterior a revision manual del Gate Hito 7
+
+* Se unifico la paleta en azul profundo, azul corporativo, cyan moderado y grises
+  frios para que sidebar, acciones, superficies y estados tengan una jerarquia
+  comun.
+* Se corrigio la interferencia de `.offcanvas-lg` de Bootstrap que transparentaba
+  el sidebar y deformaba su pie en escritorio.
+* Se agrego contraccion voluntaria del sidebar en escritorio, persistida en
+  `localStorage`, con iconos, nombres accesibles y contenido que reajusta su
+  margen sin recargar.
+* Se corrigio la franja blanca de Usuarios: la celda `td.acciones-tabla` vuelve a
+  conservar layout de tabla y distribuye sus controles como elementos inline.
+* Se alinearon formularios desde el inicio para impedir que un textarea estire
+  inputs vecinos o genere recuadros desproporcionados.
+* Se corrigio el recorte del dropdown `Acciones` dentro de tablas responsive: el
+  contenedor permite overflow visible solo durante la apertura del menu.
+* Se elimino el destello expandir/contraer al navegar con sidebar contraido; un
+  script local restaura la preferencia antes de que se carguen los estilos.
+* Se corrigieron los controles sin respuesta en modo movil: el sidebar tenia
+  `z-index: 30` y quedaba debajo del backdrop Bootstrap. El Offcanvas movil ahora
+  usa su capa `1045`, `100dvh`, columna estable y scroll interno.
+* Se corrigio la orientacion horizontal de celulares: filtros de Tareas,
+  Catalogos y Ejecuciones quedan en dos columnas, el sidebar ocupa como maximo
+  72% del viewport y los espaciados verticales se compactan.
+* Se corrigio el salto del sidebar a una segunda columna en poca altura:
+  Bootstrap heredaba `flex-wrap: wrap` desde `.nav`. La navegacion ahora fuerza
+  una columna no reducible y scroll vertical confinado.
+* Las vistas y formularios operativos ahora usan todo el ancho disponible; se
+  retiraron los topes de 900, 1050, 1060 y 1440 px sin afectar el login.
+* Validacion focal: 42 pruebas aprobadas, JavaScript valido, servidor fake HTTP
+  200 y `git diff --check` sin errores. La segunda correccion focal aprobo 54
+  pruebas y ambos JavaScript. La revision visual final sigue a cargo del usuario
+  en `http://127.0.0.1:5097`.
+* Sin cambios de negocio, SQL, `.env`, `.env.docker`, staging, commit o push.
+
+## 2026-08-21 - Gate transversal UI/UX, Bootstrap y OWASP dentro de Hito 7
+
+* Bootstrap 5.3.3 queda versionado localmente y se usa como base de layout,
+  Offcanvas, dropdowns, modal, alerts, forms, cards, badges, tablas y spinners.
+* Sidebar, topbar, Panel, login, mantenedores, usuarios, tareas, scripts,
+  programaciones, ejecuciones y consola reciben jerarquia y responsive comunes.
+* El bug aparente de Guardar se corrige moviendo la confirmacion desde clics
+  globales al evento `submit`, preservando validacion, CSRF y submitter; se agrega
+  loading sin doble envio.
+* Las acciones extensas de Tareas se agrupan, scripts distinguen protegida/
+  reemplazable y la consola incorpora seguimiento de salida opcional.
+* Se agregan cabeceras CSP/anti-framing/nosniff/referrer/permissions y pruebas de
+  assets locales, Jinja, botones, CSRF, confirmacion segura y headers.
+* Validacion: 223 pruebas completas y 197 reconstruidas aprobadas, con un caso
+  de symlink omitido en Windows; compileall, 17 templates, 5 JavaScript,
+  Compose, build y checks web/worker aprobados. Smoke fake: 13 rutas HTTP 200.
+* El servidor fake sin SQL queda disponible en `http://127.0.0.1:5097`; el
+  complemento de navegador fallo antes de navegar, por lo que la inspeccion
+  visual 1440x900/390x844 corresponde al usuario y no se declara aprobada.
+* Hito 7 sigue pendiente de revision visual; Hito 8 no fue iniciado.
+
+## 2026-08-21 - Gate transversal de estabilidad, regresion y UX del Hito 7
+
+### Listo para revision
+
+* Se reprodujo la superficie vacia: `errores/error.html` solo implementaba el
+  bloque autenticado, mientras `base.html` usa `contenido_publico` sin sesion.
+  El error era visible con sesion, pero 404/503/500 publicos quedaban sin cuerpo.
+* La pagina de error ahora implementa ambos contextos y dirige al acceso o al
+  inicio segun corresponda. El login invalido conserva formulario y mensaje
+  generico visible dentro del contenedor normal de acceso.
+* Se corrigio el texto concatenado del Panel mediante estructura semantica y
+  estilos reales para acciones, no mediante espacios manuales.
+* Panel y sidebar se agruparon por Principal, Operacion, Maestros y Seguridad,
+  respetando permisos y sin duplicar Programaciones ni agregar modulos futuros.
+* Se sustituyeron iniciales por iconos SVG locales, se agrego scroll interno al
+  sidebar y el control de menu quedo reservado a viewports moviles.
+* Los textos obsoletos de Scripts fueron alineados con el motor ya implementado;
+  tareas, catalogos, programaciones y ejecuciones recibieron estados vacios mas
+  explicitos sin cambiar logica.
+* Se agregaron regresiones para login invalido, 404 publico, 403 autenticado,
+  500 sanitizado, error de persistencia visible y estructura del Panel.
+* Validacion: 217 pruebas aprobadas y 1 symlink omitido en Windows; 17 templates,
+  JavaScript, Compose, build web/worker y ambos `--check` aprobados sin SQL.
+* La inspeccion visual automatizada se intento otra vez con servidor fake sin
+  SQL; el complemento de navegador fallo antes de navegar por su dependencia
+  interna. El servidor se detuvo y no quedaron contenedores efimeros.
+* No se modificaron runtime historico, SQL protegido, `.env`, `.env.docker` ni
+  QA. No hubo staging, commit o push. Hito 7 sigue pendiente de cierre formal y
+  Hito 8 no fue iniciado.
+
+## 2026-08-19 - Hito 7: motor unico, logs y evidencias
+
+### En curso - listo para revision tecnica
+
+* Se agrego reserva manual `PENDIENTE` con version activa congelada, usuario APP,
+  mantenimiento, capacidad, CSRF, permiso y auditoria.
+* El scheduler conserva su fila automatica y ahora congela tambien snapshots; el
+  motor nunca crea duplicado ni vuelve a elegir version.
+* Se implemento claim atomico con `sp_getapplock`, limite concurrente,
+  `UPDLOCK`, `READPAST`, ownership y transicion a `EN_EJECUCION`.
+* El worker consume la cola entre ciclos y usa un unico motor para ambos origenes.
+* Subprocess usa Python actual con `-u`, `shell=False`, cwd determinista, entorno
+  allowlist mas `.env` aislado, PID y process tree portable Windows/Linux.
+* stdout/stderr se escriben incrementalmente con canal/timestamp; la consola
+  protegida usa polling y mantiene el limite visual historico de 120 KB sin
+  truncar el archivo.
+* Codigo 0 cierra `EXITOSA`; no cero, fallo, timeout o shutdown cierran `ERROR`.
+  Detencion autorizada cierra `DETENIDA_MANUALMENTE` sin aceptar PID del cliente.
+* Evidencia stdout 1.0 guarda metadata/hash en `evidencias_ejecucion`, nunca JSON
+  completo; exige un bloque unico y adjuntos obligatorios confinados/existentes, y Hito 7 no
+  envia Graph.
+* Se agregaron timeout/gracia globales a las plantillas, sin tocar `.env` ni
+  `.env.docker` reales.
+* La politica de crash es at-most-once despues del claim: `PENDIENTE` se recupera;
+  `EN_EJECUCION` incierta no se relanza sin una futura lease SQL.
+* Se agrego `docs/MOTOR_EJECUCION_RECONSTRUCCION.md` y se actualizaron documentos
+  vivos. No hubo SQL, QA, cutover, staging, commit ni push; Hito 8 no se inicio.
+* Validacion final: 25 pruebas Hito 7, 187 reconstruidas y 213 totales aprobadas;
+  una prueba de symlink se omite en Windows. `compileall`, 17 templates,
+  JavaScript, Compose, build `web`/`worker`, checks y subprocess Linux quedaron
+  OK con configuracion ficticia y sin usar archivos `.env` reales.
+* La inspeccion visual se intento con servidor fake sin SQL, pero el conector del
+  navegador rechazo una dependencia interna antes de navegar. El servidor se
+  detuvo; 1440x900 y 390x844 permanecen como validacion manual explicita.
+
 ## 2026-08-19 - Hito 6: programaciones, scheduler y worker
 
 ### Cerrado

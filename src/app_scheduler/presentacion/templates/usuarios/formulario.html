@@ -5,28 +5,28 @@
 {% block contenido %}
 <header class="encabezado-pagina">
     <div><p class="eyebrow">Seguridad</p><h1>{{ 'Crear usuario' if modo == 'crear' else 'Editar usuario' }}</h1><p class="texto-secundario">Identidad interna de APP Scheduler</p></div>
-    <a class="boton secundario" href="{{ url_for('usuarios.listado') }}">Volver</a>
+    <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('usuarios.listado') }}">Volver</a>
 </header>
 
-<form class="formulario formulario-usuario" method="post" novalidate>
+<form class="formulario formulario-usuario needs-validation" method="post" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <section class="seccion-formulario">
         <div class="seccion-titulo"><h2>Identidad</h2><p>Datos visibles y de acceso del usuario.</p></div>
         <div class="grid-formulario">
-            <label class="campo"><span>Usuario</span><input name="usuario" value="{{ datos.usuario or '' }}" maxlength="100" required {% if modo == 'editar' %}readonly{% endif %}></label>
-            <label class="campo"><span>Nombre completo</span><input name="nombre_completo" value="{{ datos.nombre_completo or '' }}" maxlength="200" required></label>
-            <label class="campo"><span>Correo</span><input type="email" name="email" value="{{ datos.email or '' }}" maxlength="200"></label>
-            <label class="campo"><span>Rol</span><select name="id_rol" required><option value="">Seleccionar</option>{% for rol in roles %}<option value="{{ rol.id_rol }}" {% if datos.id_rol|string == rol.id_rol|string %}selected{% endif %}>{{ rol.nombre_rol }}</option>{% endfor %}</select></label>
+            <label class="campo"><span>Usuario</span><input class="form-control" name="usuario" value="{{ datos.usuario or '' }}" maxlength="100" required {% if modo == 'editar' %}readonly{% endif %}><small class="invalid-feedback">Ingresa un usuario valido.</small></label>
+            <label class="campo"><span>Nombre completo</span><input class="form-control" name="nombre_completo" value="{{ datos.nombre_completo or '' }}" maxlength="200" required><small class="invalid-feedback">Ingresa el nombre completo.</small></label>
+            <label class="campo"><span>Correo</span><input class="form-control" type="email" name="email" value="{{ datos.email or '' }}" maxlength="200"><small class="invalid-feedback">Ingresa un correo valido.</small></label>
+            <label class="campo"><span>Rol</span><select class="form-select" name="id_rol" required><option value="">Seleccionar</option>{% for rol in roles %}<option value="{{ rol.id_rol }}" {% if datos.id_rol|string == rol.id_rol|string %}selected{% endif %}>{{ rol.nombre_rol }}</option>{% endfor %}</select><small class="invalid-feedback">Selecciona un rol.</small></label>
         </div>
     </section>
     <section class="seccion-formulario">
         <div class="seccion-titulo"><h2>Contrasena</h2><p>{{ 'Obligatoria para el alta.' if modo == 'crear' else 'Dejar vacio para conservar la actual.' }}</p></div>
         <div class="grid-formulario">
-            <label class="campo"><span>Nueva contrasena</span><input type="password" name="password" autocomplete="new-password" {% if modo == 'crear' %}required{% endif %}></label>
-            <label class="campo"><span>Confirmar contrasena</span><input type="password" name="confirmacion_password" autocomplete="new-password" {% if modo == 'crear' %}required{% endif %}></label>
+            <label class="campo"><span>Nueva contrasena</span><input class="form-control" type="password" name="password" autocomplete="new-password" {% if modo == 'crear' %}required{% endif %}><small class="invalid-feedback">Ingresa la contrasena requerida.</small></label>
+            <label class="campo"><span>Confirmar contrasena</span><input class="form-control" type="password" name="confirmacion_password" autocomplete="new-password" {% if modo == 'crear' %}required{% endif %}><small class="invalid-feedback">Confirma la contrasena.</small></label>
         </div>
     </section>
-    {% if modo == 'crear' %}<label class="opcion-check"><input type="checkbox" name="activo" value="1" {% if datos.activo %}checked{% endif %}><span>Crear usuario activo</span></label>{% endif %}
-    <div class="acciones-formulario"><a class="boton secundario" href="{{ url_for('usuarios.listado') }}">Cancelar</a><button class="boton primario" type="submit" data-confirmar data-titulo="{{ 'Crear usuario' if modo == 'crear' else 'Guardar cambios' }}" data-mensaje="Se actualizaran los datos y el rol del usuario.">Guardar</button></div>
+    {% if modo == 'crear' %}<label class="opcion-check form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" {% if datos.activo %}checked{% endif %}><span class="form-check-label">Crear usuario activo</span></label>{% endif %}
+    <div class="acciones-formulario"><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('usuarios.listado') }}">Cancelar</a><button class="btn btn-primary boton primario" type="submit" data-confirmar data-titulo="{{ 'Crear usuario' if modo == 'crear' else 'Guardar cambios' }}" data-mensaje="Se actualizaran los datos y el rol del usuario." data-texto-procesando="Guardando...">Guardar</button></div>
 </form>
 {% endblock %}

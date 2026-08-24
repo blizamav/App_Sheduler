@@ -1,5 +1,9 @@
 # Uso de .env por scripts
 
+## Reconstruccion Hito 7
+
+El worker reconstruido carga el `.env` asociado a la version congelada sin modificar `os.environ`. El proceso hijo recibe una base minima de variables operativas mas las claves de esa version; no hereda credenciales de base de datos, Factory Reset, Microsoft Graph ni secretos internos de APP Scheduler. El archivo se valida dentro de `RUTA_BASE_ENV_SCRIPTS`, se parsea sin interpolacion y sus valores nunca se escriben en logs.
+
 ## Que es el .env por script
 
 El `.env` por script permite definir variables de entorno especificas para una version de script cargada en APP Scheduler.

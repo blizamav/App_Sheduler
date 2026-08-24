@@ -89,6 +89,8 @@ class ConfiguracionAplicacion:
     zona_horaria: str
     max_script_size_mb: int
     max_env_size_kb: int
+    ejecucion_timeout_segundos: int
+    ejecucion_gracia_terminacion_segundos: int
     factory_reset_lock_timeout_segundos: int
     factory_reset_preview_ttl_segundos: int
     factory_reset_csrf_ttl_segundos: int
@@ -174,6 +176,12 @@ class ConfiguracionAplicacion:
             zona_horaria=_texto(valores, "ZONA_HORARIA", "America/Santiago"),
             max_script_size_mb=_entero(valores, "MAX_SCRIPT_SIZE_MB", 5, 1, 100),
             max_env_size_kb=_entero(valores, "MAX_ENV_SIZE_KB", 100, 1, 1024),
+            ejecucion_timeout_segundos=_entero(
+                valores, "EJECUCION_TIMEOUT_SEGUNDOS", 3600, 10, 86400
+            ),
+            ejecucion_gracia_terminacion_segundos=_entero(
+                valores, "EJECUCION_GRACIA_TERMINACION_SEGUNDOS", 5, 1, 60
+            ),
             factory_reset_lock_timeout_segundos=_entero(
                 valores, "FACTORY_RESET_LOCK_TIMEOUT_SEGUNDOS", 1800, 60, 86400
             ),

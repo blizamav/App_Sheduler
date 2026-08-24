@@ -6,6 +6,21 @@ Este documento fija la linea base del Hito 0 para reconstruir APP Scheduler sin 
 
 Fecha de corte: 2026-08-13.
 
+## Reconciliacion vigente al cierre del Hito 7
+
+La linea base siguiente conserva la fotografia inicial del Hito 0 y no debe
+interpretarse como el estado funcional actual. Al 2026-08-24, la evidencia del
+repositorio confirma Hitos 0-7 cerrados en `src/app_scheduler/`; Hito 8 no se ha
+iniciado, el runtime historico sigue activo y no existe cutover ni validacion SQL
+real de la reconstruccion.
+
+Desde esa linea base ya se reconstruyeron autenticacion, usuarios, catalogos,
+tareas, scripts/versiones/`.env`, el hub global `/scripts`, programaciones,
+scheduler, worker, ejecucion manual y automatica, historial, logs de ejecucion,
+consola y captura base de evidencia. Observabilidad transversal, auditoria UI,
+Papelera, Graph/correos, Factory Reset reconstruido, QA integral y cutover siguen
+el orden vigente de `ROADMAP.md`.
+
 ## Fuentes revisadas
 
 * `README.md`, `log_codex.md` y los 23 documentos de `docs/`.
@@ -177,15 +192,18 @@ Decisiones:
 | Fallback Docker a `.env` | DESCARTAR | Riesgo de mezclar LOCAL y QA. |
 | Fases diagnosticas como arquitectura oficial | DESCARTAR | Se conservan solo en historia Git/Changelog. |
 
-## Riesgos abiertos antes de implementar
+## Riesgos abiertos despues del Hito 7
 
-1. Definir el contrato persistente para encolar ejecuciones sin perder compatibilidad con `ejecuciones`.
-2. Decidir migracion/cutover del paquete Flask sin ejecutar simultaneamente dos motores.
-3. Obtener una linea base de QA y respaldo antes de cambios SQL o Factory Reset real.
-4. Validar la matriz completa de 52 permisos contra todas las rutas mutables.
-5. Formalizar retencion de logs, auditoria, evidencias y notificaciones.
-6. Resolver el lock de ERROR de Factory Reset actual solo mediante procedimiento autorizado; el Hito 0 no lo toca.
+1. Decidir migracion/cutover del paquete Flask sin ejecutar simultaneamente dos motores.
+2. Obtener una linea base de QA y respaldo antes de cambios SQL o Factory Reset real.
+3. Mantener la comprobacion automatizada de los 28 permisos consumidos por rutas contra los 52 permisos del bootstrap.
+4. Formalizar observabilidad, rotacion y retencion de logs, auditoria, evidencias y notificaciones.
+5. Resolver el lock de ERROR del Factory Reset historico solo mediante procedimiento autorizado; la reconstruccion aun no lo reemplaza.
+6. Definir lease/epoch antes de cualquier recuperacion automatica de ejecuciones `EN_EJECUCION` huerfanas.
 
 ## Criterio de cierre del Hito 0
 
-Hito 0 queda cerrado con este inventario y `ARQUITECTURA_RECONSTRUCCION.md` revisados, el roadmap normalizado y el README alineado. Hito 1 permanece pendiente y requiere autorizacion explicita; el cierre no habilita SQL destructivo, Factory Reset real ni cambios en `database/release/`.
+Hito 0 quedo cerrado con este inventario y
+`ARQUITECTURA_RECONSTRUCCION.md`. La reconciliacion del 2026-08-24 confirma
+Hitos 1-7 cerrados y Hito 8 no iniciado. Este cierre no habilita SQL
+destructivo, Factory Reset real, cambios en `database/release/` ni cutover.

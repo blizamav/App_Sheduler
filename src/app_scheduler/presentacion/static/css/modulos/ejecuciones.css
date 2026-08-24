@@ -1,0 +1,14 @@
+.ejecuciones-filtros { grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto auto; }
+.tabla-ejecuciones { min-width: 1100px; }
+.texto-bloque { display: block; margin-top: 4px; color: var(--color-texto-suave); }
+.ejecucion-resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.detencion-ejecucion { display: flex; align-items: end; gap: 10px; margin-bottom: 16px; padding: 14px; border: 1px solid var(--color-borde); background: var(--color-superficie); }
+.detencion-ejecucion .campo { flex: 1; }
+.consola-ejecucion { overflow: hidden; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: #101820; box-shadow: var(--sombra-suave); }
+.consola-ejecucion > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; color: #fff; border-bottom: 1px solid #30404d; }
+.consola-ejecucion h2 { margin: 2px 0 0; font-size: 1rem; }
+.consola-acciones { display: flex; align-items: center; gap: 12px; }
+.consola-acciones label { display: inline-flex; align-items: center; gap: 7px; color: #d7e4eb; font-size: .78rem; }
+.consola-ejecucion pre { min-height: 360px; max-height: 65vh; margin: 0; padding: 16px; overflow: auto; color: #d7e4eb; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 Consolas, "Courier New", monospace; }
+@media (max-width: 1000px) { .ejecucion-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .ejecuciones-filtros, .ejecucion-resumen { grid-template-columns: 1fr; } .detencion-ejecucion { align-items: stretch; flex-direction: column; } .consola-ejecucion > header { align-items: flex-start; flex-direction: column; } .consola-ejecucion pre { min-height: 300px; } }

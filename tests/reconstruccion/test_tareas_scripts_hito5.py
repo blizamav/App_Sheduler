@@ -16,7 +16,7 @@ from app_scheduler.compartido.errores import ErrorValidacion
 from app_scheduler.compartido.filesystem import AlmacenArchivosProcesos, validar_env, validar_script
 from app_scheduler.modulos.scripts.casos_uso import ServicioScripts
 from app_scheduler.modulos.tareas.casos_uso import ServicioTareas
-from app_scheduler.persistencia.modelos import Pagina, Script, Tarea, VersionScript
+from app_scheduler.persistencia.modelos import Pagina, ResumenScript, Script, Tarea, VersionScript
 from app_scheduler.persistencia.modelos import Paginacion
 from app_scheduler.persistencia.repositorio_scripts import RepositorioScripts
 from app_scheduler.persistencia.repositorio_tareas import RepositorioTareas
@@ -35,6 +35,13 @@ def version(numero=1, *, activa=False, estado="DISPONIBLE", ruta=""):
     return VersionScript(numero, 8, numero, f"proceso_{numero}.py", ruta, ruta,
                          "a" * 64, "ACTIVA" if activa else estado, activa, False,
                          None, None, "actor", FECHA, None, FECHA, None)
+
+
+def resumen_script():
+    return ResumenScript(
+        8, 1, "Script proceso diario", "Proceso diario", "Cliente", True,
+        2, "proceso_2.py", 2, 1, FECHA,
+    )
 
 
 class Estado:
@@ -166,6 +173,16 @@ def test_no_crea_cuarta_version(tmp_path):
     estado.versiones = [version(n, activa=n == 1) for n in (1, 2, 3)]
     with pytest.raises(ErrorValidacion, match="tres slots"):
         servicio_scripts(estado, tmp_path).subir_version(1, "cuarta.py", b"print(4)\n", None, actor(), ContextoAuditoria())
+
+
+def test_detalle_ordena_los_tres_slots_incluidos_los_vacios(tmp_path):
+    estado = Estado(); estado.script = Script(8, 1, "Script", None, 1, FECHA, None, True)
+    estado.versiones = [version(1, activa=True), version(3)]
+
+    detalle = servicio_scripts(estado, tmp_path).detalle(1)
+
+    assert tuple(item.numero_version if item else None for item in detalle["slots_versiones"]) == (1, None, 3)
+    assert detalle["slots_libres"] == (2,)
 
 
 def test_activar_v2_deja_una_unica_version_activa(tmp_path):
@@ -355,11 +372,16 @@ class TareasWeb:
 
 
 class ScriptsWeb:
-    def __init__(self): self.cargas = []
+    def __init__(self):
+        self.cargas = []; self.listados = []
+        self.pagina = Pagina((resumen_script(),), 1, 1, 18)
+    def listar(self, **filtros):
+        self.listados.append(filtros); return self.pagina
     def detalle(self, _):
         versiones = (version(1, activa=True), version(2), version(3))
         return {"tarea": tarea(), "script": Script(8, 1, "Script", None, 1, FECHA, None, True),
-                "versiones": versiones, "referencias": {1: 0, 2: 1, 3: 0}, "slots_libres": ()}
+                "versiones": versiones, "referencias": {1: 0, 2: 1, 3: 0},
+                "slots_libres": (), "slots_versiones": versiones}
     def subir_version(self, id_tarea, nombre, contenido, observacion, actor_actual, _contexto):
         self.cargas.append((id_tarea, nombre, contenido, observacion, actor_actual.usuario)); return 1
 
@@ -415,6 +437,67 @@ def test_panel_versiones_explica_maximo_y_bloqueo(configuracion):
     assert b"v4" in respuesta.data  # Solo aparece en la explicacion de que nunca se crea.
 
 
+def test_hub_scripts_exige_sesion_y_permiso(configuracion):
+    sin_permiso = actor(frozenset({"PANEL_VER"}))
+    app, _, _ = app_web(configuracion, sin_permiso); cliente = app.test_client()
+    assert cliente.get("/scripts").status_code == 302
+    iniciar_sesion(cliente, sin_permiso)
+    assert cliente.get("/scripts").status_code == 403
+
+
+def test_hub_scripts_muestra_metadatos_seguros_y_acceso_al_detalle(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/scripts")
+
+    assert respuesta.status_code == 200
+    assert b"Script proceso diario" in respuesta.data
+    assert b"Proceso diario" in respuesta.data and b"Cliente" in respuesta.data
+    assert b"v2" in respuesta.data and b"2 / 3" in respuesta.data
+    assert b"/tareas/1/scripts?origen=scripts" in respuesta.data
+    assert b"ruta_env" not in respuesta.data and b"TOKEN=" not in respuesta.data
+
+
+def test_hub_scripts_transfiere_filtros_y_paginacion(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "SCRIPTS_VER"}))
+    app, _, scripts = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    scripts.pagina = Pagina((resumen_script(),), 19, 2, 18)
+
+    respuesta = cliente.get("/scripts?pagina=2&buscar=diario&estado=ACTIVO&version_activa=2")
+
+    assert respuesta.status_code == 200
+    assert scripts.listados == [{"pagina": 2, "busqueda": "diario", "estado": "ACTIVO", "version_activa": "2"}]
+    assert b"Pagina 2 de 2" in respuesta.data
+
+
+def test_hub_scripts_estado_vacio_orienta_a_tareas(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "SCRIPTS_VER"}))
+    app, _, scripts = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    scripts.pagina = Pagina((), 0, 1, 18)
+
+    respuesta = cliente.get("/scripts")
+
+    assert respuesta.status_code == 200
+    assert b"No hay scripts registrados." in respuesta.data
+    assert b"Ir a tareas" in respuesta.data
+
+
+def test_hub_scripts_no_concede_permiso_de_mutacion(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "SCRIPTS_VER"}))
+    app, _, scripts = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    token = token_csrf(cliente)
+
+    respuesta = cliente.post(
+        "/tareas/1/scripts/versiones",
+        data={"csrf_token": token, "archivo_script": (BytesIO(b"print('ok')\n"), "proceso.py")},
+        content_type="multipart/form-data",
+    )
+
+    assert respuesta.status_code == 403
+    assert scripts.cargas == []
+
+
 def test_upload_script_exige_csrf_y_transfiere_bytes(configuracion):
     identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "SCRIPTS_VER", "SCRIPTS_VERSIONAR"}))
     app, _, scripts = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
@@ -436,6 +519,27 @@ def test_repositorio_tareas_pagina_parametrizada_sin_commit():
     assert conexion.commits == 0
     assert "LIKE ? ESCAPE '~'" in conexion.ejecuciones[0][0]
     assert conexion.ejecuciones[0][1] == ("%100~%%", "%100~%%")
+
+
+def test_repositorio_scripts_global_parametriza_filtros_y_no_expone_rutas():
+    fila = (8, 1, "Script", "Proceso diario", "Cliente", 1, 2,
+            "proceso_2.py", 2, 1, FECHA)
+    conexion = ConexionProgramada(ResultadoSQL(fila=(1,)), ResultadoSQL(filas=[fila]))
+
+    pagina = RepositorioScripts(conexion).listar_paginado(
+        Paginacion(1, 18), busqueda="100%", activo=True, version_activa=2
+    )
+
+    assert pagina.elementos[0].nombre_script == "Script"
+    assert pagina.elementos[0].env_configurados == 1
+    sql_conteo, parametros_conteo = conexion.ejecuciones[0]
+    sql_listado, parametros_listado = conexion.ejecuciones[1]
+    assert "LIKE ? ESCAPE '~'" in sql_conteo
+    assert parametros_conteo == ("%100~%%", "%100~%%", "%100~%%", 1, 2)
+    assert parametros_listado == parametros_conteo + (0, 18)
+    seleccion = sql_listado.split("FROM dbo.scripts AS s", 1)[0]
+    assert "ruta_fisica" not in seleccion and "ruta_env" not in seleccion
+    assert conexion.commits == 0
 
 
 def test_repositorio_version_protege_referencias_reales():

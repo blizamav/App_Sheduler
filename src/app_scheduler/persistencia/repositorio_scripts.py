@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from app_scheduler.persistencia.mapeadores import mapear_script, mapear_version_script
+from app_scheduler.persistencia.mapeadores import (
+    mapear_resumen_script,
+    mapear_script,
+    mapear_version_script,
+)
+from app_scheduler.persistencia.modelos import Pagina, Paginacion
 from app_scheduler.persistencia.repositorio import RepositorioSQL
 
 
@@ -12,6 +17,69 @@ fecha_creacion, fecha_actualizacion, activo"""
     _VERSION = """id_version, id_script, numero_version, nombre_archivo, ruta_fisica,
 ruta_relativa, hash_archivo, estado_version, es_activa, requiere_env, ruta_env_fisica,
 ruta_env_relativa, usuario_carga, fecha_carga, observacion, fecha_creacion, fecha_actualizacion"""
+
+    def listar_paginado(
+        self,
+        paginacion: Paginacion,
+        *,
+        busqueda: str | None = None,
+        activo: bool | None = None,
+        version_activa: int | None = None,
+    ) -> Pagina:
+        filtros = ["s.eliminado_operativo = 0", "t.eliminado_operativo = 0"]
+        parametros: list[object] = []
+        if busqueda:
+            patron = f"%{self._escapar_like(busqueda)}%"
+            filtros.append(
+                "(s.nombre_script LIKE ? ESCAPE '~' OR "
+                "t.nombre_tarea LIKE ? ESCAPE '~' OR "
+                "c.nombre_cliente LIKE ? ESCAPE '~')"
+            )
+            parametros.extend((patron, patron, patron))
+        if activo is not None:
+            filtros.append("s.activo = ?")
+            parametros.append(int(activo))
+        if version_activa is not None:
+            filtros.append("va.numero_version = ?")
+            parametros.append(version_activa)
+
+        origen = """FROM dbo.scripts AS s
+INNER JOIN dbo.tareas AS t ON t.id_tarea = s.id_tarea
+INNER JOIN dbo.clientes AS c ON c.id_cliente = t.id_cliente
+LEFT JOIN dbo.scripts_versiones AS va
+    ON va.id_version = s.id_version_activa AND va.eliminado_operativo = 0
+LEFT JOIN (
+    SELECT id_script,
+           COUNT(1) AS slots_ocupados,
+           SUM(CASE WHEN ruta_env_relativa IS NOT NULL THEN 1 ELSE 0 END) AS env_configurados,
+           MAX(COALESCE(fecha_actualizacion, fecha_carga, fecha_creacion)) AS ultima_modificacion
+    FROM dbo.scripts_versiones
+    WHERE eliminado_operativo = 0
+    GROUP BY id_script
+) AS vm ON vm.id_script = s.id_script"""
+        donde = " AND ".join(filtros)
+        total = int(self.ejecutar_escalar(
+            f"SELECT COUNT(1) {origen} WHERE {donde}",
+            tuple(parametros), operacion="contar_scripts_global",
+        ) or 0)
+        filas = self.ejecutar_lista(
+            f"""SELECT s.id_script, s.id_tarea, s.nombre_script, t.nombre_tarea,
+c.nombre_cliente, s.activo, va.numero_version, va.nombre_archivo,
+COALESCE(vm.slots_ocupados, 0), COALESCE(vm.env_configurados, 0),
+COALESCE(vm.ultima_modificacion, s.fecha_actualizacion, s.fecha_creacion)
+{origen}
+WHERE {donde}
+ORDER BY s.nombre_script, t.nombre_tarea, s.id_script
+OFFSET ? ROWS FETCH NEXT ? ROWS ONLY""",
+            tuple(parametros) + (paginacion.desplazamiento, paginacion.por_pagina),
+            operacion="listar_scripts_global",
+        )
+        return Pagina(
+            elementos=tuple(mapear_resumen_script(fila) for fila in filas),
+            total=total,
+            pagina=paginacion.pagina,
+            por_pagina=paginacion.por_pagina,
+        )
 
     def obtener_por_tarea(self, id_tarea: int):
         fila = self.ejecutar_uno(
@@ -124,3 +192,7 @@ ruta_env_relativa = ?, fecha_actualizacion = SYSDATETIME()
 WHERE id_version = ? AND eliminado_operativo = 0""",
             (int(requiere), ruta_fisica, ruta_relativa, id_version), operacion="actualizar_env_version",
         ) == 1
+
+    @staticmethod
+    def _escapar_like(valor: str) -> str:
+        return valor.replace("~", "~~").replace("%", "~%").replace("_", "~_").replace("[", "~[")

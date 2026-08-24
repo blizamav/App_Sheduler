@@ -44,6 +44,18 @@ Referencia detallada de variables:
 docs/VARIABLES_ENTORNO.md
 ```
 
+El runtime reconstruido Hito 7 agrega dos variables no secretas:
+
+```env
+EJECUCION_TIMEOUT_SEGUNDOS=3600
+EJECUCION_GRACIA_TERMINACION_SEGUNDOS=5
+```
+
+El timeout termina el process tree y registra `ERROR`; la gracia define cuanto
+esperar antes del cierre forzado. Docker conserva los volumenes compartidos de
+scripts, `env_scripts`, `logs_tareas` y `runtime_control` requeridos por web y
+worker. Los entrypoints historicos no se cambian hasta el cutover.
+
 ## Docker Compose con archivo dedicado
 
 Para contenedores, el flujo oficial usa un archivo real separado declarado directamente por Compose:

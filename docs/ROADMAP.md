@@ -59,51 +59,85 @@ Clientes, categorias y tipos disponen de listados paginados, filtros, alta, edic
 
 Estado: CERRADO.
 
-Se reconstruyeron tareas manuales, listado y filtros, scripts logicos 1:1, tres slots de version, unica version activa, reemplazo explicito solo sin referencias, carga `.py` validada y `.env` por version. SQL, auditoria y filesystem se coordinan con UoW y compensacion. No se persiste usuario ejecutor en `tareas`: Hito 6 definio `NULL` para automaticas y Hito 7 resolvera el contexto manual. Hito 5 no implemento programaciones ni ejecucion.
+Se reconstruyeron tareas manuales, listado y filtros, scripts logicos 1:1, tres slots de version, unica version activa, reemplazo explicito solo sin referencias, carga `.py` validada y `.env` por version. SQL, auditoria y filesystem se coordinan con UoW y compensacion. No se persiste usuario ejecutor en `tareas`: la automatica usa `usuario_ejecucion = NULL` y la manual registra al usuario APP Scheduler en `ejecuciones`, segun el contrato cerrado en Hito 7.
 
 ### Hito 6 - Programaciones, scheduler y worker
 
 Estado: CERRADO.
 
-Programaciones, calculo temporal IANA/DST, calendario local, reserva automatica idempotente, heartbeat y loop controlado fueron reconstruidos bajo `src/app_scheduler/`. El scheduler persiste una ejecucion `PENDIENTE` con la version activa congelada, pero no inicia procesos Python. El runtime historico sigue activo y Hito 7 no fue iniciado.
+Programaciones, calculo temporal IANA/DST, calendario local, reserva automatica idempotente, heartbeat y loop controlado fueron reconstruidos bajo `src/app_scheduler/`. El scheduler persiste una ejecucion `PENDIENTE` con la version activa congelada y Hito 7 ahora consume esa fila sin duplicarla. El runtime historico sigue activo.
+
+### Hito 7 - Motor unico de ejecucion, logs y evidencias
+
+Estado: CERRADO.
+
+Manual y automatica comparten reserva `PENDIENTE`, claim atomico y un unico
+motor worker. Quedaron implementados subprocess seguro, entorno aislado,
+stdout/stderr incremental, PID, timeout global, detencion persistida, logs,
+captura de evidencia, historial, consola, permisos, CSRF y auditoria. No existe
+cutover y el runtime historico permanece intacto.
+
+Gate transversal de cierre: login invalido y errores publicos ya no pueden
+renderizar una pagina vacia; Panel, sidebar, acciones y estados vacios fueron
+reconciliados con la organizacion util del runtime historico sin copiar su deuda.
+El gate incorporo Bootstrap 5.3.3 local, navegacion responsive, hub global
+`/scripts`, correcciones visuales desktop/movil y disciplina OWASP aplicable sin
+declarar cumplimiento formal. La validacion de cierre aprueba 205 pruebas
+reconstruidas y 231 totales; una prueba de symlink queda omitida en Windows y
+esta cubierta en Linux. Hito 8 no fue iniciado.
 
 ## Pendiente
 
-### Hito 7 - Motor de ejecucion manual y automatica
+### Hito 8 - Observabilidad, configuracion operativa e integracion tecnica QA
 
-Unificar ambos origenes en un motor propiedad del worker, con reclamo atomico, PID, detencion y recuperacion.
+Estado: NO INICIADO.
 
-### Hito 8 - Logs, consola y evidencias
+Reimplementar `logs_sistema` global, observabilidad, panel/configuracion de
+Scheduler y Worker, configuracion pendiente de evidencias y configuracion de
+sistema relacionada. Incluir integracion tecnica temprana contra
+`APP_SCHEDULER_QA` para web, worker, filesystem, logs y evidencia. No duplicar
+stdout/stderr, consola ni captura base ya cerrados en Hito 7.
 
-Reimplementar salida incremental, archivos, estados, contrato stdout de evidencia y trazabilidad por version.
+### Hito 9 - Auditoria UI y Papelera
 
-### Hito 9 - Papelera y auditoria
+Reimplementar consulta, filtros y detalle de auditoria; retiro, restauracion,
+eliminacion permanente, limpieza filesystem y preservacion historica.
 
-Reimplementar retiro, restauracion, eliminacion permanente y auditoria transversal sin residuos fisicos.
+### Hito 10 - Feriados, notificaciones, Microsoft Graph y email
 
-### Hito 10 - Feriados y notificaciones Graph
-
-Reimplementar calendario local, sincronizacion manual Nager.Date, configuracion Graph, evidencias y alertas.
+Reimplementar mantenedor de feriados, sincronizacion manual Nager.Date,
+configuracion y cliente Graph, destinatarios, correos automaticos, evidencias y
+adjuntos por correo, sanitizacion externa y manejo controlado de fallos/reintentos.
 
 ### Hito 11 - Factory Reset in-place
 
-Reimplementar prechecks, lock, cuarentena, runner transaccional, validacion SQL y recuperacion sin bases auxiliares.
+Reimplementar el Factory Reset in-place con UI critica, permiso dedicado,
+prechecks, lock, progreso y recuperacion, sin arquitectura blue-green.
 
 ### Hito 12 - UI/UX y responsive final
 
-Conservar identidad visual y dividir CSS/JS por componentes y modulos; validar accesibilidad y viewports.
+Completar Bootstrap avanzado, consistencia global, fluidez, microtransiciones,
+responsive, accesibilidad, diseno final y revision visual completa. UI/UX es
+responsabilidad transversal desde Hito 7: cada hito debe entregar funcionalidad,
+seguridad, tests, UI/UX, responsive e integracion visual; Hito 12 no rescatara
+interfaces deficientes acumuladas.
 
 ### Hito 13 - Docker QA
 
-Validar imagen reproducible, servicios web/worker, `.env.docker`, volumenes, healthchecks, ODBC y SQLCMD.
+Promover los entrypoints reconstruidos para web/worker, validar `.env.docker`,
+imagen reproducible, volumenes, healthchecks, ODBC y SQLCMD, sin cutover productivo.
 
 ### Hito 14 - QA integral
 
-Ejecutar pruebas end-to-end, permisos, scheduler, worker, filesystem, Graph controlado y Factory Reset autorizado.
+Ejecutar pruebas end-to-end con SQL real, permisos, seguridad, concurrencia,
+scheduler, worker, filesystem, Graph controlado, feriados, Factory Reset,
+responsive y regresion completa.
 
-### Hito 15 - Documentacion y cierre
+### Hito 15 - Documentacion, cutover y cierre
 
-Actualizar README, modulos, operaciones, despliegue, seguridad, QA, changelog y bitacora; registrar pendientes productivos reales.
+Completar documentacion y runbooks, ejecutar cutover controlado, retirar el
+runtime historico, validar post-cutover y cerrar el proyecto con pendientes
+productivos reales registrados.
 
 ## Reglas permanentes
 
@@ -114,3 +148,5 @@ Actualizar README, modulos, operaciones, despliegue, seguridad, QA, changelog y 
 * No cerrar hitos con residuos no justificados.
 * No marcar QA como validado solo por compilar o pasar mocks.
 * Staging Git explicito; no usar `git add -A`.
+* Cada cierre exige un gate transversal tecnico, funcional, visual y comparativo
+  con el historico cuando corresponda. Una regresion UX objetiva bloquea el hito.

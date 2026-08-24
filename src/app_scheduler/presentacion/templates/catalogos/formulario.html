@@ -5,21 +5,21 @@
 {% block contenido %}
 <header class="encabezado-pagina">
     <div><p class="eyebrow">{{ config.plural }}</p><h1>{{ 'Crear' if modo == 'crear' else 'Editar' }} {{ config.singular }}</h1><p class="texto-secundario">Catalogo utilizado para clasificar tareas.</p></div>
-    <a class="boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Volver</a>
+    <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Volver</a>
 </header>
 
-<form class="formulario formulario-catalogo" method="post" novalidate>
+<form class="formulario formulario-catalogo needs-validation" method="post" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <section class="seccion-formulario">
         <div class="seccion-titulo"><h2>Datos del registro</h2><p>El nombre se normaliza para controlar duplicados sin alterar su presentacion.</p></div>
         <div class="grid-formulario">
-            <label class="campo"><span>Nombre</span><input name="nombre" value="{{ datos.nombre or '' }}" maxlength="150" required autofocus></label>
-            <label class="campo campo-descripcion"><span>Descripcion</span><textarea name="descripcion" maxlength="300" rows="4">{{ datos.descripcion or '' }}</textarea><small>Opcional, hasta 300 caracteres.</small></label>
+            <label class="campo"><span>Nombre</span><input class="form-control" name="nombre" value="{{ datos.nombre or '' }}" maxlength="150" required autofocus><small class="invalid-feedback">Ingresa el nombre del registro.</small></label>
+            <label class="campo campo-descripcion"><span>Descripcion</span><textarea class="form-control" name="descripcion" maxlength="300" rows="4">{{ datos.descripcion or '' }}</textarea><small class="form-text">Opcional, hasta 300 caracteres.</small></label>
         </div>
     </section>
     <div class="acciones-formulario">
-        <a class="boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Cancelar</a>
-        <button class="boton primario" type="submit" data-confirmar data-titulo="{{ 'Crear' if modo == 'crear' else 'Guardar cambios de' }} {{ config.singular }}" data-mensaje="{{ 'Se agregara el registro al catalogo.' if modo == 'crear' else 'Se actualizaran el nombre y la descripcion.' }}">Guardar</button>
+        <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Cancelar</a>
+        <button class="btn btn-primary boton primario" type="submit" data-confirmar data-titulo="{{ 'Crear' if modo == 'crear' else 'Guardar cambios de' }} {{ config.singular }}" data-mensaje="{{ 'Se agregara el registro al catalogo.' if modo == 'crear' else 'Se actualizaran el nombre y la descripcion.' }}" data-texto-procesando="Guardando...">Guardar</button>
     </div>
 </form>
 {% endblock %}

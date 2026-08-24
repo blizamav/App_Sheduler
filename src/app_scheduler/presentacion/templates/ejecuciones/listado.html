@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
+{% block titulo %}Ejecuciones | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/ejecuciones.css') }}">{% endblock %}
+{% block contenido %}
+<header class="encabezado-pagina">
+  <div><p class="eyebrow">Operacion</p><h1>Ejecuciones</h1><p class="texto-secundario">{{ resultado.total }} registros manuales y automaticos.</p></div>
+</header>
+<form class="barra-filtros ejecuciones-filtros" method="get">
+  <label class="campo"><span>Estado</span><select class="form-select" name="estado"><option value="">Todos</option>{% for item in ('PENDIENTE','EN_EJECUCION','EXITOSA','ERROR','DETENIDA_MANUALMENTE','CANCELADA') %}<option value="{{ item }}" {% if filtros.estado == item %}selected{% endif %}>{{ item|replace('_',' ')|title }}</option>{% endfor %}</select></label>
+  <label class="campo"><span>Origen</span><select class="form-select" name="origen"><option value="">Todos</option>{% for item in ('MANUAL','AUTOMATICA') %}<option value="{{ item }}" {% if filtros.origen == item %}selected{% endif %}>{{ item|title }}</option>{% endfor %}</select></label>
+  <button class="btn btn-outline-primary boton secundario" type="submit">Filtrar</button><a class="btn btn-link boton secundario" href="{{ url_for('ejecuciones.listado') }}">Limpiar</a>
+</form>
+<div class="tabla-contenedor table-responsive"><table class="tabla-base tabla-ejecuciones table table-hover align-middle mb-0"><thead><tr><th>ID / tarea</th><th>Origen</th><th>Estado</th><th>Inicio / duracion</th><th>Version</th><th>Actor</th><th>Accion</th></tr></thead><tbody>
+{% for item in resultado.elementos %}<tr>
+  <td><strong>#{{ item.id_ejecucion }} · {{ item.nombre_tarea }}</strong><small class="texto-bloque">{{ item.nombre_script }}</small></td>
+  <td>{{ item.origen_ejecucion|title }}</td>
+  <td><span class="badge {{ 'activo' if item.estado_ejecucion == 'EXITOSA' else 'info' if item.estado_ejecucion in ('PENDIENTE','EN_EJECUCION') else 'advertencia' if item.estado_ejecucion == 'DETENIDA_MANUALMENTE' else 'error' }}">{{ item.estado_ejecucion|replace('_',' ') }}</span></td>
+  <td>{{ item.fecha_hora_inicio.strftime('%Y-%m-%d %H:%M:%S') }}<small class="texto-bloque">{{ item.duracion_segundos ~ ' s' if item.duracion_segundos is not none else 'En progreso' }}</small></td>
+  <td>{{ item.nombre_archivo }}<small class="texto-bloque">v{{ item.version_script }}</small></td>
+  <td>{{ item.usuario_ejecucion or item.nombre_worker or 'Worker pendiente' }}</td>
+  <td><a class="btn btn-sm btn-outline-primary boton secundario compacto" href="{{ url_for('ejecuciones.detalle', id_ejecucion=item.id_ejecucion) }}">Ver consola</a></td>
+</tr>{% else %}<tr><td colspan="7" class="estado-vacio">{{ estado_vacio('Sin ejecuciones', 'No hay resultados para los filtros seleccionados.', 'ejecuciones') }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion">{% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('ejecuciones.listado', pagina=resultado.pagina-1, estado=filtros.estado, origen=filtros.origen) }}">Anterior</a>{% endif %}<span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>{% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('ejecuciones.listado', pagina=resultado.pagina+1, estado=filtros.estado, origen=filtros.origen) }}">Siguiente</a>{% endif %}</nav>{% endif %}
+{% endblock %}

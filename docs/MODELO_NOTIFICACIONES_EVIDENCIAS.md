@@ -1,5 +1,9 @@
 # Modelo minimo de notificaciones y evidencias
 
+## Reconstruccion Hito 7
+
+El motor reconstruido captura el bloque emitido por `stdout` solo cuando la tarea tiene habilitado `enviar_evidencia`. Exige un unico bloque, valida el contrato `1.0`, comprueba que los adjuntos obligatorios declarados existan dentro de la carpeta de la version y persiste exclusivamente metadatos, hash y conteos en `evidencias_ejecucion`. El JSON completo permanece en el log tecnico de la ejecucion y no se duplica en base de datos. El envio por Microsoft Graph no forma parte del Hito 7.
+
 ## Proposito
 
 Este documento define la propuesta de Fase 15B para soportar evidencias por `stdout`, notificaciones por Microsoft Graph y alertas internas, sin implementar codigo ni SQL en esta fase.

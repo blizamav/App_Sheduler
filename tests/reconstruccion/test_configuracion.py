@@ -12,6 +12,8 @@ def test_configuracion_local_tipifica_valores(valores_configuracion):
     assert configuracion.app_port == 5000
     assert configuracion.app_debug is False
     assert configuracion.db_timeout == 5
+    assert configuracion.ejecucion_timeout_segundos == 3600
+    assert configuracion.ejecucion_gracia_terminacion_segundos == 5
     assert configuracion.session_cookie_secure is False
     configuracion.validar("web")
 

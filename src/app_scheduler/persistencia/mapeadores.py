@@ -15,6 +15,7 @@ from app_scheduler.persistencia.modelos import (
     Tipo,
     Tarea,
     Script,
+    ResumenScript,
     VersionScript,
     Programacion,
     Usuario,
@@ -29,6 +30,11 @@ COLUMNAS_TAREA = (
 COLUMNAS_SCRIPT = (
     "id_script", "id_tarea", "nombre_script", "descripcion", "id_version_activa",
     "fecha_creacion", "fecha_actualizacion", "activo",
+)
+COLUMNAS_RESUMEN_SCRIPT = (
+    "id_script", "id_tarea", "nombre_script", "nombre_tarea", "cliente",
+    "activo", "numero_version_activa", "nombre_archivo_activo", "slots_ocupados",
+    "env_configurados", "ultima_modificacion",
 )
 COLUMNAS_VERSION_SCRIPT = (
     "id_version", "id_script", "numero_version", "nombre_archivo", "ruta_fisica",
@@ -222,6 +228,20 @@ def mapear_script(fila: Sequence[Any]) -> Script:
         nombre_script=datos["nombre_script"], descripcion=datos["descripcion"],
         id_version_activa=datos["id_version_activa"], fecha_creacion=datos["fecha_creacion"],
         fecha_actualizacion=datos["fecha_actualizacion"], activo=bool(datos["activo"]),
+    )
+
+
+def mapear_resumen_script(fila: Sequence[Any]) -> ResumenScript:
+    datos = fila_como_diccionario(fila, COLUMNAS_RESUMEN_SCRIPT)
+    return ResumenScript(
+        id_script=datos["id_script"], id_tarea=datos["id_tarea"],
+        nombre_script=datos["nombre_script"], nombre_tarea=datos["nombre_tarea"],
+        cliente=datos["cliente"], activo=bool(datos["activo"]),
+        numero_version_activa=datos["numero_version_activa"],
+        nombre_archivo_activo=datos["nombre_archivo_activo"],
+        slots_ocupados=int(datos["slots_ocupados"]),
+        env_configurados=int(datos["env_configurados"]),
+        ultima_modificacion=datos["ultima_modificacion"],
     )
 
 

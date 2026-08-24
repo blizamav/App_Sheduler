@@ -15,8 +15,9 @@ body {
     margin: 0;
     color: var(--color-texto);
     background: var(--color-fondo);
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
     line-height: 1.5;
+    letter-spacing: 0;
 }
 
 button,
@@ -43,6 +44,15 @@ h1 {
     letter-spacing: 0;
 }
 
+h2 {
+    letter-spacing: 0;
+}
+
+a,
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
 :focus-visible {
     outline: 3px solid rgba(24, 168, 216, 0.42);
     outline-offset: 2px;
@@ -58,4 +68,13 @@ h1 {
 
 .texto-secundario {
     color: var(--color-texto-suave);
+}
+
+.pagina {
+    animation: entrada-contenido 180ms ease-out;
+}
+
+@keyframes entrada-contenido {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }

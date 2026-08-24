@@ -6,10 +6,207 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-6 cerrados. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-7 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 6 cerrado, sin cutover; Hito 7 no iniciado.
-* Ultima actualizacion: 2026-08-19
+* Fase actual: Reconstruccion limpia - Hito 7 cerrado, sin cutover; Hito 8 no iniciado.
+* Ultima actualizacion: 2026-08-24
+
+## 2026-08-24 - Cierre formal definitivo del Hito 7
+
+* Fase: cierre y versionado del motor de ejecucion, logs/evidencia base y gates
+  Bootstrap/UI; Hito 8 no iniciado.
+* Alcance: se consolido el mismo motor del worker para reservas manuales y
+  automaticas, claim atomico, subprocess confinado, PID, timeout, detencion,
+  historial, logs incrementales, consola, captura base de evidencia y hub
+  global `/scripts` con `SCRIPTS_VER`.
+* Contrato: Flask solo reserva; nunca inicia subprocess. Manual registra el
+  usuario APP autenticado en `ejecuciones.usuario_ejecucion`; automatica
+  conserva `NULL` y usa `nombre_worker` como actor tecnico. Timeout termina en
+  `ERROR`; no se agrego `TIMEOUT` ni se prometio exactly-once.
+* UI/UX: Bootstrap 5.3.3 local, sidebar contraible, Offcanvas movil, navegacion,
+  login/errores, panel, formularios, tablas, dropdowns y vistas de ejecucion
+  quedaron integrados y corregidos en escritorio, movil vertical y horizontal.
+  Hito 12 conserva el pulido visual global.
+* Documentacion: README, inventario, arquitectura, persistencia, seguridad,
+  tareas/scripts, programaciones, motor, modulos, UI/UX, changelog y roadmap
+  reconciliados con el working tree. Hitos 8-15 conservan el orden aprobado.
+* Validaciones: `python -m pytest -q tests/reconstruccion` = 205 aprobadas y 1
+  omitida; suite completa = 231 aprobadas y 1 omitida. El skip conocido es el
+  caso de symlink restringido por Windows y esta cubierto en Linux.
+* Validaciones tecnicas: `compileall app src scheduler_worker.py`, Jinja, seis
+  JavaScript, imports, 44 reglas Flask, `docker compose config --quiet`, build
+  `web`/`worker` y ambos `--check` en host y contenedor Linux: OK.
+* Seguridad: 28 permisos consumidos por rutas confirmados dentro de los 52
+  permisos activos del bootstrap; CSRF, autorizacion backend, CSP, SQL
+  parametrizado, `shell=False`, confinamiento y minimizacion de secretos
+  conservados. No se declara cumplimiento formal OWASP.
+* Protecciones: sin SQL, QA, Factory Reset, cutover ni scripts operativos; sin
+  cambios en `database/`, `app/`, `run.py`, `scheduler_worker.py`, `.env` o
+  `.env.docker`.
+* Riesgos: falta integracion SQL QA real; `EN_EJECUCION` huerfana permanece
+  incierta sin lease; observabilidad global, Graph, Papelera, Factory Reset
+  reconstruido, Docker definitivo y cutover corresponden a hitos posteriores.
+* Proximo paso: esperar autorizacion antes de iniciar Hito 8.
+
+## 2026-08-21 - Ajuste UX transversal: hub global de Scripts
+
+* Fase: mejora incluida en el gate de cierre del Hito 7; no constituye hito
+  nuevo, no cierra Hito 7 y no inicia Hito 8.
+* Objetivo: eliminar la dependencia de entrar por Tareas para localizar y
+  administrar un script, sin romper la relacion tarea-script ni duplicar CRUD.
+* Cambios: `GET /scripts` con `SCRIPTS_VER`, busqueda y filtros parametrizados,
+  paginacion, tarjetas responsive, metadata segura, sidebar dedicado y retorno
+  contextual al detalle canonico `/tareas/<id_tarea>/scripts`.
+* Arquitectura: se extendieron `ServicioScripts` y `RepositorioScripts`; la
+  nueva proyeccion `ResumenScript` omite rutas y secretos. Las mutaciones,
+  permisos especificos, CSRF, auditoria y filesystem existentes no cambiaron.
+* UX: el detalle muestra v1/v2/v3 en orden, incluso slots vacios; no existe alta
+  global ni posibilidad de crear scripts sin tarea.
+* Pruebas focales: 38 aprobadas y 1 omitida por limitacion de symlink en Windows.
+  Suite reconstruida: 205 aprobadas y 1 omitida. Suite completa: 231 aprobadas
+  y 1 omitida. Compileall, Jinja, JavaScript, Compose, build y checks efimeros
+  `web`/`worker`: OK.
+* Protecciones: sin SQL, QA, Factory Reset, `.env`, `.env.docker`, runtime
+  historico, staging, commit ni push.
+* Revision: servidor fake actualizado en `http://127.0.0.1:5097/scripts`, con
+  respuesta HTTP 200. El navegador integrado no pudo automatizar la inspeccion
+  por su dependencia interna de confianza; la revision visual queda al usuario.
+* Riesgos: falta validacion con datos SQL reales; el Hito 7 permanece abierto.
+
+## 2026-08-21 - Ajuste visual por revision manual del Gate Hito 7
+
+* Fase: correccion dentro del gate de cierre de Hito 7; Hito 8 no iniciado.
+* Evidencia recibida: el usuario detecto paletas desconectadas, sidebar sin
+  contraccion voluntaria, recuadros desalineados y una franja blanca bajo las
+  acciones del listado de Usuarios.
+* Causa: Bootstrap aplicaba reglas desktop de `.offcanvas-lg` con fondo
+  transparente y dimensiones flex; `td.acciones-tabla` se convertia en flex y
+  rompia el algoritmo de tabla; la grilla de campos estiraba el input a la altura
+  del textarea vecino.
+* Cambios: paleta reconciliada, overrides desktop acotados, sidebar contraible
+  persistente, pie lateral estable, acciones de tabla inline y formularios
+  alineados desde el inicio.
+* Segunda observacion visual: el dropdown de Tareas era recortado por el
+  `overflow-x` de su tabla responsive y el sidebar contraido se restauraba en
+  `DOMContentLoaded`, despues del primer render. Se libera el overflow solo
+  durante el dropdown y `estado-sidebar.js` aplica la clase sobre `html` antes
+  de cargar CSS, evitando el destello entre navegaciones.
+* Tercera observacion visual: en viewport movil el sidebar mantenia `z-index: 30`
+  mientras el backdrop Bootstrap se renderizaba en `1040`; el menu era visible,
+  pero la capa superior interceptaba botones y enlaces. El Offcanvas movil queda
+  en `1045`, con alto `100dvh`, columna y scroll confinados.
+* Cuarta observacion visual: celulares horizontales entre 667 y 900 px heredaban
+  grillas de cuatro/cinco columnas porque los CSS modulares anulaban el
+  breakpoint comun. Se reforzaron filtros a dos columnas con selectores
+  especificos, sidebar maximo 72vw y espaciado compacto. Pagina y formularios
+  operativos usan ahora el 100% del ancho disponible, sin topes de escritorio.
+* Quinta observacion visual: la captura 844x390 mostro Maestros y Seguridad en
+  una segunda columna fuera del ancho del sidebar. Causa confirmada:
+  `.nav { flex-wrap: wrap; }` de Bootstrap. Se fuerza `nowrap`, items no
+  reducibles, overflow horizontal oculto y scroll vertical.
+* Archivos: `base.html`, `tokens.css`, `layout.css`, `componentes.css`, `core.js`,
+  prueba UI del gate, `docs/UI_UX_RECONSTRUCCION.md`, `docs/CHANGELOG.md` y esta
+  bitacora.
+* Pruebas: primera correccion con 42 casos focales; segunda correccion con 54
+  casos focales y 1 omitido por symlink Windows. `core.js` y
+  `estado-sidebar.js` validos con Node incluido en Codex, HTTP `/login` 200 y
+  `git diff --check` sin errores.
+* Riesgos: falta confirmacion visual manual final en distintos anchos; el control
+  automatizado del navegador integrado continua bloqueado por una dependencia
+  interna y no se declara validacion pixel a pixel.
+* Protecciones: sin SQL, QA, Factory Reset, `.env`, `.env.docker`, staging,
+  commit o push.
+* Proximo paso: usuario revisa Panel, Usuarios, formulario y sidebar expandido/
+  contraido en el servidor fake; Hito 7 permanece abierto hasta su aprobacion.
+
+## 2026-08-21 - Gate transversal UI/UX + Bootstrap + OWASP dentro de Hito 7
+
+* Fase: gate de cierre de Hito 7; no constituye hito nuevo y no inicia Hito 8.
+* Diagnostico: la confirmacion comun dependia del clic en `[data-confirmar]`, por
+  lo que un fallo de JS/overlay podia hacer parecer roto un Guardar aunque las
+  rutas backend fueran validas. El sidebar usaba estado/overlay propio y carecia
+  del ciclo robusto de foco/cierre movil.
+* Cambios: Bootstrap 5.3.3 local, shell Offcanvas, dropdown de usuario, modal,
+  alerts, controles/forms/tablas/cards/badges/spinners, estados vacios, acciones
+  compactas, programaciones dinamicas y consola con auto-scroll controlable.
+* Seguridad: headers CSP y endurecimiento complementario; CSRF, autorizacion,
+  autoescape, redirects locales, uploads confinados, SQL parametrizado y
+  `shell=False` permanecen vigentes. No se exponen secretos.
+* Pruebas: gate UI y suite focal Hitos 3-7: 137 aprobadas, 1 omitida; suite
+  completa: 223 aprobadas, 1 omitida; reconstruccion: 197 aprobadas, 1 omitida.
+  `compileall`, 17 templates, 5 JavaScript, Compose, build y checks web/worker:
+  OK. Smoke fake autenticado: 13 rutas principales con HTTP 200.
+* Protecciones: sin SQL, QA, Factory Reset, staging, commit ni push; `app/`,
+  `run.py`, `scheduler_worker.py`, `.env`, `.env.docker` y SQL protegido intactos.
+* Inspeccion: servidor fake sin SQL activo en `http://127.0.0.1:5097`, usuario
+  `operador` y clave fake `clave-segura`. El navegador integrado fallo antes de
+  navegar por su dependencia de confianza; no se declara validacion pixel a
+  pixel. El usuario debe revisar 1440x900, 768 px y 390x844.
+* Proximo paso: esperar revision visual obligatoria. Hito 7 permanece abierto.
+
+## 2026-08-21 - Gate transversal de calidad dentro del cierre Hito 7
+
+* Diagnostico login: El POST invalido normal devolvia 200 y flash generico, pero
+  un fallo de persistencia al autenticar activaba `errores/error.html`. Esa
+  plantilla no definia `contenido_publico`, por lo que cualquier error sin sesion
+  podia verse como pagina vacia.
+* Correccion login/errores: Se comparte el cuerpo seguro entre contexto publico y
+  autenticado, con retorno al acceso o inicio. Los flashes publicos quedan dentro
+  del contenedor centrado del login y nunca muestran detalle SQL o credenciales.
+* Diagnostico Panel: `.acciones-principales` y `.accion-principal` no tenian CSS;
+  sus elementos inline se concatenaban visualmente. Se implemento grilla,
+  jerarquia titulo/descripcion, iconos y separacion responsive.
+* UX: Sidebar agrupado por flujo y permisos, iconografia SVG local, scroll
+  interno y menu solo movil. Panel agrupa accesos ya existentes sin metricas ni
+  funciones nuevas. Se corrigieron estados vacios y textos de Scripts obsoletos.
+* Comparativa historica: Se conservaron su mejor agrupacion, contexto y lectura
+  de acciones; no se copiaron dashboard analitico, deuda monolitica ni modulos
+  fuera de Hitos 0-7.
+* Pruebas: 217 aprobadas y 1 symlink omitido por Windows. Se cubren login valido/
+  invalido, logout, sesiones, permisos, 403/404/500, catalogos, usuarios, tareas,
+  scripts, programaciones, scheduler, motor, ejecuciones, logs y evidencia.
+* Validacion tecnica: `compileall`, 17 templates, JavaScript, Compose, build de
+  imagenes y `web --check`/`worker --check` aprobados. No se consulto SQL.
+* Visual: El navegador se intento con servidor fake, pero el complemento fallo
+  antes de navegar. El servidor fue detenido; no se afirma una nueva validacion
+  pixel a pixel 1440x900/390x844 en esta sesion.
+* Protecciones: `app/`, `run.py`, `scheduler_worker.py`, SQL protegido, `.env`,
+  `.env.docker` y QA intactos. Sin staging, commit o push. Hito 8 no iniciado.
+
+## 2026-08-19 16:46 - Hito 7 / Motor unico, logs y evidencias
+
+* Que se hizo: Se implemento en `src/app_scheduler/` reserva manual, claim atomico,
+  cola concurrente, motor subprocess comun, PID, timeout, detencion, logs,
+  evidencia, historial y consola.
+* Por que: Para eliminar los hilos Flask y consumir las reservas automaticas de
+  Hito 6 sin duplicar filas ni recalcular versiones.
+* Contrato: Manual usa version activa y usuario APP Scheduler; automatica usa la
+  fila existente, version congelada, `usuario_ejecucion = NULL` y worker tecnico.
+  No existen `id_programacion`, timeout SQL ni estado `TIMEOUT`; timeout global
+  finaliza `ERROR`.
+* Seguridad: `shell=False`, ruta confinada, cwd controlado, allowlist de entorno,
+  `.env` aislado, process group propio, permisos exactos, CSRF y auditoria.
+* Persistencia: `ejecuciones`, `logs_tareas` y `evidencias_ejecucion` se usan con
+  el DDL vigente; no se modifico ni ejecuto SQL.
+* Crash: La semantica es at-most-once tras claim. Una PENDIENTE se recupera; una
+  EN_EJECUCION incierta no se relanza automaticamente porque el esquema no tiene
+  lease y el PID puede reciclarse.
+* Archivos: Nuevos modulos de ejecuciones, repositorio, motor/cola/procesos/
+  evidencias, templates/CSS/JS, tests y
+  `docs/MOTOR_EJECUCION_RECONSTRUCCION.md`; integracion acotada en fabrica,
+  worker, modelos, scheduler y plantillas de entorno.
+* Pruebas finales: 25 casos Hito 7, 187 reconstruidos y 213 totales aprobados;
+  una prueba de symlink queda omitida en Windows. `compileall`, 17 templates,
+  JavaScript, Compose, build `web`/`worker`, checks y subprocess Linux: OK.
+* Evidencia: Se exige un unico bloque y los adjuntos obligatorios deben existir
+  dentro de la carpeta de la version; BD conserva solo metadata/hash/conteos.
+* Inspeccion visual: Se levanto un servidor fake sin SQL, pero el conector del
+  navegador rechazo una dependencia interna antes de navegar. El servidor y el
+  puerto se cerraron; 1440x900 y 390x844 quedan como deuda manual explicita.
+* Riesgos: Falta lease SQL para recuperacion automatica segura tras crash duro;
+  no existe cutover ni prueba SQL/QA en este hito.
+* Limites: `app/`, `run.py`, `scheduler_worker.py`, SQL protegido, `.env`,
+  `.env.docker` y QA permanecen intactos. Hito 8 no iniciado.
 
 ## 2026-08-19 - Hito 6 / Programaciones, scheduler y worker
 

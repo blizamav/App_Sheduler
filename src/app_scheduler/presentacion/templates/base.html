@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block titulo %}APP Scheduler{% endblock %}</title>
+    <script src="{{ url_for('static', filename='js/estado-sidebar.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
@@ -13,78 +15,119 @@
 </head>
 {% set identidad_sesion = identidad_actual() %}
 <body class="{% if not identidad_sesion %}pagina-login{% endif %}">
+    <svg class="iconos-sprite" aria-hidden="true">
+        <symbol id="icono-panel" viewBox="0 0 24 24"><path d="M4 4h6v9H4V4ZM4 15h6v5H4v-5ZM14 11h6v9h-6v-9ZM14 4h6v5h-6V4Z"/></symbol>
+        <symbol id="icono-tareas" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+        <symbol id="icono-scripts" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z M14 2v6h6 M10 13l-2 2 2 2 M14 13l2 2-2 2"/></symbol>
+        <symbol id="icono-ejecuciones" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+        <symbol id="icono-usuarios" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+        <symbol id="icono-seguridad" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10ZM9 12l2 2 4-4"/></symbol>
+        <symbol id="icono-clientes" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M10 21v-3h4v3"/></symbol>
+        <symbol id="icono-categorias" viewBox="0 0 24 24"><path d="M3 7h8l2 3h8v10H3V7ZM3 7V4h7l2 3"/></symbol>
+        <symbol id="icono-tipos" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+        <symbol id="icono-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+        <symbol id="icono-contraer" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6M20 4v16"/></symbol>
+        <symbol id="icono-flecha" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    </svg>
     {% if identidad_sesion %}
-    <div class="app-shell" data-app-shell>
-        <div class="sidebar-overlay" data-sidebar-cerrar></div>
-        <aside class="sidebar" id="sidebarPrincipal" aria-label="Navegacion principal">
-            <header class="sidebar-header">
-                <a class="marca" href="{{ url_for('base.inicio') }}" aria-label="APP Scheduler">
+    <div class="app-shell">
+        <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarPrincipal" aria-labelledby="sidebarTitulo" data-bs-scroll="true">
+            <header class="sidebar-header offcanvas-header">
+                <a class="marca" href="{{ url_for('base.inicio') }}" aria-label="APP Scheduler" id="sidebarTitulo">
                     <span class="marca-sigla">AS</span>
                     <span>APP Scheduler<small>Control TI</small></span>
                 </a>
+                <button class="btn-close btn-close-white d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#sidebarPrincipal" aria-label="Cerrar navegacion"></button>
             </header>
-            <nav class="navegacion">
-                <p class="navegacion-grupo">Operacion</p>
-                <a class="navegacion-enlace {% if request.endpoint == 'base.inicio' %}activo{% endif %}" href="{{ url_for('base.inicio') }}">
-                    <span class="navegacion-icono" aria-hidden="true">P</span>
+            <nav class="navegacion nav flex-column" aria-label="Navegacion principal">
+                <p class="navegacion-grupo">Principal</p>
+                <a class="navegacion-enlace nav-link {% if request.endpoint == 'base.inicio' %}activo active{% endif %}" href="{{ url_for('base.inicio') }}" aria-label="Panel" title="Panel" {% if request.endpoint == 'base.inicio' %}aria-current="page"{% endif %}>
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-panel"></use></svg>
                     <span>Panel</span>
                 </a>
+                {% if identidad_sesion.tiene_permiso('TAREAS_VER') or identidad_sesion.tiene_permiso('SCRIPTS_VER') or identidad_sesion.tiene_permiso('EJECUCIONES_VER') %}
+                <p class="navegacion-grupo">Operacion</p>
                 {% if identidad_sesion.tiene_permiso('TAREAS_VER') %}
-                <a class="navegacion-enlace {% if request.blueprint in ('tareas', 'scripts', 'programaciones') %}activo{% endif %}" href="{{ url_for('tareas.listado') }}">
-                    <span class="navegacion-icono" aria-hidden="true">T</span>
-                    <span>Tareas y scripts</span>
+                <a class="navegacion-enlace nav-link {% if request.blueprint in ('tareas', 'programaciones') %}activo active{% endif %}" href="{{ url_for('tareas.listado') }}" aria-label="Tareas" title="Tareas" {% if request.blueprint in ('tareas', 'programaciones') %}aria-current="page"{% endif %}>
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-tareas"></use></svg>
+                    <span>Tareas</span>
                 </a>
                 {% endif %}
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('CLIENTES_VER') or identidad_sesion.tiene_permiso('CATEGORIAS_VER') or identidad_sesion.tiene_permiso('TIPOS_VER') %}
-                <p class="navegacion-grupo">Administracion</p>
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
-                <a class="navegacion-enlace {% if request.blueprint == 'usuarios' %}activo{% endif %}" href="{{ url_for('usuarios.listado') }}">
-                    <span class="navegacion-icono" aria-hidden="true">U</span>
-                    <span>Usuarios</span>
-                </a>
-                <a class="navegacion-enlace {% if request.blueprint == 'seguridad' %}activo{% endif %}" href="{{ url_for('seguridad.roles_permisos') }}">
-                    <span class="navegacion-icono" aria-hidden="true">R</span>
-                    <span>Roles y permisos</span>
+                {% if identidad_sesion.tiene_permiso('SCRIPTS_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'scripts' %}activo active{% endif %}" href="{{ url_for('scripts.listado') }}" aria-label="Scripts" title="Scripts" {% if request.blueprint == 'scripts' %}aria-current="page"{% endif %}>
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-scripts"></use></svg>
+                    <span>Scripts</span>
                 </a>
                 {% endif %}
+                {% if identidad_sesion.tiene_permiso('EJECUCIONES_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'ejecuciones' %}activo active{% endif %}" href="{{ url_for('ejecuciones.listado') }}" aria-label="Ejecuciones" title="Ejecuciones" {% if request.blueprint == 'ejecuciones' %}aria-current="page"{% endif %}>
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-ejecuciones"></use></svg>
+                    <span>Ejecuciones</span>
+                </a>
+                {% endif %}
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('CLIENTES_VER') or identidad_sesion.tiene_permiso('CATEGORIAS_VER') or identidad_sesion.tiene_permiso('TIPOS_VER') %}
+                <p class="navegacion-grupo">Maestros</p>
                 {% if identidad_sesion.tiene_permiso('CLIENTES_VER') %}
-                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.clientes_') %}activo{% endif %}" href="{{ url_for('catalogos.clientes_listado') }}">
-                    <span class="navegacion-icono" aria-hidden="true">C</span>
+                <a class="navegacion-enlace nav-link {% if request.endpoint and request.endpoint.startswith('catalogos.clientes_') %}activo active{% endif %}" href="{{ url_for('catalogos.clientes_listado') }}" aria-label="Clientes" title="Clientes">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-clientes"></use></svg>
                     <span>Clientes</span>
                 </a>
                 {% endif %}
                 {% if identidad_sesion.tiene_permiso('CATEGORIAS_VER') %}
-                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.categorias_') %}activo{% endif %}" href="{{ url_for('catalogos.categorias_listado') }}">
-                    <span class="navegacion-icono" aria-hidden="true">G</span>
+                <a class="navegacion-enlace nav-link {% if request.endpoint and request.endpoint.startswith('catalogos.categorias_') %}activo active{% endif %}" href="{{ url_for('catalogos.categorias_listado') }}" aria-label="Categorias" title="Categorias">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-categorias"></use></svg>
                     <span>Categorias</span>
                 </a>
                 {% endif %}
                 {% if identidad_sesion.tiene_permiso('TIPOS_VER') %}
-                <a class="navegacion-enlace {% if request.endpoint and request.endpoint.startswith('catalogos.tipos_') %}activo{% endif %}" href="{{ url_for('catalogos.tipos_listado') }}">
-                    <span class="navegacion-icono" aria-hidden="true">T</span>
+                <a class="navegacion-enlace nav-link {% if request.endpoint and request.endpoint.startswith('catalogos.tipos_') %}activo active{% endif %}" href="{{ url_for('catalogos.tipos_listado') }}" aria-label="Tipos" title="Tipos">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-tipos"></use></svg>
                     <span>Tipos</span>
                 </a>
                 {% endif %}
                 {% endif %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
+                <p class="navegacion-grupo">Seguridad</p>
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'usuarios' %}activo active{% endif %}" href="{{ url_for('usuarios.listado') }}" aria-label="Usuarios" title="Usuarios">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-usuarios"></use></svg>
+                    <span>Usuarios</span>
+                </a>
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'seguridad' %}activo active{% endif %}" href="{{ url_for('seguridad.roles_permisos') }}" aria-label="Roles y permisos" title="Roles y permisos">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-seguridad"></use></svg>
+                    <span>Roles y permisos</span>
+                </a>
+                {% endif %}
             </nav>
             <footer class="sidebar-footer">
-                <span class="badge info">Reconstruccion</span>
+                <span class="sidebar-entorno"><span class="sidebar-entorno-dot" aria-hidden="true"></span><span class="sidebar-entorno-texto">Reconstruccion</span></span>
                 <small>Runtime aislado</small>
             </footer>
         </aside>
 
         <main class="contenido">
-            <header class="topbar">
-                <button class="boton secundario compacto boton-menu" type="button" data-sidebar-abrir aria-label="Abrir navegacion">Menu</button>
+            <header class="topbar navbar">
+                <button class="btn btn-light boton-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarPrincipal" aria-controls="sidebarPrincipal" aria-label="Abrir navegacion" title="Abrir navegacion">
+                    <svg aria-hidden="true"><use href="#icono-menu"></use></svg>
+                </button>
+                <button class="btn boton-contraer d-none d-lg-inline-grid" type="button" data-sidebar-contraer aria-controls="sidebarPrincipal" aria-pressed="false" aria-label="Contraer navegacion" title="Contraer navegacion">
+                    <svg aria-hidden="true"><use href="#icono-contraer"></use></svg>
+                </button>
                 <div class="topbar-acciones">
-                    <div class="topbar-identidad">
-                        <span class="estado-dot" aria-hidden="true"></span>
-                        <span><strong>{{ identidad_sesion.nombre }}</strong><small>{{ identidad_sesion.tipo_identidad|replace('_', ' ')|title }}</small></span>
+                    <div class="dropdown">
+                        <button class="btn usuario-menu dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="usuario-avatar" aria-hidden="true">{{ identidad_sesion.nombre[:1]|upper }}</span>
+                            <span class="topbar-identidad"><strong>{{ identidad_sesion.nombre }}</strong><small>{{ identidad_sesion.tipo_identidad|replace('_', ' ')|title }}</small></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <div class="px-3 py-2 usuario-menu-contexto"><strong>{{ identidad_sesion.usuario }}</strong><small>Sesion activa</small></div>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" action="{{ url_for('autenticacion.logout') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="dropdown-item" type="submit">Cerrar sesion</button>
+                            </form>
+                        </div>
                     </div>
-                    <form method="post" action="{{ url_for('autenticacion.logout') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button class="boton secundario compacto" type="submit">Cerrar sesion</button>
-                    </form>
                 </div>
             </header>
 
@@ -96,26 +139,30 @@
     </div>
     {% else %}
     <main class="login-shell">
-        {% include 'base/mensajes.html' %}
-        {% block contenido_publico %}{% endblock %}
+        <div class="login-contenedor">
+            {% include 'base/mensajes.html' %}
+            {% block contenido_publico %}{% endblock %}
+        </div>
     </main>
     {% endif %}
 
-    <div class="modal-overlay" data-modal aria-hidden="true">
-        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
-            <div class="modal-icono" data-modal-icono>!</div>
-            <div>
-                <p class="eyebrow" data-modal-tipo>Confirmacion</p>
-                <h2 id="modalTitulo" data-modal-titulo>Confirmar accion</h2>
-                <p data-modal-mensaje>Confirma si deseas continuar.</p>
-                <div class="modal-acciones">
-                    <button class="boton secundario" type="button" data-modal-cancelar>Cancelar</button>
-                    <button class="boton primario" type="button" data-modal-confirmar>Confirmar</button>
-                </div>
-            </div>
-        </section>
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalTitulo" aria-hidden="true" data-modal>
+        <div class="modal-dialog modal-dialog-centered">
+            <section class="modal-content">
+                <header class="modal-header">
+                    <div><p class="eyebrow mb-1" data-modal-tipo>Confirmacion</p><h2 class="modal-title fs-5" id="modalTitulo" data-modal-titulo>Confirmar accion</h2></div>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </header>
+                <div class="modal-body"><p class="mb-0" data-modal-mensaje>Confirma si deseas continuar.</p></div>
+                <footer class="modal-footer">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal" data-modal-cancelar>Cancelar</button>
+                    <button class="btn btn-primary" type="button" data-modal-confirmar>Confirmar</button>
+                </footer>
+            </section>
+        </div>
     </div>
 
+    <script defer src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/core.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

@@ -1,5 +1,17 @@
 # Logs de ejecucion en tiempo real
 
+## Reconstruccion Hito 7
+
+El runtime `src/app_scheduler/` mantiene `stdout` y `stderr` en pipes separados,
+con hilos lectores acotados, timestamp y canal por linea. El return code, no la
+mera existencia de stderr, decide exito o error. Ambos flujos se escriben de
+forma incremental en el mismo archivo controlado; la evidencia observa solo
+stdout. La UI reconstruida consulta el mismo contrato cada 1,5 segundos.
+
+El resto de este documento conserva la referencia historica, donde stderr se
+combinaba con stdout. Esa diferencia no altera el contenido diagnostico ni el
+contrato de polling.
+
 ## Flujo
 
 APP Scheduler ejecuta el Python de cada version con `-u` y fuerza `PYTHONUNBUFFERED=1`. `stdout` se captura mediante `PIPE`, `stderr` se combina con `stdout` y el monitor consume el flujo linea por linea mientras el proceso permanece activo.

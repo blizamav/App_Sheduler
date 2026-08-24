@@ -83,6 +83,8 @@ Ordenar que archivo de variables usa cada modo del proyecto y dejar trazable par
 | `RUTA_BASE_LOGS_SISTEMA` | No | No | Carpeta base de logs del sistema. | `logs_sistema` |
 | `MAX_SCRIPT_SIZE_MB` | No | No | Tamano maximo de script cargado. | `5` |
 | `MAX_ENV_SIZE_KB` | No | No | Tamano maximo de archivo `.env` por version. | `100` |
+| `EJECUCION_TIMEOUT_SEGUNDOS` | No | No | Tiempo maximo global del subprocess reconstruido; termina como `ERROR`. | `3600` |
+| `EJECUCION_GRACIA_TERMINACION_SEGUNDOS` | No | No | Espera antes de forzar el cierre del process tree propio. | `5` |
 | `ZONA_HORARIA` | No | No | Zona horaria operativa. | `America/Santiago` |
 
 ### Mail Automatico Graph

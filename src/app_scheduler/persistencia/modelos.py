@@ -173,6 +173,21 @@ class Script:
 
 
 @dataclass(frozen=True, slots=True)
+class ResumenScript:
+    id_script: int
+    id_tarea: int
+    nombre_script: str
+    nombre_tarea: str
+    cliente: str
+    activo: bool
+    numero_version_activa: int | None
+    nombre_archivo_activo: str | None
+    slots_ocupados: int
+    env_configurados: int
+    ultima_modificacion: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class VersionScript:
     id_version: int
     id_script: int
@@ -238,3 +253,60 @@ class ConfiguracionScheduler:
     permitir_ejecucion_automatica: bool
     modo_mantenimiento: bool
     nombre_worker_principal: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ContextoEjecucion:
+    id_ejecucion: int
+    id_tarea: int | None
+    id_script: int
+    id_version: int
+    origen_ejecucion: str
+    estado_ejecucion: str
+    usuario_ejecucion: str | None
+    nombre_worker: str | None
+    nombre_tarea: str
+    nombre_script: str
+    nombre_archivo: str
+    numero_version: int
+    ruta_script_fisica: str
+    ruta_script_relativa: str
+    requiere_env: bool
+    ruta_env_fisica: str | None
+    ruta_env_relativa: str | None
+    enviar_evidencia: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EjecucionResumen:
+    id_ejecucion: int
+    id_tarea: int | None
+    origen_ejecucion: str
+    estado_ejecucion: str
+    fecha_hora_inicio: datetime
+    fecha_hora_termino: datetime | None
+    duracion_segundos: int | None
+    codigo_salida: int | None
+    usuario_ejecucion: str | None
+    nombre_worker: str | None
+    nombre_tarea: str
+    nombre_script: str
+    nombre_archivo: str
+    version_script: str
+
+
+@dataclass(frozen=True, slots=True)
+class DetalleEjecucion(EjecucionResumen):
+    id_script: int | None
+    id_version: int | None
+    mensaje_error: str | None
+    pid_proceso: int | None
+    fecha_programada: datetime | None
+    clave_programacion: str | None
+    usuario_detencion: str | None
+    fecha_hora_detencion: datetime | None
+    motivo_detencion: str | None
+    fue_detencion_forzada: bool
+    ruta_fisica_log: str | None
+    ruta_relativa_log: str | None
+    estado_evidencia: str | None

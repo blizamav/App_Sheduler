@@ -31,6 +31,92 @@
     font-size: 1.1rem;
 }
 
+.grupo-acciones {
+    margin-top: var(--espacio-6);
+}
+
+.grupo-acciones > header {
+    margin-bottom: var(--espacio-3);
+}
+
+.grupo-acciones h2 {
+    margin: 2px 0 0;
+    font-size: 1.12rem;
+}
+
+.acciones-principales {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-3);
+}
+
+.accion-principal {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 20px;
+    min-height: 92px;
+    align-items: center;
+    gap: var(--espacio-3);
+    padding: var(--espacio-4);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-md);
+    color: var(--color-texto);
+    background: var(--color-superficie);
+    box-shadow: var(--sombra-suave);
+    text-decoration: none;
+    transition: border-color var(--transicion), box-shadow var(--transicion), transform var(--transicion);
+}
+
+.accion-principal:hover {
+    border-color: var(--color-primario);
+    box-shadow: var(--sombra-elevada);
+    transform: translateY(-1px);
+}
+
+.accion-principal > svg:first-child {
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+    border-radius: var(--radio-sm);
+    fill: none;
+    stroke: var(--color-primario);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    background: var(--color-superficie-suave);
+}
+
+.accion-principal > span {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.accion-principal strong,
+.accion-principal small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.accion-principal small {
+    color: var(--color-texto-suave);
+    font-size: .82rem;
+    line-height: 1.4;
+}
+
+.accion-principal .accion-flecha {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--color-texto-suave);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.panel-vacio {
+    margin-top: var(--espacio-6);
+}
+
 @media (max-width: 700px) {
     .banda-estado {
         grid-template-columns: 1fr;
@@ -39,5 +125,9 @@
     .banda-estado > div + div {
         border-top: 1px solid var(--color-borde);
         border-left: 0;
+    }
+
+    .acciones-principales {
+        grid-template-columns: 1fr;
     }
 }

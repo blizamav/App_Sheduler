@@ -1,12 +1,21 @@
 # Contrato de evidencia por stdout
 
+## Reconstruccion Hito 7
+
+El capturador ya esta implementado en el runtime aislado
+`src/app_scheduler/worker/evidencias.py`. Se alimenta solo con stdout real,
+mantiene el bloque completo en el log TI y persiste exclusivamente estado,
+version, metadata, hash, contadores y errores controlados en
+`evidencias_ejecucion`. Si la configuracion de la tarea no solicita evidencia,
+no crea registro. No envia Microsoft Graph y todavia no existe cutover.
+
 ## Proposito
 
 Este documento formaliza la Fase 15A.1: contrato de evidencia estructurada emitida por scripts Python hacia APP Scheduler.
 
 La evidencia no se guarda como archivo JSON fisico persistente y no se almacena completa en base de datos. El script define una variable estructurada, imprime un bloque JSON por `stdout` entre delimitadores oficiales, y la app lo capturara en una fase posterior para validarlo y usarlo en el envio de reportes por Microsoft Graph.
 
-Esta fase es documental. No implementa capturador, envio Graph, UI, migraciones ni cambios funcionales.
+La fase historica original fue documental. Hito 7 reconstruye el capturador sin implementar envio Graph ni migraciones.
 
 El modelo minimo de datos propuesto para Fase 15B queda documentado en `docs/MODELO_NOTIFICACIONES_EVIDENCIAS.md`.
 

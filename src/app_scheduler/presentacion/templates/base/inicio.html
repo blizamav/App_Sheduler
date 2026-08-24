@@ -16,16 +16,69 @@
     <span class="badge activo">Sesion protegida</span>
 </header>
 
-<section class="banda-estado" aria-label="Estado del runtime reconstruido">
-    <div><span>Autenticacion</span><strong>Operativa</strong></div>
-    <div><span>Autorizacion</span><strong>Backend activo</strong></div>
-    <div><span>Persistencia</span><strong>UoW explicita</strong></div>
+<section class="banda-estado card" aria-label="Contexto operativo">
+    <div><span>Ambiente</span><strong>{{ ambiente }}</strong></div>
+    <div><span>Version</span><strong>{{ version }}</strong></div>
+    <div><span>Perfil</span><strong>{{ identidad.tipo_identidad|replace('_', ' ')|title }}</strong></div>
 </section>
 
-{% if identidad.tiene_permiso('USUARIOS_ADMIN') %}
-<section class="acciones-principales" aria-label="Acciones de seguridad">
-    <a class="accion-principal" href="{{ url_for('usuarios.listado') }}"><strong>Administrar usuarios</strong><span>Estado, perfil y rol</span></a>
-    <a class="accion-principal" href="{{ url_for('seguridad.roles_permisos') }}"><strong>Revisar matriz de acceso</strong><span>Roles y permisos vigentes</span></a>
+{% set puede_operar = identidad.tiene_permiso('TAREAS_VER') or identidad.tiene_permiso('EJECUCIONES_VER') %}
+{% set puede_maestros = identidad.tiene_permiso('CLIENTES_VER') or identidad.tiene_permiso('CATEGORIAS_VER') or identidad.tiene_permiso('TIPOS_VER') %}
+{% set puede_seguridad = identidad.tiene_permiso('USUARIOS_ADMIN') %}
+
+{% if puede_operar %}
+<section class="grupo-acciones" aria-labelledby="titulo-operacion">
+    <header><p class="eyebrow">Operacion</p><h2 id="titulo-operacion">Trabajo diario</h2></header>
+    <div class="acciones-principales">
+        {% if identidad.tiene_permiso('TAREAS_VER') %}
+        <a class="accion-principal card" href="{{ url_for('tareas.listado') }}">
+            <svg aria-hidden="true"><use href="#icono-tareas"></use></svg>
+            <span><strong>Tareas y scripts</strong><small>Gestiona procesos, versiones y programaciones.</small></span>
+            <svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg>
+        </a>
+        {% endif %}
+        {% if identidad.tiene_permiso('EJECUCIONES_VER') %}
+        <a class="accion-principal card" href="{{ url_for('ejecuciones.listado') }}">
+            <svg aria-hidden="true"><use href="#icono-ejecuciones"></use></svg>
+            <span><strong>Ejecuciones</strong><small>Consulta estados, salida y trazabilidad operativa.</small></span>
+            <svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg>
+        </a>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if puede_maestros %}
+<section class="grupo-acciones" aria-labelledby="titulo-maestros">
+    <header><p class="eyebrow">Maestros</p><h2 id="titulo-maestros">Datos de organizacion</h2></header>
+    <div class="acciones-principales">
+        {% if identidad.tiene_permiso('CLIENTES_VER') %}
+        <a class="accion-principal card" href="{{ url_for('catalogos.clientes_listado') }}"><svg aria-hidden="true"><use href="#icono-clientes"></use></svg><span><strong>Clientes</strong><small>Administra clientes disponibles para las tareas.</small></span><svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg></a>
+        {% endif %}
+        {% if identidad.tiene_permiso('CATEGORIAS_VER') %}
+        <a class="accion-principal card" href="{{ url_for('catalogos.categorias_listado') }}"><svg aria-hidden="true"><use href="#icono-categorias"></use></svg><span><strong>Categorias</strong><small>Organiza procesos por dominio funcional.</small></span><svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg></a>
+        {% endif %}
+        {% if identidad.tiene_permiso('TIPOS_VER') %}
+        <a class="accion-principal card" href="{{ url_for('catalogos.tipos_listado') }}"><svg aria-hidden="true"><use href="#icono-tipos"></use></svg><span><strong>Tipos</strong><small>Mantiene las clasificaciones operativas.</small></span><svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg></a>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if puede_seguridad %}
+<section class="grupo-acciones" aria-labelledby="titulo-seguridad">
+    <header><p class="eyebrow">Seguridad</p><h2 id="titulo-seguridad">Acceso y autorizacion</h2></header>
+    <div class="acciones-principales">
+        <a class="accion-principal card" href="{{ url_for('usuarios.listado') }}"><svg aria-hidden="true"><use href="#icono-usuarios"></use></svg><span><strong>Administrar usuarios</strong><small>Gestiona estado, perfil y asignacion de roles.</small></span><svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg></a>
+        <a class="accion-principal card" href="{{ url_for('seguridad.roles_permisos') }}"><svg aria-hidden="true"><use href="#icono-seguridad"></use></svg><span><strong>Roles y permisos</strong><small>Revisa la matriz de acceso vigente.</small></span><svg class="accion-flecha" aria-hidden="true"><use href="#icono-flecha"></use></svg></a>
+    </div>
+</section>
+{% endif %}
+
+{% if not puede_operar and not puede_maestros and not puede_seguridad %}
+<section class="estado-vacio panel-vacio">
+    <h2>Sin modulos operativos asignados</h2>
+    <p>Tu sesion esta activa, pero tu perfil no tiene accesos adicionales disponibles.</p>
 </section>
 {% endif %}
 {% endblock %}

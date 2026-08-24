@@ -2,7 +2,7 @@
 
 ## Reconstruccion - infraestructura transversal
 
-Estado: Hito 1 cerrado; runtime historico aun activo.
+Estado: Hitos 1-7 cerrados; Hito 8 no iniciado; runtime historico aun activo.
 
 | Componente | Objetivo | Rutas | Persistencia | Estado |
 | --- | --- | --- | --- | --- |
@@ -11,10 +11,59 @@ Estado: Hito 1 cerrado; runtime historico aun activo.
 | Seguridad transversal | CSRF global, identidad y base de permisos | Protege toda escritura futura | No aplica | Implementado como fundamento |
 | Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Base Hito 1 implementada |
 | Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
-| Presentacion base | Shell, tokens, componentes y JS modular | `/` del runtime aislado | No aplica | Implementado |
-| Worker scheduler | Evaluar programaciones, reservar trabajo y mantener heartbeat | No expone rutas | SQL operativo; no ejecuta scripts | Reconstruido en Hito 6; motor pendiente Hito 7 |
+| Presentacion base | Shell, sidebar agrupado, Panel por permisos, componentes, errores visibles y JS modular | `/` del runtime aislado | No aplica | Implementado y estabilizado en gate Hito 7 |
+| Worker scheduler | Evaluar programaciones, reservar, reclamar y ejecutar trabajo | No expone rutas | SQL, subprocess, logs y evidencia | Reconstruido; Hito 7 cerrado |
 
-El paquete nuevo vive en `src/app_scheduler/`. Hito 6 incorpora programaciones, calendario local, scheduler, reserva `PENDIENTE` y heartbeat. Motor real, consola, Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+El paquete nuevo vive en `src/app_scheduler/`. Hito 7 agrega motor real, historial y consola. Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+
+## Estado maestro al cierre del Hito 7
+
+| Capacidad | Estado real | Observacion |
+| --- | --- | --- |
+| Login y seguridad base | Completa | Login hibrido, sesiones, CSRF, permisos backend y errores controlados |
+| Usuarios, roles y permisos | Completa | Gestion de usuarios y matriz de consulta |
+| Catalogos base | Completa | Clientes, categorias y tipos |
+| Tareas | Completa en alcance actual | Alta, edicion, estado y acceso operativo |
+| Scripts, versiones y `.env` | Completa en alcance actual | Slots v1-v3, descarga segura, hub `/scripts` y gestion contextual |
+| Programaciones | Completa | CRUD operativo y reglas temporales |
+| Scheduler y worker | Completa | Reserva automatica, heartbeat y motor compartido |
+| Motor de ejecucion | Completa | Manual y automatica, claim, subprocess, timeout y detencion |
+| Ejecuciones, logs y consola | Completa en alcance Hito 7 | Historial, detalle, polling y archivo completo por ejecucion |
+| Logs de sistema y observabilidad | Parcial | Base tecnica existente; operacion transversal corresponde a Hito 8 |
+| Evidencias | Parcial | Captura stdout y metadata implementadas; configuracion avanzada y correo pendientes |
+| Auditoria UI y Papelera | Pendiente | Planificadas para Hito 9 |
+| Feriados y sincronizacion externa | Parcial | Calendario local consumido; gestion/sincronizacion corresponden a Hito 10 |
+| Microsoft Graph y correos | Pendiente | Planificados para Hito 10 |
+| Configuracion operativa | Parcial | Configuracion scheduler disponible; consolidacion general en Hito 8 |
+| Factory Reset reconstruido | Pendiente | Planificado para Hito 11 |
+| UI/UX final | En progreso transversal | Gate Bootstrap cerrado; pulido global en Hito 12 |
+| QA SQL real y cutover | Pendiente | Hitos 14 y 15; el runtime historico sigue activo |
+
+El gate transversal del Hito 7 mantiene login, Panel, navegacion, mantenedores,
+tareas, scripts, programaciones, ejecuciones y consola bajo Bootstrap 5.3.3
+local, tokens y componentes propios. Offcanvas, dropdown, modal, forms, alerts,
+cards, tablas y spinners comparten un contrato responsive. La confirmacion opera
+sobre `submit`, preserva CSRF y evita doble envio visual. Los errores HTML
+403/404/500 conservan contenido con o sin sesion; no se agregaron funciones de
+negocio. Detalle: `docs/UI_UX_RECONSTRUCCION.md`.
+
+## Reconstruccion - motor de ejecucion Hito 7
+
+Estado: CERRADO.
+
+| Modulo | Rutas/proceso | Alcance | Estado |
+| --- | --- | --- | --- |
+| Reserva manual | `POST /tareas/<id>/ejecutar` | Version activa congelada, usuario APP, capacidad, mantenimiento y auditoria | Reconstruido |
+| Cola/claim | Worker | `PENDIENTE -> EN_EJECUCION` atomico y ownership | Reconstruido |
+| Motor unico | Worker | Manual/automatica, Python `-u`, cwd, env aislado, PID, timeout y process tree | Reconstruido |
+| Historial | `/ejecuciones/` y detalle | Filtros, estados, version, actor, worker y resultado | Reconstruido |
+| Consola | `/ejecuciones/<id>/log` | Polling protegido y ultimos 120 KB del archivo completo | Reconstruido |
+| Evidencia | Worker | Contrato stdout 1.0 y metadata/hash en BD; sin Graph | Reconstruido |
+| Recuperacion crash | Operacion | PENDIENTE recuperable; EN_EJECUCION incierta no se relanza | Politica cerrada; lease SQL futuro |
+
+Permisos reales: `EJECUCIONES_VER`, `EJECUCIONES_EJECUTAR`,
+`EJECUCIONES_DETENER` y `EJECUCIONES_LOG_VER`. Detalle:
+`docs/MOTOR_EJECUCION_RECONSTRUCCION.md`.
 
 ## Reconstruccion - persistencia Hito 2
 
@@ -42,19 +91,22 @@ Estado: CERRADO.
 | Versiones | Subir, reemplazar, activar y desactivar por `id_version` | Slots v1-v3; una activa; historia protegida | Reconstruido |
 | `.env` por version | Guardar o retirar por `id_version` | Archivo externo a BD; contenido no recuperable desde UI | Reconstruido |
 
-No existe ruta global `/scripts/`. Hito 5 no crea programaciones, no ejecuta codigo y no persiste un usuario ejecutor en `tareas`. Detalle: `docs/TAREAS_SCRIPTS_RECONSTRUCCION.md`.
+Hito 5 no creo una ruta global, programaciones ni ejecucion de codigo. El gate
+del Hito 7 agrego el hub global `GET /scripts`, protegido por `SCRIPTS_VER`, sin
+duplicar las operaciones contextuales. `dbo.tareas` no persiste un usuario
+ejecutor. Detalle: `docs/TAREAS_SCRIPTS_RECONSTRUCCION.md`.
 
 ## Reconstruccion - programaciones y scheduler Hito 6
 
-Estado: CERRADO; Hito 7 no iniciado.
+Estado: CERRADO; Hito 7 consume sus reservas sin cambiar la decision temporal.
 
 | Modulo | Rutas/proceso | Alcance | Estado |
 | --- | --- | --- | --- |
 | Programaciones | `/tareas/<id>/programaciones/`, nueva, editar y estado | Tipos reales, vigencia, zona, feriados, proximo disparo y auditoria | Reconstruido |
-| Scheduler | Proceso worker | Elegibilidad, ventana de atraso, concurrencia, version activa y calendario local | Reconstruido sin ejecutar scripts |
+| Scheduler | Proceso worker | Elegibilidad, ventana de atraso, concurrencia, version activa y calendario local | Reconstruido; sus reservas son ejecutadas por el motor comun del Hito 7 |
 | Despacho | `SolicitudEjecucion` -> `ejecuciones` | Reserva `PENDIENTE`, clave unica e IDs de script/version congelados | Reconstruido |
 | Heartbeat | Proceso worker | Inicio, ciclo, espera, error recuperable y detencion | Reconstruido |
-| Motor de ejecucion | Hito 7 | Reclamar pendiente, subprocess, PID, stdout/stderr y cierre | No iniciado |
+| Motor de ejecucion | Hito 7 | Reclamar pendiente, subprocess, PID, stdout/stderr y cierre | Reconstruido y cerrado |
 
 Matriz de permisos reutilizada, sin seeds nuevos: `TAREAS_VER` lista; `TAREAS_EDITAR` crea/edita; `TAREAS_ESTADO` activa/desactiva. `SUPER_ADMIN`, `ADMIN` y `TI` disponen de esas acciones por bootstrap; `TERCERO` conserva solo lectura. Detalle: `docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md`.
 
@@ -93,7 +145,10 @@ El estado local confirmado por commit llega hasta Fase 17D. Fase 17A, Fase 17B, 
 
 Fase 19B agrega `database/bootstrap/` como fuente ejecutable vigente para instalaciones nuevas. Fase 19C actualiza la fuente a `19C.0` con 52 permisos. El orquestador blue-green historico de Fase 19D fue reemplazado en Fase 19F por Factory Reset in-place.
 
-La gestion de scripts es contextual a la tarea: la vista operativa es `/tareas/<id_tarea>/scripts`. No existe ni se requiere una ruta global `/scripts/`. El smoke test del bootstrap comprobo esta ruta con una tarea temporal, script inicial y version v1 activa.
+La gestion detallada de scripts sigue siendo contextual a la tarea en
+`/tareas/<id_tarea>/scripts`. El runtime reconstruido tambien incluye el hub
+global `/scripts`, incorporado en Hito 7 como indice paginado de consulta y
+acceso contextual; no crea scripts huerfanos ni duplica operaciones.
 
 ## Factory Reset operativo protegido
 
@@ -829,3 +884,15 @@ Desde Fase 13A.1B:
 * Existe previsualizacion con total y detalle por categoria.
 * La eliminacion recalcula el filtro en backend antes de borrar.
 * Se mantiene permiso `SCHEDULER_CONFIG_EDITAR`; no hay seed ni migracion nueva.
+
+## Acceso global a scripts en la reconstruccion
+
+Dentro del gate transversal del Hito 7, el modulo reconstruido agrega la ruta
+`GET /scripts`, protegida por `SCRIPTS_VER`. Es un indice operativo paginado que
+consulta `scripts`, su tarea, cliente, version activa y resumen de los tres
+slots mediante `ServicioScripts` y `RepositorioScripts` existentes.
+
+La vista no crea scripts huerfanos ni replica operaciones. `Administrar` dirige
+al detalle canonico `GET /tareas/<id_tarea>/scripts`, donde permanecen carga,
+activacion, reemplazo, `.env` y descarga con sus permisos y CSRF actuales. El
+indice solo muestra metadata de configuracion `.env`; nunca rutas ni contenido.

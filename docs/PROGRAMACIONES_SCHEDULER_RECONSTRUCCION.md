@@ -2,7 +2,12 @@
 
 ## Estado
 
-Hito 6 esta cerrado. El runtime historico sigue activo; no existe cutover y Hito 7 no fue iniciado.
+Hitos 6 y 7 estan cerrados. El motor consume las reservas `PENDIENTE` sin duplicarlas; el runtime historico sigue activo y no existe cutover.
+
+El worker ejecuta primero el ciclo scheduler, luego reclama capacidad disponible
+y continua revisando la cola cada segundo entre ciclos. El claim registra el
+worker real y conserva la version congelada por Hito 6. Una nueva version activa
+solo afecta futuros disparos.
 
 ## Contrato demostrado
 
@@ -68,7 +73,7 @@ Una ocurrencia atrasada solo se acepta dentro de `intervalo_revision_segundos`. 
 7. Resuelve script y version activa; si faltan, omite y avanza.
 8. Construye una `SolicitudEjecucion` con origen `AUTOMATICA`.
 9. El despachador inserta `ejecuciones.PENDIENTE` y avanza la proxima fecha en una transaccion.
-10. Hito 7 reclamara esa fila y ejecutara el script mediante el motor unico.
+10. El worker reclama esa fila y ejecuta el script mediante el motor unico de Hito 7.
 
 ## Idempotencia y concurrencia
 
@@ -80,7 +85,7 @@ Antes del `INSERT`, el despachador adquiere un `sp_getapplock` exclusivo con own
 
 El recurso es el literal deterministico y acotado `APP_SCHEDULER_SCHEDULER_DESPACHO`, `LockMode='Exclusive'`, `LockOwner='Transaction'` y `LockTimeout=0`. La llamada y el conteo ocurren en la misma conexion/UoW. Cualquier retorno negativo bloquea la reserva; commit o rollback libera el lock. Dos workers sobre una misma ocurrencia terminan en una sola fila por la UNIQUE, y dos ocurrencias distintas revalidan capacidad dentro de la seccion serializada.
 
-No se agregan locks de servidor ni privilegios elevados. La administracion de programaciones usa `UPDLOCK,HOLDLOCK` sobre la tarea y la busqueda de otra activa. La ejecucion real no existe en este hito.
+No se agregan locks de servidor ni privilegios elevados. La administracion de programaciones usa `UPDLOCK,HOLDLOCK` sobre la tarea y la busqueda de otra activa. Hito 7 agrego la ejecucion real sin modificar esta decision temporal.
 
 ## Worker y heartbeat
 
@@ -94,16 +99,16 @@ El lock `runtime_control/factory_reset.lock` se lee sin modificarlo. Archivo inv
 
 | Campo | Origen | Obligatorio | Resuelve | Consume |
 | --- | --- | --- | --- | --- |
-| `id_tarea` | programacion/tarea | si | scheduler o futuro flujo manual | persistencia y Hito 7 |
-| `id_script`, `id_version` | version activa al disparar | si | scheduler o seleccion manual futura | reserva y Hito 7; quedan congelados |
+| `id_tarea` | programacion/tarea | si | scheduler o flujo manual | persistencia y motor Hito 7 |
+| `id_script`, `id_version` | version activa al reservar | si | scheduler o flujo manual | reserva y motor; quedan congelados |
 | `origen` | `AUTOMATICA`/`MANUAL` | si | productor de solicitud | persistencia y Hito 7 |
 | `actor` | identidad tecnica/humana | si | productor | trazabilidad operativa |
 | `id_programacion`, `fecha_programada`, `clave_programacion` | regla automatica | automaticas | scheduler | idempotencia/persistencia |
-| `usuario_ejecucion` | identidad aplicativa | manual futuro; `NULL` automatica | Hito 7 para manual | `ejecuciones` |
+| `usuario_ejecucion` | identidad aplicativa | usuario APP en manual; `NULL` automatica | productor de la reserva | `ejecuciones` |
 | `nombre_worker` | identidad tecnica | automatica | worker scheduler | `ejecuciones`/eventos |
 | `proxima_ejecucion` | calculo temporal | automatica | scheduler | avance de `tareas` |
 
-Hito 6 decide cuando, valida elegibilidad, resuelve/congela version y crea la unica fila `PENDIENTE`. Hito 7 reclamara esa misma fila y decidira como ejecutar; no creara otra ejecucion para la misma ocurrencia.
+Hito 6 decide cuando, valida elegibilidad, resuelve/congela version y crea la unica fila `PENDIENTE`. El motor Hito 7 reclama esa misma fila y la ejecuta sin crear otra ejecucion para la ocurrencia.
 
 ## Permisos
 
@@ -126,9 +131,9 @@ Despachos y omisiones relevantes usan `scheduler_eventos` con tipos permitidos `
 
 ## Limites y deuda legitima
 
-* No se ejecutan scripts, no se reclama `PENDIENTE`, no hay PID, detencion, stdout ni stderr: Hito 7.
-* La futura manual producira la misma `SolicitudEjecucion`; su seleccion de actor/usuario se resuelve en Hito 7.
+* Hito 7 agrega claim, PID, detencion, stdout/stderr y cierre sin alterar la reserva del scheduler.
+* La manual usa el mismo contrato persistente y registra al usuario APP Scheduler; la automatica conserva `usuario_ejecucion = NULL`.
 * No se probo SQL Server/QA ni se modificaron datos reales en Hito 6.
-* Validacion automatizada: 162 pruebas reconstruidas y 188 totales aprobadas; `test_almacen_rechaza_symlink_que_escapa` se omite cuando Windows no permite crear el enlace y se valido en Linux. Compileall, templates, JavaScript, Compose, build y checks efimeros Docker aprobaron.
-* La inspeccion visual automatizada no pudo completarse por un fallo interno del conector antes de navegar. El servidor fake se cerro sin dejar puerto o proceso temporal; queda revision visual manual desktop/movil.
+* Validacion acumulada al cierre Hito 7: 205 pruebas reconstruidas y 231 totales aprobadas; `test_almacen_rechaza_symlink_que_escapa` se omite cuando Windows no permite crear el enlace y se valido en Linux.
+* La revision visual manual del gate produjo correcciones desktop, movil y orientacion horizontal; el pulido visual global corresponde a Hito 12.
 * El runtime historico continua siendo el productivo hasta cutover autorizado.

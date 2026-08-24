@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime
+from pathlib import Path
 
 from werkzeug.security import generate_password_hash
 
@@ -277,6 +278,32 @@ def test_ruta_login_sesion_minima_destino_local_y_logout(configuracion):
         assert CLAVE_IDENTIDAD not in sesion
 
 
+def test_login_invalido_muestra_mensaje_dentro_de_la_pantalla(configuracion):
+    app, _ = _app_web(configuracion, None)
+    cliente = app.test_client()
+    token = _csrf(cliente)
+
+    respuesta = cliente.post(
+        "/login",
+        data={"csrf_token": token, "usuario": "no-existe", "password": "incorrecta"},
+    )
+
+    assert respuesta.status_code == 200
+    assert MENSAJE_CREDENCIALES_INVALIDAS.encode() in respuesta.data
+    assert b'id="tituloLogin"' in respuesta.data
+    assert b'class="login-contenedor"' in respuesta.data
+
+
+def test_error_publico_no_renderiza_pagina_vacia(configuracion):
+    app, _ = _app_web(configuracion, None)
+    respuesta = app.test_client().get("/ruta-inexistente")
+
+    assert respuesta.status_code == 404
+    assert b"No fue posible completar la solicitud" in respuesta.data
+    assert b"La pagina solicitada no existe" in respuesta.data
+    assert b"Volver al acceso" in respuesta.data
+
+
 def test_login_rechaza_open_redirect_y_post_sin_csrf(configuracion):
     identidad = IdentidadSesion(
         7, "operador", "Operador", TIPO_BASE_DATOS, frozenset(), frozenset({"PANEL_VER"})
@@ -346,8 +373,59 @@ def test_backend_deniega_usuarios_sin_permiso(configuracion):
     with cliente.session_transaction() as sesion:
         sesion[CLAVE_IDENTIDAD] = {"tipo": TIPO_BASE_DATOS, "id_usuario": 7, "usuario": "operador"}
 
-    assert cliente.get("/usuarios/").status_code == 403
-    assert cliente.get("/seguridad/roles-permisos").status_code == 403
+    respuesta_usuarios = cliente.get("/usuarios/")
+    respuesta_roles = cliente.get("/seguridad/roles-permisos")
+
+    assert respuesta_usuarios.status_code == 403
+    assert b"No fue posible completar la solicitud" in respuesta_usuarios.data
+    assert b"No tienes permiso" in respuesta_usuarios.data
+    assert respuesta_roles.status_code == 403
+    assert b"No tienes permiso" in respuesta_roles.data
+
+
+def test_panel_organiza_acciones_sin_texto_concatenado(configuracion):
+    identidad = IdentidadSesion(
+        7,
+        "operador",
+        "Operador",
+        TIPO_BASE_DATOS,
+        frozenset({"ADMIN"}),
+        frozenset(
+            {
+                "PANEL_VER",
+                "TAREAS_VER",
+                "EJECUCIONES_VER",
+                "CLIENTES_VER",
+                "CATEGORIAS_VER",
+                "TIPOS_VER",
+                "USUARIOS_ADMIN",
+            }
+        ),
+    )
+    app, _ = _app_web(configuracion, identidad)
+    cliente = app.test_client()
+    with cliente.session_transaction() as sesion:
+        sesion[CLAVE_IDENTIDAD] = {
+            "tipo": TIPO_BASE_DATOS,
+            "id_usuario": 7,
+            "usuario": "operador",
+        }
+
+    respuesta = cliente.get("/")
+
+    assert respuesta.status_code == 200
+    assert b"Trabajo diario" in respuesta.data
+    assert b"Datos de organizacion" in respuesta.data
+    assert b"Acceso y autorizacion" in respuesta.data
+    assert b"UoW explicita" not in respuesta.data
+    assert b"<span><strong>Administrar usuarios</strong><small>" in respuesta.data
+
+    css = (
+        Path(__file__).parents[2]
+        / "src/app_scheduler/presentacion/static/css/modulos/base-tecnica.css"
+    ).read_text(encoding="utf-8")
+    assert ".acciones-principales" in css
+    assert ".accion-principal > span" in css
 
 
 def test_error_persistencia_no_expone_detalle_sql_en_respuesta(configuracion):
@@ -368,8 +446,25 @@ def test_error_persistencia_no_expone_detalle_sql_en_respuesta(configuracion):
     )
 
     assert respuesta.status_code == 503
+    assert b"No fue posible completar la solicitud" in respuesta.data
+    assert b"El servicio de datos no esta disponible" in respuesta.data
     assert b"secreto-no-visible" not in respuesta.data
     assert b"SQLSTATE" not in respuesta.data
+
+
+def test_error_500_muestra_respuesta_segura(configuracion):
+    app, _ = _app_web(configuracion, None)
+
+    @app.get("/prueba-error-interno")
+    def _error_interno():
+        raise RuntimeError("detalle-interno-no-visible")
+
+    respuesta = app.test_client().get("/prueba-error-interno")
+
+    assert respuesta.status_code == 500
+    assert b"No fue posible completar la solicitud" in respuesta.data
+    assert b"Ocurrio un error interno" in respuesta.data
+    assert b"detalle-interno-no-visible" not in respuesta.data
 
 
 class UsuariosWebFalso:

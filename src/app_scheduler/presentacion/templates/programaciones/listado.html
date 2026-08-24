@@ -1,18 +1,20 @@
 {% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
 {% block titulo %}Programaciones | APP Scheduler{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/programaciones.css') }}">{% endblock %}
 {% block contenido %}
 {% set identidad = identidad_actual() %}
+<nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('tareas.listado') }}">Tareas</a></li><li class="breadcrumb-item">{{ tarea.nombre_tarea }}</li><li class="breadcrumb-item active" aria-current="page">Programaciones</li></ol></nav>
 <header class="encabezado-pagina">
   <div><p class="eyebrow">Tarea {{ tarea.id_tarea }}</p><h1>Programaciones</h1><p class="texto-secundario"><strong>{{ tarea.nombre_tarea }}</strong> · {{ tarea.tipo_tarea|title }} · {{ resultado.total }} registros</p></div>
-  <div class="acciones-encabezado"><a class="boton secundario" href="{{ url_for('tareas.listado') }}">Volver a tareas</a>{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="boton primario" href="{{ url_for('programaciones.nueva', id_tarea=tarea.id_tarea) }}">Nueva programacion</a>{% endif %}</div>
+  <div class="acciones-encabezado"><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('tareas.listado') }}">Volver a tareas</a>{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="btn btn-primary boton primario" href="{{ url_for('programaciones.nueva', id_tarea=tarea.id_tarea) }}">Nueva programacion</a>{% endif %}</div>
 </header>
 <section class="panel-contexto">
   <div><span>Estado tarea</span><strong>{{ tarea.estado_tarea }}</strong></div>
   <div><span>Modo actual</span><strong>{{ tarea.tipo_tarea }}</strong></div>
   <p>La version activa del script se resuelve y congela al momento de cada despacho automatico.</p>
 </section>
-<div class="tabla-contenedor"><table class="tabla-base tabla-programaciones"><thead><tr><th>Tipo</th><th>Horario</th><th>Regla</th><th>Proximo disparo</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+<div class="tabla-contenedor table-responsive"><table class="tabla-base tabla-programaciones table table-hover align-middle mb-0"><thead><tr><th>Tipo</th><th>Horario</th><th>Regla</th><th>Proximo disparo</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
 {% for item in resultado.elementos %}<tr>
   <td><strong>{{ item.tipo_programacion|replace('_',' ')|title }}</strong><small class="texto-bloque">{{ item.zona_horaria }}</small></td>
   <td>{% if item.modo_ejecucion_dia == 'UNA_VEZ' %}{{ item.hora_ejecucion.strftime('%H:%M') if item.hora_ejecucion else 'Sin hora' }}{% else %}{{ item.hora_inicio.strftime('%H:%M') }}–{{ item.hora_termino.strftime('%H:%M') }}<small class="texto-bloque">Cada {{ item.intervalo_minutos }} min</small>{% endif %}</td>
@@ -20,8 +22,8 @@
   <td>{{ item.proxima_ejecucion.strftime('%Y-%m-%d %H:%M') if item.proxima_ejecucion else 'Sin proximo disparo' }}</td>
   <td>{{ item.fecha_inicio_vigencia or 'Sin inicio' }}<small class="texto-bloque">Hasta {{ item.fecha_fin_vigencia or 'sin termino' }}</small></td>
   <td><span class="badge {{ 'activo' if item.activo else 'error' }}">{{ 'ACTIVA' if item.activo else 'INACTIVA' }}</span></td>
-  <td class="acciones-tabla">{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="boton secundario compacto" href="{{ url_for('programaciones.editar', id_tarea=tarea.id_tarea, id_programacion=item.id_programacion) }}">Editar</a>{% endif %}{% if identidad.tiene_permiso('TAREAS_ESTADO') %}<form method="post" action="{{ url_for('programaciones.estado', id_tarea=tarea.id_tarea, id_programacion=item.id_programacion) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="activo" value="{{ '0' if item.activo else '1' }}"><button class="boton secundario compacto" data-confirmar data-titulo="Cambiar programacion" data-mensaje="La proxima ejecucion de la tarea se recalculara.">{{ 'Desactivar' if item.activo else 'Activar' }}</button></form>{% endif %}</td>
-</tr>{% else %}<tr><td colspan="7" class="estado-vacio">Esta tarea no tiene programaciones.</td></tr>{% endfor %}
+  <td class="acciones-tabla">{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="btn btn-sm btn-outline-primary boton secundario compacto" href="{{ url_for('programaciones.editar', id_tarea=tarea.id_tarea, id_programacion=item.id_programacion) }}">Editar</a>{% endif %}{% if identidad.tiene_permiso('TAREAS_ESTADO') %}<form method="post" action="{{ url_for('programaciones.estado', id_tarea=tarea.id_tarea, id_programacion=item.id_programacion) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="activo" value="{{ '0' if item.activo else '1' }}"><button class="btn btn-sm btn-outline-secondary boton secundario compacto" type="submit" data-confirmar data-titulo="Cambiar programacion" data-mensaje="La proxima ejecucion de la tarea se recalculara." data-texto-procesando="Procesando...">{{ 'Desactivar' if item.activo else 'Activar' }}</button></form>{% endif %}</td>
+</tr>{% else %}<tr><td colspan="7" class="estado-vacio">{{ estado_vacio('Sin programaciones', 'Crea una regla horaria para habilitar la ejecucion automatica.', 'tareas', url_for('programaciones.nueva', id_tarea=tarea.id_tarea) if identidad.tiene_permiso('TAREAS_EDITAR') else none, 'Nueva programacion') }}</td></tr>{% endfor %}
 </tbody></table></div>
 {% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion">{% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('programaciones.listado', id_tarea=tarea.id_tarea, pagina=resultado.pagina-1) }}">Anterior</a>{% endif %}<span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>{% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('programaciones.listado', id_tarea=tarea.id_tarea, pagina=resultado.pagina+1) }}">Siguiente</a>{% endif %}</nav>{% endif %}
 {% endblock %}

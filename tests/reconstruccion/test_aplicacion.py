@@ -36,6 +36,7 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
         "/clientes/<int:id_registro>/estado",
         "/clientes/nuevo",
         "/seguridad/roles-permisos",
+        "/scripts",
         "/static-reconstruccion/<path:filename>",
         "/usuarios/",
         "/usuarios/<int:id_usuario>/editar",
@@ -61,6 +62,11 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
         "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/env",
         "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/env/quitar",
         "/tareas/<int:id_tarea>/scripts/versiones/<int:id_version>/reemplazar",
+        "/ejecuciones/",
+        "/ejecuciones/<int:id_ejecucion>",
+        "/ejecuciones/<int:id_ejecucion>/log",
+        "/ejecuciones/<int:id_ejecucion>/detener",
+        "/tareas/<int:id_tarea>/ejecutar",
     }
 
 

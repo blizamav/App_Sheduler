@@ -2,7 +2,20 @@
 
 ## Estado y fuente de verdad
 
-Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. No activa rutas ni sustituye `app/`, `run.py` o `scheduler_worker.py`.
+Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y evidencia sin cambiar el DDL ni sustituir `app/`, `run.py` o `scheduler_worker.py`.
+
+## Persistencia Hito 7
+
+`RepositorioEjecuciones` implementa reserva manual, claim atomico, ownership,
+PID, solicitud de detencion, cierre condicional, `logs_tareas`, metadata de
+`evidencias_ejecucion` e historial. La automatica ya reservada se consume por
+`id_ejecucion` y sus `id_script`/`id_version`; no se crea otra fila.
+
+El DDL no contiene `id_programacion`, timeout ni estado `TIMEOUT`. Hito 7 no los
+oculta en otros campos: la clave automatica conserva idempotencia y el timeout
+global de ambiente finaliza como `ERROR`. `PENDIENTE` es recuperable; una
+`EN_EJECUCION` perdida queda incierta y no se relanza automaticamente sin una
+futura lease explicita.
 
 El contrato se extrajo estaticamente, sin consultar QA, desde:
 
@@ -123,7 +136,7 @@ Lectura simple: repositorio con conexion de vida controlada. Operacion compuesta
 
 Las excepciones DB-API se convierten en `ErrorPersistencia`. El detalle conserva operacion, clase tecnica y SQLSTATE valido, pero no SQL completo, parametros, connection string ni texto libre del driver.
 
-La auditoria futura se invocara desde el caso de uso dentro de la misma UoW, con actor y contexto. No se genera automaticamente desde helpers SQL. Secretos Graph, passwords y contenido `.env` permanecen en variables/archivos de entorno, no en configuracion SQL.
+La auditoria se invoca desde los casos de uso dentro de la misma UoW, con actor y contexto. No se genera automaticamente desde helpers SQL. Secretos Graph, passwords y contenido `.env` permanecen en variables/archivos de entorno, no en configuracion SQL.
 
 ## Estrategia de pruebas
 
@@ -161,4 +174,4 @@ Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. El contra
 * La clave funcional de tarea (`nombre_tarea`, cliente, categoria y tipo) se valida en servicio, pero no tiene UNIQUE fisico en el esquema vigente; una carrera concurrente extrema queda como deuda legitima sin migracion autorizada.
 * Las UNIQUE fisicas de usuarios/catalogos/versiones incluyen registros en Papelera; los servicios deben distinguir activo, inactivo y eliminado antes de escribir.
 * El modelo no incluye views/procedures para paginacion o seguridad; las consultas permanecen explicitas en repositorios.
-* Hito 6 define `SolicitudEjecucion` comun y reserva automatica `PENDIENTE`; Hito 7 implementara el reclamo y motor unico sin crear un segundo contrato.
+* Hito 6 define `SolicitudEjecucion` comun y reserva automatica `PENDIENTE`; Hito 7 implementa el reclamo y motor unico sin crear un segundo contrato.

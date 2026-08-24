@@ -11,6 +11,7 @@ from app_scheduler.compartido.unidad_trabajo import UnidadTrabajoSQL
 from app_scheduler.persistencia.repositorio_auditoria import RepositorioAuditoria
 from app_scheduler.persistencia.repositorio_scripts import RepositorioScripts
 from app_scheduler.persistencia.repositorio_tareas import RepositorioTareas
+from app_scheduler.persistencia.modelos import Paginacion
 
 
 class ServicioScripts:
@@ -27,6 +28,30 @@ class ServicioScripts:
             configuracion.ruta_base_scripts, configuracion.ruta_base_env_scripts
         )
 
+    def listar(self, pagina=1, busqueda=None, estado=None, version_activa=None):
+        texto = str(busqueda or "").strip() or None
+        if texto and len(texto) > 100:
+            raise ErrorValidacion("La busqueda admite hasta 100 caracteres.")
+        estado_normalizado = str(estado or "").strip().upper() or None
+        if estado_normalizado not in {None, "ACTIVO", "INACTIVO"}:
+            raise ErrorValidacion("El estado seleccionado no es valido.")
+        version_normalizada = None
+        if str(version_activa or "").strip():
+            try:
+                version_normalizada = int(version_activa)
+            except (TypeError, ValueError) as error:
+                raise ErrorValidacion("La version activa seleccionada no es valida.") from error
+            if version_normalizada not in {1, 2, 3}:
+                raise ErrorValidacion("La version activa debe corresponder a v1, v2 o v3.")
+        paginacion = Paginacion(int(pagina), 18)
+        with self.proveedor.conexion_lectura() as conexion:
+            return self.tipo_repositorio(conexion).listar_paginado(
+                paginacion,
+                busqueda=texto,
+                activo=None if estado_normalizado is None else estado_normalizado == "ACTIVO",
+                version_activa=version_normalizada,
+            )
+
     def detalle(self, id_tarea: int):
         with self.proveedor.conexion_lectura() as conexion:
             tarea = self.tipo_tareas(conexion).obtener_por_id(id_tarea)
@@ -35,9 +60,11 @@ class ServicioScripts:
             script = repo.obtener_por_tarea(id_tarea)
             versiones = () if script is None else repo.listar_versiones(script.id_script)
             referencias = {v.id_version: repo.contar_referencias_version(v.id_version) for v in versiones}
+            versiones_por_slot = {v.numero_version: v for v in versiones}
             return {"tarea": tarea, "script": script, "versiones": versiones,
                     "referencias": referencias, "slots_libres": tuple(n for n in (1, 2, 3)
-                    if n not in {v.numero_version for v in versiones})}
+                    if n not in versiones_por_slot),
+                    "slots_versiones": tuple(versiones_por_slot.get(n) for n in (1, 2, 3))}
 
     def subir_version(self, id_tarea: int, nombre_archivo: str, contenido: bytes,
                       observacion, actor, contexto) -> int:

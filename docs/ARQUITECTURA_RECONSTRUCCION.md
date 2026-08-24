@@ -2,7 +2,27 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-6 estan cerrados en el runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-7 estan cerrados en el runtime aislado; el runtime historico sigue activo, Hito 8 no fue iniciado y no se ha realizado cutover.
+
+## Implementacion Hito 7
+
+Flask solo autoriza y reserva. El worker reclama bajo lock transaccional y ejecuta
+manuales y automaticas mediante `MotorEjecucionSubprocess`. El proceso recibe
+una allowlist de entorno OS mas el `.env` de la version, usa cwd determinista,
+`shell=False`, pipes separados y grupo de procesos propio. Logs y evidencia se
+producen desde el mismo flujo; la automatica nunca vuelve a resolver la version.
+
+```text
+WEB manual ----> PENDIENTE --+
+                              +-> claim atomico -> motor -> estado/log/evidencia
+SCHEDULER auto -> PENDIENTE --+
+```
+
+El worker revisa la cola entre ciclos del scheduler y limita claims con la
+configuracion SQL. Factory Reset y mantenimiento bloquean trabajo nuevo. No se
+promete exactly-once: despues del claim se aplica at-most-once y una ejecucion
+incierta no se relanza sin lease persistente. Detalle en
+`docs/MOTOR_EJECUCION_RECONSTRUCCION.md`.
 
 ## Implementacion Hito 6
 
@@ -11,10 +31,10 @@ El proceso web administra programaciones y el proceso worker es el unico dueño 
 ```text
 WEB -> caso de uso Programaciones -> SQL + auditoria
 WORKER -> scheduler -> SolicitudEjecucion -> reserva dbo.ejecuciones PENDIENTE
-Hito 7 -> futuro reclamo atomico -> motor unico manual/automatico
+Hito 7 -> reclamo atomico -> motor unico manual/automatico
 ```
 
-La version automatica se resuelve desde `scripts.id_version_activa` al disparar y su `id_version` queda congelado en `ejecuciones`. La automatica no inventa usuario aplicativo: `usuario_ejecucion = NULL`; `nombre_worker` y la clave de programacion identifican al solicitante tecnico. El worker no usa `subprocess`, no importa scripts y no lee el `.env` de una version.
+La version automatica se resuelve desde `scripts.id_version_activa` al disparar y su `id_version` queda congelado en `ejecuciones`. La automatica no inventa usuario aplicativo: `usuario_ejecucion = NULL`; `nombre_worker` y la clave de programacion identifican al solicitante tecnico. Hito 7 consume esa fila exacta mediante subprocess sin cambiar la decision del scheduler.
 
 El calculo temporal usa `programaciones.zona_horaria` IANA y entrega `datetime2` local sin offset, compatible con el esquema. Una hora inexistente por DST se omite; una hora ambigua se reserva una sola vez usando el primer `fold`. Cada fecha se calcula desde la regla civil, sin deriva diaria. La politica historica de reinicio salta ocurrencias anteriores a la ventana de polling y avanza al siguiente disparo. El indice unico filtrado de `clave_programacion` resuelve carreras entre workers; el chequeo previo no es la garantia de idempotencia.
 
@@ -32,9 +52,9 @@ Mapa de transicion aplicado:
 | Manejo local de errores | `compartido/errores.py` | Jerarquia y respuestas HTML/JSON seguras. |
 | Logging por servicios | `compartido/logging.py` | Formato comun y sanitizacion base. |
 | CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
-| Hilos web para ejecucion | `worker/contratos.py` | Solo contrato comun; motor real bloqueado hasta Hito 7. |
+| Hilos web para ejecucion | `worker/contratos.py` y motor Hito 7 | Flask reserva; el worker reclama y ejecuta con el motor unico. |
 
-Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-6 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts y scheduler; motor de ejecucion, Graph, papelera y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
+Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-7 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts, scheduler, motor de ejecucion, logs, consola y evidencia base. Graph, Papelera, observabilidad global y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
 
 ## Implementacion Hito 2
 
@@ -243,23 +263,24 @@ fallan antes del commit. Los roots y nombres se derivan de configuracion y
 metadata validada; el request nunca entrega una ruta fisica.
 
 En Hito 5 toda tarea nueva era `MANUAL`; Hito 6 agrego programaciones y reserva
-automatica sin ejecutar procesos. `dbo.tareas` no contiene ejecutor. Una
-automatica reserva `ejecuciones.usuario_ejecucion = NULL`; Hito 7 definira el
-usuario efectivo de la solicitud manual.
+automatica. `dbo.tareas` y `dbo.programaciones` no contienen ejecutor. Hito 7
+congelo el contrato: la automatica reserva `usuario_ejecucion = NULL` y conserva
+`nombre_worker` como actor tecnico; la manual registra en `ejecuciones` al
+usuario autenticado de APP Scheduler.
 6. auditar resultado y limpiar temporales.
 
 Todas las rutas se resuelven contra raices configuradas y se rechazan traversal, symlinks inseguros, raices contenidas y nombres fuera de contrato.
 
 ## Scheduler, cola y worker
 
-El worker reconstruido es propietario del loop scheduler de Hito 6 y sera propietario del motor de Hito 7:
+El worker reconstruido es propietario del loop scheduler y del motor unico:
 
 * programador: implementado; evalua calendarios y reserva solicitudes automaticas `PENDIENTE`;
-* ejecutor: pendiente Hito 7; reclamara solicitudes manuales o automaticas y lanzara procesos.
+* ejecutor: implementado; reclama solicitudes manuales o automaticas y lanza el proceso confinado.
 
-La futura web manual solo solicitara ejecucion. No creara `threading.Thread` ni procesos Python. `SolicitudEjecucion` contiene origen, tarea, script, version, actor y fecha; Hito 6 persiste la automatica en `ejecuciones` y Hito 7 implementara reclamo atomico, PID, salida y cierre.
+La web manual solo solicita ejecucion; no crea `threading.Thread` ni procesos Python. `SolicitudEjecucion` contiene origen, tarea, script, version, actor y fecha. La automatica persiste una fila en `ejecuciones`; la manual reserva otra bajo el mismo contrato, y el worker aplica claim atomico, PID, salida y cierre.
 
-El contrato de Hito 6 reutiliza `ejecuciones`: el scheduler crea una unica fila `PENDIENTE` con version congelada. Hito 7 debe definir el reclamo/lease y recuperacion tras caida sin crear una segunda fila para la misma solicitud.
+El contrato reutiliza `ejecuciones`: el scheduler crea una unica fila `PENDIENTE` con version congelada y Hito 7 reclama esa misma fila. Una `PENDIENTE` es recuperable; una `EN_EJECUCION` perdida queda incierta y no se relanza sin una futura lease SQL.
 
 Reglas comunes:
 
@@ -335,6 +356,27 @@ Se conserva la identidad visual actual, no sus archivos monoliticos. La capa obj
 
 No se incorporara framework SPA. Jinja y JavaScript modular cubren la interaccion vigente con menor costo. Se validaran desktop, notebook, tablet y movil; tablas tendran contenedor responsive y acciones accesibles.
 
+Desde el gate transversal de Hito 7, Bootstrap 5.3.3 versionado localmente es la
+base estructural. `base.html` concentra shell, Offcanvas, topbar, dropdown,
+flashes y modal; cada modulo carga solo su hoja/controlador adicional. No existe
+dependencia de CDN, SPA, jQuery ni JavaScript inline. Las mutaciones conservan
+autorizacion backend y CSRF; loading y confirmacion no cambian contratos HTTP.
+La revision visual manual y sus correcciones responsive forman parte del cierre
+del Hito 7; el pulido global permanece reservado para Hito 12.
+
+### Gate transversal de calidad
+
+Cada hito debe superar cuatro dimensiones antes de cerrarse:
+
+1. tecnica: compilacion, pruebas, templates, JavaScript y packaging;
+2. funcional: flujos, permisos, errores y estados vacios;
+3. visual: jerarquia, legibilidad, responsive y controles accesibles;
+4. comparativa: contraste con la superficie historica equivalente cuando exista.
+
+Los tests verdes no compensan una pantalla rota. Una regresion UX objetiva o un
+error que deje una superficie vacia bloquea el cierre. El runtime historico se
+usa solo como referencia de organizacion y no como fuente para copiar deuda.
+
 ## Docker y operacion
 
 Compose mantiene dos servicios:
@@ -388,4 +430,17 @@ Hito 1 quedo cerrado formalmente con su versionado controlado. El runtime recons
 
 ## Criterio para cerrar Hito 2
 
-Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3, 4, 5 y 6 quedaron cerrados; Hito 7 no fue iniciado.
+Hito 2 quedo cerrado formalmente tras reconciliar el contrato limpio de 456 columnas con las 462 observadas en la QA historica. Las seis columnas adicionales eran aliases legacy de `auditoria_cambios`, reemplazados por columnas canonicas y conservados en QA solo por compatibilidad historica. Hitos 3-7 quedaron cerrados en el runtime aislado; la integracion SQL QA real y el cutover permanecen pendientes.
+
+## Hub transversal de scripts
+
+`/scripts` pertenece al mismo blueprint y caso de uso de scripts del runtime
+reconstruido. La lectura global sigue el flujo
+`ruta -> ServicioScripts.listar -> RepositorioScripts.listar_paginado -> SQL
+parametrizado` y retorna una proyeccion `ResumenScript`; no introduce otro
+servicio, repositorio ni entidad mutable.
+
+La proyeccion excluye rutas fisicas, rutas relativas y contenido `.env`. Solo
+expone cantidad de versiones con entorno configurado. El detalle conserva la
+relacion `tarea 1:1 script logico` y muestra los slots v1, v2 y v3 en orden.
+Este ajuste forma parte del Hito 7 cerrado. Hito 8 no se inicia con su cierre.

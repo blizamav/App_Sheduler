@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
 {% block titulo %}{{ config.plural }} | APP Scheduler{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/catalogos.css') }}">{% endblock %}
 
@@ -11,19 +12,19 @@
         <p class="texto-secundario">{{ resultado.total }} registros operativos</p>
     </div>
     {% if identidad.tiene_permiso(config.permiso_crear) %}
-    <a class="boton primario" href="{{ url_for('catalogos.' ~ config.clave ~ '_nuevo') }}">Crear {{ config.singular }}</a>
+    <a class="btn btn-primary boton primario" href="{{ url_for('catalogos.' ~ config.clave ~ '_nuevo') }}">Crear {{ config.singular }}</a>
     {% endif %}
 </header>
 
 <form class="barra-filtros catalogos-filtros" method="get">
-    <label class="campo"><span>Buscar</span><input name="buscar" value="{{ filtros.buscar }}" maxlength="150" placeholder="Nombre o descripcion"></label>
-    <label class="campo"><span>Estado</span><select name="estado"><option value="">Todos</option><option value="activo" {% if filtros.estado == 'activo' %}selected{% endif %}>Activos</option><option value="inactivo" {% if filtros.estado == 'inactivo' %}selected{% endif %}>Inactivos</option></select></label>
-    <button class="boton secundario" type="submit">Filtrar</button>
-    <a class="boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Limpiar</a>
+    <label class="campo"><span>Buscar</span><input class="form-control" name="buscar" value="{{ filtros.buscar }}" maxlength="150" placeholder="Nombre o descripcion"></label>
+    <label class="campo"><span>Estado</span><select class="form-select" name="estado"><option value="">Todos</option><option value="activo" {% if filtros.estado == 'activo' %}selected{% endif %}>Activos</option><option value="inactivo" {% if filtros.estado == 'inactivo' %}selected{% endif %}>Inactivos</option></select></label>
+    <button class="btn btn-outline-primary boton secundario" type="submit">Filtrar</button>
+    <a class="btn btn-link boton secundario" href="{{ url_for('catalogos.' ~ config.clave ~ '_listado') }}">Limpiar</a>
 </form>
 
-<div class="tabla-contenedor">
-    <table class="tabla-base tabla-catalogos">
+<div class="tabla-contenedor table-responsive">
+    <table class="tabla-base tabla-catalogos table table-hover align-middle mb-0">
         <thead><tr><th>Nombre</th><th>Descripcion</th><th>Estado</th><th>Creacion</th><th>Actualizacion</th><th>Acciones</th></tr></thead>
         <tbody>
         {% for item in resultado.elementos %}
@@ -48,7 +49,7 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="estado-vacio">No hay registros para mostrar.</td></tr>
+        <tr><td colspan="6" class="estado-vacio">{{ estado_vacio('Sin ' ~ config.plural|lower, 'No hay resultados para los filtros seleccionados.', config.clave, url_for('catalogos.' ~ config.clave ~ '_nuevo') if identidad.tiene_permiso(config.permiso_crear) else none, 'Crear ' ~ config.singular) }}</td></tr>
         {% endfor %}
         </tbody>
     </table>

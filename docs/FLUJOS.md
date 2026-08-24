@@ -1,5 +1,9 @@
 # Flujos
 
+## Reconstruccion Hito 7 - Ejecucion manual y automatica
+
+La ejecucion automatica consume directamente la fila `PENDIENTE` reservada por el scheduler, respetando el `id_script` y `id_version` congelados. La ejecucion manual valida permiso, CSRF, mantenimiento, concurrencia y version activa, reserva otra fila `PENDIENTE` con el usuario APP solicitante y termina la request sin iniciar procesos. En ambos casos el worker realiza un claim atomico, usa el mismo motor subprocess, transmite `stdout`/`stderr` al log incremental y cierra la ejecucion con el estado real del contrato SQL.
+
 ## Flujo Fase 13A.1B - Limpieza parametrizable de eventos
 
 La limpieza de eventos del programador permite seleccionar periodo y categorias concretas antes de eliminar registros antiguos.
