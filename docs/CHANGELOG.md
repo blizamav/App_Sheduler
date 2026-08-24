@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-24 - Cierre formal Hito 9: Auditoria operativa y Papelera
+
+* Se agregaron `/auditoria/` y `/auditoria/<id>` con permisos separados,
+  filtros parametrizados, paginacion SQL Server, orden fijo, detalle canonico y
+  compatibilidad con los seis aliases legacy de QA.
+* Se agrego `/papelera/` para las siete entidades reales con
+  `eliminado_operativo`: usuarios, clientes, categorias, tipos, tareas, scripts
+  y versiones. Programaciones, ejecuciones, logs, evidencias y auditoria se
+  mantienen fuera por ser dependencias o historia protegida.
+* El retiro, restauracion y eliminacion permanente usan permisos reales, CSRF,
+  revalidacion backend, lock de fila, UoW y auditoria. Restaurar siempre deja el
+  recurso inactivo y valida padres, duplicados y archivos requeridos.
+* La purga de tarea/script/version bloquea cualquier ejecucion historica y no
+  nulifica `ejecuciones.id_script` o `id_version`; tampoco borra ejecuciones,
+  logs, evidencias, eventos ni auditoria.
+* Los archivos `.py` y `.env` se retiran solo durante purga autorizada mediante
+  rutas confinadas, cuarentena temporal y compensacion ante fallo SQL.
+* Se integraron accesos de sidebar, acciones contextuales, cards/filtros/tablas
+  Bootstrap, badges, estados vacios y modal corporativo, sin HTML no escapado,
+  JavaScript inline ni `window.confirm`.
+* Se creo `docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md` con matrices de entidad,
+  permisos, historia, SQL/filesystem, OWASP aplicable y deuda legitima.
+* Validacion: 28 pruebas focales, 246 reconstruidas y 272 totales aprobadas, con
+  un caso de symlink omitido en Windows porque el host no permite crearlos y
+  cubierto por el gate Linux. Compileall, 26
+  templates Jinja, JavaScript, Compose, build/checks Docker `web`/`worker`,
+  `git diff --check` y revision visual 1440x900, 390x844 y 844x390: OK.
+* El inventario Git real contiene 18 archivos modificados y 13 nuevos: 31 en
+  total. El recuento visual de 32 incluia el arnes temporal de revision visual,
+  eliminado antes del cierre y ausente del diff final.
+* No se ejecuto SQL, no se modifico QA, `database/`, runtime historico, `.env`
+  ni `.env.docker`; no hubo cutover. Hito 9 queda cerrado y Hito 10 no iniciado.
+
 ## 2026-08-24 - Cierre formal del Hito 8
 
 * Se incorporaron `/logs/` y `/logs/<id>` con `LOGS_VER`, filtros

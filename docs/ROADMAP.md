@@ -102,15 +102,21 @@ edicion tipada de `configuracion_scheduler` y configuracion de evidencia por
 tarea con validacion AST. El smoke real read-only contra `APP_SCHEDULER_QA`
 confirmo contrato y lecturas, login invalido controlado y cero residuos. El
 login SQL valido no se ejecuto al no existir una credencial de aplicacion
-autorizada para la prueba; `SUPER_ADMIN_ENV` si fue validado. Hito 9 permanece
-NO INICIADO.
-
-## Pendiente
+autorizada para la prueba; `SUPER_ADMIN_ENV` si fue validado.
 
 ### Hito 9 - Auditoria UI y Papelera
 
-Reimplementar consulta, filtros y detalle de auditoria; retiro, restauracion,
-eliminacion permanente, limpieza filesystem y preservacion historica.
+Estado: CERRADO.
+
+Implementados en el runtime aislado la consulta, filtros y detalle inmutables
+de auditoria, retiro operacional, restauracion inactiva, eliminacion permanente
+condicionada, preservacion mediante snapshots y cleanup filesystem compensable.
+Las entidades admitidas son las siete tablas que poseen
+`eliminado_operativo`; ejecuciones, logs, evidencias y auditoria son historia
+protegida y no ingresan a Papelera. El gate tecnico, Docker y visual responsive
+esta aprobado. No hubo SQL ni mutaciones QA.
+
+## Pendiente
 
 ### Hito 10 - Feriados, notificaciones, Microsoft Graph y email
 

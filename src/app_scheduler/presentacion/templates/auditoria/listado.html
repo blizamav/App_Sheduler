@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
+{% block titulo %}Auditoria | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/auditoria-papelera.css') }}">{% endblock %}
+{% block contenido %}
+<header class="encabezado-pagina control-encabezado">
+  <div><p class="eyebrow">Control y trazabilidad</p><h1>Auditoria</h1><p class="texto-secundario">Consulta inmutable de acciones humanas y administrativas.</p></div>
+  <span class="badge info">{{ resultado.total }} eventos</span>
+</header>
+<form class="barra-filtros auditoria-filtros" method="get">
+  <label class="campo"><span>Buscar</span><input class="form-control" name="buscar" value="{{ filtros.busqueda }}" placeholder="Descripcion, nombre o modulo"></label>
+  <label class="campo"><span>Desde</span><input class="form-control" type="date" name="fecha_desde" value="{{ filtros.fecha_desde }}"></label>
+  <label class="campo"><span>Hasta</span><input class="form-control" type="date" name="fecha_hasta" value="{{ filtros.fecha_hasta }}"></label>
+  <label class="campo"><span>Usuario</span><input class="form-control" name="usuario" value="{{ filtros.usuario }}"></label>
+  <label class="campo"><span>Accion</span><select class="form-select" name="accion"><option value="">Todas</option>{% for opcion in acciones %}<option value="{{ opcion }}" {% if filtros.accion == opcion %}selected{% endif %}>{{ opcion }}</option>{% endfor %}</select></label>
+  <label class="campo"><span>Entidad</span><select class="form-select" name="entidad"><option value="">Todas</option>{% for opcion in entidades %}<option value="{{ opcion }}" {% if filtros.entidad == opcion %}selected{% endif %}>{{ opcion }}</option>{% endfor %}</select></label>
+  <label class="campo"><span>ID entidad</span><input class="form-control" name="id_entidad" value="{{ filtros.id_entidad }}"></label>
+  <button class="btn btn-primary boton primario" type="submit">Filtrar</button>
+  <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('auditoria.listado') }}">Limpiar</a>
+</form>
+<section class="tabla-contenedor table-responsive auditoria-tabla">
+  <table class="tabla-base table table-hover align-middle mb-0">
+    <thead><tr><th>Fecha</th><th>Usuario</th><th>Accion</th><th>Entidad</th><th>Resultado</th><th>Descripcion</th><th></th></tr></thead>
+    <tbody>{% for evento in resultado.elementos %}<tr>
+      <td class="texto-nowrap">{{ evento.fecha_evento }}</td>
+      <td><strong>{{ evento.usuario }}</strong>{% if evento.modulo %}<small>{{ evento.modulo }}</small>{% endif %}</td>
+      <td><span class="badge info">{{ evento.accion }}</span></td>
+      <td>{{ evento.entidad }}{% if evento.id_entidad %}<small>ID {{ evento.id_entidad }}</small>{% endif %}{% if evento.nombre_entidad %}<small>{{ evento.nombre_entidad }}</small>{% endif %}</td>
+      <td><span class="badge {{ 'error' if evento.resultado == 'ERROR' else ('advertencia' if evento.resultado == 'BLOQUEADO' else 'activo') }}">{{ evento.resultado or 'OK' }}</span></td>
+      <td class="auditoria-descripcion">{{ evento.descripcion or '-' }}</td>
+      <td>{% if identidad_actual().tiene_permiso('AUDITORIA_DETALLE') %}<a class="btn btn-sm btn-outline-primary boton secundario compacto" href="{{ url_for('auditoria.detalle', id_auditoria=evento.id_auditoria) }}">Ver detalle</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="7" class="estado-vacio">{{ estado_vacio('Sin eventos', 'No se encontraron eventos para los filtros seleccionados.', 'auditoria') }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion de auditoria">
+  {% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('auditoria.listado', pagina=resultado.pagina-1, buscar=filtros.busqueda, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta, usuario=filtros.usuario, accion=filtros.accion, entidad=filtros.entidad, id_entidad=filtros.id_entidad) }}">Anterior</a>{% endif %}
+  <span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>
+  {% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('auditoria.listado', pagina=resultado.pagina+1, buscar=filtros.busqueda, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta, usuario=filtros.usuario, accion=filtros.accion, entidad=filtros.entidad, id_entidad=filtros.id_entidad) }}">Siguiente</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

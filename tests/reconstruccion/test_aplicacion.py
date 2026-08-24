@@ -73,6 +73,12 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
             "/logs/<int:id_log>",
             "/configuracion/",
             "/configuracion/scheduler",
+            "/auditoria/",
+            "/auditoria/<int:id_auditoria>",
+            "/papelera/",
+            "/papelera/<entidad>/<int:id_registro>/retirar",
+            "/papelera/<entidad>/<int:id_registro>/restaurar",
+            "/papelera/<entidad>/<int:id_registro>/eliminar-permanente",
         }
 
 

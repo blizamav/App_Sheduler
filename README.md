@@ -15,6 +15,8 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 6 - Programaciones, scheduler y worker: CERRADO.
 * Hito 7 - Motor unico, logs y evidencias base: CERRADO.
 * Hito 8 - CERRADO: observabilidad, configuracion operativa e integracion QA.
+* Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
+* Hito 10 - NO INICIADO.
 
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
@@ -39,16 +41,17 @@ Fuentes maestras de la reconstruccion:
 * [Persistencia de la Reconstruccion](docs/PERSISTENCIA_RECONSTRUCCION.md)
 * [UI/UX de la Reconstruccion](docs/UI_UX_RECONSTRUCCION.md)
 * [Observabilidad y configuracion](docs/OBSERVABILIDAD_CONFIGURACION_RECONSTRUCCION.md)
+* [Auditoria y Papelera](docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
 El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 7 agrega el motor comun y Hito 8 la observabilidad/configuracion operativa, pero todavia no reemplazan los entrypoints historicos.
 
-Validacion actual: 218 pruebas reconstruidas aprobadas y 1 omitida por la
-restriccion conocida de symlinks en Windows; suite completa con 244 aprobadas y
-la misma omision. El smoke tecnico read-only contra `APP_SCHEDULER_QA` valido
-contrato, lecturas, observabilidad y login invalido sin dejar escrituras. No se
-realizo cutover.
+Validacion actual: 246 pruebas reconstruidas aprobadas y 1 omitida por la
+restriccion conocida de symlinks en Windows; suite completa con 272 aprobadas y
+la misma omision. Compileall, Jinja, JavaScript, Compose, build/checks Docker y
+revision visual responsive aprobaron. Hito 9 no ejecuto SQL ni modifico QA. No
+se realizo cutover.
 
 Validacion aislada del runtime reconstruido:
 

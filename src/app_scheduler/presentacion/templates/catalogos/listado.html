@@ -45,6 +45,7 @@
                     <input type="hidden" name="activo" value="{{ '0' if item.activo else '1' }}">
                     <button class="boton {{ 'peligro' if item.activo else 'secundario' }} compacto" type="submit" data-confirmar data-titulo="{{ 'Desactivar' if item.activo else 'Activar' }} {{ config.singular }}" data-mensaje="{{ 'El registro dejara de estar disponible para nuevas tareas.' if item.activo else 'El registro volvera a estar disponible para nuevas tareas.' }}">{{ 'Desactivar' if item.activo else 'Activar' }}</button>
                 </form>
+                <form method="post" action="{{ url_for('papelera.retirar', entidad=config.clave, id_registro=id_registro) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="motivo" value="Retiro administrativo de {{ config.singular }}."><button class="btn btn-sm btn-outline-danger boton peligro compacto" type="submit" data-confirmar data-titulo="Enviar {{ config.singular }} a Papelera" data-mensaje="Dejara de aparecer en la operacion y en nuevos selectores, sin borrar su historia." data-texto-procesando="Retirando...">Papelera</button></form>
                 {% endif %}
             </td>
         </tr>

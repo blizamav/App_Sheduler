@@ -31,6 +31,8 @@
         <symbol id="icono-estado" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6M5 21h14M5 3h14"/></symbol>
         <symbol id="icono-logs" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4ZM8 8h8M8 12h8M8 16h5"/></symbol>
         <symbol id="icono-configuracion" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6v.08h-4V20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H3.9v-4H4a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L7.06 4.2l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6v-.1h4V4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1h.1v4H20a1.7 1.7 0 0 0-.6 1Z"/></symbol>
+        <symbol id="icono-auditoria" viewBox="0 0 24 24"><path d="M4 3h16v18H4V3ZM8 7h8M8 11h8M8 15h5M16 17l2 2 3-4"/></symbol>
+        <symbol id="icono-papelera" viewBox="0 0 24 24"><path d="M3 6h18M8 6V3h8v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
     </svg>
     {% if identidad_sesion %}
     <div class="app-shell">
@@ -100,7 +102,7 @@
                 </a>
                 {% endif %}
                 {% endif %}
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') or identidad_sesion.tiene_permiso('AUDITORIA_VER') or identidad_sesion.tiene_permiso('PAPELERA_VER') %}
                 <p class="navegacion-grupo">Administracion</p>
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'usuarios' %}activo active{% endif %}" href="{{ url_for('usuarios.listado') }}" aria-label="Usuarios" title="Usuarios">
@@ -115,6 +117,16 @@
                 {% if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'configuracion_operativa' %}activo active{% endif %}" href="{{ url_for('configuracion_operativa.inicio') }}" aria-label="Configuracion" title="Configuracion">
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-configuracion"></use></svg><span>Configuracion</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('AUDITORIA_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'auditoria' %}activo active{% endif %}" href="{{ url_for('auditoria.listado') }}" aria-label="Auditoria" title="Auditoria">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-auditoria"></use></svg><span>Auditoria</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('PAPELERA_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'papelera' %}activo active{% endif %}" href="{{ url_for('papelera.listado') }}" aria-label="Papelera" title="Papelera">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-papelera"></use></svg><span>Papelera</span>
                 </a>
                 {% endif %}
                 {% endif %}

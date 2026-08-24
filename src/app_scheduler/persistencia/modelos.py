@@ -105,6 +105,40 @@ class EventoAuditoria:
 
 
 @dataclass(frozen=True, slots=True)
+class RegistroAuditoria:
+    id_auditoria: int
+    fecha_evento: datetime
+    usuario: str
+    id_usuario: int | None
+    accion: str
+    entidad: str
+    id_entidad: str | None
+    nombre_entidad: str | None
+    descripcion: str | None
+    valores_antes: str | None
+    valores_despues: str | None
+    ip_origen: str | None
+    user_agent: str | None
+    resultado: str | None
+    modulo: str | None
+    ruta: str | None
+    metodo_http: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ElementoPapelera:
+    entidad: str
+    id_registro: int
+    nombre: str
+    descripcion: str | None
+    contexto: str | None
+    activo_anterior: bool
+    fecha_retiro: datetime | None
+    usuario_retiro: str | None
+    motivo_retiro: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class Cliente:
     id_cliente: int
     nombre: str

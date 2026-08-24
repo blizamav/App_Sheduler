@@ -899,3 +899,18 @@ La vista no crea scripts huerfanos ni replica operaciones. `Administrar` dirige
 al detalle canonico `GET /tareas/<id_tarea>/scripts`, donde permanecen carga,
 activacion, reemplazo, `.env` y descarga con sus permisos y CSRF actuales. El
 indice solo muestra metadata de configuracion `.env`; nunca rutas ni contenido.
+
+## Auditoria y Papelera en la reconstruccion
+
+Hito 9, cerrado, agrega `/auditoria/` y `/auditoria/<id>` como consulta inmutable,
+paginada y compatible con aliases legacy de QA. La UI muestra semantica
+canonica y renderiza antes/despues como texto seguro.
+
+`/papelera/` consolida usuarios, clientes, categorias, tipos, tareas, scripts y
+versiones, las siete entidades con `eliminado_operativo`. El retiro conserva
+archivos e historia; la restauracion vuelve inactiva y valida padres, claves y
+filesystem. La purga permanente conserva ejecuciones, logs, evidencias y
+auditoria, y bloquea tareas, scripts o versiones que tengan ejecuciones
+historicas. Los identificadores congelados de cada ejecucion no se nulifican.
+Permisos, matriz y bloqueos estan en
+`docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md`.

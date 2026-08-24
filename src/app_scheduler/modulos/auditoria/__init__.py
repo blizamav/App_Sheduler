@@ -1,0 +1,1 @@
+"""Consulta inmutable de auditoria."""

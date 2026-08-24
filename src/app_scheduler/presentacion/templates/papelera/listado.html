@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "base/componentes.html" import estado_vacio %}
+{% block titulo %}Papelera | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/auditoria-papelera.css') }}">{% endblock %}
+{% block contenido %}
+<header class="encabezado-pagina control-encabezado">
+  <div><p class="eyebrow">Administracion</p><h1>Papelera</h1><p class="texto-secundario">Recursos retirados de la operacion. Desactivar y eliminar permanentemente son acciones distintas.</p></div>
+  <span class="badge advertencia">{{ resultado.total }} elementos</span>
+</header>
+<div class="alert alert-warning papelera-aviso" role="note"><strong>Historia protegida:</strong> las ejecuciones, logs, evidencias y eventos de auditoria no se eliminan desde esta superficie.</div>
+<form class="barra-filtros papelera-filtros" method="get">
+  <label class="campo"><span>Buscar</span><input class="form-control" name="buscar" value="{{ filtros.busqueda }}" placeholder="Nombre, contexto o motivo"></label>
+  <label class="campo"><span>Tipo</span><select class="form-select" name="entidad"><option value="">Todos</option>{% for clave, etiqueta in entidades %}<option value="{{ clave }}" {% if filtros.entidad == clave %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}</select></label>
+  <label class="campo"><span>Usuario</span><input class="form-control" name="usuario" value="{{ filtros.usuario }}"></label>
+  <label class="campo"><span>Desde</span><input class="form-control" type="date" name="fecha_desde" value="{{ filtros.fecha_desde }}"></label>
+  <label class="campo"><span>Hasta</span><input class="form-control" type="date" name="fecha_hasta" value="{{ filtros.fecha_hasta }}"></label>
+  <button class="btn btn-primary boton primario" type="submit">Filtrar</button><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('papelera.listado') }}">Limpiar</a>
+</form>
+<section class="papelera-listado">
+{% for registro in resultado.elementos %}{% set item = registro.item %}
+  <article class="papelera-item">
+    <div class="papelera-identidad"><span class="badge inactivo">{{ registro.etiqueta }}</span><div><h2>{{ item.nombre }}</h2><p>{{ item.contexto or item.descripcion or 'Sin descripcion' }}</p></div></div>
+    <dl class="papelera-meta"><div><dt>Retiro</dt><dd>{{ item.fecha_retiro or '-' }}</dd></div><div><dt>Usuario</dt><dd>{{ item.usuario_retiro or '-' }}</dd></div><div><dt>Dependencias</dt><dd>{{ registro.resumen_dependencias }}</dd></div><div><dt>Motivo</dt><dd>{{ item.motivo_retiro or '-' }}</dd></div></dl>
+    <div class="papelera-capacidades">
+      <span class="badge {{ 'activo' if registro.restaurable else 'advertencia' }}">{{ 'Restaurable' if registro.restaurable else 'Restauracion bloqueada' }}</span>
+      <span class="badge {{ 'error' if registro.eliminable else 'inactivo' }}">{{ 'Eliminable' if registro.eliminable else 'Eliminacion bloqueada' }}</span>
+    </div>
+    {% if registro.motivo_restauracion or registro.motivo_eliminacion %}<p class="papelera-bloqueo">{{ registro.motivo_restauracion or registro.motivo_eliminacion }}</p>{% endif %}
+    <div class="papelera-acciones">
+      {% if identidad_actual().tiene_permiso('PAPELERA_RESTAURAR') and registro.restaurable %}<form method="post" action="{{ url_for('papelera.restaurar', entidad=item.entidad, id_registro=item.id_registro) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-primary boton secundario" type="submit" data-confirmar data-titulo="Restaurar {{ item.nombre }}" data-mensaje="El registro volvera como inactivo y debera activarse manualmente cuando corresponda." data-texto-procesando="Restaurando...">Restaurar</button></form>{% endif %}
+      {% if identidad_actual().tiene_permiso('PAPELERA_ELIMINAR_PERMANENTE') and registro.eliminable %}<form method="post" action="{{ url_for('papelera.eliminar_permanente', entidad=item.entidad, id_registro=item.id_registro) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger boton peligro" type="submit" data-confirmar data-titulo="Eliminar definitivamente {{ item.nombre }}" data-mensaje="Se eliminara el recurso operacional y sus archivos permitidos. La historia protegida permanecera disponible." data-texto-procesando="Eliminando...">Eliminar definitivamente</button></form>{% endif %}
+    </div>
+  </article>
+{% else %}<div class="estado-vacio papelera-vacia">{{ estado_vacio('Papelera vacia', 'No hay elementos retirados.', 'papelera') }}</div>{% endfor %}
+</section>
+{% if resultado.total_paginas > 1 %}<nav class="paginacion" aria-label="Paginacion de Papelera">{% if resultado.pagina > 1 %}<a class="boton secundario compacto" href="{{ url_for('papelera.listado', pagina=resultado.pagina-1, buscar=filtros.busqueda, entidad=filtros.entidad, usuario=filtros.usuario, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta) }}">Anterior</a>{% endif %}<span>Pagina {{ resultado.pagina }} de {{ resultado.total_paginas }}</span>{% if resultado.pagina < resultado.total_paginas %}<a class="boton secundario compacto" href="{{ url_for('papelera.listado', pagina=resultado.pagina+1, buscar=filtros.busqueda, entidad=filtros.entidad, usuario=filtros.usuario, fecha_desde=filtros.fecha_desde, fecha_hasta=filtros.fecha_hasta) }}">Siguiente</a>{% endif %}</nav>{% endif %}
+{% endblock %}

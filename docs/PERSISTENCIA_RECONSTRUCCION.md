@@ -2,7 +2,29 @@
 
 ## Estado y fuente de verdad
 
-Hito 2 construyo y cerro la persistencia funcional del runtime aislado `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y evidencia; Hito 8, ya cerrado, agrega consultas operativas y configuracion tipada sin cambiar el DDL ni sustituir `app/`, `run.py` o `scheduler_worker.py`.
+Hito 2 construyo y cerro la persistencia funcional del runtime aislado
+`src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y
+evidencia; Hito 8 agrega consultas operativas y configuracion tipada; Hito 9,
+cerrado, agrega lectura de auditoria y Papelera sin cambiar el DDL ni sustituir `app/`,
+`run.py` o `scheduler_worker.py`.
+
+## Persistencia Hito 9
+
+* `RepositorioAuditoria` suma lectura paginada, filtros parametrizados, detalle
+  y opciones de filtro. La proyeccion es canonica incluso en QA legacy.
+* `RepositorioPapelera` usa una allowlist fija de siete tablas con
+  `eliminado_operativo`; la union global filtra y pagina en SQL Server.
+* El retiro/restauracion bloquea la fila mediante `UPDLOCK, HOLDLOCK` y no
+  confirma desde el repositorio.
+* La purga de tarea/script/version se bloquea ante cualquier ejecucion historica.
+  Asi conserva los valores congelados de `ejecuciones.id_script` e `id_version`
+  y no contiene DELETE ni UPDATE de desacople sobre ejecuciones, logs,
+  evidencias, eventos o auditoria.
+* Las operaciones SQL y la auditoria comparten una UoW. El filesystem se
+  prepara y pone en cuarentena antes del commit; un fallo revierte los renames.
+
+La matriz de referencias, permisos y compensacion se mantiene en
+`docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md`.
 
 ## Persistencia Hito 8
 

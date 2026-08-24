@@ -34,6 +34,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="activo" value="{{ '0' if item.usuario.activo else '1' }}">
                     <button class="btn btn-sm {{ 'btn-outline-danger peligro' if item.usuario.activo else 'btn-outline-success secundario' }} boton compacto" type="submit" data-confirmar data-titulo="{{ 'Desactivar usuario' if item.usuario.activo else 'Activar usuario' }}" data-mensaje="El cambio se aplicara inmediatamente a su acceso." data-texto-procesando="Procesando...">{{ 'Desactivar' if item.usuario.activo else 'Activar' }}</button>
                 </form>
+                {% if identidad_actual().id_usuario != item.usuario.id_usuario %}<form method="post" action="{{ url_for('papelera.retirar', entidad='usuarios', id_registro=item.usuario.id_usuario) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="motivo" value="Retiro administrativo de usuario."><button class="btn btn-sm btn-outline-danger boton peligro compacto" type="submit" data-confirmar data-titulo="Enviar usuario a Papelera" data-mensaje="El usuario perdera acceso y quedara disponible para restauracion controlada." data-texto-procesando="Retirando...">Papelera</button></form>{% endif %}
             </td>
         </tr>
         {% else %}<tr><td colspan="6" class="estado-vacio">{{ estado_vacio('Sin usuarios', 'No hay resultados para los filtros seleccionados.', 'usuarios', url_for('usuarios.nuevo'), 'Crear usuario') }}</td></tr>{% endfor %}

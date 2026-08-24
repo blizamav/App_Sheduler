@@ -6,10 +6,49 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-8 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-9 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 8 cerrado, sin cutover; Hito 9 no iniciado.
+* Fase actual: Reconstruccion limpia - Hito 9 cerrado, sin cutover; Hito 10 no iniciado.
 * Ultima actualizacion: 2026-08-24
+
+## 2026-08-24 - Cierre formal Hito 9 / Auditoria operativa y Papelera
+
+* Fase: Auditoria operativa y Papelera implementadas, validadas y cerradas en el
+  runtime aislado. Hito 10 no iniciado.
+* Contrato revisado: siete entidades con `eliminado_operativo`; ejecuciones,
+  programaciones, logs, eventos, evidencias y auditoria no son entidades de
+  Papelera. Se contrastaron historico, release/bootstrap, permisos y docs.
+* Auditoria: listado y detalle read-only, filtros/paginacion parametrizados,
+  semantica canonica y fallback a seis aliases legacy sin duplicarlos en UI.
+* Papelera: retiro por permisos funcionales, restauracion inactiva y purga con
+  permiso dedicado, bloqueos de dependencias, UoW y auditoria en la misma
+  transaccion.
+* Historia: la purga no borra ejecuciones, logs, evidencias, eventos ni
+  auditoria. Tarea/script/version con cualquier ejecucion historica quedan
+  bloqueados; `ejecuciones.id_script` e `id_version` no se nulifican.
+* Filesystem: envio/restauracion no borran archivos; purga usa roots permitidas,
+  validacion canonical/symlink, cuarentena `.bak`, compensacion y poda de
+  directorios vacios.
+* UI/UX: accesos condicionales en Administracion, filtros, tabla de auditoria,
+  detalle seguro, cards de Papelera, bloqueos visibles, estados vacios y modal
+  Bootstrap global.
+* Pruebas: 28 focales, 246 de reconstruccion y 272 totales aprobadas; un caso
+  symlink omitido porque Windows no permite crearlo permanece cubierto por el
+  gate Linux.
+* Gates: compileall, 26 templates Jinja, JavaScript, Compose, build y checks
+  efimeros Docker `web`/`worker`, `git diff --check` y revision visual en
+  1440x900, 390x844 y 844x390: OK. Sin overflow global; tablas conservan scroll
+  local, Offcanvas movil opera y la consola del navegador no reporto errores.
+* Housekeeping: sin servidor temporal en 5098, archivos `.tmp`/`.bak` ni
+  contenedores efimeros residuales al finalizar las pruebas.
+* Inventario: 18 archivos modificados y 13 nuevos, 31 totales. El recuento de 32
+  correspondia al arnes visual temporal ya eliminado y ausente del diff final.
+* Protecciones: sin SQL, QA, DDL, Factory Reset, Graph, Nager.Date, email ni
+  cutover. `database/`, runtime historico, `.env` y `.env.docker` intactos; el
+  cierre se versiona mediante staging explicito y commit dedicado.
+* Riesgo legitimo: no existe transaccion distribuida SQL/filesystem; un fallo de
+  cleanup posterior al commit puede dejar un respaldo `.bak` para housekeeping,
+  sin poner la BD a apuntar a un archivo inexistente.
 
 ## 2026-08-24 - Cierre formal Hito 8: observabilidad, configuracion operativa e integracion QA
 

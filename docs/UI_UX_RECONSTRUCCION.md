@@ -43,6 +43,13 @@ Hito 8 agrega vistas Bootstrap integradas al mismo shell:
 * evidencia en la edicion de tarea con estado compatible/requiere ajuste y ayuda
   colapsable del contrato stdout.
 
+Hito 9 agrega Auditoria y Papelera dentro de Administracion, visibles solo con
+sus permisos. Auditoria usa filtros compactos, tabla responsive y detalle de
+JSON con scroll local. Papelera usa cards operativas con tipo, retiro,
+dependencias, badges de capacidad, motivo de bloqueo y acciones separadas. Las
+confirmaciones reutilizan el modal Bootstrap global; no se introduce
+`window.confirm` ni JavaScript inline.
+
 Los layouts usan todo el ancho disponible y cambian a una columna bajo 780 px;
 no generan overflow global en 390x844, 768 px, notebook ni 1440x900.
 

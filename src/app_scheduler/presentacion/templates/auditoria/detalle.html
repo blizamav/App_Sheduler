@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Detalle de auditoria | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/auditoria-papelera.css') }}">{% endblock %}
+{% block contenido %}
+<header class="encabezado-pagina"><div><p class="eyebrow">Auditoria #{{ registro.id_auditoria }}</p><h1>{{ registro.accion }}</h1><p class="texto-secundario">{{ registro.fecha_evento }} · {{ registro.usuario }}</p></div><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('auditoria.listado') }}">Volver</a></header>
+<section class="auditoria-detalle-grid">
+  <article class="seccion-formulario auditoria-meta"><div class="seccion-titulo"><h2>Contexto del evento</h2><p>Datos canonicos de la accion registrada.</p></div>
+    <dl class="lista-definicion">
+      <div><dt>Resultado</dt><dd><span class="badge {{ 'error' if registro.resultado == 'ERROR' else ('advertencia' if registro.resultado == 'BLOQUEADO' else 'activo') }}">{{ registro.resultado or 'OK' }}</span></dd></div>
+      <div><dt>Entidad</dt><dd>{{ registro.entidad }}{% if registro.id_entidad %} · ID {{ registro.id_entidad }}{% endif %}</dd></div>
+      <div><dt>Nombre</dt><dd>{{ registro.nombre_entidad or '-' }}</dd></div>
+      <div><dt>Modulo</dt><dd>{{ registro.modulo or '-' }}</dd></div>
+      <div><dt>Origen</dt><dd>{{ registro.metodo_http or '-' }} {{ registro.ruta or '' }}</dd></div>
+      <div><dt>IP</dt><dd>{{ registro.ip_origen or '-' }}</dd></div>
+    </dl>
+  </article>
+  <article class="seccion-formulario auditoria-resumen"><div class="seccion-titulo"><h2>Descripcion</h2><p>Resumen funcional del evento.</p></div><p>{{ registro.descripcion or 'Sin descripcion.' }}</p><small class="texto-secundario">User-agent: {{ registro.user_agent or '-' }}</small></article>
+</section>
+<section class="auditoria-valores-grid">
+  <article class="seccion-formulario"><div class="seccion-titulo"><h2>Antes</h2><p>Estado previo registrado.</p></div><pre class="auditoria-json"><code>{{ valores_antes }}</code></pre></article>
+  <article class="seccion-formulario"><div class="seccion-titulo"><h2>Despues</h2><p>Estado posterior registrado.</p></div><pre class="auditoria-json"><code>{{ valores_despues }}</code></pre></article>
+</section>
+{% endblock %}

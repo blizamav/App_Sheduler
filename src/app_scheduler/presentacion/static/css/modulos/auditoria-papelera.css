@@ -1,0 +1,218 @@
+.control-encabezado {
+    align-items: center;
+}
+
+.auditoria-filtros {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.papelera-filtros {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.auditoria-tabla {
+    max-height: min(64vh, 720px);
+    overflow: auto;
+}
+
+.auditoria-tabla thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.auditoria-descripcion {
+    min-width: 240px;
+    max-width: 440px;
+}
+
+.texto-nowrap {
+    white-space: nowrap;
+}
+
+.auditoria-detalle-grid,
+.auditoria-valores-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-4);
+    margin-bottom: var(--espacio-4);
+}
+
+.lista-definicion {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-3);
+    margin: 0;
+}
+
+.lista-definicion div {
+    min-width: 0;
+}
+
+.lista-definicion dt {
+    color: var(--color-texto-suave);
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.lista-definicion dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.auditoria-json {
+    max-height: 420px;
+    margin: 0;
+    overflow: auto;
+    padding: var(--espacio-4);
+    color: #dce8f4;
+    border-radius: var(--radio-md);
+    background: #10273c;
+    font-size: .8rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.papelera-aviso {
+    margin-bottom: var(--espacio-5);
+    border-color: #edcf8d;
+}
+
+.papelera-listado {
+    display: grid;
+    gap: var(--espacio-3);
+}
+
+.papelera-item {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.2fr) minmax(360px, 2fr) auto;
+    align-items: center;
+    gap: var(--espacio-4);
+    padding: var(--espacio-4);
+    border: 1px solid var(--color-borde);
+    border-left: 4px solid #d89b27;
+    border-radius: var(--radio-md);
+    background: var(--color-superficie);
+    box-shadow: var(--sombra-suave);
+}
+
+.papelera-identidad {
+    display: grid;
+    min-width: 0;
+    gap: var(--espacio-2);
+}
+
+.papelera-identidad h2 {
+    margin: 0;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.papelera-identidad p,
+.papelera-bloqueo {
+    margin: 3px 0 0;
+    color: var(--color-texto-suave);
+    font-size: .82rem;
+}
+
+.papelera-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-3);
+    margin: 0;
+}
+
+.papelera-meta dt {
+    color: var(--color-texto-suave);
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.papelera-meta dd {
+    margin: 2px 0 0;
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+}
+
+.papelera-capacidades,
+.papelera-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--espacio-2);
+}
+
+.papelera-bloqueo {
+    grid-column: 2 / -1;
+    padding: var(--espacio-2) var(--espacio-3);
+    border-radius: var(--radio-sm);
+    color: #7a4605;
+    background: #fff4dc;
+}
+
+.papelera-acciones {
+    grid-column: 3;
+}
+
+.papelera-acciones form {
+    margin: 0;
+}
+
+.papelera-vacia {
+    border: 1px dashed var(--color-borde);
+    border-radius: var(--radio-md);
+    background: var(--color-superficie);
+}
+
+@media (max-width: 1180px) {
+    .auditoria-filtros,
+    .papelera-filtros {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .papelera-item {
+        grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr);
+    }
+
+    .papelera-capacidades,
+    .papelera-acciones {
+        grid-column: auto;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .auditoria-filtros,
+    .papelera-filtros,
+    .auditoria-detalle-grid,
+    .auditoria-valores-grid,
+    .papelera-item,
+    .lista-definicion,
+    .papelera-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .papelera-bloqueo,
+    .papelera-acciones {
+        grid-column: 1;
+    }
+
+    .papelera-acciones {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .papelera-acciones .btn,
+    .papelera-acciones form {
+        width: 100%;
+    }
+}
+
+@media (max-width: 991.98px) and (orientation: landscape) {
+    .auditoria-filtros,
+    .papelera-filtros {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

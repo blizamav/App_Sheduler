@@ -780,6 +780,25 @@ Hito 2 establece estas reglas para todos los repositorios nuevos:
 
 Los tests usan fakes y lectura estatica de DDL; no consultan ni modifican QA.
 
+## Auditoria y Papelera en la reconstruccion
+
+Hito 9 separa lectura de auditoria (`AUDITORIA_VER` y
+`AUDITORIA_DETALLE`) de las acciones de Papelera. Ver Papelera, restaurar y
+eliminar permanentemente usan permisos distintos; el retiro reutiliza el
+permiso funcional real de cada entidad. No se hardcodean roles.
+
+Toda mutacion es POST con CSRF, vuelve a cargar entidad/ID y usa una allowlist
+de tablas. El request no puede asignar `eliminado_operativo`, rutas, actor o
+estado interno. Auditoria no tiene endpoints de escritura o borrado en su UI.
+
+La eliminacion permanente nunca borra auditoria, ejecuciones, logs ni
+evidencias. Tareas, scripts y versiones con ejecuciones historicas quedan
+bloqueados; nunca se nulifican `ejecuciones.id_script` o `id_version` para
+forzar un DELETE. Para recursos con archivo se validan canonical path y
+symlinks contra roots configuradas; un rename temporal permite compensar fallos
+SQL. No se audita contenido `.py`, `.env`, paths ni secretos. Detalle en
+`docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md`.
+
 La reconciliacion de auditoria confirma que las seis columnas legacy de QA son aliases reemplazados. El contrato limpio usa solo `fecha_evento`, `entidad`, `id_entidad`, `valores_antes`, `valores_despues` e `ip_origen`; no se conserva doble escritura en el runtime reconstruido.
 
 ## Recomendaciones

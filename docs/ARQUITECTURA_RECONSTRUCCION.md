@@ -2,7 +2,27 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-8 estan cerrados en el runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-9 estan cerrados en el
+runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+
+## Implementacion Hito 9
+
+Auditoria conserva una superficie estrictamente read-only sobre el repositorio
+canonico/legacy existente. Papelera agrega un caso de uso central, entidad
+allowlist y una UoW comun para estado, auditoria y preservacion historica.
+
+```text
+GET Auditoria -> servicio de consulta -> repositorio paginado -> SQL canonico/legacy
+POST Papelera -> permiso + CSRF -> lock de fila -> dependencias -> estado/auditoria -> commit
+POST Purga -> validar ausencia de historia -> cuarentena FS -> DELETE operativo -> commit -> cleanup
+```
+
+La purga se bloquea si tarea, script o version conserva ejecuciones, por lo que
+`ejecuciones.id_script` e `id_version` no se nulifican ni reinterpretan. Tampoco
+elimina ejecuciones, logs, evidencias, eventos ni auditoria. El
+filesystem usa el almacen confinado de Hito 5 y compensacion por rename. No se
+agregan DDL, repositorios paralelos ni transacciones ocultas. El contrato
+completo esta en `docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md`.
 
 ## Implementacion Hito 8
 
@@ -19,7 +39,8 @@ Las consultas de logs son parametrizadas, paginadas y con orden fijo en
 allowlist. La configuracion scheduler acepta solo cinco campos tipados y audita
 antes/despues en la misma UoW. La evidencia se valida con AST y lectura confinada
 del `.py`; nunca se importa, ejecuta ni evalua el script. No se agregaron tablas,
-jobs destructivos, Graph, Papelera, Factory Reset reconstruido ni entrypoints.
+jobs destructivos, Graph, Factory Reset reconstruido ni entrypoints. Papelera
+se incorpora posteriormente en Hito 9 sin cambiar este alcance.
 
 ## Implementacion Hito 7
 
