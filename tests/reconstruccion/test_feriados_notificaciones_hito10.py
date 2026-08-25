@@ -369,7 +369,7 @@ def test_config_graph_preserva_identificadores_ocultos_si_no_se_reemplazan(confi
 class EstadoNotificaciones:
     def __init__(self, config=None):
         self.config = config or ConfiguracionNotificacionTarea(
-            None, 1, False, "STDOUT_V1", None, True, True, False, True, True, ()
+            None, 1, False, False, "STDOUT_V1", None, True, True, False, True, True, ()
         )
         self.auditorias = []; self.commits = 0; self.destinatarios = (); self.reservas = []
         self.finalizaciones = []; self.logs = []; self.envios = set()
@@ -401,6 +401,11 @@ class EvidenciasCompatibles:
     def obtener_para_tarea(self, _): return {"soporte": {"compatible": True, "errores": []}}
 
 
+class EvidenciasNoImplementadas:
+    def obtener_para_tarea(self, _):
+        return {"soporte": {"compatible": False, "errores": ["No implementada."]}}
+
+
 def test_configuracion_notificaciones_guarda_destinatarios_y_audita_atomico():
     estado = EstadoNotificaciones(); actor = identidad({"TAREAS_EDITAR"})
     servicio = ServicioNotificacionesTarea(
@@ -408,7 +413,7 @@ def test_configuracion_notificaciones_guarda_destinatarios_y_audita_atomico():
         repositorio=RepoNotificacionesEstado, repositorio_tareas=RepoTareaEstado,
         repositorio_auditoria=RepoAuditoriaEstado,
     )
-    servicio.guardar(1, {"enviar_evidencia": "1", "alerta_error_activa": "1",
+    servicio.guardar(1, {"notificar_exito_activa": "1", "enviar_evidencia": "1", "alerta_error_activa": "1",
         "usar_alerta_global": "1", "usar_asunto_sugerido_script": "1",
         "adjuntar_archivos_declarados": "1", "evidencia_to": "cliente@example.cl",
         "alerta_cc": "ti@example.cl"}, actor, ContextoAuditoria())
@@ -425,7 +430,20 @@ def test_configuracion_notificaciones_exige_to_y_script_compatible():
         repositorio_auditoria=RepoAuditoriaEstado,
     )
     with pytest.raises(ErrorValidacion, match="destinatario TO"):
-        servicio.guardar(1, {"enviar_evidencia": "1"}, actor, ContextoAuditoria())
+        servicio.guardar(1, {"notificar_exito_activa": "1", "enviar_evidencia": "1"}, actor, ContextoAuditoria())
+
+
+def test_configuracion_exito_sin_evidencia_no_exige_script_compatible():
+    estado = EstadoNotificaciones(); actor = identidad({"TAREAS_EDITAR"})
+    servicio = ServicioNotificacionesTarea(
+        ProveedorEstado(estado), EvidenciasNoImplementadas(), fabrica_uow=UowEstado,
+        repositorio=RepoNotificacionesEstado, repositorio_tareas=RepoTareaEstado,
+        repositorio_auditoria=RepoAuditoriaEstado,
+    )
+    servicio.guardar(1, {"notificar_exito_activa": "1",
+        "evidencia_to": "cliente@example.cl"}, actor, ContextoAuditoria())
+    assert estado.config.notificar_exito_activa
+    assert not estado.config.enviar_evidencia
 
 
 class GraphConfigFake:
@@ -456,7 +474,7 @@ def estado_despacho(estado_ejecucion="EXITOSA", estado_evidencia="VALIDADA"):
     destinatario = DestinatarioNotificacion(1, "EVIDENCIA", "TO", "cliente@example.cl", None)
     alerta = DestinatarioNotificacion(2, "ALERTA", "TO", "ti@example.cl", None)
     estado = EstadoNotificaciones(ConfiguracionNotificacionTarea(
-        3, 1, True, "STDOUT_V1", None, True, True, False, True, True,
+        3, 1, True, True, "STDOUT_V1", None, True, True, False, True, True,
         (destinatario, alerta),
     ))
     estado.destinatarios = (destinatario, alerta)
@@ -486,7 +504,27 @@ def test_despacho_evidencia_exitoso_es_idempotente_y_trazable():
     assert servicio.procesar(9, evidencia) == "ENVIADO"
     assert servicio.procesar(9, evidencia) == "OMITIDO"
     assert len(graph.mensajes) == 1 and estado.finalizaciones[0][1] == "ENVIADO"
+    assert estado.reservas[0][0] == "NOTIFICACION_EXITOSA"
     assert any(log["accion"] == "GRAPH_ENVIO_OK" for log in estado.logs)
+
+
+def test_despacho_exito_sin_evidencia_envia_notificacion_estandar():
+    estado = estado_despacho(estado_evidencia=None)
+    estado.config = replace(estado.config, enviar_evidencia=False)
+    graph = GraphEnvioFake()
+    assert servicio_despacho_estado(estado, graph).procesar(9, None) == "ENVIADO"
+    assert estado.reservas[0][0] == "NOTIFICACION_EXITOSA"
+    assert estado.reservas[0][1] == "Ejecucion exitosa | Proceso"
+    assert "Evidencia del proceso" not in graph.mensajes[0]["body"]["content"]
+
+
+def test_despacho_evidencia_solicitada_no_emitida_no_bloquea_exito():
+    estado = estado_despacho(estado_evidencia="NO_EMITIDA")
+    graph = GraphEnvioFake()
+    assert servicio_despacho_estado(estado, graph).procesar(9, None) == "ENVIADO"
+    assert estado.reservas[0][0] == "NOTIFICACION_EXITOSA"
+    assert any(log["accion"] == "EVIDENCIA_OMITIDA" for log in estado.logs)
+    assert estado.finalizaciones[0][1] == "ENVIADO"
 
 
 def test_despacho_graph_fallido_no_cambia_estado_ejecucion_y_no_reintenta():

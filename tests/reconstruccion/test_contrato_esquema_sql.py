@@ -108,7 +108,7 @@ def test_bootstrap_declara_exactamente_las_33_tablas_vigentes():
 
     assert set(tablas) == TABLAS_ESPERADAS
     assert len(tablas) == 33
-    assert sum(len(columnas) for columnas in tablas.values()) == 456
+    assert sum(len(columnas) for columnas in tablas.values()) == 457
 
 
 def test_columnas_consumidas_existen_en_ddl_vigente():
@@ -156,8 +156,28 @@ def test_validacion_100_conserva_conteos_del_contrato_publicado():
         RAIZ / "database/bootstrap/100_validacion_bootstrap_actual.sql"
     ).read_text(encoding="utf-8-sig")
 
-    for cantidad in (33, 456, 25, 38, 117, 119):
+    for cantidad in (33, 457, 25, 39, 118, 120):
         assert f"<> {cantidad}" in validacion
+
+
+def test_ajuste_notificaciones_separa_exito_y_evidencia_sin_romper_legacy():
+    _, ddl = _esquema()
+    migracion = (
+        RAIZ / "database/migrations/022_separar_notificacion_estado_evidencia.sql"
+    ).read_text(encoding="utf-8-sig")
+
+    assert re.search(
+        r"notificar_exito_activa\s+bit\s+NOT NULL.*?DEFAULT 0",
+        ddl,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    assert "enviar_evidencia = 0 OR notificar_exito_activa = 1" in ddl
+    for tipo in ("NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE", "ALERTA_INTERNA"):
+        assert tipo in ddl and tipo in migracion
+    assert "WHERE enviar_evidencia = 1" in migracion
+    assert "SET notificar_exito_activa = 1" in migracion
+    assert "SET alerta_error_activa" not in migracion
+    assert "DELETE FROM dbo.notificaciones" not in migracion
 
 
 def test_versiones_y_ejecuciones_conservan_contratos_de_trazabilidad():

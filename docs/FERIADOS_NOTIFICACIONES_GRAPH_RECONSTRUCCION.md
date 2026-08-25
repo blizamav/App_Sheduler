@@ -1,7 +1,8 @@
 # Hito 10: feriados, notificaciones y Microsoft Graph
 
-Estado: **CERRADO**. El contrato fue implementado y validado en el runtime
-aislado sin modificar el esquema SQL ni habilitar envios reales.
+Estado: **Hito 10 CERRADO; ajuste contractual posterior LISTO PARA REVISION**.
+No se habilitaron envios reales. La migracion `022` esta preparada y no fue
+ejecutada sobre QA.
 
 ## Matriz contract-first
 
@@ -10,13 +11,13 @@ aislado sin modificar el esquema SQL ni habilitar envios reales.
 | Calendario local | `feriados` y `reglas_feriados_irrenunciables` | CRUD y reglas locales | Scheduler consume SQL local | El scheduler ya consulta `feriados` | Mantener SQL como unica fuente operativa del scheduler |
 | Mantenedor feriados | Campos fecha, nombre, tipo, pais, irrenunciable, origen, activo y trazabilidad | Listar, crear, editar, estado y borrado manual | Permisos `FERIADOS_*` | Sin UI reconstruida | Reconstruir CRUD autorizado, paginado y auditado |
 | Sincronizacion Nager.Date | `origen=API_NAGER`; unicidad activa fecha/pais | Preview y aplicacion manual | Manual preserva prioridad | No reconstruida | Cliente central con endpoint fijo oficial, timeout y TLS; sin cron automatico |
-| Configuracion por tarea | `notificaciones_config_tarea` | Configuracion por tarea | Evidencia stdout V1 | Captura tecnica parcial | Completar asunto, alertas y destinatarios sin duplicar fuente |
+| Configuracion por tarea | `notificaciones_config_tarea` | Configuracion por tarea | Exito, error y Evidencia stdout V1 | Ajuste contractual preparado | `notificar_exito_activa`, `alerta_error_activa` y `enviar_evidencia` son decisiones distintas |
 | Destinatarios | `notificaciones_destinatarios`, tipos `EVIDENCIA/ALERTA`, canales `TO/CC/BCC` | Administracion por tarea | Validacion y no duplicados | No reconstruidos | Normalizar, validar y reemplazar atomica y auditadamente |
 | Evidencia | `evidencias_ejecucion`, una por ejecucion, solo metadata | Captura stdout | JSON no persiste completo | Captura y metadata operativas | Conservar JSON solo en memoria para componer el correo |
 | Trazabilidad email | `notificaciones_envios` | Estados de envio | Separada del estado de ejecucion | No consumida | Reservar `PENDIENTE`, enviar fuera de transaccion y cerrar `ENVIADO/FALLIDO/OMITIDO` |
 | Graph global | `configuracion_mail_graph`, clave unica `MAIL_GRAPH` | Client credentials y `sendMail` | Secret solo ENV | Variables `GRAPH_*` tipadas | SQL administra identificadores no secretos; ENV conserva kill switch y secret |
-| Correo evidencia | `EVIDENCIA_CLIENTE` | Ejecucion exitosa + evidencia valida | Evento respaldado | No implementado | Enviar tras confirmar resultado de ejecucion |
-| Alerta interna | `ALERTA_INTERNA` | Error de proceso/evidencia | Evento respaldado | No implementado | Alertar por ejecucion `ERROR` o evidencia requerida no valida |
+| Correo de exito | `NOTIFICACION_EXITOSA`; `EVIDENCIA_CLIENTE` legacy | Ejecucion exitosa | Contrato evolucionado | Implementado en ajuste | Enviar correo estandar; Evidencia valida es contenido opcional |
+| Alerta interna | `ALERTA_INTERNA` | Error de proceso | Evento respaldado | Implementado | Notificar ejecucion `ERROR` sin depender de Evidencia |
 | Reintentos | Columnas `intento`, `es_reintento`, `id_envio_origen`; sin cola durable completa | Sin politica robusta | No duplicar correo | No implementado | Sin retry automatico en Hito 10; politica at-most-once mediante reserva |
 | Adjuntos | Declarados en JSON, no persistidos como paths separados | Adjuntos simples | Solo archivos autorizados | Valida obligatorio/existencia | Resolver exclusivamente bajo carpeta de version; rechazar enlaces, `.env`, `.py` y exceso de tamano |
 
@@ -79,6 +80,17 @@ Todos los POST usan CSRF global. Los cambios humanos se escriben junto con `audi
 - El fallo Graph no altera el estado final de la ejecucion.
 - No hay correo de prueba ni envio real durante la suite automatica.
 
+## Contrato post-Hito 10
+
+* `notificar_exito_activa`: habilita el correo estandar al finalizar `EXITOSA`.
+* `alerta_error_activa`: habilita el correo estandar al finalizar `ERROR`.
+* `enviar_evidencia`: incorpora Evidencia 1.0 al correo de exito y exige que la
+  notificacion de exito este activa.
+* Los destinatarios SQL internos `EVIDENCIA` se conservan por compatibilidad y
+  se presentan en UI como destinatarios de notificacion de exito.
+* `NOTIFICACION_EXITOSA` es el tipo canonico nuevo. `EVIDENCIA_CLIENTE` y
+  `ALERTA_INTERNA` siguen permitidos para preservar historia.
+
 ## Deuda legitima
 
 - No existe sincronizacion automatica Nager respaldada por contrato.
@@ -91,8 +103,8 @@ Todos los POST usan CSRF global. Los cambios humanos se escriben junto con `audi
 La implementacion vive exclusivamente en `src/app_scheduler/`: modulo
 `feriados`, modulo `notificaciones`, repositorios dedicados, integracion
 post-ejecucion en el worker, vistas Bootstrap y observabilidad. Se reutilizaron
-las tablas, restricciones y permisos del bootstrap vigente; no se crearon
-migraciones ni seeds.
+las tablas y permisos vigentes. El ajuste posterior crea la migracion `022` y
+actualiza solo el bootstrap canonico necesario; no ejecuta SQL ni seeds.
 
 La suite automatica cubre CRUD, auditoria, preview/aplicacion, idempotencia,
 prioridad manual, errores Nager, destinatarios, configuracion efectiva, payload

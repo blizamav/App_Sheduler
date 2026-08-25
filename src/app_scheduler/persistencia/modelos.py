@@ -374,6 +374,7 @@ class ConfiguracionNotificacionTarea:
     id_config_notificacion: int | None
     id_tarea: int
     enviar_evidencia: bool
+    notificar_exito_activa: bool
     plantilla_evidencia: str
     asunto_personalizado: str | None
     usar_asunto_sugerido_script: bool

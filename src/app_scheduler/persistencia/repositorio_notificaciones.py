@@ -14,6 +14,7 @@ class RepositorioNotificaciones(RepositorioSQL):
     def obtener_configuracion_tarea(self, id_tarea: int) -> ConfiguracionNotificacionTarea:
         fila = self.ejecutar_uno(
             """SELECT TOP 1 id_config_notificacion, id_tarea, enviar_evidencia,
+notificar_exito_activa,
 plantilla_evidencia, asunto_personalizado, usar_asunto_sugerido_script,
 adjuntar_archivos_declarados, adjuntar_log_tecnico, alerta_error_activa,
 usar_alerta_global
@@ -23,14 +24,18 @@ WHERE id_tarea = ? AND activo = 1 ORDER BY id_config_notificacion""",
         )
         if fila is None:
             return ConfiguracionNotificacionTarea(
-                None, id_tarea, False, "STDOUT_V1", None, True, True, False,
-                True, True, (),
+                id_config_notificacion=None, id_tarea=id_tarea,
+                enviar_evidencia=False, notificar_exito_activa=False,
+                plantilla_evidencia="STDOUT_V1", asunto_personalizado=None,
+                usar_asunto_sugerido_script=True, adjuntar_archivos_declarados=True,
+                adjuntar_log_tecnico=False, alerta_error_activa=True,
+                usar_alerta_global=True, destinatarios=(),
             )
         destinatarios = self.listar_destinatarios(int(fila[0]))
         return ConfiguracionNotificacionTarea(
-            int(fila[0]), int(fila[1]), bool(fila[2]), str(fila[3] or "STDOUT_V1"),
-            fila[4], bool(fila[5]), bool(fila[6]), bool(fila[7]), bool(fila[8]),
-            bool(fila[9]), destinatarios,
+            int(fila[0]), int(fila[1]), bool(fila[2]), bool(fila[3]),
+            str(fila[4] or "STDOUT_V1"), fila[5], bool(fila[6]), bool(fila[7]),
+            bool(fila[8]), bool(fila[9]), bool(fila[10]), destinatarios,
         )
 
     def listar_destinatarios(self, id_configuracion: int):
@@ -47,7 +52,8 @@ ORDER BY tipo_destinatario, canal, email""",
 
     def guardar_configuracion_tarea(self, config: ConfiguracionNotificacionTarea) -> int:
         parametros = (
-            int(config.enviar_evidencia), config.asunto_personalizado,
+            int(config.enviar_evidencia), int(config.notificar_exito_activa),
+            config.asunto_personalizado,
             int(config.usar_asunto_sugerido_script),
             int(config.adjuntar_archivos_declarados), int(config.adjuntar_log_tecnico),
             int(config.alerta_error_activa), int(config.usar_alerta_global),
@@ -55,17 +61,17 @@ ORDER BY tipo_destinatario, canal, email""",
         if config.id_config_notificacion is None:
             fila = self.ejecutar_uno(
                 """INSERT INTO dbo.notificaciones_config_tarea
-(id_tarea, enviar_evidencia, plantilla_evidencia, asunto_personalizado,
+(id_tarea, enviar_evidencia, notificar_exito_activa, plantilla_evidencia, asunto_personalizado,
  usar_asunto_sugerido_script, adjuntar_archivos_declarados, adjuntar_log_tecnico,
  alerta_error_activa, usar_alerta_global, activo)
 OUTPUT INSERTED.id_config_notificacion
-VALUES (?, ?, 'STDOUT_V1', ?, ?, ?, ?, ?, ?, 1)""",
+VALUES (?, ?, ?, 'STDOUT_V1', ?, ?, ?, ?, ?, ?, 1)""",
                 (config.id_tarea, *parametros), operacion="crear_configuracion_notificacion",
             )
             return int(fila[0])
         if self.ejecutar(
             """UPDATE dbo.notificaciones_config_tarea
-SET enviar_evidencia = ?, plantilla_evidencia = 'STDOUT_V1',
+SET enviar_evidencia = ?, notificar_exito_activa = ?, plantilla_evidencia = 'STDOUT_V1',
     asunto_personalizado = ?, usar_asunto_sugerido_script = ?,
     adjuntar_archivos_declarados = ?, adjuntar_log_tecnico = ?,
     alerta_error_activa = ?, usar_alerta_global = ?, actualizado_en = SYSDATETIME()
@@ -135,11 +141,15 @@ WHERE id_config_mail = ? AND clave_configuracion = N'MAIL_GRAPH'""",
             """SELECT e.id_ejecucion, e.id_tarea, e.estado_ejecucion, e.codigo_salida,
 e.fecha_hora_inicio, e.fecha_hora_termino, e.duracion_segundos,
 COALESCE(e.nombre_tarea_snapshot, t.nombre_tarea, N'Tarea historica'),
-e.mensaje_error, v.ruta_fisica,
+e.mensaje_error, v.ruta_fisica, e.origen_ejecucion,
+COALESCE(e.nombre_script_snapshot, s.nombre_script, N'Script historico'),
+COALESCE(e.nombre_archivo_snapshot, v.nombre_archivo, N'Archivo historico'),
+COALESCE(e.version_script_snapshot, CONCAT(N'v', v.numero_version), N'Sin version'),
 ev.id_evidencia, ev.estado_evidencia, ev.titulo, ev.asunto_sugerido,
 ev.tipo_evidencia, ev.error_validacion
 FROM dbo.ejecuciones e
 LEFT JOIN dbo.tareas t ON t.id_tarea = e.id_tarea
+LEFT JOIN dbo.scripts s ON s.id_script = e.id_script
 LEFT JOIN dbo.scripts_versiones v ON v.id_version = e.id_version
 LEFT JOIN dbo.evidencias_ejecucion ev ON ev.id_ejecucion = e.id_ejecucion
 WHERE e.id_ejecucion = ?""",
@@ -149,7 +159,8 @@ WHERE e.id_ejecucion = ?""",
             return None
         claves = ("id_ejecucion", "id_tarea", "estado_ejecucion", "codigo_salida",
                   "fecha_inicio", "fecha_termino", "duracion_segundos", "nombre_tarea",
-                  "mensaje_error", "ruta_script_fisica", "id_evidencia",
+                  "mensaje_error", "ruta_script_fisica", "origen_ejecucion",
+                  "nombre_script", "nombre_archivo", "version_script", "id_evidencia",
                   "estado_evidencia", "titulo_evidencia", "asunto_sugerido",
                   "tipo_evidencia", "error_evidencia")
         return dict(zip(claves, fila))

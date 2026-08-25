@@ -1,0 +1,42 @@
+{% set config_notificacion = notificaciones.configuracion %}
+{% set validaciones_evidencia = evidencia.soporte.validaciones %}
+{% set evidencia_sin_implementar = not evidencia.soporte.compatible and not (validaciones_evidencia.declaracion or validaciones_evidencia.version or validaciones_evidencia.inicio or validaciones_evidencia.fin) %}
+<section class="seccion-formulario notificaciones-configuracion" id="notificaciones" aria-labelledby="titulo-notificaciones">
+  <div class="seccion-titulo evidencia-cabecera">
+    <div><p class="eyebrow">Notificaciones de ejecucion</p><h2 id="titulo-notificaciones">Entrega automatica</h2><p>Configura por separado los mensajes de exito, error y la Evidencia 1.0 opcional. Microsoft Graph es solo el transporte.</p></div>
+  </div>
+  <form class="formulario" method="post" action="{{ url_for('tareas.guardar_notificaciones', id_tarea=actual.id_tarea) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="notificaciones-grid">
+      <article class="notificacion-card notificacion-exito">
+        <header><div><span class="eyebrow">Exito</span><h3>Ejecucion completada</h3></div><span class="badge activo">ESTANDAR</span></header>
+        <label class="form-check form-switch switch-principal"><input class="form-check-input" type="checkbox" name="notificar_exito_activa" value="1" data-notificar-exito {% if config_notificacion.notificar_exito_activa %}checked{% endif %}><span class="form-check-label">Notificar cuando la ejecucion termine correctamente</span></label>
+        <div class="canales-notificacion">{% for canal, ayuda in (('to','Destinatarios principales'),('cc','Copia visible'),('bcc','Copia oculta')) %}<label class="campo"><span>{{ canal|upper }} · {{ ayuda }}</span><textarea class="form-control" name="evidencia_{{ canal }}" rows="2" placeholder="Una direccion por linea">{{ notificaciones.destinatarios['evidencia_' ~ canal] }}</textarea></label>{% endfor %}</div>
+      </article>
+      <article class="notificacion-card notificacion-error">
+        <header><div><span class="eyebrow">Error</span><h3>Falla de ejecucion</h3></div><span class="badge error">INTERNA</span></header>
+        <label class="form-check form-switch switch-principal"><input class="form-check-input" type="checkbox" name="alerta_error_activa" value="1" {% if config_notificacion.alerta_error_activa %}checked{% endif %}><span class="form-check-label">Notificar cuando la ejecucion termine con error</span></label>
+        <div class="canales-notificacion">{% for canal, ayuda in (('to','Destinatarios principales'),('cc','Copia visible'),('bcc','Copia oculta')) %}<label class="campo"><span>{{ canal|upper }} · {{ ayuda }}</span><textarea class="form-control" name="alerta_{{ canal }}" rows="2" placeholder="Una direccion por linea">{{ notificaciones.destinatarios['alerta_' ~ canal] }}</textarea></label>{% endfor %}</div>
+        <label class="form-check form-switch opcion-secundaria"><input class="form-check-input" type="checkbox" name="usar_alerta_global" value="1" {% if config_notificacion.usar_alerta_global %}checked{% endif %}><span class="form-check-label">Usar destinatarios globales si no existe TO propio</span></label>
+      </article>
+      <article class="notificacion-card notificacion-evidencia" id="evidencia">
+        <header><div><span class="eyebrow">Evidencia</span><h3>Contenido adicional 1.0</h3></div><span class="badge {{ 'activo' if evidencia.soporte.compatible else ('advertencia' if not evidencia_sin_implementar else 'info') }}">{{ 'COMPATIBLE' if evidencia.soporte.compatible else ('REQUIERE AJUSTE' if not evidencia_sin_implementar else 'NO IMPLEMENTADA') }}</span></header>
+        {% if not evidencia.soporte.compatible %}<div class="alert alert-info evidencia-aviso" role="status"><strong>Las notificaciones de exito y error pueden utilizarse normalmente.</strong><p>Para incluir Evidencia en el correo de exito, la version activa debe implementar Evidencia 1.0.</p></div>{% endif %}
+        <label class="form-check form-switch switch-principal"><input class="form-check-input" type="checkbox" name="enviar_evidencia" value="1" data-incluir-evidencia {% if config_notificacion.enviar_evidencia %}checked{% endif %} {% if not evidencia.soporte.compatible %}disabled{% endif %}><span class="form-check-label">Incluir Evidencia en la notificacion de exito</span></label>
+        <p class="texto-ayuda" data-evidencia-dependencia aria-live="polite">Requiere que la notificacion de exito este activa.</p>
+        <ul class="checklist-evidencia">{% for clave, etiqueta in (('declaracion','Soporte declarado'),('version','Version 1.0'),('inicio','Delimitador inicial'),('fin','Delimitador final')) %}<li class="{{ 'cumple' if validaciones_evidencia[clave] else 'pendiente' }}"><span aria-hidden="true">{{ '✓' if validaciones_evidencia[clave] else '○' }}</span>{{ etiqueta }}</li>{% endfor %}</ul>
+        <label class="form-check form-switch opcion-secundaria"><input class="form-check-input" type="checkbox" name="adjuntar_archivos_declarados" value="1" {% if config_notificacion.adjuntar_archivos_declarados %}checked{% endif %} {% if not evidencia.soporte.compatible %}disabled{% endif %}><span class="form-check-label">Adjuntar archivos seguros declarados</span></label>
+        <label class="form-check form-switch opcion-secundaria"><input class="form-check-input" type="checkbox" name="usar_asunto_sugerido_script" value="1" {% if config_notificacion.usar_asunto_sugerido_script %}checked{% endif %} {% if not evidencia.soporte.compatible %}disabled{% endif %}><span class="form-check-label">Usar asunto sugerido por la evidencia</span></label>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('scripts.detalle', id_tarea=actual.id_tarea) }}">Revisar script</a>
+      </article>
+    </div>
+    <div class="grid-formulario asunto-notificacion"><label class="campo campo-ancho"><span>Asunto personalizado de notificacion exitosa</span><input class="form-control" name="asunto_personalizado" maxlength="255" value="{{ config_notificacion.asunto_personalizado or '' }}"><small>Opcional. Se aplica tanto al correo estandar como al que incluye Evidencia.</small></label></div>
+    <div class="acciones-formulario"><a class="btn btn-outline-secondary" href="{{ url_for('programaciones.listado', id_tarea=actual.id_tarea) }}">Ir a programacion</a><button class="btn btn-primary" type="submit" data-confirmar data-titulo="Guardar notificaciones" data-mensaje="Se actualizaran reglas y destinatarios. Guardar no envia correos." data-texto-procesando="Guardando...">Guardar notificaciones</button></div>
+  </form>
+  <details class="ayuda-evidencia"><summary>Ver estructura requerida</summary><div><p>La validacion es estatica: APP Scheduler analiza el codigo sin ejecutarlo, importarlo ni evaluarlo.</p><pre><code>APP_SCHEDULER_EVIDENCIA = True
+APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"
+
+print("###APP_SCHEDULER_EVIDENCIA_INICIO###")
+print(json.dumps(evidencia_scheduler, ensure_ascii=False))
+print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre><p class="mb-0">Los delimitadores deben ser strings reales del codigo y emitirse durante la ejecucion; dejarlos solo como comentarios no es compatible.</p></div></details>
+</section>

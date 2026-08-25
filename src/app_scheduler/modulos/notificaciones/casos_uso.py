@@ -41,11 +41,17 @@ class ServicioNotificacionesTarea:
         asunto = str(formulario.get("asunto_personalizado") or "").strip() or None
         if asunto and len(asunto) > 255:
             raise ErrorValidacion("El asunto personalizado admite hasta 255 caracteres.")
+        notificar_exito = formulario.get("notificar_exito_activa") == "1"
         enviar = formulario.get("enviar_evidencia") == "1"
         alerta = formulario.get("alerta_error_activa") == "1"
         usar_global = formulario.get("usar_alerta_global") == "1"
-        if enviar and not any(d.tipo_destinatario == "EVIDENCIA" and d.canal == "TO" for d in destinatarios):
-            raise ErrorValidacion("Para enviar evidencia debes configurar al menos un destinatario TO.")
+        if enviar and not notificar_exito:
+            raise ErrorValidacion("Para incluir evidencia debes activar la notificacion de exito.")
+        if notificar_exito and not any(
+            d.tipo_destinatario == "EVIDENCIA" and d.canal == "TO"
+            for d in destinatarios
+        ):
+            raise ErrorValidacion("Para notificar ejecuciones exitosas configura al menos un destinatario TO.")
         if alerta and not usar_global and not any(
             d.tipo_destinatario == "ALERTA" and d.canal == "TO" for d in destinatarios
         ):
@@ -61,7 +67,8 @@ class ServicioNotificacionesTarea:
             repo = self.tipo_repositorio(conexion)
             actual = repo.obtener_configuracion_tarea(id_tarea)
             nueva = ConfiguracionNotificacionTarea(
-                actual.id_config_notificacion, id_tarea, enviar, "STDOUT_V1", asunto,
+                actual.id_config_notificacion, id_tarea, enviar, notificar_exito,
+                "STDOUT_V1", asunto,
                 formulario.get("usar_asunto_sugerido_script") == "1",
                 formulario.get("adjuntar_archivos_declarados") == "1",
                 False, alerta, usar_global, destinatarios,
@@ -115,6 +122,7 @@ class ServicioNotificacionesTarea:
     def _snapshot(config):
         return {
             "enviar_evidencia": config.enviar_evidencia,
+            "notificar_exito_activa": config.notificar_exito_activa,
             "asunto_personalizado": config.asunto_personalizado,
             "usar_asunto_sugerido_script": config.usar_asunto_sugerido_script,
             "adjuntar_archivos_declarados": config.adjuntar_archivos_declarados,

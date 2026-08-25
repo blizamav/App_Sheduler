@@ -18,6 +18,10 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
 * Hito 10 - CERRADO: feriados, sincronizacion manual, notificaciones y Microsoft Graph reconstruidos sin envio real.
 
+Ajuste contractual post-Hito 10 listo para revision: la notificacion estandar
+de exito y la Evidencia 1.0 quedaron separadas. La migracion incremental `022`
+esta preparada, pero no ha sido ejecutada sobre QA; Hito 11 no fue iniciado.
+
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
 consola, y corrige el flujo comun de confirmacion/Guardado. Tambien refuerza
@@ -33,7 +37,8 @@ Hito 8 incorpora en el runtime aislado `/operacion/estado`, `/logs/` y
 en la edicion de tareas. Hito 10 completa el mantenedor de feriados, la
 sincronizacion manual Nager.Date, destinatarios, configuracion Graph y el
 despacho posterior a ejecucion. Usa exclusivamente tablas y permisos existentes,
-no modifica el esquema y no realiza cutover.
+no realiza cutover. El ajuste post-Hito 10 evoluciona el contrato preparado a
+33 tablas y 457 columnas sin modificar aun `APP_SCHEDULER_QA`.
 
 Fuentes maestras de la reconstruccion:
 

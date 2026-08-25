@@ -137,6 +137,18 @@ real queda pendiente de configuracion autorizada para el Hito 14.
 
 ## Pendiente
 
+### Ajuste contractual post-Hito 10 - Notificacion de exito independiente
+
+Estado: LISTO PARA REVISION; migracion QA pendiente de autorizacion.
+
+Se preparo `notificar_exito_activa`, el tipo canonico
+`NOTIFICACION_EXITOSA`, el backfill de configuraciones con Evidencia y el CHECK
+que impide Evidencia sin exito. El despacho puede enviar exito o error a scripts
+sin Evidencia y agrega Evidencia solo cuando el bloque runtime es valido. La UI
+separa Exito, Error y Evidencia e incorpora el flujo Datos -> Script ->
+Evidencia -> Notificaciones -> Programacion. Hito 10 permanece cerrado y Hito
+11 no fue iniciado.
+
 ### Hito 11 - Factory Reset in-place
 
 Estado: NO INICIADO.

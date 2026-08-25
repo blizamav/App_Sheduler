@@ -1,0 +1,12 @@
+<nav class="flujo-tarea" aria-label="Progreso de configuracion de la tarea">
+  <ol>
+    {% for paso in flujo %}
+    <li class="flujo-paso estado-{{ paso.estado }}" {% if paso.estado == 'actual' %}aria-current="step"{% endif %}>
+      {% if paso.url %}<a href="{{ paso.url }}">{% else %}<span>{% endif %}
+        <b>{{ paso.numero }}</b>
+        <span class="flujo-paso-texto"><strong>{{ paso.nombre }}</strong><small>{{ paso.detalle }}</small></span>
+      {% if paso.url %}</a>{% else %}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</nav>

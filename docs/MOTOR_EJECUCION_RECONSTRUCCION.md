@@ -111,12 +111,15 @@ adjunto obligatorio declarado exista dentro de la carpeta de la version. Persist
 ausente o fuera del root controlado queda `ADJUNTO_FALTANTE`. El JSON completo
 permanece disponible solo durante el cierre del motor y no se guarda en BD.
 
-Hito 10 agrega el paso posterior al cierre: con una ejecucion `EXITOSA` y
-evidencia `VALIDADA` puede reservar `EVIDENCIA_CLIENTE`; con ejecucion `ERROR` o
-evidencia requerida invalida puede reservar `ALERTA_INTERNA`. El envio Graph
-ocurre fuera de la transaccion de ejecucion, se finaliza por separado y no
-cambia su estado ante fallos HTTP. Los adjuntos declarados se revalidan bajo el
-root de la version antes de codificarlos. No hay retry automatico.
+El ajuste contractual post-Hito 10 separa el evento principal de su contenido:
+una ejecucion `EXITOSA` con `notificar_exito_activa=1` reserva
+`NOTIFICACION_EXITOSA`, exista o no Evidencia. Si `enviar_evidencia=1` y el
+bloque runtime esta `VALIDADA`, se incorpora al mismo correo; si esta ausente o
+invalido se registra `EVIDENCIA_OMITIDA` y se conserva el correo estandar. Una
+ejecucion `ERROR` con `alerta_error_activa=1` reserva `ALERTA_INTERNA` sin
+depender de Evidencia. `EVIDENCIA_CLIENTE` permanece solo como valor historico.
+Graph ocurre fuera de la transaccion, no cambia el estado de ejecucion, no
+incluye stdout completo y mantiene at-most-once sin retry automatico.
 
 ## Rutas y permisos
 

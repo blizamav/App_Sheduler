@@ -26,6 +26,7 @@ BEGIN
         id_config_notificacion int IDENTITY(1,1) NOT NULL,
         id_tarea int NOT NULL,
         enviar_evidencia bit NOT NULL CONSTRAINT DF_notif_config_enviar_evidencia DEFAULT 0,
+        notificar_exito_activa bit NOT NULL CONSTRAINT DF_notif_config_notificar_exito DEFAULT 0,
         plantilla_evidencia nvarchar(100) NULL CONSTRAINT DF_notif_config_plantilla DEFAULT N'STDOUT_V1',
         asunto_personalizado nvarchar(255) NULL,
         usar_asunto_sugerido_script bit NOT NULL CONSTRAINT DF_notif_config_usar_asunto_script DEFAULT 1,
@@ -38,7 +39,8 @@ BEGIN
         actualizado_en datetime2(0) NULL,
         CONSTRAINT PK_notificaciones_config_tarea PRIMARY KEY (id_config_notificacion),
         CONSTRAINT FK_notif_config_tareas FOREIGN KEY (id_tarea) REFERENCES dbo.tareas(id_tarea),
-        CONSTRAINT CK_notif_config_plantilla CHECK (plantilla_evidencia IS NULL OR plantilla_evidencia IN (N'STDOUT_V1'))
+        CONSTRAINT CK_notif_config_plantilla CHECK (plantilla_evidencia IS NULL OR plantilla_evidencia IN (N'STDOUT_V1')),
+        CONSTRAINT CK_notif_config_evidencia_requiere_exito CHECK (enviar_evidencia = 0 OR notificar_exito_activa = 1)
     );
 END;
 GO
@@ -200,7 +202,7 @@ BEGIN
         CONSTRAINT FK_notif_envios_ejecuciones FOREIGN KEY (id_ejecucion) REFERENCES dbo.ejecuciones(id_ejecucion),
         CONSTRAINT FK_notif_envios_evidencias FOREIGN KEY (id_evidencia) REFERENCES dbo.evidencias_ejecucion(id_evidencia),
         CONSTRAINT FK_notif_envios_origen FOREIGN KEY (id_envio_origen) REFERENCES dbo.notificaciones_envios(id_envio),
-        CONSTRAINT CK_notif_envios_tipo CHECK (tipo_envio IN (N'EVIDENCIA_CLIENTE', N'ALERTA_INTERNA')),
+        CONSTRAINT CK_notif_envios_tipo CHECK (tipo_envio IN (N'NOTIFICACION_EXITOSA', N'EVIDENCIA_CLIENTE', N'ALERTA_INTERNA')),
         CONSTRAINT CK_notif_envios_estado CHECK (estado_envio IN (N'PENDIENTE', N'ENVIADO', N'FALLIDO', N'OMITIDO', N'NO_REQUERIDO')),
         CONSTRAINT CK_notif_envios_intento CHECK (intento >= 1),
         CONSTRAINT CK_notif_envios_graph_status CHECK (graph_status_code IS NULL OR graph_status_code BETWEEN 100 AND 599)
@@ -216,6 +218,19 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX IX_notif_envios_ejecucion_fecha
     ON dbo.notificaciones_envios(id_ejecucion, fecha_intento DESC);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_notif_envio_notificacion_exitosa'
+      AND object_id = OBJECT_ID(N'dbo.notificaciones_envios')
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_notif_envio_notificacion_exitosa
+    ON dbo.notificaciones_envios(id_ejecucion, tipo_envio)
+    WHERE tipo_envio = N'NOTIFICACION_EXITOSA'
+      AND estado_envio = N'ENVIADO';
 END;
 GO
 

@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from app_scheduler.compartido.auditoria import ContextoAuditoria
 from app_scheduler.compartido.autorizacion import identidad_actual, permiso_requerido
 from app_scheduler.compartido.errores import ErrorValidacion
+from app_scheduler.modulos.tareas.flujo import construir_flujo, flujo_nueva_tarea
 
 
 bp_tareas = Blueprint("tareas", __name__, url_prefix="/tareas")
@@ -13,6 +14,8 @@ bp_tareas = Blueprint("tareas", __name__, url_prefix="/tareas")
 def _servicio(): return current_app.extensions["servicio_tareas"]
 def _servicio_evidencias(): return current_app.extensions["servicio_evidencias"]
 def _servicio_notificaciones(): return current_app.extensions["servicio_notificaciones_tarea"]
+def _servicio_scripts(): return current_app.extensions["servicio_scripts"]
+def _servicio_programaciones(): return current_app.extensions["servicio_programaciones"]
 def _contexto(): return ContextoAuditoria(request.remote_addr, request.user_agent.string[:500] or None, request.path, request.method)
 def _entero(valor, default=None):
     try: return int(valor)
@@ -50,9 +53,11 @@ def nueva():
         except ErrorValidacion as error: flash(error.mensaje, "error")
         else:
             flash("Tarea creada correctamente.", "success")
-            return redirect(url_for("tareas.editar", id_tarea=identificador))
+            if request.form.get("accion") == "continuar":
+                return redirect(url_for("scripts.detalle", id_tarea=identificador))
+            return redirect(url_for("tareas.listado"))
     return render_template("tareas/formulario.html", modo="crear", datos=datos,
-                           catalogos=_servicio().catalogos())
+                           catalogos=_servicio().catalogos(), flujo=flujo_nueva_tarea())
 
 
 @bp_tareas.route("/<int:id_tarea>/editar", methods=["GET", "POST"])
@@ -72,11 +77,31 @@ def editar(id_tarea):
         except ErrorValidacion as error: flash(error.mensaje, "error")
         else:
             flash("Tarea actualizada correctamente.", "success")
-            return redirect(url_for("tareas.listado"))
+            return redirect(url_for("tareas.editar", id_tarea=id_tarea))
+    detalle_scripts = _servicio_scripts().detalle(id_tarea)
+    evidencia = _servicio_evidencias().obtener_para_tarea(id_tarea)
+    notificaciones = _servicio_notificaciones().obtener(id_tarea)
+    total_programaciones = _servicio_programaciones().listar(
+        pagina=1, por_pagina=1, id_tarea=id_tarea
+    ).total
+    flujo = list(construir_flujo(
+        detalle_scripts=detalle_scripts, evidencia=evidencia,
+        notificaciones=notificaciones, total_programaciones=total_programaciones,
+    ))
+    urls = (
+        url_for("tareas.editar", id_tarea=id_tarea),
+        url_for("scripts.detalle", id_tarea=id_tarea),
+        url_for("tareas.editar", id_tarea=id_tarea, _anchor="evidencia"),
+        url_for("tareas.editar", id_tarea=id_tarea, _anchor="notificaciones"),
+        url_for("programaciones.listado", id_tarea=id_tarea),
+    )
+    for paso, url in zip(flujo, urls):
+        paso["url"] = url
     return render_template("tareas/formulario.html", modo="editar", datos=datos,
                            actual=actual, catalogos=_servicio().catalogos(),
-                           evidencia=_servicio_evidencias().obtener_para_tarea(id_tarea),
-                           notificaciones=_servicio_notificaciones().obtener(id_tarea))
+                           evidencia=evidencia, notificaciones=notificaciones,
+                           flujo=flujo, detalle_scripts=detalle_scripts,
+                           total_programaciones=total_programaciones)
 
 
 @bp_tareas.post("/<int:id_tarea>/evidencia")

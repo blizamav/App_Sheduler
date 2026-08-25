@@ -1,1 +1,16 @@
-<!doctype html><html lang="es"><body style="font-family:Arial,sans-serif;color:#172033"><h1 style="font-size:20px;color:#a32626">Alerta interna APP Scheduler</h1><p>La tarea <strong>{{ ejecucion.nombre_tarea }}</strong> requiere revision.</p><dl><dt>Estado</dt><dd>{{ ejecucion.estado_ejecucion }}</dd><dt>Ejecucion</dt><dd>{{ ejecucion.id_ejecucion }}</dd>{% if ejecucion.mensaje_error %}<dt>Detalle controlado</dt><dd>{{ ejecucion.mensaje_error }}</dd>{% endif %}{% if ejecucion.error_evidencia %}<dt>Evidencia</dt><dd>{{ ejecucion.error_evidencia }}</dd>{% endif %}</dl><p style="color:#5d677a;font-size:12px">Revisa la consola interna para el diagnostico completo.</p></body></html>
+<!doctype html>
+<html lang="es">
+<body style="font-family:Arial,sans-serif;color:#172033">
+  <h1 style="font-size:20px;color:#a32626">Error de ejecucion</h1>
+  <p>La tarea <strong>{{ ejecucion.nombre_tarea }}</strong> termino con error y requiere revision.</p>
+  <dl>
+    <dt>Ejecucion</dt><dd>{{ ejecucion.id_ejecucion }}</dd>
+    <dt>Estado</dt><dd>{{ ejecucion.estado_ejecucion }}</dd>
+    {% if ejecucion.origen_ejecucion %}<dt>Origen</dt><dd>{{ ejecucion.origen_ejecucion }}</dd>{% endif %}
+    {% if ejecucion.nombre_script %}<dt>Script</dt><dd>{{ ejecucion.nombre_script }}</dd>{% endif %}
+    {% if ejecucion.version_script %}<dt>Version</dt><dd>{{ ejecucion.version_script }}</dd>{% endif %}
+    {% if ejecucion.mensaje_error %}<dt>Detalle controlado</dt><dd>{{ ejecucion.mensaje_error }}</dd>{% endif %}
+  </dl>
+  <p style="color:#5d677a;font-size:12px">Revisa la consola interna para el diagnostico completo. El correo no incluye stdout completo.</p>
+</body>
+</html>

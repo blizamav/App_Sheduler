@@ -510,3 +510,13 @@ La proyeccion excluye rutas fisicas, rutas relativas y contenido `.env`. Solo
 expone cantidad de versiones con entorno configurado. El detalle conserva la
 relacion `tarea 1:1 script logico` y muestra los slots v1, v2 y v3 en orden.
 Este ajuste forma parte del Hito 7 cerrado. Hito 8 no se inicia con su cierre.
+
+## Ajuste contractual de notificaciones post-Hito 10
+
+La arquitectura mantiene cuatro responsabilidades separadas: el motor confirma
+el estado de ejecucion, Evidencias captura contenido opcional desde stdout,
+Notificaciones decide el evento de negocio y Microsoft Graph lo transporta.
+`NOTIFICACION_EXITOSA` ya no depende de que exista Evidencia; una omision de
+Evidencia no cambia una ejecucion exitosa ni dispara una alerta de error. La
+migracion `022` y el bootstrap preparado expresan el invariante
+`enviar_evidencia = 0 OR notificar_exito_activa = 1`. Hito 11 no fue iniciado.

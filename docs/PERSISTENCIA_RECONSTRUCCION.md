@@ -6,8 +6,9 @@ Hito 2 construyo y cerro la persistencia funcional del runtime aislado
 `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y
 evidencia; Hito 8 agrega consultas operativas y configuracion tipada; Hito 9
 agrega lectura de auditoria y Papelera; Hito 10 consume las tablas existentes de
-feriados y notificaciones. Ninguno cambia el DDL ni sustituye `app/`, `run.py` o
-`scheduler_worker.py`.
+feriados y notificaciones. El ajuste contractual post-Hito 10 prepara la
+migracion incremental `022` y actualiza el bootstrap canonico; no se ha aplicado
+a QA ni sustituye `app/`, `run.py` o `scheduler_worker.py`.
 
 ## Persistencia Hito 10
 
@@ -84,11 +85,11 @@ El contrato se extrajo estaticamente, sin consultar QA, desde:
 4. `database/bootstrap/008_crear_configuracion_mail_graph.sql`.
 5. `database/bootstrap/100_validacion_bootstrap_actual.sql`.
 
-Contrato limpio vigente: 33 tablas `dbo`, 456 columnas, 25 FK, 38 CHECK, 117 DEFAULT y 119 indices. No existen vistas, procedures, funciones ni triggers propios en el bootstrap.
+Contrato limpio preparado: 33 tablas `dbo`, 457 columnas, 25 FK, 39 CHECK, 118 DEFAULT y 120 indices. No existen vistas, procedures, funciones ni triggers propios en el bootstrap. El delta respecto del contrato cerrado de Hito 10 es una columna `BIT NOT NULL`, su DEFAULT, el CHECK Evidencia/Exito y el indice filtrado de envios exitosos.
 
 ## Inventario tecnico de las 33 tablas
 
-La columna `Claves/reglas` resume UNIQUE, indices filtrados y CHECK relevantes. Las columnas enumeradas son las que definen el contrato funcional principal; el DDL conserva el detalle completo de las 456 columnas.
+La columna `Claves/reglas` resume UNIQUE, indices filtrados y CHECK relevantes. Las columnas enumeradas son las que definen el contrato funcional principal; el DDL preparado conserva el detalle completo de las 457 columnas.
 
 | Tabla | Proposito | PK | FK | Claves/reglas y columnas clave | Modulo consumidor |
 | --- | --- | --- | --- | --- | --- |

@@ -5,12 +5,14 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from app_scheduler.compartido.auditoria import ContextoAuditoria
 from app_scheduler.compartido.autorizacion import identidad_actual, permiso_requerido
 from app_scheduler.compartido.errores import ErrorValidacion
+from app_scheduler.modulos.tareas.flujo import construir_flujo
 
 
 bp_scripts = Blueprint("scripts", __name__)
 
 
 def _servicio(): return current_app.extensions["servicio_scripts"]
+def _servicio_evidencias(): return current_app.extensions["servicio_evidencias"]
 def _contexto(): return ContextoAuditoria(request.remote_addr, request.user_agent.string[:500] or None, request.path, request.method)
 def _entero(valor, default=None):
     try: return int(valor)
@@ -58,8 +60,22 @@ def detalle(id_tarea):
     try: datos = _servicio().detalle(id_tarea)
     except ErrorValidacion as error:
         flash(error.mensaje, "error"); return redirect(url_for("tareas.listado"))
+    evidencia = _servicio_evidencias().obtener_para_tarea(id_tarea)
+    flujo = list(construir_flujo(
+        detalle_scripts=datos, evidencia=evidencia,
+    ))
+    urls = (
+        url_for("tareas.listado"),
+        url_for("scripts.detalle", id_tarea=id_tarea),
+        None,
+        None,
+        url_for("programaciones.listado", id_tarea=id_tarea),
+    )
+    for paso, url in zip(flujo, urls):
+        if url: paso["url"] = url
     return render_template(
-        "scripts/detalle.html", origen_scripts=_origen_scripts(), **datos
+        "scripts/detalle.html", origen_scripts=_origen_scripts(),
+        evidencia=evidencia, flujo=flujo, **datos
     )
 
 

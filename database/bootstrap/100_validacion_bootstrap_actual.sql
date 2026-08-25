@@ -32,24 +32,24 @@ WHERE OBJECT_ID(N'dbo.' + e.nombre, N'U') IS NULL;
 IF (SELECT COUNT(*) FROM sys.tables t INNER JOIN sys.schemas s ON s.schema_id = t.schema_id WHERE s.name = N'dbo') <> 33
     INSERT INTO @errores VALUES (N'TABLAS', N'La base debe contener exactamente 33 tablas dbo.');
 
-IF (SELECT COUNT(*) FROM sys.columns c INNER JOIN sys.tables t ON t.object_id = c.object_id INNER JOIN sys.schemas s ON s.schema_id = t.schema_id WHERE s.name = N'dbo') <> 456
-    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 456 columnas dbo.');
+IF (SELECT COUNT(*) FROM sys.columns c INNER JOIN sys.tables t ON t.object_id = c.object_id INNER JOIN sys.schemas s ON s.schema_id = t.schema_id WHERE s.name = N'dbo') <> 457
+    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 457 columnas dbo.');
 
 IF (SELECT COUNT(*) FROM sys.foreign_keys WHERE is_ms_shipped = 0) <> 25
     INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 25 claves foraneas.');
 
-IF (SELECT COUNT(*) FROM sys.check_constraints WHERE is_ms_shipped = 0) <> 38
-    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 38 restricciones CHECK.');
+IF (SELECT COUNT(*) FROM sys.check_constraints WHERE is_ms_shipped = 0) <> 39
+    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 39 restricciones CHECK.');
 
-IF (SELECT COUNT(*) FROM sys.default_constraints) <> 117
-    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 117 restricciones DEFAULT.');
+IF (SELECT COUNT(*) FROM sys.default_constraints) <> 118
+    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 118 restricciones DEFAULT.');
 
-IF (SELECT COUNT(*) FROM sys.indexes i INNER JOIN sys.tables t ON t.object_id = i.object_id WHERE i.index_id > 0 AND t.is_ms_shipped = 0) <> 119
-    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 119 indices, incluyendo PK y UNIQUE.');
+IF (SELECT COUNT(*) FROM sys.indexes i INNER JOIN sys.tables t ON t.object_id = i.object_id WHERE i.index_id > 0 AND t.is_ms_shipped = 0) <> 120
+    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 120 indices, incluyendo PK y UNIQUE.');
 
 DECLARE @columnas_esperadas TABLE (tabla sysname PRIMARY KEY, cantidad int NOT NULL);
 INSERT INTO @columnas_esperadas VALUES
-    (N'notificaciones_config_tarea', 13),
+    (N'notificaciones_config_tarea', 14),
     (N'notificaciones_destinatarios', 8),
     (N'evidencias_ejecucion', 16),
     (N'notificaciones_envios', 18),
@@ -64,6 +64,7 @@ DECLARE @objetos_esperados TABLE (nombre sysname PRIMARY KEY);
 INSERT INTO @objetos_esperados (nombre)
 VALUES
     (N'PK_notificaciones_config_tarea'), (N'FK_notif_config_tareas'), (N'CK_notif_config_plantilla'),
+    (N'CK_notif_config_evidencia_requiere_exito'),
     (N'UX_notif_config_tarea_activa'), (N'IX_notif_config_tarea_activo'), (N'IX_notif_config_enviar_evidencia'),
     (N'PK_notificaciones_destinatarios'), (N'FK_notif_dest_config'), (N'CK_notif_dest_tipo'),
     (N'CK_notif_dest_canal'), (N'CK_notif_dest_email_basico'), (N'UX_notif_dest_activo'),
@@ -74,7 +75,8 @@ VALUES
     (N'CK_notif_envios_estado'), (N'CK_notif_envios_intento'), (N'CK_notif_envios_graph_status'),
     (N'IX_notif_envios_ejecucion_fecha'), (N'IX_notif_envios_evidencia_fecha'),
     (N'IX_notif_envios_tipo_estado_fecha'), (N'IX_notif_envios_origen'),
-    (N'UX_notif_envio_exitoso_cliente'), (N'PK_configuracion_mail_graph'),
+    (N'UX_notif_envio_exitoso_cliente'), (N'UX_notif_envio_notificacion_exitosa'),
+    (N'PK_configuracion_mail_graph'),
     (N'CK_config_mail_graph_clave'), (N'CK_config_mail_graph_secret_origen'),
     (N'CK_config_mail_graph_scope'), (N'CK_config_mail_graph_send_mail_user'),
     (N'UX_config_mail_graph_unica_activa'), (N'UX_config_mail_graph_clave'),

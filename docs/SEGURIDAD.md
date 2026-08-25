@@ -826,3 +826,16 @@ La reconciliacion de auditoria confirma que las seis columnas legacy de QA son a
 ## Recomendaciones
 
 Cambiar `APP_SECRET_KEY` y `PASSWORD_ADMIN_DEFECTO` antes de ejecutar en entornos compartidos.
+
+## Seguridad del ajuste de notificaciones post-Hito 10
+
+La configuracion conserva autorizacion backend `TAREAS_EDITAR`, CSRF y una
+allowlist de campos. El invariante Exito/Evidencia se valida en servicio y queda
+preparado como CHECK SQL. Los templates de correo usan autoescape y metadata
+sanitizada; no incluyen stdout completo, stack trace, rutas de entorno ni
+secretos. Graph sigue siendo el unico transporte, con endpoints fijos,
+credenciales ENV, reserva at-most-once y sin retry automatico.
+
+La migracion `022` no fue ejecutada sobre QA y no modifica las seis columnas
+legacy de auditoria. `database/release/`, `.env` y `.env.docker` permanecen
+intactos.

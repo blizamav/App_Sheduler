@@ -13,9 +13,15 @@
   <a class="btn btn-outline-secondary boton secundario" href="{{ url_for('scripts.listado') if origen_scripts else url_for('tareas.listado') }}">{{ 'Volver a scripts' if origen_scripts else 'Volver a tareas' }}</a>
   {% if script and identidad.tiene_permiso('SCRIPTS_ELIMINAR') %}<form method="post" action="{{ url_for('papelera.retirar', entidad='scripts', id_registro=script.id_script) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="motivo" value="Retiro operacional de script."><button class="btn btn-outline-danger boton peligro" type="submit" data-confirmar data-titulo="Enviar script a Papelera" data-mensaje="El script y todas sus versiones dejaran de estar disponibles para nuevas ejecuciones." data-texto-procesando="Retirando...">Enviar script a Papelera</button></form>{% endif %}
 </header>
+{% include 'tareas/_flujo.html' %}
 <section class="resumen-versiones">
   <article class="panel-operativo card"><span class="eyebrow">Script logico</span><strong>{{ nombre_script }}</strong>{% if script %}<span class="badge {{ 'activo' if script.activo else 'error' }}">{{ 'ACTIVO' if script.activo else 'INACTIVO' }}</span>{% endif %}<small>{{ versiones|length }} de 3 slots ocupados</small></article>
   <article class="panel-operativo card"><span class="eyebrow">Version activa</span><strong>{% set activas = versiones|selectattr('es_activa')|list %}{{ 'v' ~ activas[0].numero_version if activas else 'Sin version activa' }}</strong><small>La ejecucion automatica utiliza siempre la version activa.</small></article>
+</section>
+<section class="continuidad-script" aria-labelledby="continuidad-script-titulo">
+  <div><p class="eyebrow">Siguiente paso</p><h2 id="continuidad-script-titulo">Estado del proceso</h2></div>
+  <div class="estado-continuidad"><span><strong>Script</strong><small>{{ 'Ejecutable' if activas else 'Sin version activa' }}</small></span><span><strong>Evidencia</strong><small>{{ 'Compatible 1.0' if evidencia.soporte.compatible else ('Requiere ajuste' if evidencia.soporte.validaciones.declaracion or evidencia.soporte.validaciones.version or evidencia.soporte.validaciones.inicio or evidencia.soporte.validaciones.fin else 'No implementada') }}</small></span></div>
+  {% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="btn btn-primary" href="{{ url_for('tareas.editar', id_tarea=tarea.id_tarea, _anchor='notificaciones') }}">Continuar a Notificaciones</a>{% endif %}
 </section>
 {% if slots_libres and identidad.tiene_permiso('SCRIPTS_VERSIONAR') %}
 <form class="formulario carga-version needs-validation" method="post" enctype="multipart/form-data" action="{{ url_for('scripts.subir', id_tarea=tarea.id_tarea) }}" novalidate>

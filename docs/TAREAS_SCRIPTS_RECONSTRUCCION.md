@@ -7,6 +7,12 @@ Hito 6 agrega programaciones y reserva automatica sin alterar las reglas de
 scripts. Hito 7 ejecuta la version congelada con un motor unico; el runtime
 historico sigue activo y no existe cutover.
 
+El ajuste post-Hito 10 agrega un flujo guiado no transaccional: Datos, Script,
+Evidencia, Notificaciones y Programacion. `Guardar` crea la tarea y vuelve al
+listado; `Guardar y continuar` crea la misma tarea y abre su panel de Script.
+Una tarea puede existir sin script y un script sin Evidencia 1.0 sigue siendo
+ejecutable y apto para notificaciones estandar de exito o error.
+
 Para manuales se usa exclusivamente `scripts.id_version_activa`, como en el
 contrato historico. La version, ruta y snapshots se congelan al reservar. El
 motor valida nuevamente que la ruta fisica persista dentro del root autorizado,
@@ -80,6 +86,11 @@ archivo anterior y se retiran temporal/nuevo. Tras commit se elimina el respaldo
 | `.../<id_version>/env` | POST | `SCRIPTS_ENV_GESTIONAR` |
 | `.../<id_version>/env/quitar` | POST | `SCRIPTS_ENV_GESTIONAR` |
 | `.../<id_version>/descargar` | GET | `SCRIPTS_VER` |
+
+El detalle de script muestra el estado ejecutable de la version activa, el
+estado independiente de Evidencia (`Compatible 1.0`, `No implementada` o
+`Requiere ajuste`) y el acceso a Notificaciones. El stepper enlaza las cinco
+etapas sin introducir SPA ni una transaccion gigante.
 
 `SUPER_ADMIN` y `ADMIN` reciben todos estos permisos. `TI` recibe tareas
 operativas, carga/versionado/activacion/reemplazo y `.env`, pero bootstrap no le

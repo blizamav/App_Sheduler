@@ -386,11 +386,41 @@ class ScriptsWeb:
         self.cargas.append((id_tarea, nombre, contenido, observacion, actor_actual.usuario)); return 1
 
 
+class EvidenciasWeb:
+    def __init__(self, compatible=False): self.compatible = compatible
+    def obtener_para_tarea(self, _):
+        return {"soporte": {"compatible": self.compatible,
+                            "errores": [] if self.compatible else ["No implementada."],
+                            "validaciones": {"declaracion": self.compatible,
+                                             "version": self.compatible,
+                                             "inicio": self.compatible,
+                                             "fin": self.compatible}}}
+
+
+class NotificacionesWeb:
+    def obtener(self, _):
+        config = SimpleNamespace(id_config_notificacion=None, enviar_evidencia=False,
+                                 notificar_exito_activa=False, alerta_error_activa=False,
+                                 adjuntar_archivos_declarados=False,
+                                 usar_asunto_sugerido_script=False,
+                                 usar_alerta_global=True, asunto_personalizado=None)
+        vacios = {f"{tipo}_{canal}": "" for tipo in ("evidencia", "alerta")
+                  for canal in ("to", "cc", "bcc")}
+        return {"configuracion": config, "destinatarios": vacios}
+
+
+class ProgramacionesWeb:
+    def listar(self, **_): return Pagina((), 0, 1, 1)
+
+
 def app_web(configuracion, identidad):
     app = crear_aplicacion(configuracion, ajustes={"TESTING": True, "PROPAGATE_EXCEPTIONS": False})
     auth = AuthWeb(identidad); app.extensions["cargador_identidad"] = auth.cargar_identidad
     tareas = TareasWeb(); scripts = ScriptsWeb()
     app.extensions["servicio_tareas"] = tareas; app.extensions["servicio_scripts"] = scripts
+    app.extensions["servicio_evidencias"] = EvidenciasWeb()
+    app.extensions["servicio_notificaciones_tarea"] = NotificacionesWeb()
+    app.extensions["servicio_programaciones"] = ProgramacionesWeb()
     return app, tareas, scripts
 
 
@@ -425,6 +455,42 @@ def test_formulario_tarea_solo_mapea_allowlist(configuracion):
     assert respuesta.status_code == 302
     assert set(tareas.creaciones[0][0]) == {"nombre_tarea", "descripcion", "observacion_tecnica",
         "id_cliente", "id_categoria", "id_tipo", "estado_tarea"}
+
+
+def test_nueva_tarea_guardar_y_continuar_dirige_al_script(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_CREAR"}))
+    app, _, _ = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    token = token_csrf(cliente)
+    respuesta = cliente.post("/tareas/nueva", data={"csrf_token": token,
+        "nombre_tarea": "Proceso", "id_cliente": "2", "id_categoria": "3",
+        "id_tipo": "4", "estado_tarea": "ACTIVA", "accion": "continuar"})
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/tareas/1/scripts")
+
+
+def test_edicion_separa_exito_error_y_evidencia_no_implementada(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    respuesta = cliente.get("/tareas/1/editar")
+    assert respuesta.status_code == 200
+    assert b"Notificar cuando la ejecucion termine correctamente" in respuesta.data
+    assert b"Notificar cuando la ejecucion termine con error" in respuesta.data
+    assert b"NO IMPLEMENTADA" in respuesta.data
+    assert b"Las notificaciones de exito y error pueden utilizarse normalmente" in respuesta.data
+    assert b'name="notificar_exito_activa"' in respuesta.data
+    assert b'name="enviar_evidencia"' in respuesta.data and b"disabled" in respuesta.data
+
+
+def test_edicion_muestra_evidencia_compatible_y_stepper(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, identidad)
+    app.extensions["servicio_evidencias"] = EvidenciasWeb(compatible=True)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    respuesta = cliente.get("/tareas/1/editar")
+    assert respuesta.status_code == 200
+    assert b"COMPATIBLE" in respuesta.data
+    for paso in (b"Datos", b"Script", b"Evidencia", b"Notificaciones", b"Programacion"):
+        assert paso in respuesta.data
 
 
 def test_panel_versiones_explica_maximo_y_bloqueo(configuracion):

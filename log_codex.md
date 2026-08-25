@@ -11,6 +11,38 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-25
 
+## 2026-08-25 - Ajuste contractual post-Hito 10 / Exito distinto de Evidencia
+
+* Fase: Ajuste posterior al Hito 10 listo para revision; Hito 10 permanece
+  cerrado y Hito 11 no fue iniciado.
+* Migracion: Se creo
+  `database/migrations/022_separar_notificacion_estado_evidencia.sql`, sin
+  ejecutarla. Agrega `notificar_exito_activa BIT NOT NULL DEFAULT 0`, realiza
+  backfill donde `enviar_evidencia=1`, refuerza el invariante y habilita
+  `NOTIFICACION_EXITOSA` preservando tipos legacy.
+* Bootstrap: Se ajustaron exclusivamente `007` y `100`; contrato preparado de
+  33 tablas/457 columnas, 25 FK, 39 CHECK, 118 DEFAULT y 120 indices.
+* Dominio: Exito y error son notificaciones estandar independientes. Evidencia
+  es complemento opcional del exito. Si falta o es invalida en runtime, se
+  registra `EVIDENCIA_OMITIDA` y el correo estandar puede continuar.
+* UI/UX: Stepper de cinco pasos, alta con `Guardar`/`Guardar y continuar`,
+  estado Script/Evidencia y cards separadas para Exito, Error y Evidencia.
+* Seguridad: Graph sigue siendo transporte unico, sin retry; reserva
+  at-most-once, autoescape, sanitizacion, adjuntos confinados y sin stdout
+  completo en correo.
+* Restricciones: No se modificaron QA, `.env`, `.env.docker`, runtime historico,
+  `database/release/` ni `database/factory_reset/`; no hubo SQL ni Graph real.
+* Archivo ajeno: `scripts_pruebas/prueba_qa.py` permanece local, sin modificar
+  y fuera del staging.
+* Validacion final: 287 pruebas de reconstruccion y 313 pruebas totales
+  aprobadas, con 1 omitida por la restriccion conocida de symlinks en Windows.
+  `compileall`, Jinja, JavaScript, `web --check`, `worker --check`,
+  `docker compose config --quiet`, build Docker de `web`/`worker` y
+  `git diff --check` quedaron correctos.
+* Validacion visual: formulario y detalle de scripts revisados en escritorio,
+  movil vertical y movil horizontal, sin desbordamiento global; el stepper
+  conserva desplazamiento horizontal local cuando el ancho es reducido.
+
 ## 2026-08-25 - Hito 10 / Feriados, notificaciones y Microsoft Graph
 
 * Fase: CERRADA en el runtime aislado; no se declara envio Graph real, QA

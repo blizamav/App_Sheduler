@@ -149,3 +149,17 @@ No se declara cumplimiento formal de OWASP. Se mantienen controles verificables:
 Cada hito nuevo debe entregar funcionalidad, seguridad, pruebas, UI/UX,
 responsive e integracion visual. Hito 12 queda reservado para consistencia y
 accesibilidad finales, no para reparar interfaces temporales acumuladas.
+
+## Flujo guiado y notificaciones post-Hito 10
+
+Tareas usa un stepper Bootstrap ligero de cinco pasos: Datos, Script,
+Evidencia, Notificaciones y Programacion. Es navegacion server-rendered, no una
+SPA. En alta se ofrecen `Guardar` y `Guardar y continuar`; la segunda opcion
+abre Script despues de persistir la tarea.
+
+La edicion diferencia tres cards: Exito, Error y Evidencia. Los dos primeros
+switches son independientes del soporte Evidencia. La card Evidencia informa
+`Compatible`, `No implementada` o `Requiere ajuste`, presenta checklist y solo
+habilita su switch cuando el script es compatible y el exito esta activo. Las
+grillas se reducen a una columna en movil y el stepper usa scroll horizontal
+local, sin provocar overflow global.

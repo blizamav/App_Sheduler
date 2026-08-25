@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<body style="font-family:Arial,sans-serif;color:#172033">
+  <h1 style="font-size:20px;color:#17603a">Ejecucion exitosa</h1>
+  <p>La tarea <strong>{{ ejecucion.nombre_tarea }}</strong> finalizo correctamente.</p>
+  <dl>
+    <dt>Ejecucion</dt><dd>{{ ejecucion.id_ejecucion }}</dd>
+    {% if ejecucion.origen_ejecucion %}<dt>Origen</dt><dd>{{ ejecucion.origen_ejecucion }}</dd>{% endif %}
+    {% if ejecucion.nombre_script %}<dt>Script</dt><dd>{{ ejecucion.nombre_script }}</dd>{% endif %}
+    {% if ejecucion.version_script %}<dt>Version</dt><dd>{{ ejecucion.version_script }}</dd>{% endif %}
+    {% if ejecucion.fecha_inicio %}<dt>Inicio</dt><dd>{{ ejecucion.fecha_inicio }}</dd>{% endif %}
+    {% if ejecucion.fecha_termino %}<dt>Termino</dt><dd>{{ ejecucion.fecha_termino }}</dd>{% endif %}
+    {% if ejecucion.duracion_segundos is not none %}<dt>Duracion</dt><dd>{{ ejecucion.duracion_segundos }} segundos</dd>{% endif %}
+  </dl>
+  {% if evidencia %}
+  <h2 style="font-size:16px">{{ evidencia.titulo or 'Evidencia del proceso' }}</h2>
+  {% if evidencia.resumen %}<ul>{% for item in evidencia.resumen %}<li>{% if item is mapping %}<strong>{{ item.nombre or item.clave or 'Dato' }}:</strong> {{ item.valor or item.detalle or '' }}{% else %}{{ item }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+  {% endif %}
+  <p style="color:#5d677a;font-size:12px">APP Scheduler</p>
+</body>
+</html>

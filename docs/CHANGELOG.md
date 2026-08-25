@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-25 - Ajuste contractual post-Hito 10 listo para revision
+
+* Se separo `notificar_exito_activa` de `enviar_evidencia`; la Evidencia 1.0 es
+  contenido opcional del correo exitoso y ya no define si existe notificacion.
+* Se preparo la migracion incremental
+  `022_separar_notificacion_estado_evidencia.sql`: columna `BIT NOT NULL`
+  default 0, backfill historico, CHECK Exito/Evidencia, tipo
+  `NOTIFICACION_EXITOSA` e indice filtrado at-most-once.
+* El bootstrap canonico queda en 33 tablas, 457 columnas, 25 FK, 39 CHECK, 118
+  DEFAULT y 120 indices. `EVIDENCIA_CLIENTE` y `ALERTA_INTERNA` siguen validos.
+* El despacho envia exito estandar sin Evidencia, agrega Evidencia solo cuando
+  esta validada y registra `EVIDENCIA_OMITIDA` sin convertir la ejecucion en
+  error. Error sigue siendo independiente.
+* Se agregaron templates de correo estandar, UI separada para Exito/Error/
+  Evidencia y flujo guiado Datos, Script, Evidencia, Notificaciones y
+  Programacion con `Guardar y continuar`.
+* Estado: codigo listo para revision. La migracion `022` no se ejecuto, QA no se
+  modifico, Graph real no fue llamado y Hito 11 no fue iniciado.
+* Validacion: 287 pruebas de reconstruccion y 313 totales aprobadas, con 1
+  omitida por symlinks en Windows; `compileall`, Jinja, JavaScript, ambos
+  `--check`, Compose, build Docker, `git diff --check` y revision responsive
+  quedaron correctos.
+
 ## 2026-08-25 - Cierre formal Hito 10: feriados, notificaciones y Graph
 
 * Se reconstruyo el mantenedor de feriados con filtros, paginacion, alta,
