@@ -11,6 +11,22 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-25
 
+## 2026-08-25 - Correccion SQL Server 1934 en migracion 022
+
+* Gate QA: El primer intento de `022` fallo antes del primer `ALTER TABLE`
+  porque SQLCMD no garantizo `QUOTED_IDENTIFIER ON`. La ejecucion estaba en
+  transaccion y el postcheck confirmo rollback completo: QA permanece con 33
+  tablas, 462 columnas, 25 FK, 39 CHECK, 118 DEFAULT y 121 indices.
+* Correccion: La migracion declara explicitamente las siete SET options
+  requeridas por indices filtrados, mantiene `XACT_ABORT ON` y usa una
+  transaccion `TRY/CATCH` con rollback y errores visibles.
+* Alcance: No cambia columna, backfill, CHECK, tipos de envio ni indice del
+  ajuste contractual. Bootstrap y `database/release/` permanecen intactos.
+* Estado: Correccion preparada en codigo; `022` continua NO APLICADA en QA y
+  requiere un nuevo gate separado. Validacion: 288 pruebas de reconstruccion,
+  314 totales, 1 omitida por symlinks en Windows, `compileall`, Compose, build
+  Docker y `git diff --check` correctos. Hito 11 no fue iniciado.
+
 ## 2026-08-25 - Ajuste contractual post-Hito 10 / Exito distinto de Evidencia
 
 * Fase: Ajuste posterior al Hito 10 listo para revision; Hito 10 permanece

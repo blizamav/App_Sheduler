@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-25 - Correccion de opciones de sesion en migracion 022
+
+* El primer intento controlado sobre QA fallo con SQL Server 1934 antes del
+  primer `ALTER TABLE`; la transaccion se revirtio completa y `022` continua
+  no aplicada, sin columna, CHECK, indice ni backfill parcial.
+* La causa fue `QUOTED_IDENTIFIER` heredado desde SQLCMD. La migracion ahora
+  declara todas las opciones ANSI requeridas antes del DDL y administra una
+  transaccion `TRY/CATCH` autocontenida, sin cambiar el contrato funcional.
+* Se agrego validacion estatica de presencia, valor y orden de las SET options.
+  Aprobaron 288 pruebas de reconstruccion y 314 totales, con 1 omitida por
+  symlinks en Windows; `compileall`, Compose y build Docker quedaron correctos.
+  No se reintento SQL sobre QA y Hito 11 no fue iniciado.
+
 ## 2026-08-25 - Ajuste contractual post-Hito 10 listo para revision
 
 * Se separo `notificar_exito_activa` de `enviar_evidencia`; la Evidencia 1.0 es

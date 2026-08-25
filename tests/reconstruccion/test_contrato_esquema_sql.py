@@ -180,6 +180,34 @@ def test_ajuste_notificaciones_separa_exito_y_evidencia_sin_romper_legacy():
     assert "DELETE FROM dbo.notificaciones" not in migracion
 
 
+def test_migracion_022_declara_set_options_y_atomicidad_antes_del_ddl():
+    migracion = (
+        RAIZ / "database/migrations/022_separar_notificacion_estado_evidencia.sql"
+    ).read_text(encoding="utf-8-sig")
+    normalizada = re.sub(r"\s+", " ", migracion).upper()
+
+    opciones = (
+        "SET ANSI_NULLS ON",
+        "SET ANSI_PADDING ON",
+        "SET ANSI_WARNINGS ON",
+        "SET ARITHABORT ON",
+        "SET CONCAT_NULL_YIELDS_NULL ON",
+        "SET QUOTED_IDENTIFIER ON",
+        "SET NUMERIC_ROUNDABORT OFF",
+        "SET XACT_ABORT ON",
+    )
+    primer_ddl = normalizada.index("ALTER TABLE")
+    for opcion in opciones:
+        assert opcion in normalizada
+        assert normalizada.index(opcion) < primer_ddl
+
+    assert normalizada.index("BEGIN TRANSACTION") < primer_ddl
+    assert "BEGIN TRY" in normalizada
+    assert "BEGIN CATCH" in normalizada
+    assert "ROLLBACK TRANSACTION" in normalizada
+    assert "COMMIT TRANSACTION" in normalizada
+
+
 def test_versiones_y_ejecuciones_conservan_contratos_de_trazabilidad():
     _, ddl = _esquema()
 
