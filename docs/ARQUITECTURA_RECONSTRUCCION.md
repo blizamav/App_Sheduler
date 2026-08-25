@@ -2,8 +2,29 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-9 estan cerrados en el
-runtime aislado; el runtime historico sigue activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-9 estan cerrados y Hito
+10 esta listo para revision en el runtime aislado; el runtime historico sigue
+activo y no se ha realizado cutover.
+
+## Implementacion Hito 10
+
+El calendario conserva SQL Server como unica fuente usada por el scheduler.
+Nager.Date se encapsula en un cliente con endpoint fijo, timeout y TLS normal, y
+solo se invoca desde una sincronizacion manual autorizada con preview.
+
+```text
+UI feriados -> caso de uso -> Nager.Date manual -> reconciliacion -> SQL + auditoria
+motor -> cierre SQL ejecucion -> evidencia efimera -> reserva envio -> Graph -> cierre envio
+```
+
+La configuracion Graph combina metadata no secreta de
+`configuracion_mail_graph` con kill switch y secret provenientes del entorno.
+El worker confirma primero ejecucion/evidencia, reserva el tipo de correo de
+forma at-most-once y realiza HTTP fuera de la transaccion. Un fallo Graph se
+registra en `notificaciones_envios` y `logs_sistema`, pero nunca reescribe el
+resultado de la ejecucion. Los adjuntos se resuelven solo bajo el root de la
+version y bloquean symlinks, traversal, `.env`, codigo y tamanos no admitidos.
+No hay retry automatico ni envio real en las pruebas de Hito 10.
 
 ## Implementacion Hito 9
 
@@ -92,7 +113,11 @@ Mapa de transicion aplicado:
 | CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
 | Hilos web para ejecucion | `worker/contratos.py` y motor Hito 7 | Flask reserva; el worker reclama y ejecuta con el motor unico. |
 
-Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-8 reimplementaron de forma incremental seguridad, catalogos, tareas/scripts, scheduler, motor de ejecucion, logs, consola, evidencia base, observabilidad global y configuracion operativa. Graph, Papelera y Factory Reset siguen pendientes en el runtime reconstruido. Los entrypoints `run.py` y `scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
+Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-10
+reimplementaron incrementalmente seguridad, catalogos, tareas/scripts,
+scheduler, motor, logs, consola, evidencia, observabilidad, Papelera, feriados y
+Graph. Factory Reset sigue pendiente. Los entrypoints `run.py` y
+`scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
 
 ## Implementacion Hito 2
 
@@ -358,7 +383,10 @@ Auditoria es append-only desde la aplicacion. Registra actor, accion, entidad, i
 
 SQL Server es la unica fuente de feriados consumida por el scheduler. Nager.Date se consulta solo desde una accion manual autorizada, con preview, timeout y prioridad de datos manuales.
 
-Graph se encapsula tras un cliente propio. El servicio decide destinatarios, idempotencia, reintentos limitados y estado del envio. El client secret proviene exclusivamente del entorno y nunca vuelve a HTML, logs o auditoria.
+Graph se encapsula tras un cliente propio. El servicio decide destinatarios,
+idempotencia at-most-once y estado del envio. Hito 10 no hace reintentos
+automaticos. El client secret proviene exclusivamente del entorno y nunca
+vuelve a HTML, logs o auditoria.
 
 ## Factory Reset in-place
 

@@ -13,6 +13,8 @@ from app_scheduler.worker.scheduler import ServicioScheduler
 from app_scheduler.worker.servicio import ServicioWorker
 from app_scheduler.worker.cola import ProcesadorColaEjecuciones
 from app_scheduler.worker.motor import MotorEjecucionSubprocess
+from app_scheduler.modulos.notificaciones.casos_uso import ServicioConfiguracionGraph
+from app_scheduler.modulos.notificaciones.despacho import ServicioDespachoNotificaciones
 
 
 def preparar_worker(
@@ -45,6 +47,8 @@ def main() -> int:
         logger.info("Worker base validado", extra={"evento": "WORKER_BASE_OK"})
         return 0
     proveedor = ProveedorConexionesSQLServer(configuracion)
+    servicio_graph = ServicioConfiguracionGraph(proveedor, configuracion)
+    notificador = ServicioDespachoNotificaciones(proveedor, servicio_graph)
     detener = Event()
     worker = ServicioWorker(
         proveedor, ServicioScheduler(proveedor, configuracion), configuracion,
@@ -54,6 +58,7 @@ def main() -> int:
         proveedor, configuracion, logger, evento_detencion=detener,
         timeout_segundos=configuracion.ejecucion_timeout_segundos,
         espera_terminacion_segundos=configuracion.ejecucion_gracia_terminacion_segundos,
+        notificador=notificador,
     )
     worker.procesador_ejecuciones = ProcesadorColaEjecuciones(
         proveedor, configuracion, motor, worker.nombre_worker,

@@ -12,7 +12,7 @@ ejecutar scripts operativos. No se modifico el esquema SQL.
 ```text
 Manual: HTTP autorizado -> reserva PENDIENTE -> worker -> claim -> motor
 Automatica: scheduler Hito 6 -> PENDIENTE existente -> claim -> mismo motor
-Motor -> Python -u -> stdout/stderr -> log -> evidencia -> estado final
+Motor -> Python -u -> stdout/stderr -> log -> evidencia -> estado final -> notificacion
 ```
 
 La request manual no inicia procesos. Usa la version activa, la congela antes de
@@ -109,11 +109,14 @@ stdout, exige un unico bloque, valida el contrato 1.0 y comprueba que cada
 adjunto obligatorio declarado exista dentro de la carpeta de la version. Persiste en
 `evidencias_ejecucion` solo estado, metadata, hash y contadores; un archivo
 ausente o fuera del root controlado queda `ADJUNTO_FALTANTE`. El JSON completo
-permanece en el log TI y no se guarda en BD. Hito 7 no envia Graph.
+permanece disponible solo durante el cierre del motor y no se guarda en BD.
 
-Esta es la base de evidencia del motor. La configuracion funcional avanzada,
-la validacion estatica del contrato desde formularios y los envios por Microsoft
-Graph permanecen fuera del cierre de Hito 7.
+Hito 10 agrega el paso posterior al cierre: con una ejecucion `EXITOSA` y
+evidencia `VALIDADA` puede reservar `EVIDENCIA_CLIENTE`; con ejecucion `ERROR` o
+evidencia requerida invalida puede reservar `ALERTA_INTERNA`. El envio Graph
+ocurre fuera de la transaccion de ejecucion, se finaliza por separado y no
+cambia su estado ante fallos HTTP. Los adjuntos declarados se revalidan bajo el
+root de la version antes de codificarlos. No hay retry automatico.
 
 ## Rutas y permisos
 

@@ -12,6 +12,7 @@ from app_scheduler.persistencia.repositorio_operacion import (
     RepositorioLogsSistema,
     RepositorioOperacion,
 )
+from app_scheduler.persistencia.repositorio_notificaciones import RepositorioNotificaciones
 
 
 NIVELES_LOG = frozenset({"INFO", "WARNING", "ERROR", "CRITICAL"})
@@ -70,10 +71,13 @@ class ServicioLogsSistema:
 
 
 class ServicioObservabilidad:
-    def __init__(self, proveedor, *, repositorio=RepositorioOperacion, reloj=datetime.now):
+    def __init__(self, proveedor, configuracion=None, *, repositorio=RepositorioOperacion,
+                 repositorio_integraciones=None, reloj=datetime.now):
         self.proveedor = proveedor
         self.tipo_repositorio = repositorio
         self.reloj = reloj
+        self.configuracion_app = configuracion
+        self.tipo_integraciones = repositorio_integraciones
 
     def obtener_estado(self):
         with self.proveedor.conexion_lectura() as conexion:
@@ -81,11 +85,22 @@ class ServicioObservabilidad:
             configuracion = repo.obtener_configuracion_scheduler()
             heartbeat = repo.obtener_heartbeat()
             metricas = repo.metricas()
+            integraciones = (
+                self.tipo_integraciones(conexion).estado_integraciones()
+                if self.tipo_integraciones is not None
+                else {"feriados_activos": 0, "ultima_sync": None,
+                      "graph_sql_activo": False, "ultimo_envio_estado": None,
+                      "ultimo_envio_fecha": None}
+            )
+        integraciones["graph_env_habilitado"] = bool(
+            self.configuracion_app and self.configuracion_app.graph_mail_enabled
+        )
         return {
             "configuracion": configuracion,
             "heartbeat": heartbeat,
             "estado_worker": self._clasificar_worker(heartbeat, configuracion),
             "metricas": metricas,
+            "integraciones": integraciones,
         }
 
     def _clasificar_worker(self, heartbeat, configuracion):

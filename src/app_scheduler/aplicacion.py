@@ -11,6 +11,7 @@ from app_scheduler.compartido.base_datos import ProveedorConexionesSQLServer
 from app_scheduler.compartido.logging import configurar_logging
 from app_scheduler.configuracion import ConfiguracionAplicacion
 from app_scheduler.extensiones import iniciar_extensiones
+from app_scheduler.persistencia.repositorio_notificaciones import RepositorioNotificaciones
 
 
 def crear_aplicacion(
@@ -75,6 +76,11 @@ def crear_aplicacion(
     from app_scheduler.modulos.evidencias.casos_uso import ServicioEvidencias
     from app_scheduler.modulos.auditoria.casos_uso import ServicioConsultaAuditoria
     from app_scheduler.modulos.papelera.casos_uso import ServicioPapelera
+    from app_scheduler.modulos.feriados.casos_uso import ServicioFeriados
+    from app_scheduler.modulos.notificaciones.casos_uso import (
+        ServicioConfiguracionGraph,
+        ServicioNotificacionesTarea,
+    )
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -94,9 +100,18 @@ def crear_aplicacion(
         proveedor_sql, configuracion
     )
     app.extensions["servicio_logs_sistema"] = ServicioLogsSistema(proveedor_sql)
-    app.extensions["servicio_observabilidad"] = ServicioObservabilidad(proveedor_sql)
+    app.extensions["servicio_observabilidad"] = ServicioObservabilidad(
+        proveedor_sql, configuracion, repositorio_integraciones=RepositorioNotificaciones
+    )
     app.extensions["servicio_configuracion_operativa"] = ServicioConfiguracionOperativa(proveedor_sql)
     app.extensions["servicio_evidencias"] = ServicioEvidencias(proveedor_sql, configuracion)
+    app.extensions["servicio_notificaciones_tarea"] = ServicioNotificacionesTarea(
+        proveedor_sql, app.extensions["servicio_evidencias"]
+    )
+    app.extensions["servicio_configuracion_graph"] = ServicioConfiguracionGraph(
+        proveedor_sql, configuracion
+    )
+    app.extensions["servicio_feriados"] = ServicioFeriados(proveedor_sql)
     app.extensions["servicio_consulta_auditoria"] = ServicioConsultaAuditoria(proveedor_sql)
     app.extensions["servicio_papelera"] = ServicioPapelera(proveedor_sql, configuracion)
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
@@ -114,6 +129,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.configuracion_operativa.rutas import bp_configuracion
     from app_scheduler.modulos.auditoria.rutas import bp_auditoria
     from app_scheduler.modulos.papelera.rutas import bp_papelera
+    from app_scheduler.modulos.feriados.rutas import bp_feriados
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
@@ -128,6 +144,7 @@ def crear_aplicacion(
     app.register_blueprint(bp_configuracion)
     app.register_blueprint(bp_auditoria)
     app.register_blueprint(bp_papelera)
+    app.register_blueprint(bp_feriados)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

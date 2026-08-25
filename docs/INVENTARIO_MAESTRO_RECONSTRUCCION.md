@@ -6,21 +6,21 @@ Este documento fija la linea base del Hito 0 para reconstruir APP Scheduler sin 
 
 Fecha de corte: 2026-08-13.
 
-## Reconciliacion vigente al cierre del Hito 8
+## Reconciliacion vigente al cierre del Hito 10
 
 La linea base siguiente conserva la fotografia inicial del Hito 0 y no debe
-interpretarse como el estado funcional actual. Al 2026-08-24, la evidencia del
-repositorio confirma Hitos 0-8 cerrados en `src/app_scheduler/`; el runtime
-historico sigue activo y no existe cutover. Hito 8 completo un smoke tecnico
-read-only contra `APP_SCHEDULER_QA`, sin cambios de esquema ni datos persistidos.
+interpretarse como el estado funcional actual. Al 2026-08-25, la evidencia del
+repositorio confirma Hitos 0-10 cerrados en `src/app_scheduler/`; el runtime
+historico sigue activo y no existe cutover. Los smoke tecnicos fueron de solo
+lectura contra `APP_SCHEDULER_QA`, sin cambios de esquema ni datos persistidos.
 
 Desde esa linea base ya se reconstruyeron autenticacion, usuarios, catalogos,
 tareas, scripts/versiones/`.env`, el hub global `/scripts`, programaciones,
 scheduler, worker, ejecucion manual y automatica, historial, logs de ejecucion,
 consola, captura base de evidencia, observabilidad global, configuracion
-operativa y configuracion de evidencia por tarea. Auditoria UI, Papelera,
-Graph/correos, Factory Reset reconstruido, QA integral y cutover siguen el orden
-vigente de `ROADMAP.md`.
+operativa, configuracion de evidencia por tarea, Auditoria UI, Papelera,
+feriados, sincronizacion manual Nager.Date y Graph/correos. Factory Reset
+reconstruido, QA integral y cutover siguen el orden vigente de `ROADMAP.md`.
 
 ## Fuentes revisadas
 

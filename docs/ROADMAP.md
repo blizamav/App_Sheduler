@@ -116,15 +116,30 @@ Las entidades admitidas son las siete tablas que poseen
 protegida y no ingresan a Papelera. El gate tecnico, Docker y visual responsive
 esta aprobado. No hubo SQL ni mutaciones QA.
 
-## Pendiente
-
 ### Hito 10 - Feriados, notificaciones, Microsoft Graph y email
 
-Reimplementar mantenedor de feriados, sincronizacion manual Nager.Date,
-configuracion y cliente Graph, destinatarios, correos automaticos, evidencias y
-adjuntos por correo, sanitizacion externa y manejo controlado de fallos/reintentos.
+Estado: CERRADO.
+
+Se reconstruyeron el mantenedor de feriados, sincronizacion manual y con preview
+desde Nager.Date, prioridad de registros manuales, configuracion Graph global,
+destinatarios TO/CC/BCC por tarea y despacho posterior a ejecucion para evidencia
+o alerta interna. El scheduler conserva SQL Server como unica fuente de
+calendario. El contenido completo de evidencia vive solo en memoria y la BD
+mantiene metadata y trazabilidad. Graph usa client credentials, endpoints fijos,
+timeouts, autoescape, adjuntos confinados y reserva at-most-once; no existe retry
+automatico ni envio real dentro de la validacion. No hubo SQL, cambios de esquema,
+cutover ni modificaciones al runtime historico.
+
+El cierre aprobo 280 pruebas de reconstruccion y 306 totales, con un skip de
+symlink cubierto en Linux, gates tecnicos/Docker y revision responsive. Un GET
+no destructivo a Nager.Date valido conectividad y parser sin persistencia; Graph
+real queda pendiente de configuracion autorizada para el Hito 14.
+
+## Pendiente
 
 ### Hito 11 - Factory Reset in-place
+
+Estado: NO INICIADO.
 
 Reimplementar el Factory Reset in-place con UI critica, permiso dedicado,
 prechecks, lock, progreso y recuperacion, sin arquitectura blue-green.

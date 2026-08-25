@@ -18,6 +18,8 @@ representa eventos internos de APP Scheduler.
 | `/configuracion/` | `configuracion_sistema`, `configuracion_scheduler` | Matriz solo lectura | `SCHEDULER_CONFIG_VER` |
 | `POST /configuracion/scheduler` | `configuracion_scheduler`, `auditoria_cambios` | Edicion por allowlist | `SCHEDULER_CONFIG_EDITAR` |
 | `/tareas/<id>/evidencia` | `notificaciones_config_tarea`, script/version activa | Upsert tipado | `TAREAS_EDITAR` |
+| `/tareas/<id>/notificaciones` | Configuracion, destinatarios y script/version activa | Reemplazo atomico auditado | `TAREAS_EDITAR` |
+| `/configuracion/mail-graph` | `configuracion_mail_graph` + estado ENV | Lectura/edicion no secreta | `CONFIGURACION_ADMIN` |
 
 Todas las escrituras HTTP usan CSRF global. Scheduler y evidencia registran
 `auditoria_cambios` en la misma unidad de trabajo.
@@ -81,7 +83,20 @@ archivos declarados y log tecnico, con plantilla fija `STDOUT_V1`. Antes de
 habilitar, el `.py` activo se analiza con AST sin ejecutar ni importar codigo.
 Debe declarar soporte/version 1.0 y contener ambos delimitadores como strings
 reales. Comentarios por si solos no son compatibles. Graph, destinatarios y
-correo permanecen fuera de Hito 8.
+correo permanecen fuera del cierre de Hito 8 y se incorporan en Hito 10.
+
+## Extension Hito 10
+
+`/operacion/estado` incorpora un resumen no sensible del calendario local y de
+Graph: disponibilidad de fila global, activacion efectiva, presencia del secret
+y ultimo resultado registrado. Nunca muestra tenant, client secret, token ni
+destinatarios de ejecuciones.
+
+La configuracion Mail Graph edita solo campos SQL no secretos. El estado
+efectivo exige fila activa, `GRAPH_MAIL_ENABLED`, identificadores completos y
+secret presente. Los intentos quedan en `notificaciones_envios`; los errores
+tecnicos se resumen tambien en `logs_sistema` sin sobrescribir el estado de la
+ejecucion. No se implementa retry automatico.
 
 ## QA y seguridad
 

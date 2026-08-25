@@ -6,10 +6,53 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-9 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-10 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 9 cerrado, sin cutover; Hito 10 no iniciado.
-* Ultima actualizacion: 2026-08-24
+* Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
+* Ultima actualizacion: 2026-08-25
+
+## 2026-08-25 - Hito 10 / Feriados, notificaciones y Microsoft Graph
+
+* Fase: CERRADA en el runtime aislado; no se declara envio Graph real, QA
+  integral ni cutover.
+* Contrato: Se reconciliaron historico, 33 tablas/456 columnas, 52 permisos,
+  bootstrap/release, configuracion ENV y documentacion oficial de Nager.Date y
+  Microsoft Graph antes de implementar.
+* Feriados: CRUD paginado y auditado, estado, eliminacion manual controlada,
+  preview/aplicacion Nager.Date, reglas locales de irrenunciables, prioridad
+  `MANUAL`, preservacion de inactivos e idempotencia.
+* Notificaciones: Configuracion por tarea, TO/CC/BCC, asuntos, configuracion
+  global `MAIL_GRAPH`, cliente Graph central y estado no sensible en Operacion.
+* Motor: Tras confirmar ejecucion/evidencia, reserva y despacha
+  `EVIDENCIA_CLIENTE` o `ALERTA_INTERNA`; el JSON completo permanece en memoria,
+  Graph se cierra en otra UoW y un fallo HTTP no altera `ejecuciones`.
+* Seguridad: Endpoints fijos, TLS y timeouts, secrets solo ENV, autoescape,
+  sanitizacion externa, adjuntos confinados, bloqueo de `.env`/codigo/symlink,
+  limites y politica at-most-once sin retry automatico.
+* UI/UX: Vistas Bootstrap para feriados, sincronizacion y Graph; formulario de
+  tarea integrado, permisos visibles, tablas con scroll local y responsive.
+* Archivos: Cambios exclusivamente en `src/app_scheduler/`, pruebas y docs. No
+  se tocaron `app/`, `run.py`, `scheduler_worker.py`, `database/`, `.env` ni
+  `.env.docker`.
+* Pruebas: `280 passed, 1 skipped` en reconstruccion y `306 passed, 1 skipped`
+  en suite completa; compileall, 32 templates Jinja, seis JS,
+  checks web/worker, Compose, build Docker web/worker y `git diff --check`: OK.
+  El skip conocido corresponde a symlink Windows; sigue cubierto en Linux.
+* Visual: 1440x900, 390x844 y 844x390 aprobados en feriados, sincronizacion y
+  Graph; sin overflow global ni errores de consola. Se corrigio `display:grid`
+  faltante en los filtros de feriados. El servidor temporal se retiro.
+* Integraciones: Los clientes HTTP fueron simulados en tests. El cierre realizo
+  un unico GET no destructivo a Nager.Date 2026/CL: DNS, TLS, HTTP y esquema del
+  parser correctos, 17 registros y cero persistencia. No hubo trafico Graph,
+  correo real, SQL ni mutaciones QA.
+* QA read-only: Docker confirmo `APP_SCHEDULER_QA`, 17 feriados, reglas locales
+  y las cinco tablas de notificaciones. Graph tiene fila SQL activa e
+  identificadores completos, pero queda `DESHABILITADO` por kill switch ENV
+  apagado y secret ausente. No se mostraron valores sensibles ni se hizo DML.
+* UI Graph: Tenant ID y Client ID vigentes no se envian al HTML. Campos vacios
+  preservan la configuracion; solo un valor nuevo solicita reemplazo.
+* Riesgos/deuda: Smoke Graph real pendiente de autorizacion; no hay retry
+  automatico ni upload session para adjuntos grandes; Hito 11 no iniciado.
 
 ## 2026-08-24 - Cierre formal Hito 9 / Auditoria operativa y Papelera
 

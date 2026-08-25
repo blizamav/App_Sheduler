@@ -102,6 +102,7 @@ class CapturadorEvidencia:
             "cantidad_adjuntos_declarados": len(adjuntos) if isinstance(adjuntos, list) else 0,
             "cantidad_problemas": len(problemas) if isinstance(problemas, list) else 0,
             "error_validacion": "; ".join(errores)[:1000] or None,
+            "evidencia": datos,
         }
 
 

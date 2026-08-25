@@ -68,6 +68,7 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
         "/ejecuciones/<int:id_ejecucion>/detener",
             "/tareas/<int:id_tarea>/ejecutar",
             "/tareas/<int:id_tarea>/evidencia",
+            "/tareas/<int:id_tarea>/notificaciones",
             "/operacion/estado",
             "/logs/",
             "/logs/<int:id_log>",
@@ -78,8 +79,17 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
             "/papelera/",
             "/papelera/<entidad>/<int:id_registro>/retirar",
             "/papelera/<entidad>/<int:id_registro>/restaurar",
-            "/papelera/<entidad>/<int:id_registro>/eliminar-permanente",
-        }
+                "/papelera/<entidad>/<int:id_registro>/eliminar-permanente",
+                "/feriados/",
+                "/feriados/nuevo",
+                "/feriados/<int:id_feriado>/editar",
+                "/feriados/<int:id_feriado>/estado",
+                "/feriados/<int:id_feriado>/eliminar",
+                "/feriados/sincronizar",
+                "/feriados/sincronizar/preview",
+                "/feriados/sincronizar/aplicar",
+                "/configuracion/mail-graph",
+            }
 
 
 def test_healthcheck_no_requiere_sql(configuracion):

@@ -34,3 +34,29 @@ def guardar_scheduler():
     else:
         flash("Configuracion del scheduler actualizada.", "success")
     return redirect(url_for("configuracion_operativa.inicio"))
+
+
+@bp_configuracion.get("/mail-graph")
+@permiso_requerido("CONFIGURACION_ADMIN")
+def mail_graph():
+    return render_template(
+        "configuracion/mail_graph.html",
+        resultado=current_app.extensions["servicio_configuracion_graph"].obtener(),
+    )
+
+
+@bp_configuracion.post("/mail-graph")
+@permiso_requerido("CONFIGURACION_ADMIN")
+def guardar_mail_graph():
+    try:
+        current_app.extensions["servicio_configuracion_graph"].guardar(
+            request.form, identidad_actual(), ContextoAuditoria(
+                request.remote_addr, request.user_agent.string[:500] or None,
+                request.path, request.method,
+            ),
+        )
+    except ErrorValidacion as error:
+        flash(error.mensaje, "error")
+    else:
+        flash("Configuracion Microsoft Graph actualizada.", "success")
+    return redirect(url_for("configuracion_operativa.mail_graph"))

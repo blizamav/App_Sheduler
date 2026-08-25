@@ -131,6 +131,12 @@ Despachos y omisiones relevantes usan `scheduler_eventos` con tipos permitidos `
 
 ## Limites y deuda legitima
 
+Hito 10 no cambia el loop ni la decision temporal: el worker consulta
+exclusivamente `dbo.feriados`. Nager.Date se usa solo desde la accion manual de
+sincronizacion web; nunca se consulta Internet desde el scheduler. El despacho
+Graph ocurre despues del cierre de una ejecucion y no puede crear, omitir ni
+reprogramar candidatos.
+
 * Hito 7 agrega claim, PID, detencion, stdout/stderr y cierre sin alterar la reserva del scheduler.
 * La manual usa el mismo contrato persistente y registra al usuario APP Scheduler; la automatica conserva `usuario_ejecucion = NULL`.
 * No se probo SQL Server/QA ni se modificaron datos reales en Hito 6.

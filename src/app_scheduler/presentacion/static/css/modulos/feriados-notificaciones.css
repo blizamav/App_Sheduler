@@ -1,0 +1,148 @@
+.acciones-encabezado,
+.acciones-filtro,
+.resumen-sync,
+.resultado-sync-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.filtros-feriados {
+    display: grid;
+    grid-template-columns: minmax(14rem, 2fr) repeat(4, minmax(7rem, 1fr)) auto;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.grid-feriado,
+.grid-graph {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.campo-switch {
+    align-self: end;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+.resultado-sync {
+    margin-top: 1.5rem;
+}
+
+.resultado-sync-header {
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.resumen-sync span {
+    padding: .55rem .75rem;
+    border: 1px solid var(--color-borde);
+    background: var(--color-superficie);
+    border-radius: var(--radio-sm);
+}
+
+.resumen-sync strong {
+    color: var(--color-primario);
+}
+
+.sync-form {
+    display: grid;
+    grid-template-columns: minmax(8rem, 12rem) minmax(7rem, 9rem) auto;
+    align-items: end;
+    gap: 1rem;
+}
+
+.estado-graph {
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.estado-graph > div,
+.estado-graph dl {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.estado-graph dl {
+    margin: 1rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-borde);
+    flex-wrap: wrap;
+}
+
+.estado-graph dl div {
+    min-width: 10rem;
+}
+
+.estado-graph dt {
+    color: var(--color-texto-secundario);
+    font-size: .78rem;
+}
+
+.estado-graph dd {
+    margin: .15rem 0 0;
+    font-weight: 700;
+}
+
+.destinatarios-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.destinatarios-grid fieldset {
+    min-width: 0;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-md);
+    padding: 1rem;
+}
+
+.destinatarios-grid legend {
+    float: none;
+    width: auto;
+    margin: 0 0 .75rem;
+    padding: 0 .25rem;
+    font-size: .95rem;
+    font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+    .filtros-feriados {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .filtros-feriados,
+    .grid-feriado,
+    .grid-graph,
+    .destinatarios-grid,
+    .sync-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .acciones-encabezado,
+    .acciones-filtro,
+    .acciones-encabezado .btn,
+    .acciones-filtro .btn,
+    .sync-form .btn {
+        width: 100%;
+    }
+
+    .estado-graph dl {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 430px) {
+    .estado-graph dl {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

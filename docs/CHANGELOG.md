@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-08-25 - Cierre formal Hito 10: feriados, notificaciones y Graph
+
+* Se reconstruyo el mantenedor de feriados con filtros, paginacion, alta,
+  edicion, estado, eliminacion manual controlada, permisos, CSRF y auditoria.
+* La sincronizacion Nager.Date es exclusivamente manual: consulta, preview y
+  aplicacion con endpoint fijo, timeout, prioridad `MANUAL`, preservacion de
+  inactivos e idempotencia. El scheduler sigue leyendo solo SQL Server.
+* La tarea ahora administra evidencia, asuntos y destinatarios TO/CC/BCC. La
+  configuracion global Mail Graph mantiene secretos en ENV y datos operativos
+  no secretos en la unica fila SQL `MAIL_GRAPH`.
+* El worker procesa el JSON de evidencia solo en memoria despues de cerrar la
+  ejecucion, reserva `EVIDENCIA_CLIENTE` o `ALERTA_INTERNA` de forma at-most-once
+  y registra el resultado Graph sin cambiar el estado de la ejecucion.
+* Los adjuntos se confinan al root de la version y rechazan traversal, symlinks,
+  `.env`, codigo, ejecutables, exceso de cantidad y exceso de tamano.
+* Se agregaron vistas Bootstrap responsive para feriados, sincronizacion y
+  configuracion Graph, ademas de estado de integraciones en Operacion.
+* El gate visual corrigio el grid base de filtros de feriados y aprobo
+  1440x900, 390x844 y 844x390 sin overflow global ni errores de consola.
+* Pruebas automatizadas: clientes HTTP simulados, sin Graph real ni correo. El
+  cierre agrego un unico GET no destructivo a Nager.Date para 2026/CL, con DNS,
+  TLS, HTTP y esquema del parser correctos, 17 registros y cero persistencia.
+  No se ejecuto SQL, no se modificaron `.env`, runtime historico,
+  `database/bootstrap/` ni `database/release/`, y no hubo cutover.
+* Gates: `306 passed, 1 skipped`, compileall, 32 templates Jinja, seis archivos
+  JavaScript, checks web/worker, Compose y build Docker web/worker: OK. El skip
+  corresponde al caso conocido de symlink no disponible en Windows.
+* Smoke QA read-only desde un contenedor efimero: base autorizada correcta, 17
+  feriados, reglas locales y cinco tablas de notificaciones presentes. Graph se
+  clasifica `DESHABILITADO`: fila SQL activa e identificadores completos, pero
+  kill switch ENV apagado y secret ausente. No se imprimieron valores ni hubo DML.
+* Tenant ID y Client ID vigentes no se incluyen en HTML; el formulario solo
+  acepta valores nuevos para reemplazarlos y conserva los actuales si quedan vacios.
+* Estado: Hito 10 queda CERRADO. El smoke Graph real requiere configuracion,
+  autorizacion y destinatario explicitos y queda asociado a QA integral; Hito 11
+  no fue iniciado.
+
 ## 2026-08-24 - Cierre formal Hito 9: Auditoria operativa y Papelera
 
 * Se agregaron `/auditoria/` y `/auditoria/<id>` con permisos separados,

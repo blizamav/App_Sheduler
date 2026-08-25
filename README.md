@@ -16,7 +16,7 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 7 - Motor unico, logs y evidencias base: CERRADO.
 * Hito 8 - CERRADO: observabilidad, configuracion operativa e integracion QA.
 * Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
-* Hito 10 - NO INICIADO.
+* Hito 10 - CERRADO: feriados, sincronizacion manual, notificaciones y Microsoft Graph reconstruidos sin envio real.
 
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
@@ -30,8 +30,10 @@ cliente y entrar al detalle versionado existente sin duplicar su CRUD.
 
 Hito 8 incorpora en el runtime aislado `/operacion/estado`, `/logs/` y
 `/configuracion/`, ademas de configuracion y validacion estatica de evidencia
-en la edicion de tareas. Usa exclusivamente tablas y permisos existentes; no
-modifica el esquema, no implementa correo/Graph y no realiza cutover.
+en la edicion de tareas. Hito 10 completa el mantenedor de feriados, la
+sincronizacion manual Nager.Date, destinatarios, configuracion Graph y el
+despacho posterior a ejecucion. Usa exclusivamente tablas y permisos existentes,
+no modifica el esquema y no realiza cutover.
 
 Fuentes maestras de la reconstruccion:
 
@@ -42,16 +44,18 @@ Fuentes maestras de la reconstruccion:
 * [UI/UX de la Reconstruccion](docs/UI_UX_RECONSTRUCCION.md)
 * [Observabilidad y configuracion](docs/OBSERVABILIDAD_CONFIGURACION_RECONSTRUCCION.md)
 * [Auditoria y Papelera](docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md)
+* [Feriados, notificaciones y Graph](docs/FERIADOS_NOTIFICACIONES_GRAPH_RECONSTRUCCION.md)
 
 La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; Hito 7 agrega el motor comun y Hito 8 la observabilidad/configuracion operativa, pero todavia no reemplazan los entrypoints historicos.
+El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; los Hitos 7-10 agregan motor, observabilidad, Papelera, feriados y notificaciones, pero todavia no reemplazan los entrypoints historicos.
 
-Validacion actual: 246 pruebas reconstruidas aprobadas y 1 omitida por la
-restriccion conocida de symlinks en Windows; suite completa con 272 aprobadas y
-la misma omision. Compileall, Jinja, JavaScript, Compose, build/checks Docker y
-revision visual responsive aprobaron. Hito 9 no ejecuto SQL ni modifico QA. No
-se realizo cutover.
+Validacion final de Hito 10: 280 pruebas de reconstruccion y 306 pruebas totales
+aprobadas, con 1 omitida por la restriccion conocida de symlinks en Windows. No
+se envio correo. Un unico GET no destructivo a Nager.Date valido DNS, TLS, HTTP
+y el esquema del parser para 2026/CL, sin persistir datos. Compose, Docker y UI
+responsive quedaron aprobados. No se ejecuto SQL, no se modifico QA y no se
+realizo cutover.
 
 Validacion aislada del runtime reconstruido:
 

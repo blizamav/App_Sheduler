@@ -73,7 +73,7 @@ def crear_contexto(script: Path, env: Path | None = None, evidencia=False):
 
 
 def motor(tmp_path, configuracion, script_texto, *, env_texto=None, evidencia=False,
-          timeout=None, estado=None):
+          timeout=None, estado=None, notificador=None):
     scripts = tmp_path / "scripts"; envs = tmp_path / "env_scripts"; logs = tmp_path / "logs_tareas"
     script = scripts / "x" / "v1" / "test.py"; script.parent.mkdir(parents=True)
     script.write_text(script_texto, encoding="utf-8")
@@ -89,6 +89,7 @@ def motor(tmp_path, configuracion, script_texto, *, env_texto=None, evidencia=Fa
         ProveedorFake(estado), config, logger, repositorio=RepoMotorFake,
         fabrica_uow=UowFake, timeout_segundos=timeout,
         espera_terminacion_segundos=0.2, intervalo_control_segundos=0.05,
+        notificador=notificador,
     )
     return instancia, estado, logs
 
@@ -113,6 +114,16 @@ def test_motor_error_conserva_exit_code(tmp_path, configuracion):
     instancia, estado, _ = motor(tmp_path, configuracion, "raise SystemExit(7)\n")
     assert instancia.ejecutar(9) == "ERROR"
     assert estado.final[0] == "ERROR" and estado.final[1] == 7
+
+
+def test_fallo_notificacion_no_cambia_estado_ejecucion(tmp_path, configuracion):
+    class NotificadorFallido:
+        def procesar(self, *_): raise RuntimeError("graph simulado")
+    instancia, estado, _ = motor(
+        tmp_path, configuracion, "print('ok')\n", notificador=NotificadorFallido(),
+    )
+    assert instancia.ejecutar(9) == "EXITOSA"
+    assert estado.final[:2] == ("EXITOSA", 0)
 
 
 def test_motor_salida_grande_se_escribe_incremental(tmp_path, configuracion):

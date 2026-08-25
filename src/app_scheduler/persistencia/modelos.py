@@ -361,6 +361,62 @@ class ConfiguracionEvidenciaTarea:
 
 
 @dataclass(frozen=True, slots=True)
+class DestinatarioNotificacion:
+    id_destinatario: int | None
+    tipo_destinatario: str
+    canal: str
+    email: str
+    nombre: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiguracionNotificacionTarea:
+    id_config_notificacion: int | None
+    id_tarea: int
+    enviar_evidencia: bool
+    plantilla_evidencia: str
+    asunto_personalizado: str | None
+    usar_asunto_sugerido_script: bool
+    adjuntar_archivos_declarados: bool
+    adjuntar_log_tecnico: bool
+    alerta_error_activa: bool
+    usar_alerta_global: bool
+    destinatarios: tuple[DestinatarioNotificacion, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Feriado:
+    id_feriado: int
+    fecha: date
+    nombre: str
+    tipo: str | None
+    pais: str
+    irrenunciable: bool
+    activo: bool
+    origen: str
+    observacion: str | None
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime | None
+    usuario_creacion: str | None
+    usuario_actualizacion: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiguracionMailGraph:
+    id_config_mail: int
+    activo: bool
+    tenant_id: str | None
+    client_id: str | None
+    graph_scope: str
+    send_mail_user: str | None
+    save_to_sent_items: bool
+    alertas_destinatarios_default: str | None
+    client_secret_origen: str
+    fecha_actualizacion: datetime | None
+    usuario_actualizacion: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class ContextoEjecucion:
     id_ejecucion: int
     id_tarea: int | None

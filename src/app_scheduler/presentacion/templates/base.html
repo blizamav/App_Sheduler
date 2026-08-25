@@ -33,6 +33,8 @@
         <symbol id="icono-configuracion" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6v.08h-4V20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H3.9v-4H4a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L7.06 4.2l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6v-.1h4V4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1h.1v4H20a1.7 1.7 0 0 0-.6 1Z"/></symbol>
         <symbol id="icono-auditoria" viewBox="0 0 24 24"><path d="M4 3h16v18H4V3ZM8 7h8M8 11h8M8 15h5M16 17l2 2 3-4"/></symbol>
         <symbol id="icono-papelera" viewBox="0 0 24 24"><path d="M3 6h18M8 6V3h8v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
+        <symbol id="icono-feriados" viewBox="0 0 24 24"><path d="M6 2v4M18 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2ZM8 13h3v3H8v-3Z"/></symbol>
+        <symbol id="icono-correo" viewBox="0 0 24 24"><path d="M3 5h18v14H3V5Zm0 1 9 7 9-7"/></symbol>
     </svg>
     {% if identidad_sesion %}
     <div class="app-shell">
@@ -102,7 +104,7 @@
                 </a>
                 {% endif %}
                 {% endif %}
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') or identidad_sesion.tiene_permiso('AUDITORIA_VER') or identidad_sesion.tiene_permiso('PAPELERA_VER') %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') or identidad_sesion.tiene_permiso('AUDITORIA_VER') or identidad_sesion.tiene_permiso('PAPELERA_VER') or identidad_sesion.tiene_permiso('FERIADOS_VER') or identidad_sesion.tiene_permiso('CONFIGURACION_ADMIN') %}
                 <p class="navegacion-grupo">Administracion</p>
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'usuarios' %}activo active{% endif %}" href="{{ url_for('usuarios.listado') }}" aria-label="Usuarios" title="Usuarios">
@@ -115,8 +117,18 @@
                 </a>
                 {% endif %}
                 {% if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}
-                <a class="navegacion-enlace nav-link {% if request.blueprint == 'configuracion_operativa' %}activo active{% endif %}" href="{{ url_for('configuracion_operativa.inicio') }}" aria-label="Configuracion" title="Configuracion">
+                <a class="navegacion-enlace nav-link {% if request.endpoint in ('configuracion_operativa.inicio', 'configuracion_operativa.guardar_scheduler') %}activo active{% endif %}" href="{{ url_for('configuracion_operativa.inicio') }}" aria-label="Configuracion" title="Configuracion">
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-configuracion"></use></svg><span>Configuracion</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('FERIADOS_VER') %}
+                <a class="navegacion-enlace nav-link {% if request.blueprint == 'feriados' %}activo active{% endif %}" href="{{ url_for('feriados.listado') }}" aria-label="Feriados" title="Feriados">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-feriados"></use></svg><span>Feriados</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('CONFIGURACION_ADMIN') %}
+                <a class="navegacion-enlace nav-link {% if request.endpoint in ('configuracion_operativa.mail_graph', 'configuracion_operativa.guardar_mail_graph') %}activo active{% endif %}" href="{{ url_for('configuracion_operativa.mail_graph') }}" aria-label="Microsoft Graph" title="Microsoft Graph">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-correo"></use></svg><span>Microsoft Graph</span>
                 </a>
                 {% endif %}
                 {% if identidad_sesion.tiene_permiso('AUDITORIA_VER') %}

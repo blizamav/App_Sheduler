@@ -3,7 +3,7 @@
 ## Estado y alcance
 
 Esta guia define el contrato visual transversal de `src/app_scheduler/` incluido
-en el cierre del Hito 7 y extendido por el Hito 8 ya cerrado. Este hito no reemplaza el
+en el cierre del Hito 7 y extendido hasta Hito 10. Este hito no reemplaza el
 pulido final previsto para Hito 12.
 
 La base frontend es Flask + Jinja2 + HTML5 + Bootstrap 5.3.3 + CSS y JavaScript
@@ -49,6 +49,13 @@ JSON con scroll local. Papelera usa cards operativas con tipo, retiro,
 dependencias, badges de capacidad, motivo de bloqueo y acciones separadas. Las
 confirmaciones reutilizan el modal Bootstrap global; no se introduce
 `window.confirm` ni JavaScript inline.
+
+Hito 10 agrega Feriados y Microsoft Graph al sidebar segun permiso. El
+mantenedor usa filtros, tabla responsive, estados y confirmaciones globales; la
+sincronizacion separa consulta, preview y aplicacion. La tarea integra
+notificaciones, destinatarios y ayuda de evidencia sin una card anidada. La
+configuracion Graph distingue datos SQL editables de secretos ENV solo mediante
+estados de presencia, nunca valores.
 
 Los layouts usan todo el ancho disponible y cambian a una columna bajo 780 px;
 no generan overflow global en 390x844, 768 px, notebook ni 1440x900.

@@ -2,7 +2,7 @@
 
 ## Reconstruccion - infraestructura transversal
 
-Estado: Hitos 1-8 cerrados; Hito 9 no iniciado; runtime historico aun activo.
+Estado: Hitos 1-10 cerrados; runtime historico aun activo y Hito 11 no iniciado.
 
 | Componente | Objetivo | Rutas | Persistencia | Estado |
 | --- | --- | --- | --- | --- |
@@ -15,9 +15,13 @@ Estado: Hitos 1-8 cerrados; Hito 9 no iniciado; runtime historico aun activo.
 | Worker scheduler | Evaluar programaciones, reservar, reclamar y ejecutar trabajo | No expone rutas | SQL, subprocess, logs y evidencia | Reconstruido; Hito 7 cerrado |
 | Observabilidad | Estado real y logs globales para TI | `/operacion/estado`, `/logs/`, `/logs/<id>` | `logs_sistema`, heartbeat, scheduler y ejecuciones | Hito 8 cerrado |
 | Configuracion operativa | Matriz segura y edicion scheduler | `/configuracion/` (`SCHEDULER_CONFIG_VER`), `POST /configuracion/scheduler` (`SCHEDULER_CONFIG_EDITAR`) | `configuracion_sistema`, `configuracion_scheduler`, auditoria | Hito 8 cerrado |
-| Evidencia por tarea | Activacion y validacion estatica | `POST /tareas/<id>/evidencia` | `notificaciones_config_tarea`, auditoria | Hito 8 implementado; Graph excluido |
+| Evidencia y notificaciones por tarea | Activacion, validacion estatica, destinatarios y asuntos | `POST /tareas/<id>/notificaciones` | `notificaciones_config_tarea`, `notificaciones_destinatarios`, auditoria | Hito 10 cerrado |
+| Feriados | CRUD local y sincronizacion manual con preview | `/feriados/*` | `feriados`, `reglas_feriados_irrenunciables`, auditoria | Hito 10 cerrado |
+| Microsoft Graph | Configuracion global y despacho post-ejecucion | `/configuracion/mail-graph`; proceso worker | `configuracion_mail_graph`, `notificaciones_envios` | Implementado sin envio real en pruebas |
 
-El paquete nuevo vive en `src/app_scheduler/`. Hito 7 agrega motor real, historial y consola. Graph, papelera y Factory Reset permanecen fuera del runtime reconstruido.
+El paquete nuevo vive en `src/app_scheduler/`. Hitos 7-10 agregan motor,
+historial, consola, Papelera, feriados y Graph. Factory Reset permanece fuera
+del runtime reconstruido.
 
 ## Estado maestro actual
 
@@ -33,10 +37,10 @@ El paquete nuevo vive en `src/app_scheduler/`. Hito 7 agrega motor real, histori
 | Motor de ejecucion | Completa | Manual y automatica, claim, subprocess, timeout y detencion |
 | Ejecuciones, logs y consola | Completa en alcance Hito 7 | Historial, detalle, polling y archivo completo por ejecucion |
 | Logs de sistema y observabilidad | Completa en alcance Hito 8 | Consulta global, filtros, paginacion, detalle y estado worker/scheduler |
-| Evidencias | Completa salvo correo | Captura stdout, metadata, configuracion por tarea y validacion AST; Graph queda en Hito 10 |
-| Auditoria UI y Papelera | Pendiente | Planificadas para Hito 9 |
-| Feriados y sincronizacion externa | Parcial | Calendario local consumido; gestion/sincronizacion corresponden a Hito 10 |
-| Microsoft Graph y correos | Pendiente | Planificados para Hito 10 |
+| Evidencias | Completa en alcance Hito 10 | Captura stdout, metadata, configuracion, validacion AST y uso efimero para correo |
+| Auditoria UI y Papelera | Completa | Consulta inmutable, retiro, restauracion y purga protegida |
+| Feriados y sincronizacion externa | Completa en alcance Hito 10 | CRUD, preview/aplicacion Nager manual y calendario SQL local |
+| Microsoft Graph y correos | Completa en codigo/alcance Hito 10 | Configuracion global, TO/CC/BCC, evidencia, alerta, adjuntos y at-most-once; smoke real pendiente de autorizacion |
 | Configuracion operativa | Completa en alcance Hito 8 | Scheduler editable por allowlist; configuracion_sistema segura y solo lectura |
 | Factory Reset reconstruido | Pendiente | Planificado para Hito 11 |
 | UI/UX final | En progreso transversal | Gate Bootstrap cerrado; pulido global en Hito 12 |

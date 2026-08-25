@@ -4,9 +4,27 @@
 
 Hito 2 construyo y cerro la persistencia funcional del runtime aislado
 `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y
-evidencia; Hito 8 agrega consultas operativas y configuracion tipada; Hito 9,
-cerrado, agrega lectura de auditoria y Papelera sin cambiar el DDL ni sustituir `app/`,
-`run.py` o `scheduler_worker.py`.
+evidencia; Hito 8 agrega consultas operativas y configuracion tipada; Hito 9
+agrega lectura de auditoria y Papelera; Hito 10 consume las tablas existentes de
+feriados y notificaciones. Ninguno cambia el DDL ni sustituye `app/`, `run.py` o
+`scheduler_worker.py`.
+
+## Persistencia Hito 10
+
+* `RepositorioFeriados` implementa filtros/paginacion, CRUD local, estado,
+  borrado manual controlado y reconciliacion `API_NAGER`. La unicidad activa
+  fecha/pais y la prioridad `MANUAL` se validan antes de escribir.
+* `RepositorioNotificaciones` administra una configuracion activa por tarea,
+  reemplazo atomico de destinatarios TO/CC/BCC y la unica configuracion global
+  `MAIL_GRAPH`.
+* Cada despacho reserva `notificaciones_envios` bajo `sp_getapplock`. La
+  existencia de cualquier intento previo del mismo tipo y ejecucion impide un
+  segundo envio automatico; Hito 10 no implementa retries.
+* El motor confirma primero estado y metadata de evidencia. El JSON parseado se
+  entrega en memoria al despachador y no se persiste completo. El resultado
+  Graph se confirma en una transaccion posterior, sin alterar `ejecuciones`.
+* Auditoria humana comparte UoW con configuraciones y feriados; eventos tecnicos
+  usan `logs_sistema`. Secretos, tokens y contenido `.env` no se persisten.
 
 ## Persistencia Hito 9
 

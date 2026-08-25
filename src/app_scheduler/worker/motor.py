@@ -39,7 +39,8 @@ class MotorEjecucionSubprocess:
                  timeout_segundos: float | None = None,
                  espera_terminacion_segundos: float = 5.0,
                  evento_detencion=None, reloj=time.monotonic,
-                 intervalo_control_segundos: float = 0.5):
+                 intervalo_control_segundos: float = 0.5,
+                 notificador=None):
         self.proveedor = proveedor
         self.configuracion = configuracion
         self.logger = logger
@@ -50,6 +51,7 @@ class MotorEjecucionSubprocess:
         self.evento_detencion = evento_detencion or threading.Event()
         self.reloj = reloj
         self.intervalo_control_segundos = max(0.05, intervalo_control_segundos)
+        self.notificador = notificador
         self.almacen = AlmacenArchivosProcesos(
             Path(configuracion.ruta_base_scripts), Path(configuracion.ruta_base_env_scripts),
         )
@@ -63,6 +65,7 @@ class MotorEjecucionSubprocess:
         escritor = None
         proceso = None
         capturador = CapturadorEvidencia()
+        resultado_evidencia = None
         forzada = False
         motivo_control = None
         inicio = self.reloj()
@@ -116,9 +119,10 @@ class MotorEjecucionSubprocess:
             codigo = proceso.wait()
             for hilo in hilos: hilo.join(timeout=5)
             if contexto.enviar_evidencia:
+                resultado_evidencia = capturador.procesar(codigo, ruta_script.parent)
                 self._registrar_evidencia(
                     id_ejecucion,
-                    capturador.procesar(codigo, ruta_script.parent),
+                    resultado_evidencia,
                 )
             if motivo_control == "DETENIDA_MANUALMENTE":
                 estado, mensaje = "DETENIDA_MANUALMENTE", "Ejecucion detenida por solicitud autorizada."
@@ -131,9 +135,11 @@ class MotorEjecucionSubprocess:
                 mensaje = None if codigo == 0 else f"Proceso finalizo con codigo {codigo}."
             escritor.escribir(f"Codigo salida proceso: {codigo}", "INFO" if codigo == 0 else "ERROR")
             escritor.escribir(f"Estado final: {estado}", "INFO" if estado == "EXITOSA" else "ERROR")
-            return self._finalizar(
+            estado_final = self._finalizar(
                 id_ejecucion, estado, codigo, mensaje, forzada=forzada,
             )
+            self._notificar(id_ejecucion, resultado_evidencia)
+            return estado_final
         except Exception as error:
             mensaje = f"Fallo controlado del motor: {error.__class__.__name__}."
             if escritor:
@@ -141,6 +147,7 @@ class MotorEjecucionSubprocess:
             if proceso is not None and proceso.poll() is None:
                 terminar_arbol(proceso, espera_segundos=self.espera_terminacion_segundos)
             self._finalizar(id_ejecucion, "ERROR", None, mensaje)
+            self._notificar(id_ejecucion, resultado_evidencia)
             self.logger.exception(
                 "Motor de ejecucion finalizo con error controlado",
                 extra={"evento": "EJECUCION_ERROR", "id_ejecucion": id_ejecucion},
@@ -218,3 +225,16 @@ class MotorEjecucionSubprocess:
 
     def _cerrar_sin_proceso(self, id_ejecucion, mensaje):
         self._finalizar(id_ejecucion, "ERROR", None, mensaje)
+        self._notificar(id_ejecucion, None)
+
+    def _notificar(self, id_ejecucion, resultado_evidencia):
+        if self.notificador is None:
+            return
+        try:
+            evidencia = resultado_evidencia.get("evidencia") if resultado_evidencia else None
+            self.notificador.procesar(id_ejecucion, evidencia)
+        except Exception:
+            self.logger.exception(
+                "Fallo controlado al procesar notificacion post-ejecucion",
+                extra={"evento": "GRAPH_ENVIO_ERROR", "id_ejecucion": id_ejecucion},
+            )

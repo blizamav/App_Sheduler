@@ -1,5 +1,27 @@
 # Seguridad
 
+## Hito 10 - Feriados, evidencia y Microsoft Graph
+
+Estado: CERRADO.
+
+* Nager.Date y Microsoft Graph usan endpoints constantes, TLS normal y timeouts;
+  ninguna URL proviene del request. El scheduler nunca consulta Internet.
+* Todas las escrituras de feriados, destinatarios y configuracion usan permiso
+  backend, CSRF, SQL parametrizado, allowlist y auditoria dentro de la UoW.
+* `GRAPH_CLIENT_SECRET` y tokens viven solo en memoria/ENV. No se serializan en
+  DTO, HTML, logs ni auditoria. La UI informa presencia, no contenido.
+* Direcciones se validan, normalizan y deduplican. Los templates de correo usan
+  autoescape y el contenido externo se sanitiza sin alterar los logs TI.
+* La evidencia JSON se parsea desde stdout y permanece efimera. SQL conserva
+  solo metadata/hash y trazabilidad del envio.
+* Los adjuntos se confinan al root exacto de la version, rechazan symlinks,
+  traversal, `.env`, codigo y ejecutables, y aplican limites de cantidad/tamano.
+* La reserva at-most-once evita duplicados automaticos. Hito 10 no reintenta por
+  si solo: un timeout se registra como fallo y no altera el estado de ejecucion.
+* Las pruebas usan clientes simulados. El cierre realizo un unico GET
+  no destructivo a Nager.Date para validar DNS, TLS, HTTP y esquema del parser,
+  sin persistencia. No se llamo Graph ni se enviaron correos reales.
+
 ## Hito 8 - Observabilidad y configuracion operativa
 
 Estado: CERRADO.

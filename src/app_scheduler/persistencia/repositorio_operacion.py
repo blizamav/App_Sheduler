@@ -73,6 +73,20 @@ OFFSET ? ROWS FETCH NEXT ? ROWS ONLY""",
         )
         return tuple(f[0] for f in modulos), tuple(f[0] for f in eventos)
 
+    def registrar(self, *, accion: str, modulo: str, descripcion: str,
+                  nivel: str = "INFO", usuario: str | None = None,
+                  valor_anterior: str | None = None, valor_nuevo: str | None = None,
+                  ip: str | None = None, user_agent: str | None = None) -> int:
+        fila = self.ejecutar_uno(
+            """INSERT INTO dbo.logs_sistema
+(usuario, accion, modulo, descripcion, valor_anterior, valor_nuevo, ip, user_agent, nivel)
+OUTPUT INSERTED.id
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (usuario, accion, modulo, descripcion, valor_anterior, valor_nuevo,
+             ip, user_agent, nivel), operacion="registrar_log_sistema",
+        )
+        return int(fila[0])
+
     @staticmethod
     def _escapar_like(valor: str) -> str:
         return valor.replace("~", "~~").replace("%", "~%").replace("_", "~_")
