@@ -13,7 +13,8 @@ import requests
 from app_scheduler import crear_aplicacion
 from app_scheduler.compartido.auditoria import ContextoAuditoria
 from app_scheduler.compartido.autorizacion import CLAVE_IDENTIDAD, IdentidadSesion, TIPO_BASE_DATOS
-from app_scheduler.compartido.errores import ErrorValidacion
+from app_scheduler.compartido.errores import ErrorPersistencia, ErrorValidacion
+from app_scheduler.compartido.unidad_trabajo import UnidadTrabajoSQL
 from app_scheduler.modulos.feriados.casos_uso import ServicioFeriados
 from app_scheduler.modulos.feriados.cliente_nager import ClienteNagerDate, ErrorNagerDate
 from app_scheduler.modulos.notificaciones.casos_uso import ServicioConfiguracionGraph, ServicioNotificacionesTarea
@@ -33,7 +34,11 @@ from app_scheduler.persistencia.modelos import (
     Pagina,
 )
 from app_scheduler.persistencia.repositorio_notificaciones import RepositorioNotificaciones
-from tests.reconstruccion.fakes_sql import ConexionProgramada, ResultadoSQL
+from tests.reconstruccion.fakes_sql import (
+    ConexionProgramada,
+    ProveedorProgramado,
+    ResultadoSQL,
+)
 
 
 AHORA = datetime(2026, 8, 25, 10, 0)
@@ -334,9 +339,101 @@ def test_repositorio_reserva_idempotente_usa_applock_y_estado_pendiente():
     assert repo.reservar_envio(7, 8, "EVIDENCIA_CLIENTE", "Asunto",
                                {"TO": "a@example.cl", "CC": None, "BCC": None}) == 91
     sql, parametros = conexion.ejecuciones[0]
+    assert sql.lstrip().startswith("SET NOCOUNT ON;")
     assert "sp_getapplock" in sql and "NOT EXISTS" in sql
     assert "estado_envio IN" not in sql
     assert "APP_SCHEDULER_MAIL_7_EVIDENCIA_CLIENTE" in parametros
+
+
+class CursorPyodbcNotificacionSimulado:
+    """Simula los DONE/rowcount previos al SELECT final del batch."""
+
+    def __init__(self, fila=(91,), *, resultado_final=True):
+        self.fila = fila
+        self.resultado_final = resultado_final
+        self.description = None
+        self.rowcount = -1
+        self.cerrado = False
+
+    def execute(self, sql, parametros=()):
+        self.sql = sql
+        self.parametros = tuple(parametros)
+        if sql.lstrip().startswith("SET NOCOUNT ON;") and self.resultado_final:
+            self.description = (("id_envio",),)
+        else:
+            self.description = None
+            self.rowcount = 1
+        return self
+
+    def fetchone(self):
+        if self.description is None:
+            raise RuntimeError("No results. Previous SQL was not a query.")
+        return self.fila
+
+    def close(self):
+        self.cerrado = True
+
+
+class ConexionPyodbcNotificacionSimulada:
+    def __init__(self, fila=(91,), *, resultado_final=True):
+        self.cursor_notificacion = CursorPyodbcNotificacionSimulado(
+            fila, resultado_final=resultado_final,
+        )
+        self.commits = 0
+        self.rollbacks = 0
+        self.cerrada = False
+
+    def cursor(self):
+        return self.cursor_notificacion
+
+    def commit(self):
+        self.commits += 1
+
+    def rollback(self):
+        self.rollbacks += 1
+
+    def close(self):
+        self.cerrada = True
+
+
+def _reservar_notificacion(repo):
+    return repo.reservar_envio(
+        7, None, "NOTIFICACION_EXITOSA", "Ejecucion exitosa",
+        {"TO": "cliente@example.cl", "CC": None, "BCC": None},
+    )
+
+
+def test_reserva_notificacion_nocount_evita_resultados_intermedios_pyodbc():
+    conexion = ConexionPyodbcNotificacionSimulada((91,))
+
+    assert _reservar_notificacion(RepositorioNotificaciones(conexion)) == 91
+    cursor = conexion.cursor_notificacion
+    assert cursor.description[0][0] == "id_envio" and cursor.cerrado
+
+    sin_nocount = CursorPyodbcNotificacionSimulado((91,))
+    sin_nocount.execute(cursor.sql.replace("SET NOCOUNT ON;", "", 1), cursor.parametros)
+    with pytest.raises(RuntimeError, match="Previous SQL was not a query"):
+        sin_nocount.fetchone()
+
+
+def test_reserva_notificacion_duplicada_retorna_none_sin_error_driver():
+    conexion = ConexionPyodbcNotificacionSimulada(None)
+
+    assert _reservar_notificacion(RepositorioNotificaciones(conexion)) is None
+
+
+def test_reserva_notificacion_sin_resultset_final_revierte_uow():
+    conexion = ConexionPyodbcNotificacionSimulada(resultado_final=False)
+    proveedor = ProveedorProgramado(conexion)
+
+    with pytest.raises(ErrorPersistencia, match="reservar_envio_notificacion"):
+        with UnidadTrabajoSQL(proveedor) as uow:
+            _reservar_notificacion(
+                RepositorioNotificaciones(uow.obtener_conexion())
+            )
+            uow.confirmar()
+
+    assert conexion.commits == 0 and conexion.rollbacks == 1 and conexion.cerrada
 
 
 def test_config_graph_falla_cerrado_y_secret_nunca_es_publico(configuracion):
@@ -516,6 +613,26 @@ def test_despacho_exito_sin_evidencia_envia_notificacion_estandar():
     assert estado.reservas[0][0] == "NOTIFICACION_EXITOSA"
     assert estado.reservas[0][1] == "Ejecucion exitosa | Proceso"
     assert "Evidencia del proceso" not in graph.mensajes[0]["body"]["content"]
+
+
+def test_despacho_exito_graph_off_reserva_una_vez_y_finaliza_omitido():
+    estado = estado_despacho(estado_evidencia=None)
+    estado.config = replace(estado.config, enviar_evidencia=False)
+    graph = GraphEnvioFake()
+    servicio = ServicioDespachoNotificaciones(
+        ProveedorEstado(estado), GraphConfigFake(disponible=False),
+        cliente_graph=graph, fabrica_uow=UowEstado,
+        repositorio=RepoNotificacionesEstado,
+        repositorio_logs=LogsNotificacionesEstado,
+    )
+
+    assert servicio.procesar(9, None) == "OMITIDO"
+    assert servicio.procesar(9, None) == "OMITIDO"
+    assert estado.reservas[0][0] == "NOTIFICACION_EXITOSA"
+    assert len(estado.reservas) == 1
+    assert estado.finalizaciones[0][1] == "OMITIDO"
+    assert len(estado.finalizaciones) == 1 and graph.mensajes == []
+    assert estado.contexto["estado_ejecucion"] == "EXITOSA"
 
 
 def test_despacho_evidencia_solicitada_no_emitida_no_bloquea_exito():

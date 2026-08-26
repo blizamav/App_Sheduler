@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-26 - Correccion pyodbc de reserva de notificaciones
+
+* `RepositorioNotificaciones.reservar_envio()` incorpora `SET NOCOUNT ON`
+  exclusivamente en su batch transaccional. Asi, pyodbc recibe directamente
+  el `SELECT` final con `id_envio` y no intenta leer un resultado intermedio de
+  rowcount como si fuera una consulta.
+* Se preservaron `sp_getapplock`, la reserva idempotente, la unidad de trabajo,
+  el rollback, los tipos SQL existentes y la garantia at-most-once. No se
+  modificaron `ejecutar_uno()`, la logica global de cursores ni el esquema SQL.
+* La regresion cubre NOCOUNT OFF/ON, reserva exitosa, duplicado, rollback ante
+  ausencia de resultset final y despacho repetido con Graph deshabilitado.
+  Aprobaron `316 passed, 1 skipped` en reconstruccion y `342 passed, 1 skipped`
+  en la suite completa, ademas de compileall y `git diff --check`.
+* Se recupero una unica vez el postproceso de notificacion de la ejecucion QA
+  `10096`, sin volver a ejecutar la tarea. La ejecucion conserva estado
+  `EXITOSA` y codigo `0`; quedo exactamente una `NOTIFICACION_EXITOSA` en
+  `OMITIDO` porque Graph esta deshabilitado. No hubo token, HTTP ni correo.
+* No se ejecuto DDL ni DML SQL manual, no se modificaron variables de entorno y
+  no se inicio Hito 11.
+
 ## 2026-08-26 - Modo oficial Worker `--queue-only`
 
 * El entrypoint reconstruido incorpora `--queue-only` para consumir ejecuciones

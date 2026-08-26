@@ -11,6 +11,36 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-26
 
+## 2026-08-26 - Correccion reserva de notificaciones / pyodbc NOCOUNT
+
+* Gate: correccion bloqueante pre-release posterior al Hito 10; Hito 11 no fue
+  iniciado.
+* Causa: `reservar_envio()` ejecutaba `sp_getapplock`, validacion e `INSERT`
+  con NOCOUNT OFF. pyodbc quedaba posicionado en un resultado intermedio sin
+  columnas y `fetchone()` fallaba con `No results. Previous SQL was not a
+  query.` antes de alcanzar el `SELECT id_envio` final.
+* Cambio: se agrego `SET NOCOUNT ON` solo al batch de
+  `RepositorioNotificaciones.reservar_envio()`. No se modificaron
+  `ejecutar_uno()`, cursores globales, esquema, applock, idempotencia, unidad de
+  trabajo ni garantia at-most-once.
+* Regresion controlada real: un batch de sesion con variable de tabla reprodujo
+  el fallo con NOCOUNT OFF y retorno `(91,)` con NOCOUNT ON. No hubo DDL ni DML
+  persistente en esta prueba.
+* Pruebas: `69 passed` focales; `316 passed, 1 skipped` en reconstruccion y
+  `342 passed, 1 skipped` totales; compileall y `git diff --check`: OK.
+* Recuperacion QA autorizada: se proceso una unica vez solo el postproceso de
+  notificacion de `10096` mediante componentes reales. La tarea no se volvio a
+  ejecutar. Resultado `OMITIDO`, cliente Graph 0 llamadas y exactamente una
+  fila `NOTIFICACION_EXITOSA/OMITIDO`; no se solicitaron tokens ni se realizaron
+  llamadas HTTP o envios de correo.
+* Estado final QA: `10096=EXITOSA`, codigo `0`, sin pendientes; ejecuciones
+  automaticas `(31, max 10086)`, eventos scheduler `(293, max 1209)` y
+  heartbeat `DETENIDO`. No se inicio Worker ni Scheduler.
+* Seguridad: `.env`, `.env.docker`, `database/` y el script protegido no fueron
+  modificados. `scripts_pruebas/prueba_qa.py` conserva SHA-256
+  `280AA16DCB5DEF5EDCE97EA003BA63EF9D813D23CE87E0B2DCB374C305478697` y
+  permanece fuera de Git.
+
 ## 2026-08-26 - Implementacion controlada / Worker `--queue-only`
 
 * Fase: ajuste operativo transversal posterior al Hito 10; Hito 11 no iniciado.

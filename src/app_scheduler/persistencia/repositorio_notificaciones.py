@@ -168,7 +168,8 @@ WHERE e.id_ejecucion = ?""",
     def reservar_envio(self, id_ejecucion: int, id_evidencia: int | None,
                        tipo_envio: str, asunto: str, destinatarios) -> int | None:
         fila = self.ejecutar_uno(
-            """DECLARE @resultado int;
+            """SET NOCOUNT ON;
+DECLARE @resultado int;
 DECLARE @reservado TABLE (id_envio bigint NOT NULL);
 EXEC @resultado = sys.sp_getapplock
  @Resource = ?, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;

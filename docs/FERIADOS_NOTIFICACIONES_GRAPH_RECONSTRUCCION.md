@@ -4,6 +4,20 @@ Estado: **Hito 10 CERRADO; ajuste contractual posterior LISTO PARA REVISION**.
 No se habilitaron envios reales. La migracion `022` esta preparada y no fue
 ejecutada sobre QA.
 
+## Nota operativa pyodbc para reservas
+
+`RepositorioNotificaciones.reservar_envio()` ejecuta un batch con
+`sp_getapplock`, comprobacion idempotente, `INSERT` opcional y un unico
+`SELECT` final. El batch usa `SET NOCOUNT ON` para impedir que pyodbc exponga
+resultados intermedios de rowcount antes del `id_envio` esperado por
+`ejecutar_uno()`.
+
+La correccion es local al repositorio de notificaciones: no incorpora
+`nextset()`, no cambia el helper global y conserva la transaccion, el rollback
+y la politica at-most-once. Con Graph deshabilitado, la reserva se finaliza en
+`OMITIDO`; este resultado no altera el estado final de la ejecucion ni provoca
+solicitudes de token, HTTP o correo.
+
 ## Matriz contract-first
 
 | Capacidad | SQL canonico | Runtime historico | Documentacion | Reconstruccion al iniciar Hito 10 | Decision Hito 10 |
