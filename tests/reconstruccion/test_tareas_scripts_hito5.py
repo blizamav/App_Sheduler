@@ -501,7 +501,8 @@ def test_edicion_separa_exito_error_y_evidencia_no_implementada(configuracion):
     assert respuesta.status_code == 200
     assert b"Notificar cuando la ejecucion termine correctamente" in respuesta.data
     assert b"Notificar cuando la ejecucion termine con error" in respuesta.data
-    assert b"NO IMPLEMENTADA" in respuesta.data
+    assert b"No implementada" in respuesta.data
+    assert b"OPCIONAL" in respuesta.data
     assert b"Las notificaciones de exito y error pueden utilizarse normalmente" in respuesta.data
     assert b'name="notificar_exito_activa"' in respuesta.data
     assert b'name="enviar_evidencia"' in respuesta.data and b"disabled" in respuesta.data

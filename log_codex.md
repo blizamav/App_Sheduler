@@ -8,8 +8,23 @@
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
 * Estado actual: Hitos 0-10 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
+* Fase actual: Release Candidate - Hitos 11 y 12 cerrados; Hito 13 en curso.
 * Ultima actualizacion: 2026-08-26
+
+## 2026-08-26 - Release Candidate / Hito 12 UI/UX final
+
+* Estado: cerrado. Se auditaron vistas generales y flujos de detalle en
+  1440x900, 768x900, 390x844 y 844x390 mediante navegador real.
+* Resultado: rutas cargan, el contenido usa el ancho disponible y las tablas
+  anchas mantienen scroll local. Sidebar contraible y Offcanvas responden en
+  escritorio, movil vertical y horizontal.
+* Hallazgo corregido: Ejecuciones reutilizaba visualmente `.panel-operativo`
+  definido solo en el CSS de Tareas. El modulo propio ahora conserva jerarquia,
+  espaciado y corte de nombres largos de Worker, eliminando overflow movil.
+* Evidencia sin contrato 1.0 se muestra como `OPCIONAL` en Notificaciones y no
+  como un pendiente obligatorio.
+* Seguridad/operacion: solo navegacion y lectura; no se ejecutaron tareas,
+  Graph, SQL ni Factory Reset. `.env`, `.env.docker` y ejecuciones QA intactos.
 
 ## 2026-08-26 - Release Candidate / Hito 11 Factory Reset
 

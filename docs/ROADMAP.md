@@ -164,11 +164,14 @@ Pendiente deliberado: smoke destructivo real sobre `APP_SCHEDULER_QA` en Hito
 
 ### Hito 12 - UI/UX y responsive final
 
-Completar Bootstrap avanzado, consistencia global, fluidez, microtransiciones,
-responsive, accesibilidad, diseno final y revision visual completa. UI/UX es
-responsabilidad transversal desde Hito 7: cada hito debe entregar funcionalidad,
-seguridad, tests, UI/UX, responsive e integracion visual; Hito 12 no rescatara
-interfaces deficientes acumuladas.
+Estado: CERRADO.
+
+Se completo el inventario visual del runtime reconstruido, la validacion real
+de vistas generales y flujos de detalle en 1440x900, 768x900, 390x844 y
+844x390, y el cierre transversal de responsive, foco, navegacion, formularios,
+tablas, estados y movimiento reducido. Evidencia no implementada se presenta
+como capacidad opcional y la consola de ejecucion conserva jerarquia y ancho
+correctos incluso con nombres de Worker extensos.
 
 ### Hito 13 - Docker QA
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-26 - Hito 12 UI/UX final
+
+* Se auditaron las vistas generales y los flujos de detalle del runtime
+  reconstruido en desktop, tablet, movil vertical y movil horizontal, sin
+  overflow global en el inventario validado.
+* La consola de ejecucion recupera la estructura visual de sus paneles sin
+  depender del CSS de Tareas y corta nombres extensos de Worker sin ampliar el
+  viewport.
+* Evidencia no implementada se identifica como `OPCIONAL` en Notificaciones;
+  las ejecuciones y notificaciones estandar permanecen disponibles.
+* Se verificaron sidebar/offcanvas, tablas, filtros, stepper, formularios,
+  dropdowns, foco visible y movimiento reducido. No se ejecuto ninguna tarea,
+  envio Graph ni Factory Reset.
+
 ## 2026-08-26 - Hito 11 Factory Reset reconstruido
 
 * El Factory Reset in-place se integro al runtime reconstruido con permiso

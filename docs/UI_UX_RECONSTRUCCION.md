@@ -3,8 +3,8 @@
 ## Estado y alcance
 
 Esta guia define el contrato visual transversal de `src/app_scheduler/` incluido
-en el cierre del Hito 7 y extendido hasta Hito 10. Este hito no reemplaza el
-pulido final previsto para Hito 12.
+en el cierre del Hito 7, extendido hasta Hito 10 y validado integralmente al
+cerrar Hito 12.
 
 La base frontend es Flask + Jinja2 + HTML5 + Bootstrap 5.3.3 + CSS y JavaScript
 modulares. Bootstrap se distribuye localmente en
@@ -149,6 +149,21 @@ No se declara cumplimiento formal de OWASP. Se mantienen controles verificables:
 Cada hito nuevo debe entregar funcionalidad, seguridad, pruebas, UI/UX,
 responsive e integracion visual. Hito 12 queda reservado para consistencia y
 accesibilidad finales, no para reparar interfaces temporales acumuladas.
+
+## Cierre Hito 12
+
+La revision final recorrio las vistas autenticadas, errores publicos y flujos de
+detalle en 1440x900, 768x900, 390x844 y 844x390. Se verificaron navegacion
+contraible/offcanvas, semaforo Worker, filtros, tablas con scroll local,
+formularios, stepper, consola, dropdowns y Factory Reset sin ejecutar acciones.
+No se declara conformidad WCAG formal; se verificaron controles concretos de
+teclado, foco visible, labels, nombres accesibles, estados textuales, Bootstrap
+Modal/Offcanvas y `prefers-reduced-motion`.
+
+La consola de ejecucion define sus paneles dentro de su propio modulo CSS y
+permite cortar nombres largos de Worker sin desbordar el viewport. En el flujo
+guiado, una Evidencia ausente conserva el estado `No implementada` acompañado
+por `OPCIONAL`, por lo que no se interpreta como requisito incumplido.
 
 ## Semaforo de vida del Worker
 
