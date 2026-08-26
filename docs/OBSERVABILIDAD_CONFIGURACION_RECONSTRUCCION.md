@@ -156,3 +156,17 @@ No se ejecutaron ciclos del scheduler, scripts operativos ni escritura
 confirmada. No se modificaron schema, `.env`, `.env.docker`, bootstrap, release
 o runtime historico. El worker observado en QA estaba `DETENIDO`; la lectura y
 clasificacion fueron correctas y no se intento iniciarlo desde Flask.
+
+## Healthchecks Docker Hito 13
+
+Web usa `/salud` como comprobacion de proceso sin abrir SQL. Worker usa
+`python -m app_scheduler.worker.aplicacion --healthcheck`: valida configuracion,
+consulta en SQL el heartbeat reconstruido del hostname exacto del contenedor y
+exige un estado vivo dentro de cinco intervalos. El comando es de solo lectura,
+no construye Scheduler, no reclama cola y falla cerrado ante SQL no disponible.
+
+Docker `healthy` no sustituye el panel operativo: la Web sigue mostrando la
+clasificacion completa `OPERATIVO/ATENCION/DETENIDO/DESCONOCIDO`. La politica
+`unless-stopped` reinicia el contenedor si muere su proceso principal; Docker
+Compose por si solo no reinicia un proceso vivo solo porque su healthcheck pase
+a `unhealthy`.

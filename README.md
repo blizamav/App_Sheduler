@@ -4,7 +4,8 @@ APP Scheduler es una aplicacion web interna para administrar, programar, ejecuta
 
 ## Estado del proyecto
 
-El runtime actual permanece operativo como referencia mientras se realiza una reconstruccion limpia y controlada.
+El runtime reconstruido es la Release Candidate y el arranque oficial de Docker
+QA. El runtime historico permanece solo como referencia hasta el cutover final.
 
 * Hito 0 - Inventario y arquitectura: CERRADO.
 * Hito 1 - Base del proyecto y configuracion: CERRADO.
@@ -17,10 +18,13 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 8 - CERRADO: observabilidad, configuracion operativa e integracion QA.
 * Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
 * Hito 10 - CERRADO: feriados, sincronizacion manual, notificaciones y Microsoft Graph reconstruidos sin envio real.
+* Hito 11 - CERRADO A NIVEL IMPLEMENTACION: Factory Reset in-place; smoke destructivo reservado para Hito 14.
+* Hito 12 - CERRADO: UI/UX final validada en desktop, tablet y movil.
+* Hito 13 - CERRADO: Docker QA inicia exclusivamente Web y Worker reconstruidos.
 
 Ajuste contractual post-Hito 10 aplicado: la notificacion estandar de exito y
 la Evidencia 1.0 quedaron separadas. La migracion incremental `022` fue aplicada
-y validada en `APP_SCHEDULER_QA`; Hito 11 no fue iniciado.
+y validada en `APP_SCHEDULER_QA`.
 
 El flujo guiado definitivo de tareas recorre Datos, Script, Evidencia,
 Notificaciones y Programacion. El stepper diferencia la pantalla actual del
@@ -28,16 +32,12 @@ estado funcional: un paso puede estar `En curso`, `Completado`, `Pendiente` o
 `Requiere ajuste`. Evidencia y Notificaciones tienen pantallas independientes y
 Programacion permite configurar o finalizar explicitamente sin programar.
 
-QA conserva un lock de Factory Reset en estado `FACTORY_RESET_ERROR`. Web y
-worker aplican fail-closed: las ejecuciones permanecen bloqueadas hasta una
-recuperacion manual controlada. Este ajuste no libera ni modifica ese lock.
-
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
 consola, y corrige el flujo comun de confirmacion/Guardado. Tambien refuerza
 cabeceras de seguridad y mantiene CSRF, autorizacion y autoescape. El gate fue
-integrado al cierre del hito; no constituye uno nuevo ni declara finalizada la
-UI/UX global, cuyo pulido permanece en Hito 12.
+integrado al cierre del hito; el inventario y pulido global quedaron cerrados
+posteriormente en Hito 12.
 Como ajuste transversal del mismo gate, el runtime reconstruido incorpora
 `/scripts`: un hub global paginado para localizar scripts por nombre, tarea o
 cliente y entrar al detalle versionado existente sin duplicar su CRUD.
@@ -61,16 +61,21 @@ Fuentes maestras de la reconstruccion:
 * [Auditoria y Papelera](docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md)
 * [Feriados, notificaciones y Graph](docs/FERIADOS_NOTIFICACIONES_GRAPH_RECONSTRUCCION.md)
 
-La implementacion no se reescribira de una sola vez. Los modulos se reemplazaran por hitos verificables, preservando reglas de negocio, trazabilidad, seguridad y compatibilidad necesarias.
+La reconstruccion se completo mediante hitos verificables que preservaron reglas
+de negocio, trazabilidad, seguridad y compatibilidad necesarias.
 
-El runtime historico sigue activo mediante `run.py` y `scheduler_worker.py`. El runtime reconstruido vive aislado en `src/app_scheduler/`; los Hitos 7-10 agregan motor, observabilidad, Papelera, feriados y notificaciones, pero todavia no reemplazan los entrypoints historicos.
+El runtime oficial vive en `src/app_scheduler/`. Docker y los comandos vigentes
+usan `python -m app_scheduler.web` y
+`python -m app_scheduler.worker.aplicacion`; `run.py` y
+`scheduler_worker.py` quedan solo como referencia historica hasta el cutover
+documental de Hito 15.
 
-Validacion final de Hito 10: 280 pruebas de reconstruccion y 306 pruebas totales
-aprobadas, con 1 omitida por la restriccion conocida de symlinks en Windows. No
-se envio correo. Un unico GET no destructivo a Nager.Date valido DNS, TLS, HTTP
-y el esquema del parser para 2026/CL, sin persistir datos. Compose, Docker y UI
-responsive quedaron aprobados. No se ejecuto SQL, no se modifico QA y no se
-realizo cutover.
+Validacion Release Candidate Hitos 11-13: 332 pruebas de reconstruccion y 358
+pruebas totales aprobadas, con 1 omitida por la restriccion conocida de symlinks
+en Windows; 38 templates Jinja y 8 archivos JavaScript validados. Compose,
+builds, checks internos, startup Web `healthy` y conectividad SQL read-only a
+`APP_SCHEDULER_QA` aprobaron. No se envio correo, no se ejecuto Factory Reset,
+no se inicio Scheduler y no se realizo cutover.
 
 Validacion aislada del runtime reconstruido:
 
@@ -105,7 +110,8 @@ El sistema actual incluye:
 * papelera, auditoria, feriados, evidencias y Microsoft Graph;
 * Factory Reset in-place sobre la base autorizada.
 
-Estas capacidades constituyen requisitos de reconstruccion, no una declaracion de que el nuevo runtime ya fue implementado.
+Estas capacidades estan implementadas en el runtime reconstruido; el smoke QA
+integral y el cutover final permanecen en Hitos 14 y 15.
 
 ## Arquitectura vigente
 
@@ -135,20 +141,22 @@ Docker carga explicitamente `.env.docker`. No existe fallback automatico hacia `
 
 Los archivos reales no se versionan. Las plantillas son `.env.example` y `.env.docker.example`. Nunca sobrescribas un archivo `.env` existente.
 
-## Ejecucion local de referencia
+## Ejecucion local reconstruida
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
-python run.py
+$env:PYTHONPATH="src"
+python -m app_scheduler.web
 ```
 
 El worker se ejecuta en otro proceso:
 
 ```powershell
-python scheduler_worker.py
+$env:PYTHONPATH="src"
+python -m app_scheduler.worker.aplicacion
 ```
 
 Validacion no funcional del runtime reconstruido:
@@ -185,8 +193,15 @@ Configura manualmente `.env.docker` a partir de su plantilla sin sobrescribir va
 
 ```powershell
 docker compose config --quiet
-docker compose up --build
+docker compose up -d --build web worker
+docker compose ps
 ```
+
+Compose carga siempre `.env.docker`. Web valida proceso con `GET /salud`; Worker
+valida en SQL el heartbeat del mismo hostname. Ambos usan
+`restart: unless-stopped`. El healthcheck informa disponibilidad, pero no
+reinicia por si solo un proceso vivo bloqueado. Una caida del proceso principal
+si activa la politica de reinicio Docker.
 
 ## Base de datos
 

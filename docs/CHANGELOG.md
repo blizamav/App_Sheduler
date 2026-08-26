@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-26 - Hito 13 Runtime Docker QA reconstruido
+
+* Dockerfile y Compose usan exclusivamente los entrypoints reconstruidos para
+  Web y Worker; `docker compose up` ya no arranca `run.py` ni
+  `scheduler_worker.py`.
+* Ambos servicios cargan `.env.docker`, usan `restart: unless-stopped` y montan
+  scripts, env, logs y control runtime. El Worker anula credenciales Web y de
+  mantenimiento Factory Reset que no necesita.
+* Web incorpora healthcheck HTTP `/salud`. Worker incorpora `--healthcheck` de
+  solo lectura sobre el heartbeat del hostname exacto; no construye Scheduler,
+  no reclama cola y falla cerrado ante una senal ausente, detenida o vencida.
+* `docker compose config --quiet`, build Web/Worker, checks internos y startup
+  Web QA aprobaron. No se inicio Worker operativo, no se consumio cola, no se
+  ejecuto SQL destructivo, Graph ni Factory Reset.
+* El cierre integrado aprobo `332 passed, 1 skipped` en reconstruccion y
+  `358 passed, 1 skipped` en la suite total, 38 templates Jinja, 8 JavaScript,
+  compileall, checks Docker y conectividad SQL de solo lectura.
+
 ## 2026-08-26 - Hito 12 UI/UX final
 
 * Se auditaron las vistas generales y los flujos de detalle del runtime

@@ -2,9 +2,9 @@
 
 ## Estado
 
-Arquitectura maestra aprobada al cerrar Hito 0. Hitos 1-9 estan cerrados y Hito
-10 esta listo para revision en el runtime aislado; el runtime historico sigue
-activo y no se ha realizado cutover.
+Arquitectura maestra aprobada al cerrar Hito 0. Los Hitos 1-13 estan cerrados
+como Release Candidate; el runtime reconstruido es el default Docker QA y el
+runtime historico queda solo como referencia hasta el cutover de Hito 15.
 
 ## Implementacion Hito 10
 
@@ -127,11 +127,12 @@ Mapa de transicion aplicado:
 | CSS/JS monoliticos | `presentacion/static/` | Base dividida por tokens, layout, componentes y modulos. |
 | Hilos web para ejecucion | `worker/contratos.py` y motor Hito 7 | Flask reserva; el worker reclama y ejecuta con el motor unico. |
 
-Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-10
+Hito 1 no copio rutas funcionales ni modulos de negocio. Los Hitos 3-13
 reimplementaron incrementalmente seguridad, catalogos, tareas/scripts,
 scheduler, motor, logs, consola, evidencia, observabilidad, Papelera, feriados y
-Graph. Factory Reset sigue pendiente. Los entrypoints `run.py` y
-`scheduler_worker.py` continuan apuntando exclusivamente al runtime historico.
+Graph, ademas de Factory Reset in-place, UI final y Docker QA. Los archivos
+`run.py` y `scheduler_worker.py` permanecen como referencia historica, pero
+Compose y Dockerfile ya no los usan.
 
 ## Implementacion Hito 2
 
@@ -442,7 +443,7 @@ flashes y modal; cada modulo carga solo su hoja/controlador adicional. No existe
 dependencia de CDN, SPA, jQuery ni JavaScript inline. Las mutaciones conservan
 autorizacion backend y CSRF; loading y confirmacion no cambian contratos HTTP.
 La revision visual manual y sus correcciones responsive forman parte del cierre
-del Hito 7; el pulido global permanece reservado para Hito 12.
+del Hito 7; el pulido global fue completado y validado en Hito 12.
 
 ### Gate transversal de calidad
 
@@ -459,12 +460,18 @@ usa solo como referencia de organizacion y no como fuente para copiar deuda.
 
 ## Docker y operacion
 
-Compose mantiene dos servicios:
+Desde Hito 13, Compose mantiene dos servicios reconstruidos:
 
 * `web`: aplicacion Flask/WSGI segun ambiente;
 * `worker`: scheduler y motor de ejecucion.
 
-Ambos usan la misma imagen y `.env.docker`, con volumenes compartidos solo donde el contrato lo exige. El Hito 13 validara healthchecks, shutdown, permisos de volumen, ODBC, SQLCMD y recuperacion tras reinicio. Produccion requerira WSGI, secretos externos, backup, retencion y observabilidad como hito separado.
+Ambos usan la misma imagen y `.env.docker`, con volumenes compartidos solo donde
+el contrato lo exige. Web arranca con `python -m app_scheduler.web`; Worker con
+`python -m app_scheduler.worker.aplicacion` en modo Scheduler+cola. La imagen
+no usa los entrypoints historicos. Web expone `/salud` y Worker comprueba el
+heartbeat activo de su propio hostname; la cuenta de mantenimiento Factory
+Reset se vacia expresamente en el servicio Worker. Produccion requerira WSGI,
+secretos externos, backup y retencion como cierre posterior.
 
 ## Estrategia de pruebas
 
@@ -551,4 +558,5 @@ Notificaciones decide el evento de negocio y Microsoft Graph lo transporta.
 `NOTIFICACION_EXITOSA` ya no depende de que exista Evidencia; una omision de
 Evidencia no cambia una ejecucion exitosa ni dispara una alerta de error. La
 migracion `022` y el bootstrap preparado expresan el invariante
-`enviar_evidencia = 0 OR notificar_exito_activa = 1`. Hito 11 no fue iniciado.
+`enviar_evidencia = 0 OR notificar_exito_activa = 1`. Factory Reset fue
+reconstruido posteriormente y cerrado a nivel implementacion en Hito 11.

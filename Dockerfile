@@ -31,8 +31,8 @@ RUN pip install --upgrade pip \
 
 COPY . .
 
-RUN mkdir -p logs logs_tareas logs_sistema scripts env_scripts
+RUN mkdir -p logs logs_tareas logs_sistema scripts env_scripts runtime_control
 
 EXPOSE 5000
 
-CMD ["python", "run.py"]
+CMD ["python", "-m", "app_scheduler.web"]

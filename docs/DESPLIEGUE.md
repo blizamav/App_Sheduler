@@ -7,7 +7,8 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
-python run.py
+$env:PYTHONPATH="src"
+python -m app_scheduler.web
 ```
 
 En CMD:
@@ -21,7 +22,9 @@ No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque pued
 
 ## QA Ubuntu
 
-Implementacion base disponible desde Fase 14E con `Dockerfile` y `docker-compose.yml`. Debe ejecutarse con `.env` propio, SQL Server accesible y volumenes persistentes para scripts, env y logs.
+Runtime reconstruido oficial disponible con `Dockerfile` y
+`docker-compose.yml`. Usa `.env.docker`, SQL Server accesible y volumenes
+persistentes para scripts, env, logs y control runtime.
 
 ## Produccion Ubuntu
 
@@ -54,7 +57,8 @@ EJECUCION_GRACIA_TERMINACION_SEGUNDOS=5
 El timeout termina el process tree y registra `ERROR`; la gracia define cuanto
 esperar antes del cierre forzado. Docker conserva los volumenes compartidos de
 scripts, `env_scripts`, `logs_tareas` y `runtime_control` requeridos por web y
-worker. Los entrypoints historicos no se cambian hasta el cutover.
+worker. Los entrypoints Docker oficiales son reconstruidos; los historicos no
+forman parte del arranque QA.
 
 ## Docker Compose con archivo dedicado
 
@@ -68,7 +72,8 @@ Consideraciones:
 
 * `docker-compose.yml` no usa `.env` como fallback para `env_file`.
 * Si la password SQL contiene `$`, Docker puede requerir escape distinto al flujo local; por eso `.env.docker` debe mantenerse separado de `.env`.
-* Desde Fase 14F.5, `docker-compose.yml` inyecta `TZ` desde `ZONA_HORARIA` para alinear hora de contenedor, logs y monitor del worker con la zona operativa.
+* Compose fija `TZ=America/Santiago`; la aplicacion conserva `ZONA_HORARIA`
+  desde `.env.docker` sin interpolar el `.env` local.
 * Convencion vigente: el proyecto sigue operando con hora local de SQL Server; Docker no debe reinterpretarla como UTC en el monitor.
 
 Validacion final Fase 14G:
@@ -218,16 +223,17 @@ Decision vigente:
 
 ## Docker
 
-Fase 14E deja disponible:
+Hito 13 define como runtime QA oficial:
 
 - `Dockerfile`
 - `docker-compose.yml`
 - `.dockerignore`
 
-Servicios:
+Servicios reconstruidos:
 
-- `web`: ejecuta `python run.py`
-- `worker`: ejecuta `python scheduler_worker.py`
+- `web`: ejecuta `python -m app_scheduler.web`
+- `worker`: ejecuta `python -m app_scheduler.worker.aplicacion` en modo
+  Scheduler+cola
 
 Comandos recomendados:
 
@@ -246,8 +252,11 @@ Reglas:
 
 - no ejecutar `worker` dentro de Flask;
 - no escalar `worker` a mas de una replica;
+- ambos servicios usan `restart: unless-stopped`;
+- Web valida `/salud`; Worker valida heartbeat SQL del contenedor;
+- el healthcheck no inicia Scheduler ni consume cola;
 - mantener volumen compartido para `logs/worker_console.log`;
-- usar `.env` real por ambiente y no versionarlo.
+- usar `.env.docker` y no versionarlo.
 - si la password SQL contiene `$`, Docker Compose puede requerir escape para el archivo usado por contenedores; no cambiar `.env` a ciegas ni mezclar ese ajuste con el uso local sin documentarlo.
 
 Uso recomendado para separar local y Docker sin tocar `.env` real:

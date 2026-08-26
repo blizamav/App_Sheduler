@@ -2,7 +2,8 @@
 
 ## Reconstruccion - infraestructura transversal
 
-Estado: Hitos 1-10 cerrados; runtime historico aun activo y Hito 11 no iniciado.
+Estado: Hitos 1-13 cerrados como Release Candidate; QA integral y cutover
+permanecen en Hitos 14 y 15.
 
 | Componente | Objetivo | Rutas | Persistencia | Estado |
 | --- | --- | --- | --- | --- |
@@ -18,6 +19,8 @@ Estado: Hitos 1-10 cerrados; runtime historico aun activo y Hito 11 no iniciado.
 | Evidencia y notificaciones por tarea | Activacion, validacion estatica, destinatarios y asuntos | `POST /tareas/<id>/notificaciones` | `notificaciones_config_tarea`, `notificaciones_destinatarios`, auditoria | Hito 10 cerrado |
 | Feriados | CRUD local y sincronizacion manual con preview | `/feriados/*` | `feriados`, `reglas_feriados_irrenunciables`, auditoria | Hito 10 cerrado |
 | Microsoft Graph | Configuracion global y despacho post-ejecucion | `/configuracion/mail-graph`; proceso worker | `configuracion_mail_graph`, `notificaciones_envios` | Implementado sin envio real en pruebas |
+| Factory Reset | Reset in-place con lock, SQLCMD y compensacion filesystem | `/administracion/factory-reset` | SQL + `runtime_control` | Implementado; smoke destructivo pendiente Hito 14 |
+| Runtime Docker QA | Web y Worker reconstruidos, restart y healthchecks | `/salud`; CLI Worker `--healthcheck` | Heartbeat SQL y volumenes operativos | Hito 13 cerrado |
 
 El paquete nuevo vive en `src/app_scheduler/`. Hitos 7-10 agregan motor,
 historial, consola, Papelera, feriados y Graph. Factory Reset permanece fuera
@@ -42,8 +45,8 @@ del runtime reconstruido.
 | Feriados y sincronizacion externa | Completa en alcance Hito 10 | CRUD, preview/aplicacion Nager manual y calendario SQL local |
 | Microsoft Graph y correos | Completa en codigo/alcance Hito 10 | Configuracion global, TO/CC/BCC, evidencia, alerta, adjuntos y at-most-once; smoke real pendiente de autorizacion |
 | Configuracion operativa | Completa en alcance Hito 8 | Scheduler editable por allowlist; configuracion_sistema segura y solo lectura |
-| Factory Reset reconstruido | Pendiente | Planificado para Hito 11 |
-| UI/UX final | En progreso transversal | Gate Bootstrap cerrado; pulido global en Hito 12 |
+| Factory Reset reconstruido | Completa en implementacion | Smoke destructivo real reservado para Hito 14 |
+| UI/UX final | Completa | Responsive y accesibilidad practica validados en Hito 12 |
 | QA SQL real y cutover | Parcial | Smoke tecnico read-only Hito 8 aprobado; integracion funcional exhaustiva y cutover siguen en Hitos 14 y 15 |
 
 El gate transversal del Hito 7 mantiene login, Panel, navegacion, mantenedores,

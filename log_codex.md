@@ -6,10 +6,33 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-10 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
+* Estado actual: Hitos 0-13 cerrados como Release Candidate. El runtime historico permanece solo como referencia y no es el default Docker QA.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Release Candidate - Hitos 11 y 12 cerrados; Hito 13 en curso.
+* Fase actual: Release Candidate - Hitos 11, 12 y 13 cerrados; Hito 14 no iniciado.
 * Ultima actualizacion: 2026-08-26
+
+## 2026-08-26 - Release Candidate / Hito 13 Docker QA
+
+* Estado: cerrado. Docker QA arranca exclusivamente Web y Worker reconstruidos
+  desde `src/app_scheduler`; se retiraron comandos historicos de Compose y del
+  CMD de imagen.
+* `.env.docker` permanece explicito y sin fallback. El Worker recibe DB/Graph y
+  roots operativos, pero anula credenciales de sesion Web y mantenimiento
+  Factory Reset.
+* Supervision: `restart: unless-stopped`, Web `/salud` y Worker
+  `--healthcheck` contra heartbeat SQL del hostname. El check Worker es
+  read-only y no construye Scheduler ni consume la cola.
+* Validacion: Compose valido, imagenes Web/Worker construidas, checks internos
+  correctos y Web QA temporal `healthy` en puerto 5108. El contenedor temporal
+  fue detenido; no se inicio Worker operativo.
+* Gate integrado: `332 passed, 1 skipped` en reconstruccion; `358 passed, 1
+  skipped` total; compileall, 38 templates Jinja, 8 JavaScript, Compose, builds,
+  checks Web/Worker y `SELECT DB_NAME(), 1` read-only desde Docker correctos.
+* Limite conocido: `PENDIENTE` es recuperable tras reinicio; una caida abrupta
+  durante `EN_EJECUCION` requiere diagnostico y no se relanza automaticamente
+  para evitar duplicidad de efectos.
+* No se modificaron `.env`/`.env.docker`, no hubo SQL destructivo, Factory Reset,
+  Graph ni reejecucion de `10095`/`10096`.
 
 ## 2026-08-26 - Release Candidate / Hito 12 UI/UX final
 

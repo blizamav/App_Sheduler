@@ -175,8 +175,13 @@ correctos incluso con nombres de Worker extensos.
 
 ### Hito 13 - Docker QA
 
-Promover los entrypoints reconstruidos para web/worker, validar `.env.docker`,
-imagen reproducible, volumenes, healthchecks, ODBC y SQLCMD, sin cutover productivo.
+Estado: CERRADO.
+
+Compose inicia exclusivamente `app_scheduler.web` y
+`app_scheduler.worker.aplicacion`, carga `.env.docker` sin fallback, conserva
+volumenes operativos, separa las credenciales de mantenimiento del Worker y
+declara restart/healthchecks para Web y heartbeat. Build, checks y startup Web
+QA fueron validados sin iniciar Scheduler ni consumir ejecuciones.
 
 ### Hito 14 - QA integral
 

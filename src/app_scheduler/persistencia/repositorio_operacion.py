@@ -123,6 +123,21 @@ ORDER BY fecha_ultimo_heartbeat DESC, id_worker DESC""",
         )
         return None if fila is None else mapear_heartbeat(fila)
 
+    def obtener_heartbeat_del_host(self, host: str):
+        """Obtiene la senal mas reciente del Worker reconstruido en un host exacto."""
+        fila = self.ejecutar_uno(
+            """SELECT TOP 1 id_worker, nombre_worker, estado, fecha_inicio,
+fecha_ultimo_heartbeat, fecha_ultimo_ciclo, resultado_ultimo_ciclo, ultimo_error,
+ciclos_ejecutados, tareas_evaluadas_ultimo_ciclo, tareas_ejecutadas_ultimo_ciclo,
+tareas_omitidas_ultimo_ciclo, pid_proceso, host, version_app
+FROM dbo.scheduler_worker_heartbeat
+WHERE activo = 1 AND host = ?
+  AND nombre_worker LIKE 'scheduler_worker_reconstruido:%'
+ORDER BY fecha_ultimo_heartbeat DESC, id_worker DESC""",
+            (host,), operacion="obtener_heartbeat_worker_host",
+        )
+        return None if fila is None else mapear_heartbeat(fila)
+
     def metricas(self):
         fila = self.ejecutar_uno(
             """SELECT

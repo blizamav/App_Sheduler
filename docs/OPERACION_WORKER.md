@@ -15,8 +15,25 @@ estan `PENDIENTE`. Puede combinarse con `--once` para un unico ciclo controlado.
 
 `SIGTERM`/`SIGINT` activa un evento compartido: no se reclaman nuevas filas, los
 procesos propios se terminan y quedan `ERROR`, y el pool cierra antes del
-heartbeat `DETENIDO`. El runtime historico descrito en el resto del documento
-permanece activo hasta cutover.
+heartbeat `DETENIDO`. Desde Hito 13 este es el Worker predeterminado de Docker
+QA; las instrucciones historicas posteriores se conservan solo como contexto.
+
+Comandos vigentes:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m app_scheduler.worker.aplicacion
+python -m app_scheduler.worker.aplicacion --queue-only
+python -m app_scheduler.worker.aplicacion --queue-only --once
+python -m app_scheduler.worker.aplicacion --check
+python -m app_scheduler.worker.aplicacion --healthcheck
+```
+
+El healthcheck consulta exclusivamente el heartbeat del hostname actual. No
+crea ciclos, no evalua Scheduler y no reclama ejecuciones. `PENDIENTE` permanece
+recuperable tras un reinicio. Una caida abrupta durante `EN_EJECUCION` sigue sin
+lease durable y requiere diagnostico; no se relanza automaticamente para evitar
+duplicar efectos del script.
 
 ## Proposito
 
@@ -161,11 +178,11 @@ Riesgos:
 - Monitoreo mas dificil.
 - Operacion menos profesional.
 
-Diseno correcto:
+Diseno oficial reconstruido:
 
 ```text
-Proceso 1: python run.py
-Proceso 2: python scheduler_worker.py
+Proceso 1: python -m app_scheduler.web
+Proceso 2: python -m app_scheduler.worker.aplicacion
 ```
 
 En Docker Compose:
@@ -173,9 +190,9 @@ En Docker Compose:
 ```yaml
 services:
   web:
-    command: python run.py
+    command: python -m app_scheduler.web
   worker:
-    command: python scheduler_worker.py
+    command: python -m app_scheduler.worker.aplicacion
 ```
 
 ## Ambientes

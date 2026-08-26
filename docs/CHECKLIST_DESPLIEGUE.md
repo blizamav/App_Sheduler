@@ -85,7 +85,8 @@ Comandos base en Windows:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python run.py
+$env:PYTHONPATH="src"
+python -m app_scheduler.web
 ```
 
 Validar:
@@ -129,7 +130,8 @@ Cuando se implemente el modulo, validar:
 ## Validacion scheduler
 
 - Scheduler debe quedar apagado o con ejecucion automatica deshabilitada por defecto.
-- Worker no debe arrancar automaticamente sin decision explicita.
+- En QA, Worker arranca como servicio separado por decision explicita al usar
+  `docker compose up ... worker`; no vive dentro de Web.
 - Worker no debe ejecutarse dentro del proceso Flask.
 - En desarrollo local, levantar worker en terminal separada solo para prueba controlada.
 - En QA/Produccion, usar proceso separado para web y worker.
@@ -141,9 +143,13 @@ Cuando se implemente el modulo, validar:
 - Si se prueba worker, debe hacerse con tarea controlada.
 - No activar scheduler en produccion sin configuracion revisada.
 
-Validacion opcional Docker Compose:
+Validacion Docker Compose Hito 13:
 
-- `docker compose up -d --build`
+- `docker compose config --quiet`
+- `docker compose build web worker`
+- `docker compose run --rm --no-deps web python -m app_scheduler.web --check`
+- `docker compose run --rm --no-deps worker python -m app_scheduler.worker.aplicacion --check`
+- `docker compose up -d web worker`
 - `docker compose ps`
 - `docker compose logs -f worker`
 - `docker compose stop worker`
@@ -152,7 +158,7 @@ Validacion opcional Docker Compose:
 Si Docker requiere un archivo distinto por escape de password:
 
 - crear `.env.docker` desde `.env.docker.example`;
-- usar `DOCKER_ENV_FILE=.env.docker`;
+- usar siempre `.env.docker`, declarado directamente por Compose;
 - no sobrescribir `.env` local;
 - no versionar `.env.docker`.
 - validar que `APP_SECRET_KEY` no siga en valor de plantilla;

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import signal
+import socket
+from datetime import datetime
 from threading import Event
 
 from app_scheduler.compartido.base_datos import ProveedorConexionesSQLServer
@@ -15,6 +17,11 @@ from app_scheduler.worker.cola import ProcesadorColaEjecuciones
 from app_scheduler.worker.motor import MotorEjecucionSubprocess
 from app_scheduler.modulos.notificaciones.casos_uso import ServicioConfiguracionGraph
 from app_scheduler.modulos.notificaciones.despacho import ServicioDespachoNotificaciones
+from app_scheduler.compartido.unidad_trabajo import UnidadTrabajoSQL
+from app_scheduler.persistencia.repositorio_operacion import RepositorioOperacion
+
+
+ESTADOS_WORKER_SALUDABLES = frozenset({"INICIADO", "ACTIVO", "EN_CICLO", "ESPERANDO"})
 
 
 def preparar_worker(
@@ -51,6 +58,41 @@ def construir_worker(configuracion, logger, *, queue_only: bool = False):
     return worker, detener
 
 
+def comprobar_salud_worker(
+    configuracion,
+    *,
+    proveedor=None,
+    host=None,
+    reloj=datetime.now,
+    fabrica_uow=UnidadTrabajoSQL,
+    repositorio=RepositorioOperacion,
+) -> tuple[bool, str]:
+    """Comprueba la senal del Worker de este host sin crear ciclos ni reservas."""
+    proveedor = proveedor or ProveedorConexionesSQLServer(configuracion)
+    host = host or socket.gethostname()
+    with fabrica_uow(proveedor) as uow:
+        repo = repositorio(uow.obtener_conexion())
+        scheduler = repo.obtener_configuracion_scheduler()
+        heartbeat = repo.obtener_heartbeat_del_host(host)
+    if heartbeat is None:
+        return False, "No existe heartbeat del Worker reconstruido para este contenedor."
+    if heartbeat.estado not in ESTADOS_WORKER_SALUDABLES:
+        return False, f"El Worker reporta estado {heartbeat.estado}."
+    if heartbeat.fecha_ultimo_heartbeat is None:
+        return False, "El Worker no informa fecha de heartbeat."
+    ahora = reloj()
+    fecha = heartbeat.fecha_ultimo_heartbeat
+    if getattr(ahora, "tzinfo", None) and not getattr(fecha, "tzinfo", None):
+        ahora = ahora.replace(tzinfo=None)
+    if getattr(fecha, "tzinfo", None) and not getattr(ahora, "tzinfo", None):
+        fecha = fecha.replace(tzinfo=None)
+    antiguedad = max(0, int((ahora - fecha).total_seconds()))
+    intervalo = max(1, int(scheduler.intervalo_revision_segundos if scheduler else 60))
+    if antiguedad > intervalo * 5:
+        return False, "El heartbeat del Worker excede la ventana operativa."
+    return True, "Heartbeat del Worker operativo."
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Base tecnica del worker reconstruido.")
     parser.add_argument(
@@ -66,8 +108,19 @@ def main() -> int:
         "--queue-only", action="store_true",
         help="Consume unicamente la cola y no evalua programaciones del Scheduler.",
     )
+    parser.add_argument(
+        "--healthcheck", action="store_true",
+        help="Valida en SQL el heartbeat de este contenedor sin ejecutar ciclos.",
+    )
     argumentos = parser.parse_args()
     configuracion = ConfiguracionAplicacion.desde_entorno()
+    if argumentos.healthcheck:
+        try:
+            configuracion.validar("worker")
+            saludable, _mensaje = comprobar_salud_worker(configuracion)
+        except Exception:
+            return 1
+        return 0 if saludable else 1
     logger = preparar_worker(configuracion)
     if argumentos.check:
         logger.info("Worker base validado", extra={"evento": "WORKER_BASE_OK"})

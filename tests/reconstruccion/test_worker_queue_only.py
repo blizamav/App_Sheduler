@@ -1,6 +1,8 @@
 """Contrato del modo oficial Worker queue-only."""
 
+from datetime import datetime, timedelta
 from threading import Event
+from types import SimpleNamespace
 
 import pytest
 
@@ -188,3 +190,54 @@ def test_queue_only_conserva_error_controlado_del_consumidor():
 
     assert worker.ejecutar_una_vez() is None
     assert [evento[0] for evento in estado.eventos] == ["estado", "error"]
+
+
+class RepoSaludFake:
+    def __init__(self, estado):
+        self.estado = estado
+
+    def obtener_configuracion_scheduler(self):
+        return SimpleNamespace(intervalo_revision_segundos=self.estado["intervalo"])
+
+    def obtener_heartbeat_del_host(self, host):
+        assert host == "worker-qa"
+        return self.estado["heartbeat"]
+
+
+def test_healthcheck_worker_usa_heartbeat_del_contenedor(configuracion):
+    ahora = datetime(2026, 8, 26, 12, 0, 0)
+    estado = {
+        "intervalo": 60,
+        "heartbeat": SimpleNamespace(
+            estado="ESPERANDO", fecha_ultimo_heartbeat=ahora - timedelta(seconds=45),
+        ),
+    }
+
+    saludable, mensaje = aplicacion_worker.comprobar_salud_worker(
+        configuracion, proveedor=estado, host="worker-qa", reloj=lambda: ahora,
+        fabrica_uow=UowHeartbeat, repositorio=RepoSaludFake,
+    )
+
+    assert saludable is True
+    assert mensaje == "Heartbeat del Worker operativo."
+
+
+@pytest.mark.parametrize(
+    ("heartbeat", "esperado"),
+    [
+        (None, "No existe heartbeat"),
+        (SimpleNamespace(estado="DETENIDO", fecha_ultimo_heartbeat=datetime(2026, 8, 26, 12)), "estado DETENIDO"),
+        (SimpleNamespace(estado="ESPERANDO", fecha_ultimo_heartbeat=datetime(2026, 8, 26, 11, 54)), "excede la ventana"),
+    ],
+)
+def test_healthcheck_worker_falla_sin_senal_operativa(configuracion, heartbeat, esperado):
+    ahora = datetime(2026, 8, 26, 12, 0, 0)
+    estado = {"intervalo": 60, "heartbeat": heartbeat}
+
+    saludable, mensaje = aplicacion_worker.comprobar_salud_worker(
+        configuracion, proveedor=estado, host="worker-qa", reloj=lambda: ahora,
+        fabrica_uow=UowHeartbeat, repositorio=RepoSaludFake,
+    )
+
+    assert saludable is False
+    assert esperado in mensaje
