@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block titulo %}Factory Reset | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/factory-reset.css') }}">{% endblock %}
+{% block contenido %}
+<header class="pagina-cabecera pagina-cabecera-critica">
+    <div>
+        <p class="eyebrow">Administracion critica</p>
+        <h1>Factory Reset</h1>
+        <p>Reconstruye APP Scheduler dentro de la misma base autorizada. No crea, renombra ni elimina bases de datos.</p>
+    </div>
+    <span class="badge estado-{{ 'error' if lock.bloquea else 'activo' }}">{{ lock.estado|replace('_', ' ') }}</span>
+</header>
+
+<section class="alert alert-danger factory-reset-advertencia" role="alert">
+    <h2 class="h5">Operacion irreversible sobre datos operacionales</h2>
+    <p class="mb-0">El proceso elimina el modelo aplicativo, lo reconstruye desde el bootstrap oficial y limpia scripts, entornos y logs. Requiere mantenimiento exclusivo y una cuenta SQL separada con <code>db_owner</code> solo en <strong>{{ config.DB_DATABASE }}</strong>.</p>
+</section>
+
+{% if estado_operacion %}
+<section class="tarjeta-seccion" aria-labelledby="estado-reset-titulo">
+    <div class="seccion-cabecera"><div><p class="eyebrow">Ultima operacion</p><h2 id="estado-reset-titulo">{{ estado_operacion.fase }}</h2></div><span class="badge estado-{{ 'error' if estado_operacion.nivel == 'ERROR' else 'info' }}">{{ estado_operacion.nivel }}</span></div>
+    <p>{{ estado_operacion.mensaje }}</p>
+</section>
+{% endif %}
+
+{% if not preview %}
+<section class="tarjeta-seccion" aria-labelledby="preview-titulo">
+    <div class="seccion-cabecera"><div><p class="eyebrow">Paso 1</p><h2 id="preview-titulo">Validar condiciones</h2></div></div>
+    <p>El preview es de solo lectura: valida target, allowlist, SQLCMD, cuenta de mantenimiento, manifiesto, actividad y filesystem.</p>
+    <form method="post" action="{{ url_for('factory_reset.preview') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" type="submit">Generar preview seguro</button>
+    </form>
+</section>
+{% else %}
+<section class="tarjeta-seccion" aria-labelledby="resultado-preview-titulo">
+    <div class="seccion-cabecera">
+        <div><p class="eyebrow">Paso 1 completado</p><h2 id="resultado-preview-titulo">Resultado del preview</h2></div>
+        <span class="badge estado-{{ 'activo' if preview.estado == 'LISTO' else 'error' }}">{{ preview.estado }}</span>
+    </div>
+    <div class="factory-reset-resumen">
+        <div><span>Base objetivo</span><strong>{{ preview.base_datos.nombre }}</strong></div>
+        <div><span>Modo</span><strong>{{ preview.bootstrap.modo }}</strong></div>
+        <div><span>Bootstrap</span><strong>{{ preview.bootstrap.version or 'No disponible' }}</strong></div>
+        <div><span>Registros actuales</span><strong>{{ preview.base_datos.total_registros }}</strong></div>
+        <div><span>Ejecuciones activas</span><strong>{{ preview.ejecuciones_activas|length }}</strong></div>
+        <div><span>Archivos operacionales</span><strong>{{ preview.filesystem.total_archivos }}</strong></div>
+    </div>
+    {% if preview.bloqueos %}
+    <div class="alert alert-warning mt-3" role="alert">
+        <strong>No se puede continuar.</strong>
+        <ul class="mb-0 mt-2">{% for bloqueo in preview.bloqueos %}<li>{{ bloqueo }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+</section>
+
+{% if preview.estado == 'LISTO' %}
+<section class="tarjeta-seccion factory-reset-confirmacion" aria-labelledby="confirmacion-reset-titulo">
+    <div class="seccion-cabecera"><div><p class="eyebrow">Paso 2</p><h2 id="confirmacion-reset-titulo">Confirmacion fuerte</h2></div></div>
+    <form method="post" action="{{ url_for('factory_reset.ejecutar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="token_preview" value="{{ preview.token_preview }}">
+        <input type="hidden" name="resumen_hash" value="{{ preview.resumen_hash }}">
+        <div class="mb-3">
+            <label class="form-label" for="confirmacionReset">Escribe <strong>{{ frase_confirmacion }}</strong></label>
+            <input class="form-control" id="confirmacionReset" name="confirmacion" autocomplete="off" spellcheck="false" required>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" id="confirmacionConsecuencias" name="confirmacion_consecuencias" value="1" type="checkbox" required>
+            <label class="form-check-label" for="confirmacionConsecuencias">Comprendo que se eliminaran los datos operacionales y archivos administrados.</label>
+        </div>
+        <button class="btn btn-danger" type="submit" data-confirmar data-confirmar-titulo="Ejecutar Factory Reset" data-confirmar-mensaje="Esta operacion reconstruira la aplicacion in-place. Verifica respaldo y mantenimiento antes de continuar." data-confirmar-accion="Restablecer definitivamente" data-confirmar-tipo="peligro">Restablecer definitivamente</button>
+    </form>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

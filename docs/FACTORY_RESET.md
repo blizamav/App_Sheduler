@@ -6,6 +6,11 @@ Desde Fase 19F, Factory Reset opera **in-place** y de forma transaccional dentro
 
 El diseno blue-green de Fases 19C-19E queda **DEPRECADO**. Ya no se crean, renombran ni eliminan bases `NEW`, `OLD` o `FAILED`; esas denominaciones solo describen el historial anterior y no pertenecen al flujo operativo vigente.
 
+Desde el Hito 11, la implementacion Web vigente pertenece al runtime
+reconstruido en `src/app_scheduler/modulos/factory_reset/`. La pantalla usa el
+permiso `FACTORY_RESET_EJECUTAR`, CSRF global y tokens de preview firmados. No
+depende de roles hardcodeados ni importa servicios desde `app/`.
+
 ## Seguridad y autorizacion
 
 La cuenta operativa normal es `user_scheduler`. Factory Reset utiliza una cuenta SQL separada de mantenimiento, configurada mediante `FACTORY_RESET_DB_USER`, que debe:
@@ -117,3 +122,6 @@ Passwords, usuarios y servidor configurados se sustituyen antes de registrar o d
 ## Validacion previa a uso real
 
 La implementacion se valida con pruebas simuladas; estas no ejecutan SQL ni Factory Reset. Antes de habilitar QA se requiere una prueba controlada y respaldo externo de `APP_SCHEDULER_QA`, porque despues de un commit correcto no existe rollback automatico de datos.
+
+Estado Release Candidate: **implementacion cerrada**. El smoke destructivo real
+se ejecutara exclusivamente durante Hito 14 con autorizacion explicita.

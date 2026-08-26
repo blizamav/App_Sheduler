@@ -11,6 +11,25 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-26
 
+## 2026-08-26 - Release Candidate / Hito 11 Factory Reset
+
+* Estado: cerrado a nivel implementacion; smoke destructivo real pendiente de
+  Hito 14 y autorizacion explicita.
+* Se registro el modulo reconstruido `factory_reset` con permiso dedicado,
+  CSRF transversal, preview firmado, frase exacta y confirmacion adicional.
+* Prechecks: kill switch, target/BD actual, allowlist, SQLCMD, cuenta
+  `db_owner`, SUPER_ADMIN_ENV, lock, ejecuciones activas, manifiesto y roots.
+* Orquestacion: lock atomico externo, cuarentena filesystem verificada,
+  transaccion SQLCMD in-place, `sp_getapplock`, validacion final, compensacion
+  previa al commit y estado ERROR fail-closed posterior al commit.
+* Hallazgos corregidos: housekeeping eliminaba la cuarentena de operacion pero
+  dejaba `factory_backups` vacio; ahora solo elimina ese directorio cuando esta
+  confirmado vacio. La validacion SQL reconstruida no conserva el patron
+  invalido `BEGIN ;THROW`.
+* Pruebas: `324 passed, 1 skipped` en reconstruccion. SQL real, DDL, DML y
+  Factory Reset destructivo: cero.
+* Archivos protegidos, entornos, Graph y ejecuciones `10095/10096`: intactos.
+
 ## 2026-08-26 - Correccion reserva de notificaciones / pyodbc NOCOUNT
 
 * Gate: correccion bloqueante pre-release posterior al Hito 10; Hito 11 no fue

@@ -36,6 +36,7 @@
         <symbol id="icono-papelera" viewBox="0 0 24 24"><path d="M3 6h18M8 6V3h8v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
         <symbol id="icono-feriados" viewBox="0 0 24 24"><path d="M6 2v4M18 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2ZM8 13h3v3H8v-3Z"/></symbol>
         <symbol id="icono-correo" viewBox="0 0 24 24"><path d="M3 5h18v14H3V5Zm0 1 9 7 9-7"/></symbol>
+        <symbol id="icono-reset" viewBox="0 0 24 24"><path d="M12 3v6M5.6 6.6A9 9 0 1 0 18.4 6.6M8 17h8M9 13h6"/></symbol>
     </svg>
     {% if identidad_sesion %}
     <div class="app-shell">
@@ -105,7 +106,7 @@
                 </a>
                 {% endif %}
                 {% endif %}
-                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') or identidad_sesion.tiene_permiso('AUDITORIA_VER') or identidad_sesion.tiene_permiso('PAPELERA_VER') or identidad_sesion.tiene_permiso('FERIADOS_VER') or identidad_sesion.tiene_permiso('CONFIGURACION_ADMIN') %}
+                {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') or identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') or identidad_sesion.tiene_permiso('AUDITORIA_VER') or identidad_sesion.tiene_permiso('PAPELERA_VER') or identidad_sesion.tiene_permiso('FERIADOS_VER') or identidad_sesion.tiene_permiso('CONFIGURACION_ADMIN') or identidad_sesion.tiene_permiso('FACTORY_RESET_EJECUTAR') %}
                 <p class="navegacion-grupo">Administracion</p>
                 {% if identidad_sesion.tiene_permiso('USUARIOS_ADMIN') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'usuarios' %}activo active{% endif %}" href="{{ url_for('usuarios.listado') }}" aria-label="Usuarios" title="Usuarios">
@@ -140,6 +141,11 @@
                 {% if identidad_sesion.tiene_permiso('PAPELERA_VER') %}
                 <a class="navegacion-enlace nav-link {% if request.blueprint == 'papelera' %}activo active{% endif %}" href="{{ url_for('papelera.listado') }}" aria-label="Papelera" title="Papelera">
                     <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-papelera"></use></svg><span>Papelera</span>
+                </a>
+                {% endif %}
+                {% if identidad_sesion.tiene_permiso('FACTORY_RESET_EJECUTAR') %}
+                <a class="navegacion-enlace nav-link navegacion-enlace-peligro {% if request.blueprint == 'factory_reset' %}activo active{% endif %}" href="{{ url_for('factory_reset.pantalla') }}" aria-label="Factory Reset" title="Factory Reset">
+                    <svg class="navegacion-icono" aria-hidden="true"><use href="#icono-reset"></use></svg><span>Factory Reset</span>
                 </a>
                 {% endif %}
                 {% endif %}

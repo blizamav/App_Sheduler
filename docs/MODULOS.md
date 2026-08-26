@@ -160,15 +160,14 @@ acceso contextual; no crea scripts huerfanos ni duplica operaciones.
 
 ## Factory Reset operativo protegido
 
-* `/administracion/factory-reset`: pantalla exclusiva de `SUPER_ADMIN`/`SUPER_ADMIN_ENV`.
-* `/administracion/factory-reset/preview`: inventario no destructivo protegido por CSRF.
-* `/administracion/factory-reset/ejecutar`: POST destructivo protegido por frase exacta, segunda confirmacion, token firmado, kill switch y precheck final.
-* `/administracion/factory-reset/estado`: estado externo seguro por operacion para mostrar fases y progreso reales.
-* `servicio_control_runtime.py`: lock externo atómico, compartido por web y worker.
-* `servicio_factory_reset.py`: conteos, diagnóstico, filesystem, manifiesto, recuperación administrativa y token firmado.
-* `servicio_factory_reset_sql.py`: ejecutor SQLCMD administrativo, bootstrap, sesiones, intercambio, rollback y validación final.
-* `servicio_factory_reset_filesystem.py`: cuarentena verificada, limpieza confinada y restauración de roots.
-* `servicio_orquestador_factory_reset.py`: máquina de estados y coordinación transaccional de BD/filesystem.
+* `/administracion/factory-reset`: pantalla reconstruida protegida por `FACTORY_RESET_EJECUTAR`.
+* `/administracion/factory-reset/preview`: inventario no destructivo protegido por CSRF y token firmado.
+* `/administracion/factory-reset/ejecutar`: POST in-place protegido por frase exacta, confirmacion de consecuencias, kill switch y doble precheck.
+* `/administracion/factory-reset/estado`: estado seguro por operacion para fases y progreso.
+* `src/app_scheduler/modulos/factory_reset/casos_uso.py`: preview, manifiesto, prechecks y orquestacion.
+* `src/app_scheduler/modulos/factory_reset/sql.py`: SQLCMD in-place con password solo en `SQLCMDPASSWORD`.
+* `src/app_scheduler/modulos/factory_reset/filesystem.py`: cuarentena verificada, confinamiento, compensacion y housekeeping.
+* `src/app_scheduler/compartido/control_runtime.py`: lock atomico compartido por Web, Worker y Scheduler.
 * La ejecución manual y automática consulta el lock en backend.
 * El worker conserva heartbeat bloqueado y no toma candidatos nuevos.
 * La interfaz presenta impacto, preview, frase exacta y confirmacion consciente antes del envio definitivo.

@@ -90,6 +90,7 @@ def crear_aplicacion(
         ServicioConfiguracionGraph,
         ServicioNotificacionesTarea,
     )
+    from app_scheduler.modulos.factory_reset.casos_uso import ServicioFactoryReset
 
     servicio_autenticacion = ServicioAutenticacion(
         configuracion,
@@ -123,6 +124,9 @@ def crear_aplicacion(
     app.extensions["servicio_feriados"] = ServicioFeriados(proveedor_sql)
     app.extensions["servicio_consulta_auditoria"] = ServicioConsultaAuditoria(proveedor_sql)
     app.extensions["servicio_papelera"] = ServicioPapelera(proveedor_sql, configuracion)
+    app.extensions["servicio_factory_reset"] = ServicioFactoryReset(
+        proveedor_sql, configuracion
+    )
     iniciar_autorizacion(app, servicio_autenticacion.cargar_identidad)
 
     from app_scheduler.modulos.base.rutas import bp_base
@@ -139,6 +143,7 @@ def crear_aplicacion(
     from app_scheduler.modulos.auditoria.rutas import bp_auditoria
     from app_scheduler.modulos.papelera.rutas import bp_papelera
     from app_scheduler.modulos.feriados.rutas import bp_feriados
+    from app_scheduler.modulos.factory_reset.rutas import bp_factory_reset
 
     app.register_blueprint(bp_base)
     app.register_blueprint(bp_autenticacion)
@@ -154,6 +159,7 @@ def crear_aplicacion(
     app.register_blueprint(bp_auditoria)
     app.register_blueprint(bp_papelera)
     app.register_blueprint(bp_feriados)
+    app.register_blueprint(bp_factory_reset)
     app.logger.info(
         "Runtime base creado para ambiente %s",
         configuracion.app_env,

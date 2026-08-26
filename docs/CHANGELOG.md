@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-26 - Hito 11 Factory Reset reconstruido
+
+* El Factory Reset in-place se integro al runtime reconstruido con permiso
+  `FACTORY_RESET_EJECUTAR`, CSRF global, preview firmado, confirmacion fuerte,
+  allowlist exacta y doble precheck.
+* El flujo conserva una sola base, transaccion, `XACT_ABORT`, `sp_getapplock`,
+  SQLCMD con cuenta separada y fail-closed. No usa `CREATE/DROP/RENAME DATABASE`
+  ni importa componentes historicos.
+* Filesystem usa cuarentena confinada, huellas SHA-256, rechazo de symlinks,
+  rollback antes del commit y elimina tambien el directorio vacio
+  `factory_backups` al finalizar correctamente.
+* La cobertura simulada incluye exito, fallo SQL, fallo posterior al commit,
+  rollback, lock exclusivo, autorizacion, CSRF, kill switch y contrato del
+  manifiesto. Aprobaron `324 passed, 1 skipped` en reconstruccion.
+* No se ejecuto SQL ni Factory Reset real. El smoke destructivo QA queda
+  reservado para Hito 14 con autorizacion explicita.
+
 ## 2026-08-26 - Correccion pyodbc de reserva de notificaciones
 
 * `RepositorioNotificaciones.reservar_envio()` incorpora `SET NOCOUNT ON`

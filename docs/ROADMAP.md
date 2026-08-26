@@ -151,10 +151,16 @@ Evidencia -> Notificaciones -> Programacion. Hito 10 permanece cerrado y Hito
 
 ### Hito 11 - Factory Reset in-place
 
-Estado: NO INICIADO.
+Estado: CERRADO A NIVEL IMPLEMENTACION.
 
-Reimplementar el Factory Reset in-place con UI critica, permiso dedicado,
-prechecks, lock, progreso y recuperacion, sin arquitectura blue-green.
+El runtime reconstruido incorpora Factory Reset in-place con permiso dedicado,
+CSRF global, preview firmado, doble confirmacion, prechecks antes y despues del
+lock, SQLCMD con cuenta separada, `sp_getapplock`, transaccion, cuarentena
+filesystem compensable, progreso seguro y fail-closed. No crea, elimina o
+renombra bases y no importa componentes del runtime historico.
+
+Pendiente deliberado: smoke destructivo real sobre `APP_SCHEDULER_QA` en Hito
+14, con respaldo y autorizacion explicita.
 
 ### Hito 12 - UI/UX y responsive final
 

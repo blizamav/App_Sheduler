@@ -90,6 +90,10 @@ def test_fabrica_registra_hito_5_y_protege_panel(configuracion):
                 "/feriados/sincronizar/preview",
                 "/feriados/sincronizar/aplicar",
                 "/configuracion/mail-graph",
+                "/administracion/factory-reset",
+                "/administracion/factory-reset/preview",
+                "/administracion/factory-reset/ejecutar",
+                "/administracion/factory-reset/estado",
             }
 
 
