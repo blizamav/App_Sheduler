@@ -12,7 +12,7 @@ Estado: Hitos 1-10 cerrados; runtime historico aun activo y Hito 11 no iniciado.
 | Persistencia | Conexion SQL Server y unidad de trabajo explicita | No aplica | `pyodbc`, commit/rollback/cierre | Base Hito 1 implementada |
 | Logging | Formato comun y sanitizacion de secretos | No aplica | Sin persistencia propia | Implementado |
 | Presentacion base | Shell, sidebar agrupado, Panel por permisos, componentes, errores visibles y JS modular | `/` del runtime aislado | No aplica | Implementado y estabilizado en gate Hito 7 |
-| Worker scheduler | Evaluar programaciones, reservar, reclamar y ejecutar trabajo | No expone rutas | SQL, subprocess, logs y evidencia | Reconstruido; Hito 7 cerrado |
+| Worker scheduler | Modo predeterminado Scheduler+cola y modo `--queue-only` sin evaluacion de programaciones | No expone rutas | SQL, subprocess, logs y evidencia | Reconstruido; Hito 7 cerrado |
 | Observabilidad | Estado real y logs globales para TI | `/operacion/estado`, `/logs/`, `/logs/<id>` | `logs_sistema`, heartbeat, scheduler y ejecuciones | Hito 8 cerrado |
 | Configuracion operativa | Matriz segura y edicion scheduler | `/configuracion/` (`SCHEDULER_CONFIG_VER`), `POST /configuracion/scheduler` (`SCHEDULER_CONFIG_EDITAR`) | `configuracion_sistema`, `configuracion_scheduler`, auditoria | Hito 8 cerrado |
 | Evidencia y notificaciones por tarea | Activacion, validacion estatica, destinatarios y asuntos | `POST /tareas/<id>/notificaciones` | `notificaciones_config_tarea`, `notificaciones_destinatarios`, auditoria | Hito 10 cerrado |
@@ -33,7 +33,7 @@ del runtime reconstruido.
 | Tareas | Completa en alcance actual | Alta, edicion, estado y acceso operativo |
 | Scripts, versiones y `.env` | Completa en alcance actual | Slots v1-v3, descarga segura, hub `/scripts` y gestion contextual |
 | Programaciones | Completa | CRUD operativo y reglas temporales |
-| Scheduler y worker | Completa | Reserva automatica, heartbeat y motor compartido |
+| Scheduler y worker | Completa | Reserva automatica, heartbeat, motor compartido y consumo oficial `--queue-only` |
 | Motor de ejecucion | Completa | Manual y automatica, claim, subprocess, timeout y detencion |
 | Ejecuciones, logs y consola | Completa en alcance Hito 7 | Historial, detalle, polling y archivo completo por ejecucion |
 | Logs de sistema y observabilidad | Completa en alcance Hito 8 | Consulta global, filtros, paginacion, detalle y estado worker/scheduler |
@@ -67,6 +67,7 @@ Estado: CERRADO.
 | Consola | `/ejecuciones/<id>/log` | Polling protegido y ultimos 120 KB del archivo completo | Reconstruido |
 | Evidencia | Worker | Contrato stdout 1.0 y metadata/hash en BD; sin Graph | Reconstruido |
 | Recuperacion crash | Operacion | PENDIENTE recuperable; EN_EJECUCION incierta no se relanza | Politica cerrada; lease SQL futuro |
+| Modo cola controlado | `python -m app_scheduler.worker.aplicacion --queue-only [--once]` | Claim y motor existentes sin construir ni invocar Scheduler | Reconstruido |
 
 Permisos reales: `EJECUCIONES_VER`, `EJECUCIONES_EJECUTAR`,
 `EJECUCIONES_DETENER` y `EJECUCIONES_LOG_VER`. Detalle:

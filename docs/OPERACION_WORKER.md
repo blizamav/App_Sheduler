@@ -8,6 +8,11 @@ reclama `PENDIENTE` hasta el maximo concurrente, ejecuta el script congelado y
 cierra logs/evidencia/estado. El nombre de worker incluye host y PID para
 ownership diagnostico. `--once` espera el cierre de las ejecuciones reclamadas.
 
+El entrypoint reconstruido opera por defecto con Scheduler y cola. La opcion
+`--queue-only` reutiliza la misma cola, claim, motor y heartbeat, pero no
+construye ni invoca el Scheduler; por tanto solo procesa ejecuciones que ya
+estan `PENDIENTE`. Puede combinarse con `--once` para un unico ciclo controlado.
+
 `SIGTERM`/`SIGINT` activa un evento compartido: no se reclaman nuevas filas, los
 procesos propios se terminan y quedan `ERROR`, y el pool cierra antes del
 heartbeat `DETENIDO`. El runtime historico descrito en el resto del documento

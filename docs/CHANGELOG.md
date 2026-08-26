@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-26 - Modo oficial Worker `--queue-only`
+
+* El entrypoint reconstruido incorpora `--queue-only` para consumir ejecuciones
+  ya `PENDIENTE` sin construir `ServicioScheduler` ni evaluar programaciones.
+  El modo predeterminado conserva Scheduler y cola sin cambios funcionales.
+* `--queue-only --once` realiza un unico ciclo, respeta el limite concurrente y
+  espera el cierre de los trabajos reclamados. Reutiliza claim atomico, motor,
+  heartbeat, mantenimiento, bloqueo fail-closed de Factory Reset, logs,
+  evidencia y notificaciones.
+* La lectura de configuracion de la cola incorpora el intervalo operativo para
+  que el heartbeat del modo aislado conserve la misma cadencia SQL. No se
+  agregaron tablas, migraciones, variables de entorno ni entrypoints paralelos.
+* Cobertura: construccion sin Scheduler, modo predeterminado, ciclos continuo y
+  unico con o sin pendientes, error controlado y clasificacion de heartbeat.
+  Aprobaron `312 passed, 1 skipped` en reconstruccion y `338 passed, 1 skipped`
+  en la suite completa; compileall, Compose, build Docker y checks CLI local y
+  efimero aprobaron.
+* QA se verifico solo por lectura: `10096` permanece como unica ejecucion
+  `PENDIENTE`, sin PID ni termino, heartbeat `DETENIDO`, cero notificaciones y
+  Graph deshabilitado. No se inicio Worker, Scheduler ni Hito 11.
+
 ## 2026-08-26 - Estado de vida transversal del Worker
 
 * Se centralizo la clasificacion real del heartbeat en `OPERATIVO`, `ATENCION`,

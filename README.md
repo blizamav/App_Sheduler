@@ -161,6 +161,24 @@ python -m app_scheduler.worker.aplicacion --check
 
 Las opciones `--check` validan configuracion y bootstrap sin abrir puertos, consultar SQL o iniciar scheduler.
 
+El Worker reconstruido dispone de dos modos operativos. Sin opciones conserva
+el comportamiento oficial completo: evalua programaciones y consume la cola.
+Para gates controlados puede consumir solo ejecuciones ya reservadas, sin
+instanciar ni ejecutar el Scheduler:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m app_scheduler.worker.aplicacion
+python -m app_scheduler.worker.aplicacion --queue-only
+python -m app_scheduler.worker.aplicacion --queue-only --once
+```
+
+`--queue-only --once` realiza un unico ciclo de claim dentro del limite de
+concurrencia configurado y espera el cierre de los trabajos reclamados. Ambos
+modos mantienen heartbeat, mantenimiento, bloqueo por Factory Reset, motor,
+logs, evidencia y notificaciones. El modo `--queue-only` no crea reservas
+automaticas ni evalua programaciones.
+
 ## Docker QA
 
 Configura manualmente `.env.docker` a partir de su plantilla sin sobrescribir valores existentes. Luego valida la composicion antes de levantar servicios:

@@ -64,6 +64,13 @@ vencidas, pendientes y ultima automatica son datos SQL reales, no metricas
 simuladas. Mantenimiento critico bloquea reservas; Worker detenido no las
 bloquea y conserva las nuevas ejecuciones como `PENDIENTE`.
 
+El heartbeat representa la vida del proceso Worker y no exige que el Scheduler
+este habilitado en ese proceso. Por eso el modo oficial `--queue-only` informa
+el mismo ciclo `EN_CICLO`/`ESPERANDO`/`DETENIDO` y puede clasificarse como
+`OPERATIVO` mientras consume la cola. Su resultado tecnico es `QUEUE_ONLY`; no
+debe confundirse con una evaluacion de programaciones. La dimension Scheduler
+continua derivandose de su configuracion y actividad SQL independiente.
+
 ## Configuracion
 
 `configuracion_sistema` se clasifica como solo lectura. Un valor con

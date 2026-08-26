@@ -24,6 +24,7 @@ class ProcesadorColaEjecuciones:
         self._executor = ThreadPoolExecutor(max_workers=20, thread_name_prefix="ejecucion")
         self._futuros = set()
         self._lock = Lock()
+        self.intervalo_revision_segundos = 60
 
     def procesar_disponibles(self) -> int:
         self._depurar()
@@ -33,7 +34,11 @@ class ProcesadorColaEjecuciones:
         with self.proveedor.conexion_lectura() as conexion:
             repo = self.tipo_repositorio(conexion)
             config = repo.obtener_configuracion()
-            if config is None or bool(config[1]):
+            if config is None:
+                return 0
+            if len(config) > 2:
+                self.intervalo_revision_segundos = max(1, int(config[2]))
+            if bool(config[1]):
                 return 0
             limite = int(config[0])
             en_ejecucion = repo.contar_en_ejecucion()

@@ -89,11 +89,11 @@ No se agregan locks de servidor ni privilegios elevados. La administracion de pr
 
 ## Worker y heartbeat
 
-`src/app_scheduler/worker/aplicacion.py` mantiene `--check`, agrega `--once` y arranque continuo. `ServicioWorker` registra inicio, `EN_CICLO`, resultado, error recuperable, espera y detencion ordenada. El intervalo proviene de `configuracion_scheduler`; la espera usa `Event.wait`, sin busy-loop.
+`src/app_scheduler/worker/aplicacion.py` mantiene `--check`, `--once` y arranque continuo, y admite `--queue-only` para consumir reservas existentes sin construir el Scheduler. `ServicioWorker` registra inicio, `EN_CICLO`, resultado, error recuperable, espera y detencion ordenada. El intervalo proviene de `configuracion_scheduler`; la espera usa `Event.wait`, sin busy-loop.
 
 El lock `runtime_control/factory_reset.lock` se lee sin modificarlo. Archivo invalido o ilegible bloquea nuevos despachos. Scheduler apagado, automaticas deshabilitadas, mantenimiento y limite concurrente producen resultados controlados.
 
-`--once` inicia heartbeat, ejecuta exactamente un ciclo sin threads residuales ni espera, registra el resultado, marca `DETENIDO` y sale. El modo continuo usa un `Event.wait(intervalo_revision_segundos)`, admite interrupcion por `SIGINT`/`SIGTERM` y no hace busy-loop. El heartbeat se actualiza al inicio, cambio de estado, fin de ciclo, error recuperable y detencion; `scheduler_worker_heartbeat` es consumido por monitoreo operativo.
+`--once` inicia heartbeat, ejecuta exactamente un ciclo y espera el cierre de los trabajos que ese ciclo haya reclamado antes de marcar `DETENIDO` y salir. Combinado con `--queue-only` no evalua programaciones ni crea reservas automaticas. El modo continuo usa un `Event.wait(intervalo_revision_segundos)`, admite interrupcion por `SIGINT`/`SIGTERM` y no hace busy-loop. El heartbeat se actualiza al inicio, cambio de estado, fin de ciclo, error recuperable y detencion; `scheduler_worker_heartbeat` es consumido por monitoreo operativo.
 
 ## Contrato `SolicitudEjecucion`
 

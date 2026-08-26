@@ -11,6 +11,32 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-26
 
+## 2026-08-26 - Implementacion controlada / Worker `--queue-only`
+
+* Fase: ajuste operativo transversal posterior al Hito 10; Hito 11 no iniciado.
+* Objetivo: habilitar un modo oficial para consumir la cola ya reservada sin
+  activar la evaluacion de programaciones durante gates controlados.
+* Implementacion: `app_scheduler.worker.aplicacion` acepta `--queue-only`; en
+  ese modo no instancia `ServicioScheduler`. `ServicioWorker` ejecuta el mismo
+  `ProcesadorColaEjecuciones`, claim, motor, heartbeat, logs, evidencia y
+  notificaciones. El modo sin opciones conserva Scheduler+cola.
+* Ciclo unico: `--queue-only --once` procesa un ciclo dentro del limite de
+  concurrencia SQL, espera los trabajos reclamados, marca heartbeat `DETENIDO`
+  y sale limpiamente aun cuando no hay pendientes.
+* Seguridad: mantenimiento y lock Factory Reset siguen bloqueando claims;
+  Graph conserva su kill switch; no se agregaron variables ni credenciales y
+  no se tocaron `.env`, `.env.docker`, SQL, runtime historico o Hito 11.
+* Pruebas: `312 passed, 1 skipped` en reconstruccion y `338 passed, 1 skipped`
+  totales; compileall, `git diff --check`, Compose, build Docker, `--help` y
+  `--check --queue-only` locales/efimeros: OK.
+* QA protegida, solo lectura: `DB=APP_SCHEDULER_QA`; ejecucion `10096` sigue
+  `PENDIENTE`, es la unica pendiente, no tiene PID ni termino, heartbeat
+  `DETENIDO`, notificaciones 0 y `GRAPH_MAIL_ENABLED=false`. No se inicio un
+  Worker real ni se realizo DML/DDL.
+* Archivo protegido: `scripts_pruebas/prueba_qa.py` conserva SHA-256
+  `280AA16DCB5DEF5EDCE97EA003BA63EF9D813D23CE87E0B2DCB374C305478697` y
+  permanece fuera de Git.
+
 ## 2026-08-26 - Implementacion transversal / Estado de vida del Worker
 
 * Fase: ajuste transversal posterior al Hito 10; Hito 11 no iniciado.

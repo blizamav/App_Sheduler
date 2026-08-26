@@ -26,7 +26,8 @@ SELECT @resultado;""",
 
     def obtener_configuracion(self):
         return self.ejecutar_uno(
-            """SELECT TOP 1 max_ejecuciones_concurrentes, modo_mantenimiento
+            """SELECT TOP 1 max_ejecuciones_concurrentes, modo_mantenimiento,
+intervalo_revision_segundos
 FROM dbo.configuracion_scheduler
 WHERE activo = 1 ORDER BY id_configuracion""",
             operacion="obtener_configuracion_ejecuciones",

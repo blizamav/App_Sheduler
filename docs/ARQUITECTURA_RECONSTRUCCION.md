@@ -83,6 +83,20 @@ promete exactly-once: despues del claim se aplica at-most-once y una ejecucion
 incierta no se relanza sin lease persistente. Detalle en
 `docs/MOTOR_EJECUCION_RECONSTRUCCION.md`.
 
+El entrypoint oficial admite dos composiciones sobre el mismo
+`ServicioWorker` y el mismo `ProcesadorColaEjecuciones`:
+
+* modo predeterminado: construye `ServicioScheduler`, evalua programaciones y
+  despues consume la cola;
+* `--queue-only`: no construye `ServicioScheduler` y solo consume filas ya
+  `PENDIENTE` mediante el claim y motor existentes.
+
+`--once` limita cualquiera de las composiciones a un ciclo y espera el cierre
+de los trabajos reclamados. El modo de cola conserva heartbeat, limite de
+concurrencia SQL, mantenimiento, bloqueo fail-closed de Factory Reset, logs,
+evidencia y notificaciones. No inserta reservas automaticas ni llama a
+`ServicioScheduler.ejecutar_ciclo`.
+
 ## Implementacion Hito 6
 
 El proceso web administra programaciones y el proceso worker es el unico dueño del loop scheduler. El flujo reconstruido es:

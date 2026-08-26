@@ -188,6 +188,15 @@ def test_observabilidad_respeta_detencion_error_y_fallo_de_consulta():
     assert "desconocido" in desconocido["estado_worker"]["aria_label"].lower()
 
 
+def test_heartbeat_queue_only_esperando_es_worker_operativo():
+    resumen = ServicioObservabilidad(
+        ProveedorLectura(estado_operacion(heartbeat(AHORA, estado="ESPERANDO"))),
+        repositorio=RepoOperacionFake, reloj=lambda: AHORA,
+    ).obtener_resumen_worker()
+
+    assert resumen["estado_worker"]["codigo"] == "OPERATIVO"
+
+
 def test_configuracion_scheduler_aplica_allowlist_audita_y_confirma():
     fila_config = (1, 1, 60, 3, 1, 0, "worker", "desc", None, None)
     conexion = ConexionProgramada(
