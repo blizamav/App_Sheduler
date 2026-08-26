@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-26 - Estado de vida transversal del Worker
+
+* Se centralizo la clasificacion real del heartbeat en `OPERATIVO`, `ATENCION`,
+  `DETENIDO` y `DESCONOCIDO`, derivando las ventanas desde el intervalo del
+  scheduler y evitando cualquier estado operativo por defecto.
+* Se agrego el endpoint read-only `/operacion/worker`, semaforo reutilizable en
+  topbar, resumen de cola en Panel y detalle ampliado en Estado del sistema.
+* Tareas conserva la reserva manual con Worker detenido, pero advierte que la
+  ejecucion quedara `PENDIENTE`; mantenimiento critico continua siendo un
+  bloqueo separado.
+* El polling ligero usa el intervalo entregado por backend, maneja fallos como
+  `DESCONOCIDO`, cancela timers al salir y no expone PID, host ni secretos.
+* Se agrego cobertura de ventanas, fallo de consulta, endpoint, topbar,
+  pendientes, ejecucion manual y mantenimiento. La ejecucion QA `10096`
+  permanece protegida y no se inicio Worker, Scheduler, Graph ni Factory Reset.
+* Validacion final: `304 passed, 1 skipped` en reconstruccion y `330 passed,
+  1 skipped` en la suite completa; Jinja, `compileall`, JavaScript, Compose,
+  build Docker y checks `web`/`worker` correctos. La revision visual aprobo
+  1440x900, 768x900, 390x844 y 844x390 sin overflow horizontal.
+
 ## 2026-08-26 - Correccion pyodbc del claim del Worker
 
 * El primer smoke operacional real reservo por Web la ejecucion manual `10095`

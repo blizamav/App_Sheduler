@@ -130,25 +130,62 @@ def estado_operacion(heartbeat_actual):
     return {"config": configuracion_scheduler(), "heartbeat": heartbeat_actual,
             "metricas": {"ejecuciones_en_curso": 1, "errores_24h": 0,
                          "ultima_ejecucion_automatica": AHORA,
-                         "tareas_candidatas": 2}}
+                         "tareas_candidatas": 2,
+                         "ejecuciones_pendientes": 1}}
 
 
-def test_observabilidad_clasifica_worker_activo_stale_e_inexistente():
-    activo = ServicioObservabilidad(
+def test_observabilidad_clasifica_ventanas_del_worker():
+    operativo = ServicioObservabilidad(
         ProveedorLectura(estado_operacion(heartbeat(AHORA - timedelta(seconds=30)))),
         repositorio=RepoOperacionFake, reloj=lambda: AHORA,
     ).obtener_estado()
-    assert activo["estado_worker"]["codigo"] == "ACTIVO"
-    stale = ServicioObservabilidad(
-        ProveedorLectura(estado_operacion(heartbeat(AHORA - timedelta(minutes=6)))),
+    assert operativo["estado_worker"]["codigo"] == "OPERATIVO"
+    assert operativo["estado_worker"]["pendientes"] == 1
+    assert operativo["estado_worker"]["umbral_atencion_segundos"] == 120
+    assert operativo["estado_worker"]["umbral_detenido_segundos"] == 300
+
+    atencion = ServicioObservabilidad(
+        ProveedorLectura(estado_operacion(heartbeat(AHORA - timedelta(seconds=150)))),
         repositorio=RepoOperacionFake, reloj=lambda: AHORA,
     ).obtener_estado()
-    assert stale["estado_worker"]["codigo"] == "STALE"
+    assert atencion["estado_worker"]["codigo"] == "ATENCION"
+    assert atencion["estado_worker"]["antiguedad"] == "Hace 2 min 30 s"
+
+    detenido = ServicioObservabilidad(
+        ProveedorLectura(estado_operacion(heartbeat(AHORA - timedelta(seconds=301)))),
+        repositorio=RepoOperacionFake, reloj=lambda: AHORA,
+    ).obtener_estado()
+    assert detenido["estado_worker"]["codigo"] == "DETENIDO"
+
     vacio = ServicioObservabilidad(
         ProveedorLectura(estado_operacion(None)), repositorio=RepoOperacionFake,
         reloj=lambda: AHORA,
     ).obtener_estado()
-    assert vacio["estado_worker"]["codigo"] == "NO_REGISTRADO"
+    assert vacio["estado_worker"]["codigo"] == "DESCONOCIDO"
+
+
+def test_observabilidad_respeta_detencion_error_y_fallo_de_consulta():
+    detenido = ServicioObservabilidad(
+        ProveedorLectura(estado_operacion(heartbeat(AHORA, estado="DETENIDO"))),
+        repositorio=RepoOperacionFake, reloj=lambda: AHORA,
+    ).obtener_resumen_worker()
+    assert detenido["estado_worker"]["codigo"] == "DETENIDO"
+
+    error = ServicioObservabilidad(
+        ProveedorLectura(estado_operacion(heartbeat(AHORA, estado="ERROR"))),
+        repositorio=RepoOperacionFake, reloj=lambda: AHORA,
+    ).obtener_resumen_worker()
+    assert error["estado_worker"]["codigo"] == "ATENCION"
+
+    class ProveedorFallido:
+        @contextmanager
+        def conexion_lectura(self):
+            raise ErrorPersistencia("No disponible")
+            yield
+
+    desconocido = ServicioObservabilidad(ProveedorFallido()).obtener_resumen_worker_seguro()
+    assert desconocido["estado_worker"]["codigo"] == "DESCONOCIDO"
+    assert "desconocido" in desconocido["estado_worker"]["aria_label"].lower()
 
 
 def test_configuracion_scheduler_aplica_allowlist_audita_y_confirma():
@@ -292,6 +329,59 @@ class LogsWeb:
                 "nivel": "", "modulo": "", "evento": "", "buscar": ""},
                 "niveles": ("INFO",)}
     def obtener(self, _): return None
+
+
+class ObservabilidadWeb:
+    def __init__(self, resumen): self.resumen = resumen
+    def obtener_resumen_worker_seguro(self): return self.resumen
+    def obtener_estado(self):
+        return {**self.resumen, "integraciones": {
+            "feriados_activos": 0, "ultima_sync": None,
+            "graph_sql_activo": False, "graph_env_habilitado": False,
+            "ultimo_envio_estado": None, "ultimo_envio_fecha": None,
+        }}
+
+
+def resumen_worker_web(*, estado="DETENIDO", pendientes=1):
+    datos = estado_operacion(heartbeat(AHORA, estado=estado))
+    datos["metricas"]["ejecuciones_pendientes"] = pendientes
+    return ServicioObservabilidad(
+        ProveedorLectura(datos), repositorio=RepoOperacionFake, reloj=lambda: AHORA,
+    ).obtener_resumen_worker()
+
+
+def test_worker_se_muestra_en_topbar_panel_endpoint_y_estado(configuracion):
+    app = crear_aplicacion(
+        configuracion, ajustes={"TESTING": True, "PROPAGATE_EXCEPTIONS": False}
+    )
+    actor = identidad({"PANEL_VER", "SCHEDULER_CONFIG_VER"})
+    app.extensions["cargador_identidad"] = lambda _: actor
+    app.extensions["servicio_observabilidad"] = ObservabilidadWeb(
+        resumen_worker_web(estado="DETENIDO", pendientes=1)
+    )
+    cliente = app.test_client(); iniciar_sesion(cliente, actor)
+
+    panel = cliente.get("/")
+    assert panel.status_code == 200
+    assert panel.data.count(b'data-worker-indicador') >= 2
+    assert b'data-estado="DETENIDO"' in panel.data
+    assert b"Worker detenido" in panel.data
+    assert b"1 ejecucion pendiente" in panel.data
+    assert b'aria-label="Worker detenido.' in panel.data
+
+    respuesta_estado = cliente.get("/operacion/worker")
+    assert respuesta_estado.status_code == 200
+    datos = respuesta_estado.get_json()
+    assert datos["estado_worker"]["codigo"] == "DETENIDO"
+    assert datos["estado_worker"]["pendientes"] == 1
+    assert "host" not in datos["estado_worker"] and "pid" not in datos["estado_worker"]
+
+    detalle = cliente.get("/operacion/estado")
+    assert detalle.status_code == 200
+    assert b"Estado Worker" in detalle.data
+    assert b"Ultimo heartbeat" in detalle.data
+    assert b"Umbral detenido" in detalle.data
+    assert b"La cola se conservara" in detalle.data
 
 
 def test_rutas_logs_exigen_permiso_y_template_escapa_xss(configuracion):

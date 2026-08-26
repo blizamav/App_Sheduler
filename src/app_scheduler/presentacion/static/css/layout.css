@@ -218,6 +218,11 @@
     margin-left: auto;
 }
 
+.topbar .worker-indicador-compacto {
+    max-width: 240px;
+    min-height: 42px;
+}
+
 .boton-menu {
     display: none;
     width: 38px;
@@ -410,6 +415,24 @@
     }
 
     .topbar-identidad {
+        display: none;
+    }
+
+    .topbar {
+        padding-inline: var(--espacio-3);
+    }
+
+    .topbar-acciones {
+        gap: var(--espacio-2);
+    }
+
+    .topbar .worker-indicador-compacto {
+        max-width: min(180px, 52vw);
+        min-height: 38px;
+        padding: 6px 8px;
+    }
+
+    .worker-indicador-compacto small {
         display: none;
     }
 

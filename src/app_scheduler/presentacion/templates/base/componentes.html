@@ -6,3 +6,20 @@
     {% if url and accion %}<a class="btn btn-sm btn-primary mt-2" href="{{ url }}">{{ accion }}</a>{% endif %}
 </div>
 {%- endmacro %}
+
+{% macro indicador_worker(resumen=None, url=None, compacto=False) -%}
+{% set estado = resumen.estado_worker if resumen and resumen.estado_worker else none %}
+{% set codigo = estado.codigo if estado else 'DESCONOCIDO' %}
+{% set texto = estado.texto if estado else 'Consultando Worker' %}
+{% set antiguedad = estado.antiguedad if estado else 'Comprobando heartbeat' %}
+{% set aria = estado.aria_label if estado else 'Consultando estado de vida del Worker.' %}
+{% if url %}<a class="worker-indicador{% if compacto %} worker-indicador-compacto{% endif %}" href="{{ url }}" data-worker-indicador data-estado="{{ codigo }}" aria-label="{{ aria }}">
+{% else %}<div class="worker-indicador{% if compacto %} worker-indicador-compacto{% endif %}" data-worker-indicador data-estado="{{ codigo }}" role="status" aria-live="polite" aria-label="{{ aria }}">
+{% endif %}
+    <span class="worker-indicador-punto" aria-hidden="true"></span>
+    <span class="worker-indicador-contenido">
+        <strong data-worker-texto>{{ texto }}</strong>
+        <small data-worker-antiguedad>{{ antiguedad }}{% if estado and estado.pendientes %} · {{ estado.pendientes }} pendiente{{ 's' if estado.pendientes != 1 }}{% endif %}</small>
+    </span>
+{% if url %}</a>{% else %}</div>{% endif %}
+{%- endmacro %}

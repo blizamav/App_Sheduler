@@ -471,6 +471,24 @@ Los mocks no reemplazan validacion SQL, ODBC, Docker o filesystem cuando esos co
 
 Cada recurso temporal tendra propietario, ubicacion, criterio de retiro y limpieza en exito/fallo. Se mediran ejecuciones atascadas, heartbeat, errores scheduler, notificaciones fallidas, espacio de logs y locks. Un hito no cierra con residuos no justificados.
 
+### Estado de vida transversal del Worker
+
+La fuente de verdad sigue siendo `dbo.scheduler_worker_heartbeat`; no existe un
+heartbeat frontend ni paralelo. `ServicioObservabilidad` combina esa senal con
+el intervalo de `configuracion_scheduler` y la cantidad real de ejecuciones
+`PENDIENTE`. La Web solo clasifica y presenta; no inicia procesos, no consume la
+cola y no ejecuta scripts.
+
+La topbar y las vistas operativas consumen un endpoint GET minimo mediante
+polling. La ejecucion manual mantiene el contrato `Web -> PENDIENTE -> Worker`.
+El lock de mantenimiento es una politica fail-closed independiente y puede
+bloquear la reserva aun cuando el Worker este operativo.
+
+Permanece como requisito de los hitos posteriores de runtime: Worker como
+servicio permanente, restart automatico, healthcheck de proceso, recuperacion
+de cola `PENDIENTE` y tratamiento seguro de una caida durante
+`EN_EJECUCION`. Este ajuste no inicia Hito 11 ni adelanta el cutover.
+
 ## Decisiones cerradas y pendientes
 
 ### Cerradas

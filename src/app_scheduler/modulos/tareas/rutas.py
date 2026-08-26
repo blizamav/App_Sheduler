@@ -67,9 +67,13 @@ def listado():
         )
     except ErrorValidacion as error:
         flash(error.mensaje, "error"); return redirect(url_for("tareas.listado"))
+    estado_worker = current_app.extensions[
+        "servicio_observabilidad"
+    ].obtener_resumen_worker_seguro()
     return render_template("tareas/listado.html", resultado=resultado,
         catalogos=_servicio().catalogos(), filtros={"buscar": request.args.get("buscar", ""),
-        "estado": estado or "", "id_cliente": id_cliente or ""})
+        "estado": estado or "", "id_cliente": id_cliente or ""},
+        estado_worker=estado_worker)
 
 
 @bp_tareas.route("/nueva", methods=["GET", "POST"])

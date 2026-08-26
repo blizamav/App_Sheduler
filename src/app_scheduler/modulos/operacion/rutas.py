@@ -1,8 +1,8 @@
 """Rutas de observabilidad y logs globales."""
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 
-from app_scheduler.compartido.autorizacion import permiso_requerido
+from app_scheduler.compartido.autorizacion import permiso_requerido, sesion_requerida
 from app_scheduler.compartido.errores import ErrorValidacion
 
 
@@ -12,10 +12,25 @@ bp_operacion = Blueprint("operacion", __name__)
 @bp_operacion.get("/operacion/estado")
 @permiso_requerido("SCHEDULER_CONFIG_VER")
 def estado():
+    estado_actual = current_app.extensions["servicio_observabilidad"].obtener_estado()
     return render_template(
         "operacion/estado.html",
-        estado=current_app.extensions["servicio_observabilidad"].obtener_estado(),
+        estado=estado_actual,
+        estado_worker=estado_actual,
     )
+
+
+@bp_operacion.get("/operacion/worker")
+@sesion_requerida
+def estado_worker():
+    resumen = current_app.extensions[
+        "servicio_observabilidad"
+    ].obtener_resumen_worker_seguro()
+    estado_actual = resumen["estado_worker"]
+    return jsonify({
+        "estado_worker": estado_actual,
+        "polling_segundos": estado_actual["polling_segundos"],
+    })
 
 
 @bp_operacion.get("/logs/")

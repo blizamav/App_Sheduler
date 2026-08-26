@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'base/componentes.html' import indicador_worker %}
 
 {% block titulo %}Panel | APP Scheduler{% endblock %}
 
@@ -15,6 +16,16 @@
     </div>
     <span class="badge activo">Sesion protegida</span>
 </header>
+
+<section class="panel-worker card" aria-labelledby="panel-worker-titulo">
+    <div><p class="eyebrow">Salud operacional</p><h2 id="panel-worker-titulo">Cola de ejecuciones</h2></div>
+    {{ indicador_worker(estado_worker, url_for('operacion.estado') if identidad.tiene_permiso('SCHEDULER_CONFIG_VER') else none) }}
+    <p class="panel-worker-aviso" data-worker-cola-aviso{% if estado_worker.estado_worker.codigo not in ('DETENIDO', 'DESCONOCIDO') or not estado_worker.estado_worker.pendientes %} hidden{% endif %}>
+        <strong data-worker-pendientes>{{ estado_worker.estado_worker.pendientes }}</strong>
+        <span data-worker-pendientes-texto>ejecucion{{ 'es' if estado_worker.estado_worker.pendientes != 1 }} pendiente{{ 's' if estado_worker.estado_worker.pendientes != 1 }}.</span>
+        La cola comenzara cuando el Worker vuelva a estar operativo.
+    </p>
+</section>
 
 <section class="banda-estado card" aria-label="Contexto operativo">
     <div><span>Ambiente</span><strong>{{ ambiente }}</strong></div>

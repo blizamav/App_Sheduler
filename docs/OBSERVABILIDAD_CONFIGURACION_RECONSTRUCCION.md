@@ -38,11 +38,31 @@ segura de retencion permanece como deuda operativa.
 
 ## Estado operativo
 
-El estado worker usa el ultimo heartbeat activo. Es `ACTIVO` dentro de dos
-intervalos, advertencia `STALE` sobre dos y error `STALE` sobre cinco; tambien
-distingue `ERROR`, `DETENIDO` y `NO_REGISTRADO`. Scheduler, mantenimiento,
-concurrencia, errores de 24 horas, candidatas vencidas y ultima automatica son
-datos SQL reales, no metricas simuladas.
+El estado del Worker usa exclusivamente el ultimo registro activo de
+`scheduler_worker_heartbeat`, leido por `RepositorioOperacion`. El Worker
+actualiza `fecha_ultimo_heartbeat` mediante `RepositorioHeartbeat` al iniciar,
+entrar o cerrar un ciclo, reportar error y detenerse.
+
+La politica central deriva sus ventanas desde
+`configuracion_scheduler.intervalo_revision_segundos`:
+
+* `OPERATIVO`: heartbeat con antiguedad menor o igual a dos intervalos;
+* `ATENCION`: sobre dos y hasta cinco intervalos, o error reciente reportado;
+* `DETENIDO`: sobre cinco intervalos o estado explicito `DETENIDO`;
+* `DESCONOCIDO`: heartbeat inexistente, fecha invalida, estado no reconocido o
+  fallo de consulta. Nunca se asume `OPERATIVO` por defecto.
+
+Si falta configuracion se usa una unica politica de respaldo de 60 segundos,
+centralizada en el caso de uso. El endpoint read-only
+`GET /operacion/worker`, disponible para cualquier sesion autenticada, retorna
+solo estado, antiguedad, pendientes y proximo intervalo de consulta; no expone
+PID, host, credenciales ni detalles de conexion. La UI consulta inicialmente y
+luego cada medio intervalo real, acotado entre 10 y 60 segundos.
+
+Scheduler, mantenimiento, concurrencia, errores de 24 horas, candidatas
+vencidas, pendientes y ultima automatica son datos SQL reales, no metricas
+simuladas. Mantenimiento critico bloquea reservas; Worker detenido no las
+bloquea y conserva las nuevas ejecuciones como `PENDIENTE`.
 
 ## Configuracion
 
@@ -68,6 +88,7 @@ Matriz de autorizacion Hito 8:
 | Logs/listar | `/logs/` | GET | `LOGS_VER` | No aplica | `SUPER_ADMIN`, `ADMIN`, `TI`, `TERCERO` |
 | Logs/detalle | `/logs/<id>` | GET | `LOGS_VER` | No aplica | `SUPER_ADMIN`, `ADMIN`, `TI`, `TERCERO` |
 | Operacion/estado | `/operacion/estado` | GET | `SCHEDULER_CONFIG_VER` | No aplica | `SUPER_ADMIN`, `ADMIN`, `TI` |
+| Operacion/Worker compacto | `/operacion/worker` | GET | Sesion autenticada | No aplica | Todos los perfiles autenticados |
 | Configuracion/ver | `/configuracion/` | GET | `SCHEDULER_CONFIG_VER` | No aplica | `SUPER_ADMIN`, `ADMIN`, `TI` |
 | Scheduler/editar | `/configuracion/scheduler` | POST | `SCHEDULER_CONFIG_EDITAR` | Obligatorio | `SUPER_ADMIN`, `ADMIN`, `TI` |
 | Evidencia/configurar | `/tareas/<id>/evidencia` | POST | `TAREAS_EDITAR` | Obligatorio | `SUPER_ADMIN`, `ADMIN`, `TI` |

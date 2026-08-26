@@ -100,6 +100,77 @@
     background: #e9eef3;
 }
 
+.worker-indicador {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: var(--espacio-2);
+    padding: 8px 10px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-md);
+    color: var(--color-texto);
+    background: var(--color-superficie);
+    text-decoration: none;
+}
+
+a.worker-indicador:hover,
+a.worker-indicador:focus-visible {
+    border-color: var(--color-primario);
+    color: var(--color-texto);
+    box-shadow: 0 0 0 3px rgba(21, 91, 166, .12);
+}
+
+.worker-indicador-punto {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.worker-indicador-contenido {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+}
+
+.worker-indicador strong,
+.worker-indicador small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worker-indicador strong {
+    font-size: .8rem;
+    line-height: 1.2;
+}
+
+.worker-indicador small {
+    color: var(--color-texto-suave);
+    font-size: .68rem;
+}
+
+.worker-indicador[data-estado="OPERATIVO"] { color: var(--color-exito); background: #f1faf5; }
+.worker-indicador[data-estado="ATENCION"] { color: var(--color-advertencia); background: #fff8e9; }
+.worker-indicador[data-estado="DETENIDO"] { color: var(--color-peligro); background: #fff4f4; }
+.worker-indicador[data-estado="DESCONOCIDO"] { color: var(--color-texto-suave); background: var(--color-superficie-suave); }
+.worker-indicador[data-estado] strong { color: currentColor; }
+
+.worker-cola-aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-2);
+    margin-bottom: var(--espacio-4);
+    padding: 12px 14px;
+    border: 1px solid #edb8bb;
+    border-left: 4px solid var(--color-peligro);
+    border-radius: var(--radio-md);
+    color: #6f2025;
+    background: #fff5f5;
+}
+
 .alertas {
     position: fixed;
     top: calc(var(--topbar-alto) + var(--espacio-3));
@@ -415,6 +486,10 @@
     .acciones-tabla > form,
     .acciones-tabla > .dropdown {
         margin-bottom: 6px;
+    }
+
+    .worker-cola-aviso {
+        flex-direction: column;
     }
 }
 

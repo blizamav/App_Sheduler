@@ -1,4 +1,5 @@
 <!doctype html>
+{% from 'base/componentes.html' import indicador_worker %}
 <html lang="es">
 <head>
     <meta charset="utf-8">
@@ -14,7 +15,7 @@
     {% block estilos %}{% endblock %}
 </head>
 {% set identidad_sesion = identidad_actual() %}
-<body class="{% if not identidad_sesion %}pagina-login{% endif %}">
+<body class="{% if not identidad_sesion %}pagina-login{% endif %}"{% if identidad_sesion %} data-worker-endpoint="{{ url_for('operacion.estado_worker') }}"{% endif %}>
     <svg class="iconos-sprite" aria-hidden="true">
         <symbol id="icono-panel" viewBox="0 0 24 24"><path d="M4 4h6v9H4V4ZM4 15h6v5H4v-5ZM14 11h6v9h-6v-9ZM14 4h6v5h-6V4Z"/></symbol>
         <symbol id="icono-tareas" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
@@ -158,6 +159,7 @@
                     <svg aria-hidden="true"><use href="#icono-contraer"></use></svg>
                 </button>
                 <div class="topbar-acciones">
+                    {{ indicador_worker(estado_worker|default(none), url_for('operacion.estado') if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') else none, true) }}
                     <div class="dropdown">
                         <button class="btn usuario-menu dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="usuario-avatar" aria-hidden="true">{{ identidad_sesion.nombre[:1]|upper }}</span>

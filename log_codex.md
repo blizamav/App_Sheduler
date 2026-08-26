@@ -11,6 +11,40 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-26
 
+## 2026-08-26 - Implementacion transversal / Estado de vida del Worker
+
+* Fase: ajuste transversal posterior al Hito 10; Hito 11 no iniciado.
+* Fuente real: `scheduler_worker_heartbeat.fecha_ultimo_heartbeat`, escrita por
+  `RepositorioHeartbeat` y leida por `RepositorioOperacion`, junto con el
+  intervalo activo de `configuracion_scheduler`.
+* Politica: `OPERATIVO` hasta dos intervalos, `ATENCION` sobre dos,
+  `DETENIDO` sobre cinco o por detencion explicita y `DESCONOCIDO` ante datos
+  insuficientes o fallo. El respaldo unico es 60 segundos si falta
+  configuracion.
+* UI: componente accesible en topbar, Panel y Estado del sistema; polling GET
+  same-origin, mensajes de pendientes y responsive para escritorio, tablet y
+  movil. No se muestran PID, host ni secretos en el indicador global.
+* Ejecucion manual: Worker detenido no bloquea; la confirmacion explica que la
+  solicitud queda `PENDIENTE`. Mantenimiento critico conserva su bloqueo
+  independiente.
+* Arquitectura: Flask no ejecuta scripts ni asume funciones de Worker. Quedan
+  documentados como futuros el servicio permanente, restart, healthcheck,
+  recuperacion de cola y caidas durante `EN_EJECUCION`.
+* QA protegida: `10096` debe permanecer `PENDIENTE`; Worker, Scheduler, Graph y
+  Factory Reset no se inician en este turno. DML manual y DDL: cero.
+* Archivo protegido: `scripts_pruebas/prueba_qa.py` permanece fuera de Git y no
+  se modifica.
+* Validacion automatizada: `304 passed, 1 skipped` en
+  `tests/reconstruccion`; `330 passed, 1 skipped` en la suite completa;
+  compilacion Python, templates Jinja, JavaScript, Compose, build Docker y
+  checks efimeros `web`/`worker`: OK.
+* Validacion visual: topbar, Panel, Estado del sistema y Tareas revisados en
+  1440x900, 768x900, 390x844 y 844x390. El estado `DETENIDO`, la cola de una
+  pendiente, el texto accesible y la ejecucion manual con advertencia quedaron
+  visibles sin overflow horizontal ni errores de consola.
+* Precheck QA de solo lectura: ejecucion `10096=PENDIENTE` y heartbeat
+  `DETENIDO`. DML manual 0 y DDL 0.
+
 ## 2026-08-26 - Correccion del claim Worker / pyodbc
 
 * Gate: correccion posterior al primer smoke operacional real; Hito 11 no fue

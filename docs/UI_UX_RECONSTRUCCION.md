@@ -150,6 +150,31 @@ Cada hito nuevo debe entregar funcionalidad, seguridad, pruebas, UI/UX,
 responsive e integracion visual. Hito 12 queda reservado para consistencia y
 accesibilidad finales, no para reparar interfaces temporales acumuladas.
 
+## Semaforo de vida del Worker
+
+La topbar presenta un indicador compacto reutilizable con punto, texto de
+estado y antiguedad. Panel muestra un resumen de cola y
+`/operacion/estado` conserva el detalle completo del heartbeat y sus ventanas.
+El componente usa `data-estado`, texto visible y `aria-label`; el color es un
+refuerzo y no la unica señal.
+
+El estado se refresca mediante `GET /operacion/worker` sin recargar la pagina.
+El controlador usa `fetch` same-origin, cancela solicitudes y timers en
+`pagehide`, y ante un error cambia a `DESCONOCIDO` en vez de mostrar un falso
+verde. El intervalo de polling lo entrega el backend desde la configuracion
+real del Worker.
+
+Cuando `DETENIDO` o `DESCONOCIDO` coincide con ejecuciones pendientes, Panel,
+Estado del sistema y Tareas explican que la cola se conserva. Ejecutar sigue
+disponible y su confirmacion advierte que la solicitud quedara `PENDIENTE`.
+El banner de mantenimiento permanece separado y es el unico que deshabilita la
+accion por seguridad.
+
+En 390x844 y 844x390 el indicador de topbar oculta solo el detalle de
+antiguedad, conserva el texto del estado y limita su ancho. En tablet y
+escritorio muestra ambas lineas. `prefers-reduced-motion` continua aplicando a
+todos los componentes.
+
 ## Flujo guiado y notificaciones post-Hito 10
 
 Tareas usa un stepper Bootstrap ligero de cinco pasos: Datos, Script,

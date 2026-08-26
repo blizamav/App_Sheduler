@@ -1,5 +1,6 @@
 import { prepararModal } from "./componentes/modal.js";
 import { prepararFormularios } from "./componentes/formularios.js";
+import { prepararEstadoWorker } from "./componentes/estado-worker.js";
 
 function prepararSidebar() {
     const sidebar = document.querySelector("#sidebarPrincipal");
@@ -57,4 +58,5 @@ document.addEventListener("DOMContentLoaded", () => {
     prepararFormularios();
     prepararTooltips();
     prepararMenusEnTablas();
+    prepararEstadoWorker();
 });

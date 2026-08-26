@@ -415,6 +415,29 @@ class ProgramacionesWeb:
     def listar(self, **_): return Pagina((), 0, 1, 1)
 
 
+class ObservabilidadWeb:
+    def __init__(self, codigo="OPERATIVO", pendientes=0):
+        texto = {
+            "OPERATIVO": "Worker operativo",
+            "ATENCION": "Worker con retraso",
+            "DETENIDO": "Worker detenido",
+            "DESCONOCIDO": "Estado Worker desconocido",
+        }[codigo]
+        estado = {
+            "codigo": codigo, "texto": texto, "badge": "activo",
+            "segundos": 10, "antiguedad": "Hace 10 s",
+            "detalle": "Estado de prueba.", "ultimo_heartbeat": FECHA.isoformat(),
+            "intervalo_segundos": 60, "umbral_atencion_segundos": 120,
+            "umbral_detenido_segundos": 300, "polling_segundos": 30,
+            "pendientes": pendientes,
+            "aria_label": f"{texto}. Hace 10 s. {pendientes} ejecuciones pendientes.",
+        }
+        self.resumen = {"configuracion": None, "heartbeat": None,
+                        "estado_worker": estado,
+                        "metricas": {"ejecuciones_pendientes": pendientes}}
+    def obtener_resumen_worker_seguro(self): return self.resumen
+
+
 def app_web(configuracion, identidad):
     app = crear_aplicacion(configuracion, ajustes={"TESTING": True, "PROPAGATE_EXCEPTIONS": False})
     auth = AuthWeb(identidad); app.extensions["cargador_identidad"] = auth.cargar_identidad
@@ -423,6 +446,7 @@ def app_web(configuracion, identidad):
     app.extensions["servicio_evidencias"] = EvidenciasWeb()
     app.extensions["servicio_notificaciones_tarea"] = NotificacionesWeb()
     app.extensions["servicio_programaciones"] = ProgramacionesWeb()
+    app.extensions["servicio_observabilidad"] = ObservabilidadWeb()
     return app, tareas, scripts
 
 
@@ -594,6 +618,27 @@ def test_operacion_normal_no_muestra_banner_y_conserva_ejecutar(configuracion, t
 
     assert b"Las ejecuciones se encuentran bloqueadas" not in respuesta.data
     assert b">Ejecutar</button>" in respuesta.data
+
+
+def test_worker_detenido_advierte_y_permite_reservar_pendiente(configuracion, tmp_path):
+    configuracion = replace(configuracion, ruta_control_runtime=tmp_path)
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "EJECUCIONES_EJECUTAR"}))
+    app, _, _ = app_web(configuracion, identidad)
+    app.extensions["servicio_observabilidad"] = ObservabilidadWeb(
+        codigo="DETENIDO", pendientes=1
+    )
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/")
+
+    assert respuesta.status_code == 200
+    assert b"Worker detenido" in respuesta.data
+    assert b'data-worker-pendientes>1</span>' in respuesta.data
+    assert b"ejecucion pendiente" in respuesta.data
+    assert b"quedara PENDIENTE" in respuesta.data
+    assert b'data-worker-confirmacion' in respuesta.data
+    assert b">Ejecutar</button>" in respuesta.data
+    assert b"Ejecucion bloqueada" not in respuesta.data
 
 
 def test_panel_versiones_explica_maximo_y_bloqueo(configuracion):

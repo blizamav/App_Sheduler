@@ -132,7 +132,8 @@ ORDER BY fecha_ultimo_heartbeat DESC, id_worker DESC""",
 (SELECT MAX(fecha_hora_inicio) FROM dbo.ejecuciones WHERE origen_ejecucion = 'AUTOMATICA'),
 (SELECT COUNT(1) FROM dbo.tareas WHERE eliminado_operativo = 0 AND activo = 1
  AND estado_tarea = 'ACTIVA' AND tipo_tarea = 'PROGRAMADA'
- AND proxima_ejecucion IS NOT NULL AND proxima_ejecucion <= SYSDATETIME())""",
+ AND proxima_ejecucion IS NOT NULL AND proxima_ejecucion <= SYSDATETIME()),
+(SELECT COUNT(1) FROM dbo.ejecuciones WHERE estado_ejecucion = 'PENDIENTE')""",
             operacion="obtener_metricas_operativas",
         )
         return {
@@ -140,6 +141,7 @@ ORDER BY fecha_ultimo_heartbeat DESC, id_worker DESC""",
             "errores_24h": int(fila[1] or 0),
             "ultima_ejecucion_automatica": fila[2],
             "tareas_candidatas": int(fila[3] or 0),
+            "ejecuciones_pendientes": int(fila[4] or 0),
         }
 
     def listar_configuracion_sistema(self):
