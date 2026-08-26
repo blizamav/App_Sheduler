@@ -71,6 +71,13 @@ PID, solicitud de detencion, cierre condicional, `logs_tareas`, metadata de
 `evidencias_ejecucion` e historial. La automatica ya reservada se consume por
 `id_ejecucion` y sus `id_script`/`id_version`; no se crea otra fila.
 
+El claim es el unico consumidor de un batch DML multi-statement que retorna una
+fila mediante un `SELECT` final. Declara `SET NOCOUNT ON` para que pyodbc no
+exponga los conteos del `UPDATE` como resultados no consultables. El helper
+central `ejecutar_uno()` no cambio: sus usos en 15 modulos/repositorios esperan
+una consulta con un unico resultset, por lo que ampliar globalmente su semantica
+con `nextset()` introduciria un impacto innecesario.
+
 El DDL no contiene `id_programacion`, timeout ni estado `TIMEOUT`. Hito 7 no los
 oculta en otros campos: la clave automatica conserva idempotencia y el timeout
 global de ambiente finaliza como `ERROR`. `PENDIENTE` es recuperable; una
@@ -196,11 +203,20 @@ Lectura simple: repositorio con conexion de vida controlada. Operacion compuesta
 
 Las excepciones DB-API se convierten en `ErrorPersistencia`. El detalle conserva operacion, clase tecnica y SQLSTATE valido, pero no SQL completo, parametros, connection string ni texto libre del driver.
 
+Para el claim, un resultset final vacio significa que no existe candidato y
+retorna `None`. Si el driver no ofrece un resultset consultable, `fetchone()`
+continua elevando un error traducido; no se confunde un problema de protocolo
+con ausencia de trabajo.
+
 La auditoria se invoca desde los casos de uso dentro de la misma UoW, con actor y contexto. No se genera automaticamente desde helpers SQL. Secretos Graph, passwords y contenido `.env` permanecen en variables/archivos de entorno, no en configuracion SQL.
 
 ## Estrategia de pruebas
 
 * Fakes DB-API programables conservan SQL, parametros, rowcount, cursores y limites transaccionales.
+* La regresion del claim simula el comportamiento pyodbc con tokens de rowcount,
+  candidato presente, candidato ausente y resultset final invalido. La prueba
+  real contra QA uso una variable de tabla de sesion y un applock compartido
+  temporal, con cero DML persistente y cero DDL.
 * Tests de mapeo detectan columnas faltantes y evitan exponer hashes por representacion.
 * Tests de repositorio verifican placeholders, paginacion SQL Server, ausencia de N+1 para permisos y cero commits ocultos.
 * Tests de contrato parsean estaticamente 002/007/008 y exigen las 33 tablas, columnas consumidas, relaciones y reglas de versiones.

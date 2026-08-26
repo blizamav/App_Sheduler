@@ -88,7 +88,8 @@ VALUES (?, ?, ?, 'MANUAL', 'PENDIENTE', SYSDATETIME(), ?, NULL, ?,
 
     def reclamar_siguiente(self, nombre_worker: str, limite: int) -> int | None:
         fila = self.ejecutar_uno(
-            """DECLARE @lock int;
+            """SET NOCOUNT ON;
+DECLARE @lock int;
 DECLARE @reclamadas TABLE (id_ejecucion bigint NOT NULL);
 EXEC @lock = sys.sp_getapplock
     @Resource = 'APP_SCHEDULER_MOTOR_CLAIM',

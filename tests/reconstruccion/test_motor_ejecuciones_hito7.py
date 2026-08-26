@@ -13,7 +13,7 @@ import pytest
 from app_scheduler import crear_aplicacion
 from app_scheduler.compartido.auditoria import ContextoAuditoria
 from app_scheduler.compartido.autorizacion import CLAVE_IDENTIDAD, IdentidadSesion, TIPO_BASE_DATOS
-from app_scheduler.compartido.errores import ErrorValidacion
+from app_scheduler.compartido.errores import ErrorPersistencia, ErrorValidacion
 from app_scheduler.persistencia.modelos import ContextoEjecucion, DetalleEjecucion, Pagina
 from app_scheduler.persistencia.repositorio_ejecuciones import RepositorioEjecuciones
 from app_scheduler.modulos.ejecuciones.casos_uso import ServicioEjecuciones
@@ -243,6 +243,7 @@ def test_claim_atomico_usa_lock_readpast_y_limite():
     conexion = ConexionProgramada(ResultadoSQL(fila=(44,)))
     assert RepositorioEjecuciones(conexion).reclamar_siguiente("worker-a", 3) == 44
     sql, parametros = conexion.ejecuciones[0]
+    assert sql.lstrip().startswith("SET NOCOUNT ON;")
     assert "sp_getapplock" in sql and "UPDLOCK, READPAST, ROWLOCK" in sql
     assert "WHERE estado_ejecucion = 'PENDIENTE'" in sql
     assert parametros == (3, "worker-a")
@@ -251,6 +252,67 @@ def test_claim_atomico_usa_lock_readpast_y_limite():
 def test_claim_sin_capacidad_retorna_none_sin_error_driver():
     conexion = ConexionProgramada(ResultadoSQL(fila=None))
     assert RepositorioEjecuciones(conexion).reclamar_siguiente("worker-b", 1) is None
+
+
+class CursorPyodbcClaimSimulado:
+    """Reproduce los DONE/rowcount que pyodbc expone sin NOCOUNT."""
+
+    def __init__(self, fila=(73,), *, resultado_final=True):
+        self.fila = fila
+        self.resultado_final = resultado_final
+        self.description = None
+        self.rowcount = -1
+        self.cerrado = False
+
+    def execute(self, sql, parametros=()):
+        self.sql = sql
+        self.parametros = tuple(parametros)
+        if sql.lstrip().startswith("SET NOCOUNT ON;") and self.resultado_final:
+            self.description = (("id_ejecucion",),)
+        else:
+            self.description = None
+            self.rowcount = 1
+        return self
+
+    def fetchone(self):
+        if self.description is None:
+            raise RuntimeError("No results. Previous SQL was not a query.")
+        return self.fila
+
+    def close(self):
+        self.cerrado = True
+
+
+class ConexionPyodbcClaimSimulada:
+    def __init__(self, fila=(73,), *, resultado_final=True):
+        self.cursor_claim = CursorPyodbcClaimSimulado(
+            fila, resultado_final=resultado_final
+        )
+
+    def cursor(self):
+        return self.cursor_claim
+
+
+def test_claim_nocount_expone_directamente_resultset_final_pyodbc():
+    conexion = ConexionPyodbcClaimSimulada((73,))
+
+    assert RepositorioEjecuciones(conexion).reclamar_siguiente("worker-qa", 2) == 73
+    assert conexion.cursor_claim.description[0][0] == "id_ejecucion"
+    assert conexion.cursor_claim.parametros == (2, "worker-qa")
+    assert conexion.cursor_claim.cerrado is True
+
+
+def test_claim_resultset_final_vacio_representa_ausencia_de_candidato():
+    conexion = ConexionPyodbcClaimSimulada(None)
+
+    assert RepositorioEjecuciones(conexion).reclamar_siguiente("worker-qa", 2) is None
+
+
+def test_claim_sin_resultset_final_no_se_silencia_como_sin_candidato():
+    conexion = ConexionPyodbcClaimSimulada(resultado_final=False)
+
+    with pytest.raises(ErrorPersistencia, match="reclamar_ejecucion_pendiente"):
+        RepositorioEjecuciones(conexion).reclamar_siguiente("worker-qa", 2)
 
 
 def test_contrato_sql_real_no_inventa_timeout_ni_id_programacion():

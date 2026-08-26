@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-26 - Correccion pyodbc del claim del Worker
+
+* El primer smoke operacional real reservo por Web la ejecucion manual `10095`
+  para la tarea QA, pero el Worker fallo antes de `EN_EJECUCION`: pyodbc quedo
+  posicionado en un resultado de rowcount y `fetchone()` reporto `No results`.
+* La prueba real no persistente mostro dos resultados intermedios con
+  `description=None` usando `NOCOUNT OFF`. Con `SET NOCOUNT ON`, incluso con
+  `sp_getapplock`, el primer resultset fue el `id_ejecucion` final.
+* Se agrego `SET NOCOUNT ON` exclusivamente al batch de
+  `reclamar_siguiente()`. Se preservaron applock, transaccion, limite de
+  concurrencia, `UPDLOCK`, `READPAST`, `ROWLOCK` y at-most-once; el helper
+  central `ejecutar_uno()` no cambio.
+* Se agregaron regresiones para candidato, ausencia de candidato y protocolo
+  sin resultset final. Aprobaron `301 passed, 1 skipped` en reconstruccion y
+  `327 passed, 1 skipped` en la suite completa, ademas de compileall, Compose,
+  build Docker, checks web/worker y `git diff --check`.
+* QA no recibio DML persistente ni DDL durante el diagnostico. La ejecucion
+  `10095` continua `PENDIENTE`, sin PID, termino, codigo de salida, log ni
+  evidencia. Worker, Scheduler, Graph y Factory Reset no fueron ejecutados.
+
 ## 2026-08-26 - Cierre ajuste transversal UX del flujo de tareas
 
 * Se consolido el recorrido Datos, Script, Evidencia, Notificaciones y

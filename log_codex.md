@@ -11,6 +11,34 @@
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
 * Ultima actualizacion: 2026-08-26
 
+## 2026-08-26 - Correccion del claim Worker / pyodbc
+
+* Gate: correccion posterior al primer smoke operacional real; Hito 11 no fue
+  iniciado.
+* Evidencia inicial: la Web creo `ejecuciones.id_ejecucion=10095` como
+  `MANUAL/PENDIENTE`, con tarea 14, script 20, version 28 y actor `blizama`.
+  El claim fallo antes de proceso, PID, stdout, stderr, log y evidencia.
+* Causa: el batch multi-statement ejecutaba DML con `NOCOUNT OFF`; pyodbc expuso
+  dos resultados de rowcount (`description=None`) antes del `SELECT`
+  `id_ejecucion`, por lo que `ejecutar_uno()` llamo `fetchone()` sobre un
+  resultado no consultable.
+* Decision: agregar `SET NOCOUNT ON` solo a `reclamar_siguiente()`. La prueba
+  real demostro que esto deja como primer resultset `id_ejecucion`, incluso con
+  `sp_getapplock`. No se agrego `nextset()` ni se cambio el contrato global de
+  `ejecutar_uno()`, usado por 15 archivos de persistencia.
+* Garantias preservadas: UoW atomica, applock transaccional, limite concurrente,
+  `UPDLOCK/READPAST/ROWLOCK`, version congelada y at-most-once.
+* Prueba SQL real: variable de tabla de sesion y applock compartido temporal;
+  cero DML persistente, cero DDL y ningun secreto mostrado.
+* Validacion: 35 pruebas focales; `301 passed, 1 skipped` en reconstruccion y
+  `327 passed, 1 skipped` totales; compileall, Compose, build Docker,
+  `web --check`, `worker --check` y `git diff --check` correctos.
+* Estado protegido: `10095` permanece `PENDIENTE`; es la unica pendiente.
+  Worker y Scheduler no se iniciaron, Graph no se ejecuto, correos 0 y Factory
+  Reset continua `NORMAL`.
+* Proximo paso: gate separado para consumir la misma ejecucion `10095` con la
+  correccion versionada. No solicitar otra ejecucion.
+
 ## 2026-08-26 - Cierre ajuste transversal UX del flujo guiado
 
 * Fase: Ajuste transversal posterior al Hito 10; Hito 11 no iniciado.

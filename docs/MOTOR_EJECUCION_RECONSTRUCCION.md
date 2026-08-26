@@ -67,6 +67,12 @@ El claim usa `sp_getapplock`, limite concurrente, `UPDLOCK`, `READPAST` y
 `ROWLOCK` dentro de la misma UoW. Dos workers no pueden obtener la misma fila y
 el cambio a `EN_EJECUCION` registra inicio y worker antes de ejecutar.
 
+El batch declara `SET NOCOUNT ON` antes del DML. Esta opcion es parte del
+contrato pyodbc: evita que los tokens de filas afectadas del `UPDATE` aparezcan
+como resultados intermedios sin `cursor.description` antes del `SELECT`
+`id_ejecucion` final. `ejecutar_uno()` conserva su semantica de consulta de un
+unico resultset y no navega globalmente con `nextset()`.
+
 La garantia es at-most-once despues del claim, no exactly-once. Una
 `PENDIENTE` sobrevive al reinicio y puede ser reclamada. Una
 `EN_EJECUCION` abandonada no se relanza automaticamente: PID puede reciclarse y
@@ -153,9 +159,15 @@ datos en logs, JSON u observaciones.
 
 ## Validacion tecnica
 
-* Motor Hito 7: 25 pruebas aprobadas.
-* Reconstruccion: 205 aprobadas y 1 omitida por symlink en Windows.
-* Suite completa: 231 aprobadas y 1 omitida.
+* Primer smoke operacional real: la Web reservo `10095` correctamente, pero el
+  claim fallo antes del subprocess porque pyodbc recibio resultados de rowcount
+  anteriores al `SELECT` final. La fila permanece `PENDIENTE` para un gate de
+  reintento separado.
+* Prueba pyodbc real no persistente: `NOCOUNT OFF` expuso dos resultados con
+  `description=None`; `NOCOUNT ON`, incluso con `sp_getapplock`, expuso
+  directamente `id_ejecucion`.
+* Reconstruccion: 301 aprobadas y 1 omitida por symlink en Windows.
+* Suite completa: 327 aprobadas y 1 omitida.
 * `compileall`, 17 templates y JavaScript: OK.
 * Compose, build `web`/`worker`, checks Linux y subprocess Linux: OK usando
   configuracion ficticia aislada y sin SQL.
