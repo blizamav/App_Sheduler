@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}Evidencia | APP Scheduler{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/tareas-scripts.css') }}">{% endblock %}
+{% block contenido %}
+{% set identidad = identidad_actual() %}
+{% set script = detalle_scripts.script %}
+{% set activas = detalle_scripts.versiones|selectattr('es_activa')|list %}
+{% set validaciones = evidencia.soporte.validaciones %}
+{% set tiene_indicios = validaciones.declaracion or validaciones.version or validaciones.inicio or validaciones.fin %}
+<nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('tareas.listado') }}">Tareas</a></li><li class="breadcrumb-item">{{ actual.nombre_tarea }}</li><li class="breadcrumb-item active" aria-current="page">Evidencia</li></ol></nav>
+<header class="encabezado-pagina"><div><p class="eyebrow">Paso 3 · Evidencia</p><h1>Revisar Evidencia 1.0</h1><p class="texto-secundario">Verifica si el script activo puede aportar contenido adicional a la notificacion de exito.</p></div>{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="btn btn-outline-secondary" href="{{ url_for('tareas.editar', id_tarea=actual.id_tarea) }}">Editar datos</a>{% endif %}</header>
+{% include 'tareas/_flujo.html' %}
+<section class="resumen-paso card" aria-label="Resumen de la tarea"><div><span>Tarea</span><strong>{{ actual.nombre_tarea }}</strong></div><div><span>Script activo</span><strong>{{ script.nombre_script if script and activas else 'Sin script activo' }}</strong></div><div><span>Version activa</span><strong>{{ 'V' ~ activas[0].numero_version if activas else 'No disponible' }}</strong></div></section>
+<section class="evidencia-paso card" aria-labelledby="estado-evidencia-titulo">
+  <header><div><p class="eyebrow">Estado Evidencia 1.0</p><h2 id="estado-evidencia-titulo">{{ 'Compatible 1.0' if evidencia.soporte.compatible else ('Requiere ajuste' if tiene_indicios else 'No implementada') }}</h2></div><span class="badge {{ 'activo' if evidencia.soporte.compatible else ('advertencia' if tiene_indicios else 'info') }}">{{ 'COMPATIBLE' if evidencia.soporte.compatible else ('REQUIERE AJUSTE' if tiene_indicios else 'OPCIONAL') }}</span></header>
+  {% if not evidencia.soporte.compatible %}<div class="alert alert-info mb-0" role="status">Este Script puede ejecutarse normalmente, pero no genera Evidencia 1.0.</div>{% endif %}
+  <ul class="checklist-evidencia">{% for clave, etiqueta in (('declaracion','Soporte declarado'),('version','Version 1.0'),('inicio','Delimitador inicial'),('fin','Delimitador final')) %}<li class="{{ 'cumple' if validaciones[clave] else 'pendiente' }}"><span aria-hidden="true">{{ '✓' if validaciones[clave] else '○' }}</span>{{ etiqueta }}</li>{% endfor %}</ul>
+  <details class="ayuda-evidencia"><summary>Ver estructura requerida</summary><div><pre><code>APP_SCHEDULER_EVIDENCIA = True
+APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"
+
+print("###APP_SCHEDULER_EVIDENCIA_INICIO###")
+print(json.dumps(evidencia_scheduler, ensure_ascii=False))
+print("###APP_SCHEDULER_EVIDENCIA_FIN###")</code></pre><p>Los delimitadores deben imprimirse durante la ejecucion; no basta con dejarlos como comentarios.</p></div></details>
+</section>
+<div class="acciones-flujo"><a class="btn btn-outline-secondary" href="{{ url_for('scripts.detalle', id_tarea=actual.id_tarea) }}">Volver a Script</a>{% if identidad.tiene_permiso('TAREAS_EDITAR') %}<a class="btn btn-primary" href="{{ url_for('tareas.notificaciones', id_tarea=actual.id_tarea) }}">Continuar a Notificaciones</a>{% endif %}</div>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', filename='js/tareas.js') }}"></script>{% endblock %}

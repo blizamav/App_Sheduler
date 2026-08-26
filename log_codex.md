@@ -9,7 +9,37 @@
 * Estado actual: Hitos 0-10 cerrados en el runtime reconstruido aislado. La implementacion historica sigue activa como referencia.
 * Ambiente actual: LOCAL Windows.
 * Fase actual: Reconstruccion limpia - Hito 10 cerrado, sin cutover; Hito 11 no iniciado.
-* Ultima actualizacion: 2026-08-25
+* Ultima actualizacion: 2026-08-26
+
+## 2026-08-26 - Cierre ajuste transversal UX del flujo guiado
+
+* Fase: Ajuste transversal posterior al Hito 10; Hito 11 no iniciado.
+* Flujo: Se congelo Datos -> Script -> Evidencia -> Notificaciones ->
+  Programacion. Script guia carga, activacion y continuidad; Programacion
+  permite cierre explicito sin agenda.
+* Stepper: El paso actual depende de la ruta y el completado del estado
+  funcional. Se usan `Completado`, `En curso`, `Pendiente` y `Requiere ajuste`,
+  con `aria-current="step"`, texto visible, foco y movimiento reducido.
+* UI: Evidencia y Notificaciones tienen pantallas independientes. Evidencia no
+  duplica Datos y Notificaciones mantiene separados Exito, Error y Evidencia
+  opcional. El responsive fue revisado en escritorio, tablet y movil vertical y
+  horizontal sin overflow global.
+* Mantenimiento: Se agrego banner seguro y acceso al estado del sistema. El
+  lock `runtime_control/factory_reset.lock` permanece en
+  `FACTORY_RESET_ERROR`; no fue modificado ni liberado. La politica fail-closed
+  sigue bloqueando ejecucion manual, scheduler y worker.
+* QA: La migracion `022` ya estaba aplicada y validada. Durante este cierre no
+  se ejecuto DML, DDL, tareas, Factory Reset, Graph ni Nager.Date.
+* Validacion: `298 passed, 1 skipped` en reconstruccion y `324 passed, 1
+  skipped` totales; `compileall`, 37 templates Jinja, siete JavaScript,
+  `web --check`, `worker --check`, Compose, build Docker web/worker y
+  `git diff --check` correctos. El responsive se comprobo en 1440x900, 768 px,
+  390x844 y 844x390 sin overflow global.
+* Protecciones: `.env`, `.env.docker`, SQL publicado, runtime historico y
+  `scripts_pruebas/prueba_qa.py` permanecen intactos; el archivo de prueba sigue
+  local y fuera de versionado.
+* Proximo paso: Recuperar o liberar el lock solo mediante procedimiento manual
+  controlado y separado. No iniciar Hito 11 desde este cierre.
 
 ## 2026-08-25 - Correccion SQL Server 1934 en migracion 022
 

@@ -26,6 +26,34 @@ def _datos():
              "id_categoria", "id_tipo", "estado_tarea")}
 
 
+def _armar_flujo(id_tarea, paso_actual, *, detalle_scripts=None, evidencia=None,
+                 notificaciones=None, total_programaciones=None):
+    detalle_scripts = detalle_scripts or _servicio_scripts().detalle(id_tarea)
+    evidencia = evidencia or _servicio_evidencias().obtener_para_tarea(id_tarea)
+    notificaciones = notificaciones or _servicio_notificaciones().obtener(id_tarea)
+    if total_programaciones is None:
+        total_programaciones = _servicio_programaciones().listar(
+            pagina=1, por_pagina=1, id_tarea=id_tarea
+        ).total
+    flujo = list(construir_flujo(
+        detalle_scripts=detalle_scripts,
+        evidencia=evidencia,
+        notificaciones=notificaciones,
+        total_programaciones=total_programaciones,
+        paso_actual=paso_actual,
+    ))
+    urls = (
+        url_for("tareas.editar", id_tarea=id_tarea),
+        url_for("scripts.detalle", id_tarea=id_tarea),
+        url_for("tareas.evidencia", id_tarea=id_tarea),
+        url_for("tareas.notificaciones", id_tarea=id_tarea),
+        url_for("programaciones.listado", id_tarea=id_tarea),
+    )
+    for paso, url in zip(flujo, urls):
+        paso["url"] = url
+    return flujo, detalle_scripts, evidencia, notificaciones, total_programaciones
+
+
 @bp_tareas.get("/")
 @permiso_requerido("TAREAS_VER")
 def listado():
@@ -78,30 +106,47 @@ def editar(id_tarea):
         else:
             flash("Tarea actualizada correctamente.", "success")
             return redirect(url_for("tareas.editar", id_tarea=id_tarea))
-    detalle_scripts = _servicio_scripts().detalle(id_tarea)
-    evidencia = _servicio_evidencias().obtener_para_tarea(id_tarea)
-    notificaciones = _servicio_notificaciones().obtener(id_tarea)
-    total_programaciones = _servicio_programaciones().listar(
-        pagina=1, por_pagina=1, id_tarea=id_tarea
-    ).total
-    flujo = list(construir_flujo(
-        detalle_scripts=detalle_scripts, evidencia=evidencia,
-        notificaciones=notificaciones, total_programaciones=total_programaciones,
-    ))
-    urls = (
-        url_for("tareas.editar", id_tarea=id_tarea),
-        url_for("scripts.detalle", id_tarea=id_tarea),
-        url_for("tareas.editar", id_tarea=id_tarea, _anchor="evidencia"),
-        url_for("tareas.editar", id_tarea=id_tarea, _anchor="notificaciones"),
-        url_for("programaciones.listado", id_tarea=id_tarea),
+    flujo, detalle_scripts, evidencia, notificaciones, total_programaciones = _armar_flujo(
+        id_tarea, "datos"
     )
-    for paso, url in zip(flujo, urls):
-        paso["url"] = url
     return render_template("tareas/formulario.html", modo="editar", datos=datos,
                            actual=actual, catalogos=_servicio().catalogos(),
                            evidencia=evidencia, notificaciones=notificaciones,
                            flujo=flujo, detalle_scripts=detalle_scripts,
                            total_programaciones=total_programaciones)
+
+
+@bp_tareas.get("/<int:id_tarea>/evidencia")
+@permiso_requerido("TAREAS_VER")
+def evidencia(id_tarea):
+    actual = _servicio().obtener(id_tarea)
+    if actual is None:
+        flash("Tarea no encontrada.", "error")
+        return redirect(url_for("tareas.listado"))
+    flujo, detalle_scripts, evidencia_actual, _, _ = _armar_flujo(
+        id_tarea, "evidencia"
+    )
+    return render_template(
+        "tareas/evidencia.html", actual=actual, flujo=flujo,
+        detalle_scripts=detalle_scripts, evidencia=evidencia_actual,
+    )
+
+
+@bp_tareas.get("/<int:id_tarea>/notificaciones")
+@permiso_requerido("TAREAS_EDITAR")
+def notificaciones(id_tarea):
+    actual = _servicio().obtener(id_tarea)
+    if actual is None:
+        flash("Tarea no encontrada.", "error")
+        return redirect(url_for("tareas.listado"))
+    flujo, detalle_scripts, evidencia_actual, notificaciones_actuales, _ = _armar_flujo(
+        id_tarea, "notificaciones"
+    )
+    return render_template(
+        "tareas/notificaciones.html", actual=actual, flujo=flujo,
+        detalle_scripts=detalle_scripts, evidencia=evidencia_actual,
+        notificaciones=notificaciones_actuales,
+    )
 
 
 @bp_tareas.post("/<int:id_tarea>/evidencia")
@@ -125,9 +170,10 @@ def guardar_notificaciones(id_tarea):
         )
     except ErrorValidacion as error:
         flash(error.mensaje, "error")
+        return redirect(url_for("tareas.notificaciones", id_tarea=id_tarea))
     else:
         flash("Configuracion de notificaciones actualizada.", "success")
-    return redirect(url_for("tareas.editar", id_tarea=id_tarea))
+    return redirect(url_for("programaciones.listado", id_tarea=id_tarea))
 
 
 @bp_tareas.post("/<int:id_tarea>/estado")

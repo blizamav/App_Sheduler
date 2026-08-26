@@ -31,7 +31,7 @@
       </article>
     </div>
     <div class="grid-formulario asunto-notificacion"><label class="campo campo-ancho"><span>Asunto personalizado de notificacion exitosa</span><input class="form-control" name="asunto_personalizado" maxlength="255" value="{{ config_notificacion.asunto_personalizado or '' }}"><small>Opcional. Se aplica tanto al correo estandar como al que incluye Evidencia.</small></label></div>
-    <div class="acciones-formulario"><a class="btn btn-outline-secondary" href="{{ url_for('programaciones.listado', id_tarea=actual.id_tarea) }}">Ir a programacion</a><button class="btn btn-primary" type="submit" data-confirmar data-titulo="Guardar notificaciones" data-mensaje="Se actualizaran reglas y destinatarios. Guardar no envia correos." data-texto-procesando="Guardando...">Guardar notificaciones</button></div>
+    <div class="acciones-formulario"><a class="btn btn-outline-secondary" href="{{ url_for('tareas.evidencia', id_tarea=actual.id_tarea) }}">Volver a Evidencia</a><button class="btn btn-primary" type="submit" data-confirmar data-titulo="Guardar notificaciones" data-mensaje="Se actualizaran reglas y destinatarios. Guardar no envia correos." data-texto-procesando="Guardando...">Guardar y continuar a Programacion</button></div>
   </form>
   <details class="ayuda-evidencia"><summary>Ver estructura requerida</summary><div><p>La validacion es estatica: APP Scheduler analiza el codigo sin ejecutarlo, importarlo ni evaluarlo.</p><pre><code>APP_SCHEDULER_EVIDENCIA = True
 APP_SCHEDULER_EVIDENCIA_VERSION = "1.0"

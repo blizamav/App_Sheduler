@@ -63,12 +63,13 @@ def detalle(id_tarea):
     evidencia = _servicio_evidencias().obtener_para_tarea(id_tarea)
     flujo = list(construir_flujo(
         detalle_scripts=datos, evidencia=evidencia,
+        paso_actual="script",
     ))
     urls = (
-        url_for("tareas.listado"),
+        url_for("tareas.editar", id_tarea=id_tarea),
         url_for("scripts.detalle", id_tarea=id_tarea),
-        None,
-        None,
+        url_for("tareas.evidencia", id_tarea=id_tarea),
+        url_for("tareas.notificaciones", id_tarea=id_tarea),
         url_for("programaciones.listado", id_tarea=id_tarea),
     )
     for paso, url in zip(flujo, urls):

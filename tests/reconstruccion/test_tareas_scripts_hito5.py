@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -471,7 +473,7 @@ def test_nueva_tarea_guardar_y_continuar_dirige_al_script(configuracion):
 def test_edicion_separa_exito_error_y_evidencia_no_implementada(configuracion):
     identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
     app, _, _ = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
-    respuesta = cliente.get("/tareas/1/editar")
+    respuesta = cliente.get("/tareas/1/notificaciones")
     assert respuesta.status_code == 200
     assert b"Notificar cuando la ejecucion termine correctamente" in respuesta.data
     assert b"Notificar cuando la ejecucion termine con error" in respuesta.data
@@ -486,11 +488,112 @@ def test_edicion_muestra_evidencia_compatible_y_stepper(configuracion):
     app, _, _ = app_web(configuracion, identidad)
     app.extensions["servicio_evidencias"] = EvidenciasWeb(compatible=True)
     cliente = app.test_client(); iniciar_sesion(cliente, identidad)
-    respuesta = cliente.get("/tareas/1/editar")
+    respuesta = cliente.get("/tareas/1/evidencia")
     assert respuesta.status_code == 200
     assert b"COMPATIBLE" in respuesta.data
     for paso in (b"Datos", b"Script", b"Evidencia", b"Notificaciones", b"Programacion"):
         assert paso in respuesta.data
+
+
+@pytest.mark.parametrize(
+    ("ruta", "paso"),
+    (
+        ("/tareas/nueva", b"Datos"),
+        ("/tareas/1/scripts", b"Script"),
+        ("/tareas/1/evidencia", b"Evidencia"),
+        ("/tareas/1/notificaciones", b"Notificaciones"),
+    ),
+)
+def test_stepper_determina_paso_actual_por_ruta(configuracion, ruta, paso):
+    identidad = actor(frozenset({
+        "PANEL_VER", "TAREAS_VER", "TAREAS_CREAR", "TAREAS_EDITAR", "SCRIPTS_VER",
+    }))
+    app, _, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get(ruta)
+
+    assert respuesta.status_code == 200
+    bloque_actual = respuesta.data.split(b'aria-current="step"', 1)[1].split(b"</li>", 1)[0]
+    assert paso in bloque_actual and b"En curso" in bloque_actual
+
+
+def test_script_actual_conserva_estado_funcional_completado_y_cta_evidencia(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/1/scripts")
+
+    assert b'aria-current="step" data-estado-funcional="completo"' in respuesta.data
+    assert b"Script listo" in respuesta.data
+    assert b"Continuar a Evidencia" in respuesta.data
+    assert b"Continuar a Notificaciones" not in respuesta.data
+
+
+def test_script_sin_version_prioriza_carga_y_omision_explicita(configuracion):
+    identidad = actor(frozenset({
+        "PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER", "SCRIPTS_VERSIONAR",
+    }))
+    app, _, scripts = app_web(configuracion, identidad)
+    scripts.detalle = lambda _: {
+        "tarea": tarea(), "script": None, "versiones": (), "referencias": {},
+        "slots_libres": (1, 2, 3), "slots_versiones": (None, None, None),
+    }
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/1/scripts")
+
+    assert b"Cargar version" in respuesta.data
+    assert b"Omitir Script por ahora" in respuesta.data
+    assert b"Continuar a Notificaciones" not in respuesta.data
+
+
+def test_evidencia_es_enfocada_y_no_repite_formulario_datos(configuracion):
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/1/evidencia")
+
+    assert respuesta.status_code == 200
+    assert b"Paso 3" in respuesta.data and b"Estado Evidencia 1.0" in respuesta.data
+    assert b"Este Script puede ejecutarse normalmente" in respuesta.data
+    assert b"Volver a Script" in respuesta.data and b"Continuar a Notificaciones" in respuesta.data
+    assert b'name="nombre_tarea"' not in respuesta.data
+    assert b'name="descripcion"' not in respuesta.data
+    assert b"Editar datos" in respuesta.data
+
+
+def test_mantenimiento_critico_muestra_banner_y_deshabilita_ejecucion(configuracion, tmp_path):
+    lock = {
+        "estado": "FACTORY_RESET_ERROR", "fecha_creacion": "2026-08-13T19:09:18+00:00",
+        "origen": "WEB:ENV",
+    }
+    (tmp_path / "factory_reset.lock").write_text(json.dumps(lock), encoding="utf-8")
+    configuracion = replace(configuracion, ruta_control_runtime=tmp_path)
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "EJECUCIONES_EJECUTAR"}))
+    app, _, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/")
+
+    assert b"Modo mantenimiento" in respuesta.data
+    assert b"Las ejecuciones se encuentran bloqueadas" in respuesta.data
+    assert b"Factory Reset anterior finalizo con error" in respuesta.data
+    assert b"Ejecucion bloqueada" in respuesta.data and b"disabled" in respuesta.data
+
+
+def test_operacion_normal_no_muestra_banner_y_conserva_ejecutar(configuracion, tmp_path):
+    configuracion = replace(configuracion, ruta_control_runtime=tmp_path)
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "EJECUCIONES_EJECUTAR"}))
+    app, _, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/")
+
+    assert b"Las ejecuciones se encuentran bloqueadas" not in respuesta.data
+    assert b">Ejecutar</button>" in respuesta.data
 
 
 def test_panel_versiones_explica_maximo_y_bloqueo(configuracion):

@@ -163,3 +163,23 @@ switches son independientes del soporte Evidencia. La card Evidencia informa
 habilita su switch cuando el script es compatible y el exito esta activo. Las
 grillas se reducen a una columna en movil y el stepper usa scroll horizontal
 local, sin provocar overflow global.
+
+## Cierre del flujo guiado post-Hito 10
+
+El recorrido definitivo es Datos, Script, Evidencia, Notificaciones y
+Programacion. El estado visual actual depende exclusivamente de la ruta; el
+estado completado depende de que el requisito funcional del paso este
+satisfecho. El stepper usa `Completado`, `En curso`, `Pendiente` y `Requiere
+ajuste`, agrega `aria-current="step"` solo al paso visible y conserva texto,
+foco y `prefers-reduced-motion` ademas del color.
+
+Script guia la carga, activacion y continuidad hacia Evidencia. Evidencia es una
+pantalla independiente con resumen de tarea, version activa, estado contractual
+y checklist 1.0; no repite el formulario de Datos. Notificaciones separa Exito,
+Error y Evidencia opcional. Programacion permite configurar la agenda o cerrar
+explicitamente el onboarding sin programar.
+
+Cuando el control runtime informa mantenimiento critico, el layout muestra un
+banner seguro con el bloqueo de ejecuciones y acceso al estado del sistema. No
+expone paths, stack traces ni secretos. La UI no constituye un bypass: backend,
+scheduler y worker mantienen la politica fail-closed.

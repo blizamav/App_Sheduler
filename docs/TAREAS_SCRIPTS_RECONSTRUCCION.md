@@ -144,3 +144,20 @@ La accion `Administrar` reutiliza `/tareas/<id_tarea>/scripts`; al entrar desde
 el hub, breadcrumb y retorno vuelven a `Scripts`. El detalle representa siempre
 v1, v2 y v3, incluidos los slots vacios. Crear un script sigue requiriendo una
 tarea: el hub no ofrece alta independiente ni altera la relacion 1:1.
+
+## Flujo guiado definitivo post-Hito 10
+
+El onboarding no es una transaccion unica: cada paso persiste su propio estado.
+Datos permite guardar o guardar y continuar. Script ofrece `Cargar version`, la
+alternativa explicita `Omitir Script por ahora`, `Activar Vn` cuando corresponde
+y `Continuar a Evidencia` una vez que la version activa esta lista.
+
+Evidencia dispone de una ruta y pantalla propias para analizar el contrato 1.0
+sin duplicar campos editables de Datos. Notificaciones mantiene independientes
+Exito, Error y el contenido adicional opcional de Evidencia. Programacion
+permite configurar una agenda o finalizar explicitamente sin programacion.
+
+Las rutas de Evidencia y Notificaciones conservan autorizacion backend y CSRF
+en mutaciones. El bloqueo global de mantenimiento se consulta mediante el
+control runtime fail-closed; ocultar o deshabilitar una accion en UI nunca
+reemplaza esa validacion.

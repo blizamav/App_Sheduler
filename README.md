@@ -18,9 +18,19 @@ El runtime actual permanece operativo como referencia mientras se realiza una re
 * Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
 * Hito 10 - CERRADO: feriados, sincronizacion manual, notificaciones y Microsoft Graph reconstruidos sin envio real.
 
-Ajuste contractual post-Hito 10 listo para revision: la notificacion estandar
-de exito y la Evidencia 1.0 quedaron separadas. La migracion incremental `022`
-esta preparada, pero no ha sido ejecutada sobre QA; Hito 11 no fue iniciado.
+Ajuste contractual post-Hito 10 aplicado: la notificacion estandar de exito y
+la Evidencia 1.0 quedaron separadas. La migracion incremental `022` fue aplicada
+y validada en `APP_SCHEDULER_QA`; Hito 11 no fue iniciado.
+
+El flujo guiado definitivo de tareas recorre Datos, Script, Evidencia,
+Notificaciones y Programacion. El stepper diferencia la pantalla actual del
+estado funcional: un paso puede estar `En curso`, `Completado`, `Pendiente` o
+`Requiere ajuste`. Evidencia y Notificaciones tienen pantallas independientes y
+Programacion permite configurar o finalizar explicitamente sin programar.
+
+QA conserva un lock de Factory Reset en estado `FACTORY_RESET_ERROR`. Web y
+worker aplican fail-closed: las ejecuciones permanecen bloqueadas hasta una
+recuperacion manual controlada. Este ajuste no libera ni modifica ese lock.
 
 El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
 base estructural, moderniza layout, navegacion, formularios, tablas, estados y
@@ -37,8 +47,8 @@ Hito 8 incorpora en el runtime aislado `/operacion/estado`, `/logs/` y
 en la edicion de tareas. Hito 10 completa el mantenedor de feriados, la
 sincronizacion manual Nager.Date, destinatarios, configuracion Graph y el
 despacho posterior a ejecucion. Usa exclusivamente tablas y permisos existentes,
-no realiza cutover. El ajuste post-Hito 10 evoluciona el contrato preparado a
-33 tablas y 457 columnas sin modificar aun `APP_SCHEDULER_QA`.
+no realiza cutover. El ajuste post-Hito 10 evoluciona el contrato a 33 tablas y
+fue aplicado mediante la migracion `022` en `APP_SCHEDULER_QA`.
 
 Fuentes maestras de la reconstruccion:
 

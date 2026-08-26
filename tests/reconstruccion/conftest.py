@@ -29,6 +29,7 @@ def valores_configuracion():
         "DB_APPLICATION_NAME": "APP_SCHEDULER_TESTS",
         "USUARIO_ADMIN_DEFECTO": "admin-test",
         "PASSWORD_ADMIN_DEFECTO": "admin-password-test-no-real",
+        "RUTA_CONTROL_RUNTIME": "runtime_control_test_no_existe",
         "FACTORY_RESET_HABILITADO": "false",
         "GRAPH_MAIL_ENABLED": "false",
     }

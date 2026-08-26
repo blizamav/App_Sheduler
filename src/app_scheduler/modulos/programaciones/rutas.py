@@ -7,6 +7,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from app_scheduler.compartido.auditoria import ContextoAuditoria
 from app_scheduler.compartido.autorizacion import identidad_actual, permiso_requerido
 from app_scheduler.compartido.errores import ErrorValidacion
+from app_scheduler.modulos.tareas.flujo import construir_flujo
 
 
 bp_programaciones = Blueprint(
@@ -20,6 +21,29 @@ def _servicio():
 
 def _tareas():
     return current_app.extensions["servicio_tareas"]
+
+
+def _flujo(id_tarea, total_programaciones):
+    detalle_scripts = current_app.extensions["servicio_scripts"].detalle(id_tarea)
+    evidencia = current_app.extensions["servicio_evidencias"].obtener_para_tarea(id_tarea)
+    notificaciones = current_app.extensions["servicio_notificaciones_tarea"].obtener(id_tarea)
+    flujo = list(construir_flujo(
+        detalle_scripts=detalle_scripts,
+        evidencia=evidencia,
+        notificaciones=notificaciones,
+        total_programaciones=total_programaciones,
+        paso_actual="programacion",
+    ))
+    urls = (
+        url_for("tareas.editar", id_tarea=id_tarea),
+        url_for("scripts.detalle", id_tarea=id_tarea),
+        url_for("tareas.evidencia", id_tarea=id_tarea),
+        url_for("tareas.notificaciones", id_tarea=id_tarea),
+        url_for("programaciones.listado", id_tarea=id_tarea),
+    )
+    for paso, url in zip(flujo, urls):
+        paso["url"] = url
+    return flujo
 
 
 def _contexto():
@@ -101,6 +125,7 @@ def listado(id_tarea):
     )
     return render_template(
         "programaciones/listado.html", tarea=tarea, resultado=resultado,
+        flujo=_flujo(id_tarea, resultado.total),
     )
 
 
@@ -125,6 +150,7 @@ def nueva(id_tarea):
             return redirect(url_for("programaciones.listado", id_tarea=id_tarea))
     return render_template(
         "programaciones/formulario.html", modo="crear", tarea=tarea, datos=datos,
+        flujo=_flujo(id_tarea, _servicio().listar(pagina=1, por_pagina=1, id_tarea=id_tarea).total),
     )
 
 
@@ -150,6 +176,7 @@ def editar(id_tarea, id_programacion):
     return render_template(
         "programaciones/formulario.html", modo="editar", tarea=tarea,
         datos=datos, actual=actual,
+        flujo=_flujo(id_tarea, _servicio().listar(pagina=1, por_pagina=1, id_tarea=id_tarea).total),
     )
 
 

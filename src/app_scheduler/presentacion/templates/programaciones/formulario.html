@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block titulo %}{{ 'Nueva' if modo == 'crear' else 'Editar' }} programacion | APP Scheduler{% endblock %}
-{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/programaciones.css') }}">{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/programaciones.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/tareas-scripts.css') }}">{% endblock %}
 {% block contenido %}
 {% set dias_seleccionados = datos.dias_semana if datos.dias_semana is iterable and datos.dias_semana is not string else (datos.dias_semana or '').split(',') %}
 <nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('tareas.listado') }}">Tareas</a></li><li class="breadcrumb-item"><a href="{{ url_for('programaciones.listado', id_tarea=tarea.id_tarea) }}">{{ tarea.nombre_tarea }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ 'Nueva programacion' if modo == 'crear' else 'Editar programacion' }}</li></ol></nav>
 <header class="encabezado-pagina"><div><p class="eyebrow">{{ tarea.nombre_tarea }}</p><h1>{{ 'Nueva programacion' if modo == 'crear' else 'Editar programacion' }}</h1><p class="texto-secundario">Configura cuando el worker debe reservar una solicitud automatica.</p></div><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('programaciones.listado', id_tarea=tarea.id_tarea) }}">Volver</a></header>
+{% include 'tareas/_flujo.html' %}
 <form class="formulario formulario-programacion needs-validation" method="post" novalidate data-programacion-form><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <section class="seccion-formulario"><div class="seccion-titulo"><h2>Frecuencia</h2><p>El cálculo se valida nuevamente en backend.</p></div><div class="grid-formulario grid-dos">
 <label class="campo"><span>Tipo</span><select class="form-select" name="tipo_programacion" data-tipo-programacion required>{% for valor, texto in (('DIARIA','Diaria'),('SEMANAL','Semanal'),('MENSUAL','Mensual'),('FECHA_ESPECIFICA','Fecha especifica'),('FECHAS_ESPECIFICAS','Fechas especificas')) %}<option value="{{ valor }}" {% if datos.tipo_programacion == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}</select></label>
@@ -24,4 +25,4 @@
 <div class="acciones-formulario"><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('programaciones.listado', id_tarea=tarea.id_tarea) }}">Cancelar</a><button class="btn btn-primary boton primario" type="submit" data-confirmar data-titulo="Guardar programacion" data-mensaje="La proxima ejecucion de la tarea se recalculara." data-texto-procesando="Guardando...">Guardar</button></div>
 </form>
 {% endblock %}
-{% block scripts %}<script type="module" src="{{ url_for('static', filename='js/programaciones.js') }}"></script>{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', filename='js/programaciones.js') }}"></script><script type="module" src="{{ url_for('static', filename='js/tareas.js') }}"></script>{% endblock %}

@@ -54,7 +54,7 @@
 .ayuda-evidencia summary { cursor: pointer; color: var(--color-primario); font-weight: 700; }
 .ayuda-evidencia > div { margin-top: 12px; }
 .ayuda-evidencia pre { max-width: 100%; overflow: auto; padding: 14px; border-radius: var(--radio-md); color: #e7eef7; background: #102a42; }
-.flujo-tarea { margin: 0 0 18px; overflow-x: auto; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); box-shadow: var(--sombra-suave); }
+.flujo-tarea { max-width: 100%; margin: 0 0 18px; overflow-x: auto; overscroll-behavior-inline: contain; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); box-shadow: var(--sombra-suave); scrollbar-width: thin; }
 .flujo-tarea ol { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); min-width: 750px; margin: 0; padding: 0; list-style: none; }
 .flujo-paso { position: relative; min-width: 0; border-right: 1px solid var(--color-borde); }
 .flujo-paso:last-child { border-right: 0; }
@@ -64,15 +64,28 @@
 .flujo-paso-texto { display: grid; min-width: 0; }
 .flujo-paso-texto strong { font-size: .82rem; }
 .flujo-paso-texto small { overflow: hidden; color: var(--color-texto-suave); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.flujo-paso-texto > span { overflow: hidden; color: var(--color-texto-suave); font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
 .flujo-paso.estado-completo b { color: var(--color-exito); border-color: var(--color-exito); background: #edf9f2; }
+.flujo-paso.estado-completo { box-shadow: inset 0 -3px 0 var(--color-exito); }
 .flujo-paso.estado-ajuste b { color: var(--color-advertencia); border-color: var(--color-advertencia); background: #fff7e8; }
+.flujo-paso.estado-ajuste { box-shadow: inset 0 -3px 0 var(--color-advertencia); }
 .flujo-paso.estado-actual { box-shadow: inset 0 -3px 0 var(--color-primario); }
 .flujo-paso.estado-actual b { color: #fff; border-color: var(--color-primario); background: var(--color-primario); }
+.flujo-paso.estado-actual > a, .flujo-paso.estado-actual > span { background: #edf5ff; }
 .continuidad-script { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; padding: 16px 18px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
 .continuidad-script h2 { margin: 2px 0 0; font-size: 1rem; }
 .estado-continuidad { display: flex; flex: 1; gap: 12px; }
 .estado-continuidad > span { display: grid; min-width: 150px; padding: 8px 12px; border-left: 2px solid var(--color-primario); }
 .estado-continuidad small { color: var(--color-texto-suave); }
+.resumen-paso { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 18px; overflow: hidden; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
+.resumen-paso > div { display: grid; gap: 4px; min-width: 0; padding: 15px 18px; border-right: 1px solid var(--color-borde); }
+.resumen-paso > div:last-child { border-right: 0; }
+.resumen-paso span { color: var(--color-texto-suave); font-size: .74rem; font-weight: 700; text-transform: uppercase; }
+.resumen-paso strong { overflow-wrap: anywhere; }
+.evidencia-paso { display: grid; gap: 18px; padding: 20px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
+.evidencia-paso > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.evidencia-paso h2 { margin: 3px 0 0; font-size: 1.15rem; }
+.acciones-flujo { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .notificaciones-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .notificacion-card { display: grid; align-content: start; gap: 14px; min-width: 0; padding: 18px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
 .notificacion-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -95,5 +108,6 @@
 @media (max-width: 900px) { .scripts-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scripts-hub-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .config-switches { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .notificaciones-grid { grid-template-columns: 1fr; } .notificacion-evidencia { grid-column: auto; } .canales-notificacion { grid-template-columns: 1fr; } .checklist-evidencia { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .tareas-filtros, .scripts-filtros, .grid-tres, .resumen-versiones { grid-template-columns: 1fr; } .script-hub-datos { grid-template-columns: 1fr; } .script-hub-datos > div { border-right: 0; border-bottom: 1px solid var(--color-borde); } .script-hub-datos > div:last-child { border-bottom: 0; } .evidencia-cabecera { flex-direction: column; } .continuidad-script { align-items: stretch; flex-direction: column; } .estado-continuidad { display: grid; grid-template-columns: 1fr; } .continuidad-script .btn { width: 100%; } }
+@media (max-width: 760px) { .tareas-filtros, .scripts-filtros, .grid-tres, .resumen-versiones, .resumen-paso { grid-template-columns: 1fr; } .resumen-paso > div { border-right: 0; border-bottom: 1px solid var(--color-borde); } .resumen-paso > div:last-child { border-bottom: 0; } .script-hub-datos { grid-template-columns: 1fr; } .script-hub-datos > div { border-right: 0; border-bottom: 1px solid var(--color-borde); } .script-hub-datos > div:last-child { border-bottom: 0; } .evidencia-cabecera, .evidencia-paso > header { flex-direction: column; } .continuidad-script { align-items: stretch; flex-direction: column; } .estado-continuidad { display: grid; grid-template-columns: 1fr; } .continuidad-script .btn { width: 100%; } .acciones-flujo { display: grid; grid-template-columns: 1fr; } .flujo-tarea ol { grid-template-columns: repeat(5, minmax(132px, 1fr)); min-width: 660px; } .flujo-paso > a, .flujo-paso > span { min-height: 76px; padding: 10px; } }
 @media (max-width: 430px) { .checklist-evidencia { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .flujo-tarea { scroll-behavior: auto; } }

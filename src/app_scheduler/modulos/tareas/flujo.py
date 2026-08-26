@@ -4,7 +4,8 @@ from __future__ import annotations
 
 
 def construir_flujo(*, detalle_scripts=None, evidencia=None,
-                    notificaciones=None, total_programaciones=0):
+                    notificaciones=None, total_programaciones=0,
+                    paso_actual=None):
     detalle_scripts = detalle_scripts or {}
     soporte = (evidencia or {}).get("soporte", {})
     validaciones = soporte.get("validaciones", {})
@@ -27,23 +28,27 @@ def construir_flujo(*, detalle_scripts=None, evidencia=None,
         and config.id_config_notificacion is not None
         and (config.notificar_exito_activa or config.alerta_error_activa)
     )
-    return (
-        {"numero": 1, "nombre": "Datos", "estado": "completo", "detalle": "Guardados"},
-        {"numero": 2, "nombre": "Script", "estado": "completo" if tiene_script and tiene_version_activa else "pendiente",
-         "detalle": "Ejecutable" if tiene_script and tiene_version_activa else "Pendiente"},
-        {"numero": 3, "nombre": "Evidencia", "estado": estado_evidencia, "detalle": detalle_evidencia},
-        {"numero": 4, "nombre": "Notificaciones", "estado": "completo" if notificaciones_configuradas else "pendiente",
-         "detalle": "Configuradas" if notificaciones_configuradas else "Pendientes"},
-        {"numero": 5, "nombre": "Programacion", "estado": "completo" if total_programaciones else "pendiente",
-         "detalle": "Configurada" if total_programaciones else "Pendiente"},
+    estados = (
+        ("datos", 1, "Datos", "completo", "Datos guardados"),
+        ("script", 2, "Script", "completo" if tiene_script and tiene_version_activa else "pendiente",
+         "Script listo" if tiene_script and tiene_version_activa else "Sin version activa"),
+        ("evidencia", 3, "Evidencia", estado_evidencia, detalle_evidencia),
+        ("notificaciones", 4, "Notificaciones", "completo" if notificaciones_configuradas else "pendiente",
+         "Reglas configuradas" if notificaciones_configuradas else "Sin configurar"),
+        ("programacion", 5, "Programacion", "completo" if total_programaciones else "pendiente",
+         "Programacion configurada" if total_programaciones else "Sin programacion"),
     )
+    etiquetas = {"completo": "Completado", "pendiente": "Pendiente", "ajuste": "Requiere ajuste"}
+    return tuple({
+        "clave": clave,
+        "numero": numero,
+        "nombre": nombre,
+        "estado_funcional": estado,
+        "estado": "actual" if clave == paso_actual else estado,
+        "detalle": "En curso" if clave == paso_actual else etiquetas[estado],
+        "descripcion": descripcion,
+    } for clave, numero, nombre, estado, descripcion in estados)
 
 
 def flujo_nueva_tarea():
-    return (
-        {"numero": 1, "nombre": "Datos", "estado": "actual", "detalle": "En curso"},
-        {"numero": 2, "nombre": "Script", "estado": "pendiente", "detalle": "Pendiente"},
-        {"numero": 3, "nombre": "Evidencia", "estado": "pendiente", "detalle": "Opcional"},
-        {"numero": 4, "nombre": "Notificaciones", "estado": "pendiente", "detalle": "Pendientes"},
-        {"numero": 5, "nombre": "Programacion", "estado": "pendiente", "detalle": "Pendiente"},
-    )
+    return construir_flujo(paso_actual="datos")

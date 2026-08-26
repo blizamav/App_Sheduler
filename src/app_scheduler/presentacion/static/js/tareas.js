@@ -19,3 +19,11 @@ if (exito && evidencia) {
   exito.addEventListener("change", sincronizarEvidencia);
   sincronizarEvidencia();
 }
+
+const flujo = document.querySelector(".flujo-tarea");
+const pasoActual = flujo?.querySelector('[aria-current="step"]');
+if (flujo && pasoActual) {
+  const destino = pasoActual.offsetLeft - (flujo.clientWidth - pasoActual.clientWidth) / 2;
+  const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  flujo.scrollTo({ left: Math.max(0, destino), behavior: reducirMovimiento ? "auto" : "smooth" });
+}

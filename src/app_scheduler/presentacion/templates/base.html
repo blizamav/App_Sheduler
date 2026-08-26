@@ -176,6 +176,18 @@
             </header>
 
             {% include 'base/mensajes.html' %}
+            {% if estado_mantenimiento and estado_mantenimiento.bloquea %}
+            <section class="banner-mantenimiento" role="status" aria-labelledby="banner-mantenimiento-titulo">
+                <div class="banner-mantenimiento-icono" aria-hidden="true">!</div>
+                <div>
+                    <p class="eyebrow">Modo mantenimiento</p>
+                    <h2 id="banner-mantenimiento-titulo">Las ejecuciones se encuentran bloqueadas</h2>
+                    <p>{{ estado_mantenimiento.motivo }}</p>
+                    {% if estado_mantenimiento.desde %}<small>Desde {{ estado_mantenimiento.desde }}</small>{% endif %}
+                </div>
+                {% if identidad_sesion.tiene_permiso('SCHEDULER_CONFIG_VER') %}<a class="btn btn-outline-warning" href="{{ url_for('operacion.estado') }}">Ver estado del sistema</a>{% endif %}
+            </section>
+            {% endif %}
             <div class="pagina">
                 {% block contenido %}{% endblock %}
             </div>

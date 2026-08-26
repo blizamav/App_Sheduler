@@ -3,7 +3,7 @@
 {% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/tareas-scripts.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/modulos/feriados-notificaciones.css') }}">{% endblock %}
 {% block contenido %}
 <nav aria-label="Ruta de navegacion"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('tareas.listado') }}">Tareas</a></li><li class="breadcrumb-item active" aria-current="page">{{ 'Crear' if modo == 'crear' else 'Editar' }}</li></ol></nav>
-<header class="encabezado-pagina"><div><p class="eyebrow">Tareas</p><h1>{{ 'Crear tarea' if modo == 'crear' else 'Editar tarea' }}</h1><p class="texto-secundario">Define el proceso y su clasificacion. El ejecutor se determina al ejecutar, no se persiste en la tarea.</p></div><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('tareas.listado') }}">Volver</a></header>
+<header class="encabezado-pagina"><div><p class="eyebrow">Paso 1 · Datos</p><h1>{{ 'Crear tarea' if modo == 'crear' else 'Editar datos' }}</h1><p class="texto-secundario">Define el proceso y su clasificacion. El ejecutor se determina al ejecutar, no se persiste en la tarea.</p></div><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('tareas.listado') }}">Volver</a></header>
 {% include 'tareas/_flujo.html' %}
 <form class="formulario formulario-tarea needs-validation" method="post" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <section class="seccion-formulario"><div class="seccion-titulo"><h2>Identificacion</h2><p>Datos operativos del proceso Python.</p></div><div class="grid-formulario">
@@ -15,10 +15,7 @@
 {% for clave, etiqueta in (('clientes','Cliente'),('categorias','Categoria'),('tipos','Tipo')) %}<label class="campo"><span>{{ etiqueta }}</span><select class="form-select" name="id_{{ clave[:-1] }}" required><option value="">Seleccionar</option>{% for id, nombre in catalogos[clave] %}<option value="{{ id }}" {% if datos['id_' ~ clave[:-1]]|string == id|string %}selected{% endif %}>{{ nombre }}</option>{% endfor %}</select><small class="invalid-feedback">Selecciona {{ etiqueta|lower }}.</small></label>{% endfor %}
 {% if modo == 'crear' %}<label class="campo"><span>Estado inicial</span><select class="form-select" name="estado_tarea"><option value="ACTIVA" {% if datos.estado_tarea == 'ACTIVA' %}selected{% endif %}>Activa</option><option value="INACTIVA" {% if datos.estado_tarea == 'INACTIVA' %}selected{% endif %}>Inactiva</option></select></label>{% endif %}
 </div></section>
-<div class="acciones-formulario"><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('tareas.listado') }}">Cancelar</a><button class="btn btn-outline-primary boton secundario" type="submit" name="accion" value="guardar" data-texto-procesando="Guardando...">Guardar</button>{% if modo == 'crear' %}<button class="btn btn-primary boton primario" type="submit" name="accion" value="continuar" data-texto-procesando="Guardando...">Guardar y continuar</button>{% endif %}</div>
+<div class="acciones-formulario"><a class="btn btn-outline-secondary boton secundario" href="{{ url_for('tareas.listado') }}">Cancelar</a>{% if modo == 'crear' %}<button class="btn btn-outline-primary boton secundario" type="submit" name="accion" value="guardar" data-texto-procesando="Guardando...">Guardar</button><button class="btn btn-primary boton primario" type="submit" name="accion" value="continuar" data-texto-procesando="Guardando...">Guardar y continuar</button>{% else %}<button class="btn btn-primary boton primario" type="submit" name="accion" value="guardar" data-texto-procesando="Guardando...">Guardar cambios</button>{% endif %}</div>
 </form>
-{% if modo == 'editar' and evidencia and notificaciones %}
-{% include 'tareas/_notificaciones.html' %}
-{% endif %}
 {% endblock %}
 {% block scripts %}<script type="module" src="{{ url_for('static', filename='js/tareas.js') }}"></script>{% endblock %}

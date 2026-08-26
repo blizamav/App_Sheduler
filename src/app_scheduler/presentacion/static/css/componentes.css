@@ -428,3 +428,24 @@
         animation-iteration-count: 1 !important;
     }
 }
+.banner-mantenimiento {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    margin: 16px clamp(16px, 3vw, 42px) 0;
+    padding: 14px 16px;
+    border: 1px solid #e3ae52;
+    border-left: 4px solid var(--color-advertencia);
+    border-radius: var(--radio-md);
+    color: #523814;
+    background: #fff8e9;
+}
+.banner-mantenimiento-icono { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: #fff; background: var(--color-advertencia); font-weight: 800; }
+.banner-mantenimiento h2 { margin: 1px 0 3px; font-size: 1rem; }
+.banner-mantenimiento p { margin: 0; }
+.banner-mantenimiento small { display: block; margin-top: 3px; color: #765a32; }
+@media (max-width: 760px) {
+    .banner-mantenimiento { grid-template-columns: auto minmax(0, 1fr); }
+    .banner-mantenimiento .btn { grid-column: 1 / -1; width: 100%; }
+}

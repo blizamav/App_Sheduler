@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-26 - Cierre ajuste transversal UX del flujo de tareas
+
+* Se consolido el recorrido Datos, Script, Evidencia, Notificaciones y
+  Programacion con CTA explicitos para cargar, activar, continuar o finalizar
+  sin programar.
+* El stepper separa el paso actual del estado funcional y presenta
+  `Completado`, `En curso`, `Pendiente` y `Requiere ajuste`, con
+  `aria-current="step"`, foco visible y soporte de movimiento reducido.
+* Evidencia y Notificaciones usan pantallas independientes; Evidencia no repite
+  el formulario de Datos y Notificaciones conserva separados Exito, Error y el
+  contenido opcional de Evidencia.
+* Se agrego comunicacion global de mantenimiento con informacion segura y
+  acceso al estado del sistema. La lectura del lock conserva fail-closed para
+  web, ejecucion manual, scheduler y worker.
+* La migracion `022` ya estaba aplicada y validada en `APP_SCHEDULER_QA`. Este
+  cierre no ejecuto DML ni DDL, no libero el lock `FACTORY_RESET_ERROR`, no
+  ejecuto tareas, no llamo Graph y no inicio Hito 11.
+* Gate final: `298 passed, 1 skipped` en reconstruccion y `324 passed, 1
+  skipped` en la suite completa; `compileall`, 37 templates Jinja, siete
+  archivos JavaScript, checks web/worker, Compose, build Docker web/worker,
+  `git diff --check` y responsive aprobaron.
+
+
 ## 2026-08-25 - Correccion de opciones de sesion en migracion 022
 
 * El primer intento controlado sobre QA fallo con SQL Server 1934 antes del

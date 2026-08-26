@@ -561,6 +561,26 @@ class ProgramacionesWeb:
         self.creaciones.append((id_tarea, datos, actor.usuario)); return 7
 
 
+class ScriptsFlujoWeb:
+    def detalle(self, _):
+        return {"script": None, "versiones": ()}
+
+
+class EvidenciasFlujoWeb:
+    def obtener_para_tarea(self, _):
+        return {"soporte": {"compatible": False, "validaciones": {
+            "declaracion": False, "version": False, "inicio": False, "fin": False,
+        }}}
+
+
+class NotificacionesFlujoWeb:
+    def obtener(self, _):
+        return {"configuracion": SimpleNamespace(
+            id_config_notificacion=None, notificar_exito_activa=False,
+            alerta_error_activa=False,
+        )}
+
+
 def identidad(permisos):
     return IdentidadSesion(1, "actor", "Actor", TIPO_BASE_DATOS, frozenset({"ADMIN"}), frozenset(permisos))
 
@@ -584,6 +604,9 @@ def app_programaciones(configuracion, usuario):
     servicio = ProgramacionesWeb()
     app.extensions["servicio_tareas"] = TareasWeb()
     app.extensions["servicio_programaciones"] = servicio
+    app.extensions["servicio_scripts"] = ScriptsFlujoWeb()
+    app.extensions["servicio_evidencias"] = EvidenciasFlujoWeb()
+    app.extensions["servicio_notificaciones_tarea"] = NotificacionesFlujoWeb()
     return app, servicio
 
 
@@ -631,3 +654,14 @@ def test_edicion_presenta_fechas_sin_formato_json(configuracion):
     assert respuesta.status_code == 200
     assert b"2026-08-20, 2026-08-21" in respuesta.data
     assert b'[&quot;2026-08-20&quot;' not in respuesta.data
+
+
+def test_programacion_es_paso_actual_por_ruta(configuracion):
+    usuario = identidad({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR"})
+    app, _ = app_programaciones(configuracion, usuario)
+    cliente = app.test_client(); iniciar_sesion(cliente, usuario)
+
+    for ruta in ("/tareas/1/programaciones/", "/tareas/1/programaciones/nueva"):
+        respuesta = cliente.get(ruta)
+        bloque_actual = respuesta.data.split(b'aria-current="step"', 1)[1].split(b"</li>", 1)[0]
+        assert b"Programacion" in bloque_actual and b"En curso" in bloque_actual

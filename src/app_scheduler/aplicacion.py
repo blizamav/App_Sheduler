@@ -8,6 +8,7 @@ from flask import Flask
 
 from app_scheduler.compartido.autorizacion import iniciar_autorizacion
 from app_scheduler.compartido.base_datos import ProveedorConexionesSQLServer
+from app_scheduler.compartido.control_runtime import obtener_estado_control_runtime
 from app_scheduler.compartido.logging import configurar_logging
 from app_scheduler.configuracion import ConfiguracionAplicacion
 from app_scheduler.extensiones import iniciar_extensiones
@@ -62,6 +63,14 @@ def crear_aplicacion(
     app.logger.propagate = False
 
     iniciar_extensiones(app)
+
+    @app.context_processor
+    def contexto_estado_operativo():
+        return {
+            "estado_mantenimiento": obtener_estado_control_runtime(
+                configuracion.ruta_control_runtime
+            )
+        }
 
     proveedor_sql = proveedor_sql or ProveedorConexionesSQLServer(configuracion)
     from app_scheduler.modulos.autenticacion.casos_uso import ServicioAutenticacion
