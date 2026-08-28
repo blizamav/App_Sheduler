@@ -1,228 +1,205 @@
 # APP Scheduler
 
-APP Scheduler es una aplicacion web interna para administrar, programar, ejecutar, monitorear y auditar procesos Python orientados a equipos de TI.
+APP Scheduler v1.0.0 es una aplicacion web interna para programar, ejecutar,
+monitorear y auditar procesos Python de equipos TI. Centraliza tareas, scripts
+versionados, programaciones, ejecuciones, logs, evidencia opcional y
+notificaciones bajo autorizacion backend y trazabilidad SQL Server.
 
-## Estado del proyecto
+## Estado
 
-El runtime reconstruido es la Release Candidate y el arranque oficial de Docker
-QA. El runtime historico permanece solo como referencia hasta el cutover final.
+**Version estable: v1.0.0.** Los Hitos 0-15 de la reconstruccion estan
+cerrados. El runtime oficial vive en `src/app_scheduler/`; `app/`, `run.py` y
+`scheduler_worker.py` se conservan unicamente como referencia historica y no
+son entrypoints operativos.
 
-* Hito 0 - Inventario y arquitectura: CERRADO.
-* Hito 1 - Base del proyecto y configuracion: CERRADO.
-* Hito 2 - Base de datos y repositorios funcionales: CERRADO.
-* Hito 3 - Autenticacion, usuarios, roles y permisos: CERRADO.
-* Hito 4 - Clientes, categorias y tipos: CERRADO.
-* Hito 5 - Tareas, scripts, versiones y `.env`: CERRADO.
-* Hito 6 - Programaciones, scheduler y worker: CERRADO.
-* Hito 7 - Motor unico, logs y evidencias base: CERRADO.
-* Hito 8 - CERRADO: observabilidad, configuracion operativa e integracion QA.
-* Hito 9 - CERRADO: Auditoria operativa y Papelera reconstruidas y validadas.
-* Hito 10 - CERRADO: feriados, sincronizacion manual, notificaciones y Microsoft Graph reconstruidos sin envio real.
-* Hito 11 - CERRADO A NIVEL IMPLEMENTACION: Factory Reset in-place; smoke destructivo reservado para Hito 14.
-* Hito 12 - CERRADO: UI/UX final validada en desktop, tablet y movil.
-* Hito 13 - CERRADO: Docker QA inicia exclusivamente Web y Worker reconstruidos.
+## Arquitectura
 
-Ajuste contractual post-Hito 10 aplicado: la notificacion estandar de exito y
-la Evidencia 1.0 quedaron separadas. La migracion incremental `022` fue aplicada
-y validada en `APP_SCHEDULER_QA`.
-
-El flujo guiado definitivo de tareas recorre Datos, Script, Evidencia,
-Notificaciones y Programacion. El stepper diferencia la pantalla actual del
-estado funcional: un paso puede estar `En curso`, `Completado`, `Pendiente` o
-`Requiere ajuste`. Evidencia y Notificaciones tienen pantallas independientes y
-Programacion permite configurar o finalizar explicitamente sin programar.
-
-El gate transversal de cierre del Hito 7 incorpora Bootstrap 5.3.3 local como
-base estructural, moderniza layout, navegacion, formularios, tablas, estados y
-consola, y corrige el flujo comun de confirmacion/Guardado. Tambien refuerza
-cabeceras de seguridad y mantiene CSRF, autorizacion y autoescape. El gate fue
-integrado al cierre del hito; el inventario y pulido global quedaron cerrados
-posteriormente en Hito 12.
-Como ajuste transversal del mismo gate, el runtime reconstruido incorpora
-`/scripts`: un hub global paginado para localizar scripts por nombre, tarea o
-cliente y entrar al detalle versionado existente sin duplicar su CRUD.
-
-Hito 8 incorpora en el runtime aislado `/operacion/estado`, `/logs/` y
-`/configuracion/`, ademas de configuracion y validacion estatica de evidencia
-en la edicion de tareas. Hito 10 completa el mantenedor de feriados, la
-sincronizacion manual Nager.Date, destinatarios, configuracion Graph y el
-despacho posterior a ejecucion. Usa exclusivamente tablas y permisos existentes,
-no realiza cutover. El ajuste post-Hito 10 evoluciona el contrato a 33 tablas y
-fue aplicado mediante la migracion `022` en `APP_SCHEDULER_QA`.
-
-Fuentes maestras de la reconstruccion:
-
-* [Inventario Maestro](docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md)
-* [Arquitectura de Reconstruccion](docs/ARQUITECTURA_RECONSTRUCCION.md)
-* [Roadmap](docs/ROADMAP.md)
-* [Persistencia de la Reconstruccion](docs/PERSISTENCIA_RECONSTRUCCION.md)
-* [UI/UX de la Reconstruccion](docs/UI_UX_RECONSTRUCCION.md)
-* [Observabilidad y configuracion](docs/OBSERVABILIDAD_CONFIGURACION_RECONSTRUCCION.md)
-* [Auditoria y Papelera](docs/AUDITORIA_PAPELERA_RECONSTRUCCION.md)
-* [Feriados, notificaciones y Graph](docs/FERIADOS_NOTIFICACIONES_GRAPH_RECONSTRUCCION.md)
-
-La reconstruccion se completo mediante hitos verificables que preservaron reglas
-de negocio, trazabilidad, seguridad y compatibilidad necesarias.
-
-El runtime oficial vive en `src/app_scheduler/`. Docker y los comandos vigentes
-usan `python -m app_scheduler.web` y
-`python -m app_scheduler.worker.aplicacion`; `run.py` y
-`scheduler_worker.py` quedan solo como referencia historica hasta el cutover
-documental de Hito 15.
-
-Validacion Release Candidate Hitos 11-13: 332 pruebas de reconstruccion y 358
-pruebas totales aprobadas, con 1 omitida por la restriccion conocida de symlinks
-en Windows; 38 templates Jinja y 8 archivos JavaScript validados. Compose,
-builds, checks internos, startup Web `healthy` y conectividad SQL read-only a
-`APP_SCHEDULER_QA` aprobaron. No se envio correo, no se ejecuto Factory Reset,
-no se inicio Scheduler y no se realizo cutover.
-
-Validacion aislada del runtime reconstruido:
-
-```powershell
-$env:PYTHONPATH="src"
-python -m pytest -q tests/reconstruccion
-python -m pytest -q
-python -m app_scheduler.web --check
+```text
+Usuario -> Web Flask -> SQL Server <- Scheduler/Worker -> Motor subprocess
+                         |                    |
+                         +-- auditoria        +-- logs/evidencia/notificaciones
 ```
 
-El detalle tecnico del motor esta en
-[`docs/MOTOR_EJECUCION_RECONSTRUCCION.md`](docs/MOTOR_EJECUCION_RECONSTRUCCION.md).
+* **Web**: autenticacion, autorizacion, mantenedores, solicitudes manuales,
+  consulta operativa y administracion.
+* **Scheduler**: evalua programaciones activas, calendario y configuracion; si
+  corresponde crea una ejecucion `PENDIENTE` idempotente.
+* **Worker**: consume la cola compartida, reclama atomica y ejecuta tanto
+  solicitudes manuales como automaticas.
+* **Motor**: inicia Python con `shell=False`, entorno controlado, timeout,
+  captura incremental y detencion persistida.
+* **SQL Server**: fuente de verdad de configuracion, cola, estados, heartbeat,
+  auditoria y trazabilidad.
 
-Todo cierre aplica un gate transversal de calidad en cuatro dimensiones:
-tecnica, funcional, visual y comparativa con el runtime historico cuando exista
-una superficie equivalente. Una pantalla funcionalmente rota o una regresion UX
-objetiva bloquea el cierre aunque las pruebas tecnicas sean verdes.
+Flujo manual:
 
-El detalle funcional esta en [Autenticacion y usuarios](docs/AUTENTICACION_USUARIOS_RECONSTRUCCION.md), [Catalogos reconstruidos](docs/CATALOGOS_RECONSTRUCCION.md), [Tareas y scripts](docs/TAREAS_SCRIPTS_RECONSTRUCCION.md) y [Programaciones y scheduler](docs/PROGRAMACIONES_SCHEDULER_RECONSTRUCCION.md).
+```text
+Web -> PENDIENTE -> Worker -> EN_EJECUCION -> estado final
+```
 
-## Capacidades de referencia
+Flujo automatico:
 
-El sistema actual incluye:
+```text
+Scheduler -> PENDIENTE -> Worker -> EN_EJECUCION -> estado final
+```
 
-* autenticacion hibrida con `SUPER_ADMIN_ENV` y usuarios SQL;
-* roles, permisos, usuarios y mantenedores;
-* tareas, programaciones, scripts y hasta tres versiones;
-* acceso global a scripts con estado, version activa, slots y metadata `.env`;
-* `.env` por version de script sin persistir secretos en la base;
-* ejecucion manual y automatica, consola, logs y detencion;
-* scheduler y worker separado con heartbeat y eventos;
-* papelera, auditoria, feriados, evidencias y Microsoft Graph;
-* Factory Reset in-place sobre la base autorizada.
+## Capacidades
 
-Estas capacidades estan implementadas en el runtime reconstruido; el smoke QA
-integral y el cutover final permanecen en Hitos 14 y 15.
+* login hibrido con `SUPER_ADMIN_ENV` y usuarios SQL;
+* usuarios, roles, permisos y autorizacion backend;
+* clientes, categorias, tipos, tareas y programaciones;
+* scripts logicos con hasta tres versiones y `.env` por version;
+* hub global `/scripts`, carga y descarga confinadas y hash de archivo;
+* ejecucion manual/automatica, consola, detencion y logs con timestamp;
+* Scheduler, Worker, heartbeat, semaforo operativo y modo `queue-only`;
+* feriados locales y sincronizacion manual con Nager.Date;
+* auditoria inmutable y Papelera con eliminacion permanente condicionada;
+* evidencia stdout V1 opcional y notificaciones at-most-once por Graph;
+* Factory Reset in-place, transaccional y fail-closed sobre la unica base QA.
 
-## Arquitectura vigente
+## Runtime oficial
 
-Stack principal:
+Con el entorno virtual activo y `PYTHONPATH=src`:
 
-* Python y Flask;
-* Jinja, HTML5, Bootstrap 5.3.3 local, CSS y JavaScript modular;
-* SQL Server mediante `pyodbc`;
-* servicios separados `web` y `worker`;
-* Docker Compose para QA.
+```powershell
+# Web
+python -m app_scheduler.web
 
-Reglas centrales:
+# Worker completo: Scheduler + cola
+python -m app_scheduler.worker.aplicacion
 
-* unica base del aplicativo: `APP_SCHEDULER_QA`;
-* `user_scheduler` para operacion normal con minimo privilegio;
-* `user_scheduler_mantenimiento` para mantenimiento estructural, con `db_owner` solo en `APP_SCHEDULER_QA`;
-* la cuenta de mantenimiento no requiere `sysadmin`, `CREATE ANY DATABASE`, `ALTER ANY DATABASE` ni `CONTROL SERVER`;
-* Factory Reset es in-place; la arquitectura blue-green esta deprecada;
-* `database/release/` es publicado, protegido y de solo lectura.
+# Solo cola, sin evaluar programaciones
+python -m app_scheduler.worker.aplicacion --queue-only
 
-## Entornos
+# Un ciclo controlado de cola
+python -m app_scheduler.worker.aplicacion --queue-only --once
+```
 
-* `.env`: ejecucion LOCAL.
-* `.env.docker`: ejecucion QA mediante Docker.
+Los checks no abren puertos ni ejecutan ciclos:
 
-Docker carga explicitamente `.env.docker`. No existe fallback automatico hacia `.env`.
+```powershell
+python -m app_scheduler.web --check
+python -m app_scheduler.worker.aplicacion --check
+python -m app_scheduler.worker.aplicacion --help
+```
 
-Los archivos reales no se versionan. Las plantillas son `.env.example` y `.env.docker.example`. Nunca sobrescribas un archivo `.env` existente.
-
-## Ejecucion local reconstruida
+## Instalacion local en Windows
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
 $env:PYTHONPATH="src"
 python -m app_scheduler.web
 ```
 
-El worker se ejecuta en otro proceso:
-
-```powershell
-$env:PYTHONPATH="src"
-python -m app_scheduler.worker.aplicacion
-```
-
-Validacion no funcional del runtime reconstruido:
-
-```powershell
-$env:PYTHONPATH="src"
-python -m app_scheduler.web --check
-python -m app_scheduler.worker.aplicacion --check
-```
-
-Las opciones `--check` validan configuracion y bootstrap sin abrir puertos, consultar SQL o iniciar scheduler.
-
-El Worker reconstruido dispone de dos modos operativos. Sin opciones conserva
-el comportamiento oficial completo: evalua programaciones y consume la cola.
-Para gates controlados puede consumir solo ejecuciones ya reservadas, sin
-instanciar ni ejecutar el Scheduler:
-
-```powershell
-$env:PYTHONPATH="src"
-python -m app_scheduler.worker.aplicacion
-python -m app_scheduler.worker.aplicacion --queue-only
-python -m app_scheduler.worker.aplicacion --queue-only --once
-```
-
-`--queue-only --once` realiza un unico ciclo de claim dentro del limite de
-concurrencia configurado y espera el cierre de los trabajos reclamados. Ambos
-modos mantienen heartbeat, mantenimiento, bloqueo por Factory Reset, motor,
-logs, evidencia y notificaciones. El modo `--queue-only` no crea reservas
-automaticas ni evalua programaciones.
+Completa `.env` manualmente con los valores del ambiente. Nunca sobrescribas un
+archivo real ni copies secretos a Git, documentacion, UI o logs.
 
 ## Docker QA
 
-Configura manualmente `.env.docker` a partir de su plantilla sin sobrescribir valores existentes. Luego valida la composicion antes de levantar servicios:
+Docker usa siempre `.env.docker`; no existe fallback hacia `.env`.
 
 ```powershell
+if (!(Test-Path .env.docker)) { Copy-Item .env.docker.example .env.docker } else { Write-Host ".env.docker ya existe. No se sobrescribe." }
 docker compose config --quiet
-docker compose up -d --build web worker
+docker compose build web worker
+docker compose up -d web worker
 docker compose ps
 ```
 
-Compose carga siempre `.env.docker`. Web valida proceso con `GET /salud`; Worker
-valida en SQL el heartbeat del mismo hostname. Ambos usan
-`restart: unless-stopped`. El healthcheck informa disponibilidad, pero no
-reinicia por si solo un proceso vivo bloqueado. Una caida del proceso principal
-si activa la politica de reinicio Docker.
+* Web: `http://127.0.0.1:5000/`
+* Salud Web: `http://127.0.0.1:5000/salud`
+* Logs: `docker compose logs --tail 200 web worker`
+* Detencion: `docker compose down`
 
-## Base de datos
+El Worker usa `restart: unless-stopped`; su healthcheck consulta el heartbeat
+del hostname sin reclamar ejecuciones. Detalle en
+[`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
 
-Los canales SQL tienen responsabilidades distintas:
+## Operacion
 
-* `database/release/`: release publicado y protegido.
-* `database/bootstrap/`: instalacion limpia y validacion vigente.
+`PENDIENTE` significa que la solicitud esta persistida y espera un Worker. Si
+el Worker se detiene antes de reclamarla, no se pierde: se recupera al volver a
+estar operativo. El semaforo distingue `OPERATIVO`, `ATENCION`, `DETENIDO` y
+`DESCONOCIDO` usando heartbeat y configuracion real.
+
+Para diagnosticar sin crear automaticas:
+
+```powershell
+python -m app_scheduler.worker.aplicacion --queue-only
+```
+
+Consulta primero **Estado del sistema**, luego heartbeat y logs. No cambies
+estados de ejecucion mediante SQL manual. Guia completa:
+[`docs/OPERACION_WORKER.md`](docs/OPERACION_WORKER.md).
+
+## Base de datos y Factory Reset
+
+La unica base de la aplicacion es `APP_SCHEDULER_QA`.
+
+* `database/release/`: release SQL publicado y protegido.
+* `database/bootstrap/`: instalacion limpia y validacion canonica.
 * `database/factory_reset/`: reconstruccion in-place controlada.
-* `database/migrations/`: correctivos incrementales especificos.
-* `database/legacy_pre_release_13B/`: historia, no fuente ejecutable vigente.
+* `database/migrations/`: correcciones incrementales historicas.
 
-No ejecutes SQL destructivo, migraciones o Factory Reset sobre QA sin diagnostico, revision y autorizacion explicita.
+El Factory Reset v1.0.0 no crea, elimina ni renombra bases. Usa cuenta de
+mantenimiento dedicada con `db_owner` solo sobre `APP_SCHEDULER_QA`, lock,
+transaccion SQL, cuarentena filesystem y rollback. Permanece deshabilitado por
+defecto y requiere autorizacion operativa explicita. Ver
+[`docs/FACTORY_RESET.md`](docs/FACTORY_RESET.md).
+
+## Notificaciones, Graph y evidencia
+
+Microsoft Graph utiliza client credentials almacenadas en el entorno. Su kill
+switch ENV y la configuracion SQL deben estar activos simultaneamente. El
+despacho reserva en SQL antes de llamar Graph y no aplica retry automatico.
+Evidencia 1.0 es opcional y se captura desde stdout delimitado; el JSON completo
+no se persiste. Graph quedo deshabilitado al cerrar QA.
+
+## Seguridad
+
+La version incluye controles implementados y validados durante QA: sesion
+minima, CSRF, autoescape Jinja, SQL parametrizado, permisos backend,
+confinamiento filesystem, uploads/downloads controlados, `shell=False`,
+separacion de credenciales SQL y secretos fuera de UI/BD/logs cuando
+corresponde. Esto no equivale a una certificacion externa ni a declarar
+ausencia total de vulnerabilidades.
+
+## Pruebas
+
+```powershell
+$env:PYTHONPATH="src"
+python -m pytest -q tests/reconstruccion
+python -m pytest -q
+python -m compileall app src scheduler_worker.py
+```
+
+Los checks Jinja, JavaScript y Docker usados para release estan descritos en
+[`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
+
+## Limitacion conocida
+
+Si el Worker cae abruptamente despues del claim y mientras una ejecucion esta
+`EN_EJECUCION`, APP Scheduler no la relanza automaticamente. Esta decision
+evita duplicar efectos de scripts no idempotentes; el caso requiere diagnostico
+operacional. Una estrategia futura de lease/recuperacion puede abordarlo sin
+cambiar el contrato de v1.0.0.
 
 ## Documentacion
 
-La documentacion tecnica se encuentra en `docs/`. Para continuar el trabajo se debe leer primero:
+* [Arquitectura oficial](docs/ARQUITECTURA_RECONSTRUCCION.md)
+* [Mapa de modulos](docs/MODULOS.md)
+* [Despliegue](docs/DESPLIEGUE.md)
+* [Operacion Worker](docs/OPERACION_WORKER.md)
+* [Observabilidad](docs/OBSERVABILIDAD_CONFIGURACION_RECONSTRUCCION.md)
+* [UI/UX](docs/UI_UX_RECONSTRUCCION.md)
+* [Seguridad](docs/SEGURIDAD.md)
+* [Roadmap](docs/ROADMAP.md)
+* [Changelog](docs/CHANGELOG.md)
+* [Bitacora tecnica](log_codex.md)
 
-1. `docs/INVENTARIO_MAESTRO_RECONSTRUCCION.md`
-2. `docs/ARQUITECTURA_RECONSTRUCCION.md`
-3. `docs/ROADMAP.md`
-4. `docs/CHANGELOG.md`
-5. `log_codex.md`
-
-El historial detallado permanece en `docs/CHANGELOG.md` y `log_codex.md`; el README describe solamente el estado vigente.
+Los documentos de fases anteriores se conservan como historia tecnica. Ante
+una contradiccion operativa, prevalecen este README y los documentos de
+reconstruccion v1.0.0 enlazados arriba.

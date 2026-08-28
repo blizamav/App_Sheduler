@@ -6,10 +6,38 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-14 cerrados como Release Candidate. Hito 15 no iniciado.
+* Estado actual: Hitos 0-15 cerrados. APP Scheduler v1.0.0 publicada.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Hito 14 CERRADO; Hito 15 pendiente.
+* Fase actual: Hito 15 CERRADO; reconstruccion completada.
 * Ultima actualizacion: 2026-08-28
+
+## 2026-08-28 - Hito 15 / release v1.0.0
+
+* Cutover: `src/app_scheduler/` queda como runtime oficial. Docker usa
+  `app_scheduler.web` y `app_scheduler.worker.aplicacion`; `app/`, `run.py` y
+  `scheduler_worker.py` se clasifican como legado historico no operativo.
+* Version: metadata y plantillas seguras fijadas en `1.0.0`; release identificado
+  por el tag anotado `v1.0.0` sobre el HEAD final de `main`.
+* Documentacion: README, roadmap, arquitectura, modulos, base de datos,
+  despliegue, operacion Worker, observabilidad, Factory Reset, Graph,
+  seguridad y UI/UX reconciliados con el codigo actual.
+* Contrato SQL documentado desde la evidencia real Hito 14: 33 tablas, 457
+  columnas, 25 FK, 39 CHECK, 118 DEFAULT, 120 indices y
+  `BOOTSTRAP_SQL=19C.0`. No se ejecuto SQL en Hito 15.
+* QA heredada: Factory Reset, manual, automatica, recuperacion de cola,
+  Papelera, seguridad y unico Graph real permanecen aprobados. Graph efectivo
+  queda OFF y no se repitio ningun flujo funcional.
+* Validacion release no destructiva: `333 passed, 1 skipped` en reconstruccion;
+  `359 passed, 1 skipped` total; compileall; 38 templates Jinja; 8 JavaScript;
+  Compose; build Web/Worker; checks Web/Worker y CLI correctos.
+* Limitacion conocida: una caida abrupta durante `EN_EJECUCION` requiere
+  diagnostico y no genera auto-retry para evitar efectos duplicados.
+* Protecciones: `.env`, `.env.docker`, `database/release/` y
+  `database/bootstrap/` sin cambios. No se ejecuto Factory Reset, Graph, SQL ni
+  una nueva ejecucion. `scripts_pruebas/prueba_qa.py` permanece fuera de Git con
+  SHA-256
+  `280AA16DCB5DEF5EDCE97EA003BA63EF9D813D23CE87E0B2DCB374C305478697`.
+* Resultado: Hito 15 CERRADO; v1.0.0 lista para tag y publicacion.
 
 ## 2026-08-28 - Hito 14 / cierre smoke Microsoft Graph
 

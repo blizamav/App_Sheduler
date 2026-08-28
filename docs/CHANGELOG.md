@@ -1,5 +1,65 @@
 # Changelog
 
+## v1.0.0 - 2026-08-28
+
+### Added
+
+* Runtime modular oficial en `src/app_scheduler/` con Web Flask, Scheduler,
+  Worker, motor subprocess, persistencia SQL Server y presentacion Bootstrap.
+* Administracion de identidad, catalogos, tareas, scripts/versiones/ENV,
+  programaciones, ejecuciones, feriados, auditoria y Papelera.
+* Heartbeat y semaforo operativo, modos Worker `queue-only`/`once`, consola y
+  logs incrementales.
+* Evidencia stdout V1 opcional, notificaciones y Microsoft Graph con reserva
+  at-most-once.
+* Factory Reset in-place, transaccional, con lock y rollback SQL/filesystem.
+
+### Changed
+
+* Cutover completado: Docker, Web y Worker usan exclusivamente el runtime
+  reconstruido. `app/`, `run.py` y `scheduler_worker.py` quedan como legado de
+  referencia no operativo.
+* README, arquitectura, modulos, despliegue, operacion, UI/UX, seguridad y
+  roadmap se consolidan como documentacion v1.0.0.
+* Version canonica del paquete y plantillas de ambiente fijada en `1.0.0`.
+
+### Fixed
+
+* Claim pyodbc y reserva de notificaciones reconciliados con resultsets reales
+  de SQL Server.
+* Worker `queue-only` evita instanciar Scheduler durante recuperaciones
+  controladas.
+* Factory Reset declara todas las opciones SET de sesion SQLCMD requeridas por
+  indices filtrados, incluido `QUOTED_IDENTIFIER`.
+* Navegacion, sidebar/offcanvas, tablas, formularios y consola ajustados para
+  desktop, tablet y movil.
+
+### Security
+
+* Autorizacion backend, CSRF, sesion minima, Jinja autoescape, SQL
+  parametrizado, confinamiento filesystem y subprocess `shell=False`.
+* Separacion entre cuenta SQL ordinaria, cuenta de mantenimiento y secretos
+  Graph; archivos de entorno reales permanecen fuera de Git.
+* Factory Reset validado fail-closed y Graph real validado con un unico envio,
+  sin reproducir destinatario o secretos.
+
+### Operations
+
+* Docker QA carga siempre `.env.docker`, inicia entrypoints reconstruidos y
+  aplica healthchecks Web/Worker con `restart: unless-stopped`.
+* Hito 14 aprobo Factory Reset real, manual, automatica, recuperacion de cola,
+  heartbeat, Papelera, seguridad, UI y Graph. Estado final: Scheduler OFF,
+  Graph efectivo OFF y cero ejecuciones pendientes/en curso.
+* Release: `333 passed, 1 skipped` en reconstruccion y `359 passed, 1 skipped`
+  total; compileall, 38 templates Jinja, 8 JavaScript, Compose, builds y checks
+  Web/Worker correctos.
+
+### Known limitations
+
+* Una caida abrupta despues del claim puede dejar una ejecucion
+  `EN_EJECUCION`. v1.0.0 no aplica auto-retry para evitar efectos duplicados;
+  el caso requiere diagnostico operacional.
+
 ## 2026-08-28 - Cierre Hito 14 / smoke Microsoft Graph real
 
 * Se habilito temporalmente la configuracion SQL Mail Graph mediante la Web y

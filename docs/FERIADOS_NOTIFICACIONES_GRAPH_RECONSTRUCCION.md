@@ -1,161 +1,67 @@
-# Hito 10: feriados, notificaciones y Microsoft Graph
+# Feriados, notificaciones y Microsoft Graph v1.0.0
 
-Estado: **Hito 10 CERRADO; ajuste contractual posterior LISTO PARA REVISION**.
-No se habilitaron envios reales. La migracion `022` esta preparada y no fue
-ejecutada sobre QA.
+## Feriados
 
-## Nota operativa pyodbc para reservas
+`dbo.feriados` es la fuente de verdad del Scheduler. La ejecucion manual no se
+bloquea por calendario. La automatica respeta `ejecutar_en_feriados` y consulta
+solo SQL Server.
 
-`RepositorioNotificaciones.reservar_envio()` ejecuta un batch con
-`sp_getapplock`, comprobacion idempotente, `INSERT` opcional y un unico
-`SELECT` final. El batch usa `SET NOCOUNT ON` para impedir que pyodbc exponga
-resultados intermedios de rowcount antes del `id_envio` esperado por
-`ejecutar_uno()`.
+La sincronizacion con Nager.Date es una accion manual autorizada con preview.
+Usa endpoint fijo, timeout y validacion de esquema. Nunca ocurre dentro del
+ciclo Scheduler. Un registro `MANUAL` tiene prioridad, un inactivo no se
+reactiva automaticamente y la aplicacion evita duplicar fecha/pais activos.
 
-La correccion es local al repositorio de notificaciones: no incorpora
-`nextset()`, no cambia el helper global y conserva la transaccion, el rollback
-y la politica at-most-once. Con Graph deshabilitado, la reserva se finaliza en
-`OMITIDO`; este resultado no altera el estado final de la ejecucion ni provoca
-solicitudes de token, HTTP o correo.
+Los irrenunciables se calculan mediante reglas locales SQL.
 
-## Matriz contract-first
+## Notificaciones por tarea
 
-| Capacidad | SQL canonico | Runtime historico | Documentacion | Reconstruccion al iniciar Hito 10 | Decision Hito 10 |
-|---|---|---|---|---|---|
-| Calendario local | `feriados` y `reglas_feriados_irrenunciables` | CRUD y reglas locales | Scheduler consume SQL local | El scheduler ya consulta `feriados` | Mantener SQL como unica fuente operativa del scheduler |
-| Mantenedor feriados | Campos fecha, nombre, tipo, pais, irrenunciable, origen, activo y trazabilidad | Listar, crear, editar, estado y borrado manual | Permisos `FERIADOS_*` | Sin UI reconstruida | Reconstruir CRUD autorizado, paginado y auditado |
-| Sincronizacion Nager.Date | `origen=API_NAGER`; unicidad activa fecha/pais | Preview y aplicacion manual | Manual preserva prioridad | No reconstruida | Cliente central con endpoint fijo oficial, timeout y TLS; sin cron automatico |
-| Configuracion por tarea | `notificaciones_config_tarea` | Configuracion por tarea | Exito, error y Evidencia stdout V1 | Ajuste contractual preparado | `notificar_exito_activa`, `alerta_error_activa` y `enviar_evidencia` son decisiones distintas |
-| Destinatarios | `notificaciones_destinatarios`, tipos `EVIDENCIA/ALERTA`, canales `TO/CC/BCC` | Administracion por tarea | Validacion y no duplicados | No reconstruidos | Normalizar, validar y reemplazar atomica y auditadamente |
-| Evidencia | `evidencias_ejecucion`, una por ejecucion, solo metadata | Captura stdout | JSON no persiste completo | Captura y metadata operativas | Conservar JSON solo en memoria para componer el correo |
-| Trazabilidad email | `notificaciones_envios` | Estados de envio | Separada del estado de ejecucion | No consumida | Reservar `PENDIENTE`, enviar fuera de transaccion y cerrar `ENVIADO/FALLIDO/OMITIDO` |
-| Graph global | `configuracion_mail_graph`, clave unica `MAIL_GRAPH` | Client credentials y `sendMail` | Secret solo ENV | Variables `GRAPH_*` tipadas | SQL administra identificadores no secretos; ENV conserva kill switch y secret |
-| Correo de exito | `NOTIFICACION_EXITOSA`; `EVIDENCIA_CLIENTE` legacy | Ejecucion exitosa | Contrato evolucionado | Implementado en ajuste | Enviar correo estandar; Evidencia valida es contenido opcional |
-| Alerta interna | `ALERTA_INTERNA` | Error de proceso | Evento respaldado | Implementado | Notificar ejecucion `ERROR` sin depender de Evidencia |
-| Reintentos | Columnas `intento`, `es_reintento`, `id_envio_origen`; sin cola durable completa | Sin politica robusta | No duplicar correo | No implementado | Sin retry automatico en Hito 10; politica at-most-once mediante reserva |
-| Adjuntos | Declarados en JSON, no persistidos como paths separados | Adjuntos simples | Solo archivos autorizados | Valida obligatorio/existencia | Resolver exclusivamente bajo carpeta de version; rechazar enlaces, `.env`, `.py` y exceso de tamano |
+La politica separa:
 
-## Contrato de feriados
+* `notificar_exito_activa`: correo estandar al estado `EXITOSA`;
+* `alerta_error_activa`: alerta interna al estado `ERROR`;
+* `enviar_evidencia`: contenido Evidencia 1.0 opcional dentro del correo de
+  exito; exige notificacion de exito.
 
-- `dbo.feriados`: PK `id_feriado`; fecha, nombre, tipo, pais, irrenunciable, activo, origen, observacion y trazabilidad.
-- Origen permitido por SQL: `MANUAL`, `API`, `API_NAGER`, `IMPORTACION`.
-- Unicidad activa: fecha + pais. La aplicacion valida antes de escribir y SQL mantiene la ultima defensa.
-- Un registro manual no se sobrescribe durante sincronizacion.
-- Un registro inactivo no se reactiva automaticamente.
-- La eliminacion fisica desde UI se limita a registros `MANUAL`; los demas se desactivan.
-- Los irrenunciables se calculan desde `reglas_feriados_irrenunciables`.
+Destinatarios TO/CC/BCC se validan, normalizan y reemplazan transaccionalmente.
+El resultado del correo no modifica el estado final de la ejecucion.
 
-## Sincronizacion Nager.Date
+## Evidencia stdout
 
-- Endpoint permitido: `https://date.nager.at/api/v3/PublicHolidays/{Year}/{CountryCode}`.
-- Pais de uso actual: `CL`; el formulario acepta un codigo ISO alfabetico de dos caracteres.
-- La consulta externa ocurre solo por accion POST autorizada y nunca dentro del ciclo del scheduler.
-- Preview y aplicacion vuelven a comparar contra SQL para evitar decisiones obsoletas.
-- Fallos DNS, timeout, HTTP, JSON o esquema se convierten en error controlado; nunca vacian el calendario local.
+El script declara soporte y emite un JSON entre delimitadores impresos. La
+validacion estatica usa AST/tokenizacion y no ejecuta ni importa el script. El
+Worker captura y valida el bloque real; la BD conserva metadata/hash, no el JSON
+completo. Si la evidencia requerida no aparece, se omite el correo al cliente y
+se registra alerta interna.
 
-## Variables Graph
+## Microsoft Graph
 
-| Variable | Secreta | Visible UI | Editable UI | Origen | Consumidor |
-|---|---:|---:|---:|---|---|
-| `GRAPH_MAIL_ENABLED` | No | Estado | No | ENV | Web/worker |
-| `GRAPH_CLIENT_SECRET` | Si | Solo presencia | No | ENV | Cliente Graph |
-| `GRAPH_SECRET_CONFIG_MODE` | No | Estado | No | ENV | Diagnostico |
-| `GRAPH_TENANT_ID` | No | Solo presencia | Reemplazo SQL | ENV + SQL | Configuracion efectiva |
-| `GRAPH_CLIENT_ID` | No | Solo presencia | Reemplazo SQL | ENV + SQL | Configuracion efectiva |
-| `GRAPH_SCOPE` | No | Si | Si, SQL | ENV + SQL | Token Graph |
-| `GRAPH_SEND_MAIL_USER` | No | Si | Si, SQL | ENV + SQL | `sendMail` |
-| `GRAPH_SAVE_TO_SENT_ITEMS` | No | Si | Si, SQL | ENV + SQL | Payload Graph |
-| `GRAPH_ALERTAS_DEFAULT` | No | Si | Si, SQL | ENV + SQL | Alertas internas |
+La disponibilidad efectiva requiere simultaneamente:
 
-La configuracion efectiva exige simultaneamente `GRAPH_MAIL_ENABLED=true`, fila SQL activa, identificadores completos y secret presente. Ningun valor secreto se serializa en DTO publico, HTML, auditoria o logs.
+* `GRAPH_MAIL_ENABLED=true`;
+* `GRAPH_CLIENT_SECRET` presente en el entorno;
+* identificadores Graph completos;
+* fila SQL global `MAIL_GRAPH` activa.
 
-## Gate Graph real Hito 14
+El cliente usa OAuth client credentials, endpoints fijos, TLS y timeout. El
+secret no vive en SQL ni se muestra en UI. Antes del HTTP se reserva una fila en
+`notificaciones_envios`; una reserva existente impide un segundo despacho. No
+hay retry automatico.
 
-Con el ambiente configurado manualmente, el gate proceso exclusivamente la
-ejecucion `4`. Microsoft Graph acepto exactamente una `NOTIFICACION_EXITOSA`
-con HTTP 202 y request id, usando el template canonico, un unico TO configurado
-y sin CC, BCC, evidencia ni adjuntos. No se muestran ni documentan direcciones
-o credenciales.
+## Gate real Hito 14
 
-La revalidacion del mismo evento fue `OMITIDO` por la reserva at-most-once y no
-genero otra llamada HTTP. Luego se inactivo la fila SQL `MAIL_GRAPH` desde la
-Web; la disponibilidad efectiva quedo deshabilitada sin editar `.env.docker`.
-El Worker utilizado para el smoke se detuvo y no quedaron ejecuciones activas.
+Se proceso exclusivamente una ejecucion autorizada. Microsoft Graph acepto una
+sola `NOTIFICACION_EXITOSA` con HTTP 202 y request id, usando el template
+canonico, un unico TO y sin CC, BCC, evidencia o adjuntos. No se documenta el
+destinatario ni identificadores sensibles.
 
-## Eventos y permisos
+Una segunda evaluacion devolvio `OMITIDO` antes de llamar Graph, demostrando
+at-most-once. Al terminar, la configuracion SQL se deshabilito mediante la Web;
+Graph efectivo quedo OFF sin editar archivos de entorno.
 
-| Modulo/accion | Permiso real | Ruta/metodo |
-|---|---|---|
-| Ver feriados | `FERIADOS_VER` | `GET /feriados/` |
-| Crear | `FERIADOS_CREAR` | `GET/POST /feriados/nuevo` |
-| Editar | `FERIADOS_EDITAR` | `GET/POST /feriados/<id>/editar` |
-| Cambiar estado | `FERIADOS_ESTADO` | `POST /feriados/<id>/estado` |
-| Eliminar manual | `FERIADOS_ELIMINAR` | `POST /feriados/<id>/eliminar` |
-| Sincronizar | `FERIADOS_SINCRONIZAR` | `GET /feriados/sincronizar`, `POST` preview/aplicar |
-| Configuracion por tarea | `TAREAS_EDITAR` | `POST /tareas/<id>/evidencia` |
-| Configuracion Graph | `CONFIGURACION_ADMIN` | `GET/POST /configuracion/mail-graph` |
+## Limites v1.0.0
 
-Todos los POST usan CSRF global. Los cambios humanos se escriben junto con `auditoria_cambios` en la misma unidad de trabajo.
-
-## Seguridad y limites
-
-- Endpoints Nager y Graph son constantes de backend; no se aceptan URLs desde request.
-- No se usa `verify=False`, `eval`, `exec` ni importacion de scripts de usuario.
-- Direcciones se validan, normalizan en minusculas y deduplican por tipo/canal/email.
-- El HTML de correo se genera con templates y autoescape; el contenido externo se sanitiza antes de renderizar.
-- Adjuntos directos se mantienen bajo el limite conservador del request Graph; carga por sesion queda fuera de Hito 10.
-- El fallo Graph no altera el estado final de la ejecucion.
-- No hay correo de prueba ni envio real durante la suite automatica.
-
-## Contrato post-Hito 10
-
-* `notificar_exito_activa`: habilita el correo estandar al finalizar `EXITOSA`.
-* `alerta_error_activa`: habilita el correo estandar al finalizar `ERROR`.
-* `enviar_evidencia`: incorpora Evidencia 1.0 al correo de exito y exige que la
-  notificacion de exito este activa.
-* Los destinatarios SQL internos `EVIDENCIA` se conservan por compatibilidad y
-  se presentan en UI como destinatarios de notificacion de exito.
-* `NOTIFICACION_EXITOSA` es el tipo canonico nuevo. `EVIDENCIA_CLIENTE` y
-  `ALERTA_INTERNA` siguen permitidos para preservar historia.
-
-## Deuda legitima
-
-- No existe sincronizacion automatica Nager respaldada por contrato.
-- No se implementa retry automatico hasta contar con politica durable de recuperacion de reservas `PENDIENTE`.
-- Adjuntos grandes mediante upload session Graph quedan fuera del alcance actual.
-- El smoke real Graph requiere autorizacion y destinatario de prueba explicitos.
-
-## Implementacion y validacion
-
-La implementacion vive exclusivamente en `src/app_scheduler/`: modulo
-`feriados`, modulo `notificaciones`, repositorios dedicados, integracion
-post-ejecucion en el worker, vistas Bootstrap y observabilidad. Se reutilizaron
-las tablas y permisos vigentes. El ajuste posterior crea la migracion `022` y
-actualiza solo el bootstrap canonico necesario; no ejecuta SQL ni seeds.
-
-La suite automatica cubre CRUD, auditoria, preview/aplicacion, idempotencia,
-prioridad manual, errores Nager, destinatarios, configuracion efectiva, payload
-Graph, sanitizacion, confinamiento de adjuntos, despacho, alertas y aislamiento
-del estado de ejecucion. Las llamadas HTTP se simulan: QA Graph real permanece
-pendiente de autorizacion expresa.
-
-Gate local: `306 passed, 1 skipped`, compileall, 32 templates Jinja, seis
-archivos JavaScript, checks web/worker, Compose y build Docker aprobados. Las
-vistas fueron revisadas en 1440x900, 390x844 y 844x390 sin overflow global ni
-errores de consola.
-
-El gate especifico de reconstruccion aprobo `280 passed, 1 skipped`. Se realizo
-un unico GET no destructivo a Nager.Date para 2026/CL: DNS, TLS, HTTP y esquema
-minimo del parser fueron correctos, con 17 registros recibidos y cero
-persistencia. No se llamo Microsoft Graph ni se envio correo real.
-
-El smoke QA fue exclusivamente de lectura: confirmo la base autorizada, 17
-feriados, reglas locales y las cinco tablas de notificaciones. La configuracion
-Graph QA se clasifica `DESHABILITADA`: existe una fila SQL activa con
-identificadores completos, mientras el kill switch ENV esta apagado y el secret
-no esta presente. No se imprimieron identificadores, direcciones ni secretos;
-no hubo DML ni envio real.
-
-Tenant ID y Client ID vigentes tampoco se incluyen en el HTML. La UI informa
-solo si estan configurados y permite escribir un valor nuevo para reemplazarlos;
-dejar esos campos vacios conserva la configuracion actual.
+* sincronizacion Nager.Date solo manual;
+* sin retry automatico de notificaciones;
+* sin upload session para adjuntos grandes;
+* adjuntos permitidos solo bajo la carpeta de la version y con limite
+  conservador; se rechazan `.env`, `.py`, enlaces y rutas externas.

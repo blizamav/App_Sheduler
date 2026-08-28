@@ -1,231 +1,68 @@
-# UI/UX de la reconstruccion
+# UI/UX APP Scheduler v1.0.0
 
-## Estado y alcance
+## Estado
 
-Esta guia define el contrato visual transversal de `src/app_scheduler/` incluido
-en el cierre del Hito 7, extendido hasta Hito 10 y validado integralmente al
-cerrar Hito 12.
+La interfaz reconstruida es la UI oficial. Usa Bootstrap 5.3.3 local, Jinja,
+tokens CSS y JavaScript modular bajo `src/app_scheduler/presentacion/`. El
+runtime historico no define la experiencia vigente.
 
-La base frontend es Flask + Jinja2 + HTML5 + Bootstrap 5.3.3 + CSS y JavaScript
-modulares. Bootstrap se distribuye localmente en
-`presentacion/static/vendor/bootstrap/`; QA no depende de Internet ni de CDN.
-El bundle incluye los componentes requeridos y no carga Popper por separado.
+## Criterios
 
-Assets controlados:
+* herramienta interna sobria, clara y orientada a operacion repetitiva;
+* jerarquia compacta, superficies blancas y estados semanticos consistentes;
+* azul corporativo con cyan moderado, verde, amarillo y rojo funcionales;
+* foco visible, labels persistentes y mensajes controlados;
+* sin `alert()`, `window.confirm()` o `prompt()`;
+* tablas anchas con scroll local, sin ampliar el viewport;
+* acciones criticas mediante modal corporativo con contexto suficiente.
 
-* `bootstrap.min.css`: SHA-256
-  `3C8F27E6009CCFD710A905E6DCF12D0EE3C6F2AC7DA05B0572D3E0D12E736FC8`.
-* `bootstrap.bundle.min.js`: SHA-256
-  `0833B2E9C3A26C258476C46266E6877FC75218625162E0460BE9A3A098A61C6C`.
-* Licencia MIT incluida junto a los assets.
+## Layout
 
-## Sistema visual
+El shell contiene topbar, sidebar contraible en escritorio y offcanvas en
+movil. La preferencia del sidebar se conserva en el navegador. El contenido usa
+todo el ancho util y limita solo las superficies que requieren lectura corta.
 
-Los tokens viven en `css/tokens.css`. Blanco y grises frios dominan las
-superficies; azul corporativo expresa acciones primarias y cyan moderado aporta
-foco. Verde, amarillo y rojo se reservan para exito, advertencia y error. Radios,
-sombras, espaciado, z-index y transiciones se definen una sola vez.
+Se validaron los viewports de referencia:
 
-El layout usa sidebar estable en escritorio, topbar compacta y contenido fluido
-que ocupa todo el ancho disponible. En escritorio el usuario puede contraer la barra a
-una franja de iconos; la preferencia se conserva localmente y cada icono mantiene
-nombre accesible y `title`. Bajo 992 px la navegacion se convierte en Offcanvas
-Bootstrap. El panel agrupa accesos reales por Operacion, Maestros y Seguridad;
-no inventa indicadores.
+* 1440x900;
+* 768x900;
+* 390x844;
+* 844x390.
 
-Hito 8 agrega vistas Bootstrap integradas al mismo shell:
-
-* logs con filtros apilables, tabla con scroll local y detalle en bloques `pre`
-  de texto autoescapado;
-* cards de estado adaptables para worker, scheduler, mantenimiento y capacidad;
-* configuracion con switches, rangos visibles, confirmacion modal y matriz ancha
-  con scroll local;
-* evidencia en la edicion de tarea con estado compatible/requiere ajuste y ayuda
-  colapsable del contrato stdout.
-
-Hito 9 agrega Auditoria y Papelera dentro de Administracion, visibles solo con
-sus permisos. Auditoria usa filtros compactos, tabla responsive y detalle de
-JSON con scroll local. Papelera usa cards operativas con tipo, retiro,
-dependencias, badges de capacidad, motivo de bloqueo y acciones separadas. Las
-confirmaciones reutilizan el modal Bootstrap global; no se introduce
-`window.confirm` ni JavaScript inline.
-
-Hito 10 agrega Feriados y Microsoft Graph al sidebar segun permiso. El
-mantenedor usa filtros, tabla responsive, estados y confirmaciones globales; la
-sincronizacion separa consulta, preview y aplicacion. La tarea integra
-notificaciones, destinatarios y ayuda de evidencia sin una card anidada. La
-configuracion Graph distingue datos SQL editables de secretos ENV solo mediante
-estados de presencia, nunca valores.
-
-Los layouts usan todo el ancho disponible y cambian a una columna bajo 780 px;
-no generan overflow global en 390x844, 768 px, notebook ni 1440x900.
-
-El gate Hito 14 volvio a comprobar la pantalla de login en 1440x900, 768x900,
-390x844 y 844x390: no presenta overflow horizontal ni controles interactivos
-fuera del viewport. Las rutas autenticadas criticas respondieron correctamente
-en el smoke Web real; la validacion responsive integral cerrada en Hito 12 se
-mantiene vigente.
-
-La paleta evita mezclar azules desconectados: azul profundo identifica la
-navegacion, azul corporativo las acciones y cyan moderado solo el foco o detalle.
-Superficies, bordes y texto comparten la misma escala de grises frios. Los
-overrides de escritorio de Offcanvas se declaran de forma explicita para impedir
-que Bootstrap vuelva transparente el sidebar.
+La navegacion movil, los submenus, filtros, formularios y acciones permanecen
+alcanzables en orientacion vertical y horizontal.
 
 ## Componentes
 
-* Navegacion: `nav-link`, estado activo, enlace clickeable completo, foco visible
-  y cierre del Offcanvas al navegar en movil.
-* Formularios: labels asociados por envoltura, controles Bootstrap, ayuda,
-  `invalid-feedback`, validacion temprana y autoridad final en backend.
-* Botones: tipo explicito, estados hover/focus/disabled y texto con spinner para
-  evitar doble envio visual.
-* Confirmaciones: Modal Bootstrap sobre `submit`; conserva validacion, CSRF y el
-  submitter original mediante `requestSubmit()`.
-* Tablas: encabezados consistentes, hover, alineacion vertical y contenedor
-  responsive. Las celdas conservan su semantica de tabla; las acciones se
-  distribuyen dentro de la celda sin convertir el `td` en flex. Las acciones
-  numerosas de Tareas se agrupan en dropdown. Mientras ese menu esta abierto,
-  el contenedor libera temporalmente su recorte para mostrar todas las opciones.
-* Estados: badges con texto y color; empty states con explicacion y CTA solo
-  cuando el permiso permite la accion.
-* Feedback: flashes en alertas dismissible con `aria-live`; errores importantes
-  no dependen de un toast efimero.
-* Scripts: cards v1-v3 muestran version activa, protegida o reemplazable, estado,
-  `.env` e historial.
-* Programaciones: campos no aplicables se ocultan y deshabilitan sin ejecutar
-  reglas de negocio en JavaScript.
-* Ejecuciones: listado operativo y detalle con consola monoespaciada, polling,
-  estado visible y control de auto-scroll.
-* Formularios: filas y campos se alinean desde el inicio; un textarea alto no
-  estira artificialmente los inputs vecinos.
+* botones Bootstrap y variantes de aplicacion;
+* badges de estado;
+* alertas y toasts;
+* modal reutilizable;
+* cards operativas sin anidacion decorativa;
+* formularios, switches, selects y ayudas contextuales;
+* tablas responsive y paginacion;
+* stepper de Tareas;
+* consola de ejecucion con polling;
+* semaforo Worker y paneles de estado;
+* estados vacios y errores publicos coherentes.
 
-## Responsive, movimiento y accesibilidad
+## Flujo de tarea
 
-Los objetivos minimos son 390x844, 768 px, notebook y 1440x900. Filtros y grids
-se apilan, las tablas conservan scroll horizontal y la consola evita overflow
-global. Modal, dropdown y Offcanvas usan el manejo de teclado/foco de Bootstrap.
-No se elimina el outline global. `prefers-reduced-motion` reduce transiciones y
-animaciones a una duracion minima.
+El alta/edicion usa pasos independientes: Datos, Script, Evidencia,
+Notificaciones y Programacion. El stepper diferencia pantalla actual de estado
+funcional (`Completado`, `En curso`, `Pendiente`, `Requiere ajuste`). Evidencia
+es opcional y no bloquea una notificacion estandar de exito.
 
-El estado contraido del sidebar se restaura con un script local bloqueante y
-minimo antes de cargar los estilos. Esto evita que una navegacion pinte primero
-la barra expandida y luego la contraiga, sin incorporar JavaScript inline.
+## Accesibilidad y seguridad visual
 
-En movil el Offcanvas conserva la capa Bootstrap `1045`, por encima de su
-backdrop, usa alto dinamico `100dvh` y scroll interno de navegacion. El fondo
-queda bloqueado por Bootstrap y los enlaces mantienen objetivos tactiles de al
-menos 44 px.
+La UI usa HTML semantico, foco visible, controles nativos/Bootstrap y
+`prefers-reduced-motion`. Los errores de autenticacion no revelan si una cuenta
+existe. Los campos sensibles Graph informan presencia y permiten reemplazo sin
+reproducir el valor vigente.
 
-Los celulares en orientacion horizontal usan padding compacto, sidebar de hasta
-72% del viewport y filtros de dos columnas. Las reglas combinan ancho y
-orientacion para evitar que los CSS de cada modulo restauren grillas de cuatro o
-cinco columnas. En vertical bajo 620 px los filtros vuelven a una columna.
-La navegacion lateral no permite `flex-wrap`: grupos y enlaces permanecen en una
-sola columna no reducible y, cuando falta altura, se recorren solo con scroll
-vertical.
+## Validacion final
 
-Paneles y formularios operativos no usan topes artificiales de 900-1440 px:
-ocupan el ancho restante despues del sidebar. Se conservan limites solo en
-elementos que los necesitan por legibilidad, como login, mensajes y textos de
-estado vacio.
-
-## Seguridad frontend y OWASP
-
-No se declara cumplimiento formal de OWASP. Se mantienen controles verificables:
-
-* permisos y contexto de objeto se validan en rutas/servicios, nunca por ocultar
-  botones;
-* todas las mutaciones pasan por CSRF global;
-* autoescape Jinja permanece activo, no se usa `|safe`, JavaScript usa
-  `textContent`/DOM seguro y los logs se muestran como texto;
-* no hay JavaScript inline, `javascript:`, `eval` ni `new Function` propio;
-* CSP local sin `unsafe-inline` ni `unsafe-eval`, anti-framing, `nosniff`,
-  Referrer-Policy y Permissions-Policy;
-* consultas SQL parametrizadas y ejecucion Python con `shell=False` permanecen
-  fuera de la autoridad del frontend;
-* credenciales, `.env`, rutas internas y secretos no se incluyen en HTML ni JS;
-* uploads conservan extension, tamano, UTF-8, AST, nombre seguro, confinamiento,
-  symlink y SHA-256 definidos en Hito 5;
-* sesion minima, cookies endurecidas por ambiente, logout POST, limpieza/rotacion
-  al autenticar y `next` restringido a destino local.
-
-## Regla transversal
-
-Cada hito nuevo debe entregar funcionalidad, seguridad, pruebas, UI/UX,
-responsive e integracion visual. Hito 12 queda reservado para consistencia y
-accesibilidad finales, no para reparar interfaces temporales acumuladas.
-
-## Cierre Hito 12
-
-La revision final recorrio las vistas autenticadas, errores publicos y flujos de
-detalle en 1440x900, 768x900, 390x844 y 844x390. Se verificaron navegacion
-contraible/offcanvas, semaforo Worker, filtros, tablas con scroll local,
-formularios, stepper, consola, dropdowns y Factory Reset sin ejecutar acciones.
-No se declara conformidad WCAG formal; se verificaron controles concretos de
-teclado, foco visible, labels, nombres accesibles, estados textuales, Bootstrap
-Modal/Offcanvas y `prefers-reduced-motion`.
-
-La consola de ejecucion define sus paneles dentro de su propio modulo CSS y
-permite cortar nombres largos de Worker sin desbordar el viewport. En el flujo
-guiado, una Evidencia ausente conserva el estado `No implementada` acompañado
-por `OPCIONAL`, por lo que no se interpreta como requisito incumplido.
-
-## Semaforo de vida del Worker
-
-La topbar presenta un indicador compacto reutilizable con punto, texto de
-estado y antiguedad. Panel muestra un resumen de cola y
-`/operacion/estado` conserva el detalle completo del heartbeat y sus ventanas.
-El componente usa `data-estado`, texto visible y `aria-label`; el color es un
-refuerzo y no la unica señal.
-
-El estado se refresca mediante `GET /operacion/worker` sin recargar la pagina.
-El controlador usa `fetch` same-origin, cancela solicitudes y timers en
-`pagehide`, y ante un error cambia a `DESCONOCIDO` en vez de mostrar un falso
-verde. El intervalo de polling lo entrega el backend desde la configuracion
-real del Worker.
-
-Cuando `DETENIDO` o `DESCONOCIDO` coincide con ejecuciones pendientes, Panel,
-Estado del sistema y Tareas explican que la cola se conserva. Ejecutar sigue
-disponible y su confirmacion advierte que la solicitud quedara `PENDIENTE`.
-El banner de mantenimiento permanece separado y es el unico que deshabilita la
-accion por seguridad.
-
-En 390x844 y 844x390 el indicador de topbar oculta solo el detalle de
-antiguedad, conserva el texto del estado y limita su ancho. En tablet y
-escritorio muestra ambas lineas. `prefers-reduced-motion` continua aplicando a
-todos los componentes.
-
-## Flujo guiado y notificaciones post-Hito 10
-
-Tareas usa un stepper Bootstrap ligero de cinco pasos: Datos, Script,
-Evidencia, Notificaciones y Programacion. Es navegacion server-rendered, no una
-SPA. En alta se ofrecen `Guardar` y `Guardar y continuar`; la segunda opcion
-abre Script despues de persistir la tarea.
-
-La edicion diferencia tres cards: Exito, Error y Evidencia. Los dos primeros
-switches son independientes del soporte Evidencia. La card Evidencia informa
-`Compatible`, `No implementada` o `Requiere ajuste`, presenta checklist y solo
-habilita su switch cuando el script es compatible y el exito esta activo. Las
-grillas se reducen a una columna en movil y el stepper usa scroll horizontal
-local, sin provocar overflow global.
-
-## Cierre del flujo guiado post-Hito 10
-
-El recorrido definitivo es Datos, Script, Evidencia, Notificaciones y
-Programacion. El estado visual actual depende exclusivamente de la ruta; el
-estado completado depende de que el requisito funcional del paso este
-satisfecho. El stepper usa `Completado`, `En curso`, `Pendiente` y `Requiere
-ajuste`, agrega `aria-current="step"` solo al paso visible y conserva texto,
-foco y `prefers-reduced-motion` ademas del color.
-
-Script guia la carga, activacion y continuidad hacia Evidencia. Evidencia es una
-pantalla independiente con resumen de tarea, version activa, estado contractual
-y checklist 1.0; no repite el formulario de Datos. Notificaciones separa Exito,
-Error y Evidencia opcional. Programacion permite configurar la agenda o cerrar
-explicitamente el onboarding sin programar.
-
-Cuando el control runtime informa mantenimiento critico, el layout muestra un
-banner seguro con el bloqueo de ejecuciones y acceso al estado del sistema. No
-expone paths, stack traces ni secretos. La UI no constituye un bypass: backend,
-scheduler y worker mantienen la politica fail-closed.
+Hitos 12 y 14 revisaron login, Panel, usuarios, tareas, scripts, ejecuciones,
+consola, configuracion, operacion y flujos criticos en desktop/tablet/movil. No
+se detecto overflow global bloqueante. Los templates compilan y los JavaScript
+superan `node --check`.

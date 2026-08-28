@@ -1,6 +1,19 @@
-# Despliegue
+# Despliegue APP Scheduler v1.0.0
 
-## Ejecucion local en Windows
+## Prerrequisitos
+
+* Python 3.11 o superior;
+* SQL Server con `APP_SCHEDULER_QA` y bootstrap 19C.0;
+* ODBC Driver 17 for SQL Server;
+* Docker Desktop/Engine con Compose para QA;
+* acceso de red al SQL Server;
+* cuenta SQL ordinaria para Web/Worker;
+* cuenta de mantenimiento separada solo si se habilitara Factory Reset.
+
+No subas `.env` ni `.env.docker` a Git. Las plantillas no contienen secretos y
+nunca deben sobrescribir configuraciones reales existentes.
+
+## Local Windows
 
 ```powershell
 python -m venv .venv
@@ -8,599 +21,137 @@ python -m venv .venv
 pip install -r requirements.txt
 if (!(Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host ".env ya existe. No se sobrescribe." }
 $env:PYTHONPATH="src"
+python -m app_scheduler.web --check
 python -m app_scheduler.web
 ```
 
-En CMD:
-
-```cmd
-if not exist .env copy .env.example .env
-```
-
-IMPORTANTE:
-No ejecutar `copy .env.example .env` si ya existe un archivo `.env`, porque puede sobrescribir credenciales locales. Usar siempre comandos seguros que copien solo si `.env` no existe.
-
-## QA Ubuntu
-
-Runtime reconstruido oficial disponible con `Dockerfile` y
-`docker-compose.yml`. Usa `.env.docker`, SQL Server accesible y volumenes
-persistentes para scripts, env, logs y control runtime.
-
-Gate Hito 14: Web y Worker oficiales aprobaron build, checks internos,
-healthcheck, recuperacion de cola y restart del proceso Worker sobre Docker QA.
-Al finalizar, Scheduler y ejecucion automatica quedaron deshabilitados. El
-smoke Graph real autorizado fue aceptado una unica vez con HTTP 202 y luego la
-fila SQL global se inactivo desde la Web. Los secretos permanecen solo en el
-archivo local del ambiente y nunca se completan ni documentan automaticamente.
-
-## Produccion Ubuntu
-
-Implementacion base disponible desde Fase 14E con Docker Compose preferentemente, o systemd como alternativa documental, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.
-
-## Variables por ambiente
-
-Cada ambiente debe tener su propio `.env`; nunca debe versionarse ni sobrescribirse automaticamente. `.env.example` es solo plantilla.
-
-Mapa oficial de archivos:
-
-* Local Windows: `.env`
-* QA/Produccion sin Docker: `.env`
-* Docker local/QA: `.env.docker` obligatorio y declarado directamente en Compose
-* Plantillas versionadas: `.env.example` y `.env.docker.example`
-
-Referencia detallada de variables:
-
-```text
-docs/VARIABLES_ENTORNO.md
-```
-
-El runtime reconstruido Hito 7 agrega dos variables no secretas:
-
-```env
-EJECUCION_TIMEOUT_SEGUNDOS=3600
-EJECUCION_GRACIA_TERMINACION_SEGUNDOS=5
-```
-
-El timeout termina el process tree y registra `ERROR`; la gracia define cuanto
-esperar antes del cierre forzado. Docker conserva los volumenes compartidos de
-scripts, `env_scripts`, `logs_tareas` y `runtime_control` requeridos por web y
-worker. Los entrypoints Docker oficiales son reconstruidos; los historicos no
-forman parte del arranque QA.
-
-## Docker Compose con archivo dedicado
-
-Para contenedores, el flujo oficial usa un archivo real separado declarado directamente por Compose:
+Worker completo en otra terminal:
 
 ```powershell
-docker compose up -d --build web worker
+.\.venv\Scripts\Activate.ps1
+$env:PYTHONPATH="src"
+python -m app_scheduler.worker.aplicacion
 ```
 
-Consideraciones:
+Diagnostico sin Scheduler:
 
-* `docker-compose.yml` no usa `.env` como fallback para `env_file`.
-* Si la password SQL contiene `$`, Docker puede requerir escape distinto al flujo local; por eso `.env.docker` debe mantenerse separado de `.env`.
-* Compose fija `TZ=America/Santiago`; la aplicacion conserva `ZONA_HORARIA`
-  desde `.env.docker` sin interpolar el `.env` local.
-* Convencion vigente: el proyecto sigue operando con hora local de SQL Server; Docker no debe reinterpretarla como UTC en el monitor.
-
-Validacion final Fase 14G:
-
-* Docker QA queda validado como flujo operativo real del proyecto.
-* `.env.docker` es obligatorio para la validacion contenedorizada.
-* `web` y `worker` validaron conexion SQL, login, `/panel`, monitor `ACTIVO`, detencion `DETENIDO` y cierre limpio.
-* El host local Windows sigue presentando `08001` en este ambiente al leer SQL Server desde `.env`; por lo tanto, local no queda homologado como entorno operativo final mientras no se resuelva esa conectividad ODBC del host.
-
-## Configuracion SQL Server local
-
-Variables minimas para conexion Flask-SQL Server:
-
-```env
-APP_ENV=LOCAL
-DB_SERVER=SERVIDOR_O_INSTANCIA
-DB_DATABASE=APP_SCHEDULER_QA
-DB_USER=USUARIO_SQL
-DB_PASSWORD=PASSWORD_SQL
-DB_DRIVER=ODBC Driver 17 for SQL Server
-DB_ENCRYPT=no
-DB_TRUST_SERVER_CERTIFICATE=yes
-DB_TIMEOUT=10
+```powershell
+python -m app_scheduler.worker.aplicacion --queue-only
+python -m app_scheduler.worker.aplicacion --queue-only --once
 ```
 
-Pasos en Windows:
+`run.py` y `scheduler_worker.py` no son comandos oficiales de v1.0.0.
 
-1. Instalar dependencias: `pip install -r requirements.txt`
-2. Confirmar que el driver ODBC indicado exista en Windows.
-3. Confirmar que SQL Server permita conexiones al servidor/instancia configurada.
-4. Ejecutar la app: `python run.py`
-5. Iniciar sesion con el usuario inicial desde `.env`.
-6. Abrir `http://127.0.0.1:5000/diagnostico/bd`.
-7. Validar `http://127.0.0.1:5000/panel`: si aparece `Advertencias tecnicas del panel`, revisar el bloque informado antes de asumir que el problema es del dashboard.
+## QA Docker
 
-Errores comunes:
+`.env.docker` es el unico archivo de entorno de Compose.
 
-* `pyodbc` no instalado: ejecutar `pip install -r requirements.txt`.
-* Driver ODBC no instalado o nombre distinto en `DB_DRIVER`.
-* Instancia SQL Server no accesible por red o firewall.
-* SQL Server Browser detenido cuando se usa instancia nombrada.
-* Usuario SQL sin permisos sobre `APP_SCHEDULER_QA`.
-* Problemas de cifrado/driver: revisar driver ODBC y configuracion SQL Server local.
-* Login correcto con usuario `.env`, pero panel con advertencias: el login bootstrap no valida SQL Server; usar `/diagnostico/bd` y la alerta tecnica de `/panel` para identificar si falla `metricas_panel`, `configuracion_scheduler` o `ejecuciones_recientes`.
-
-Normalizacion ODBC vigente:
-
-* La app construye la cadena SQL Server en un unico punto: `app/database/conexion.py`.
-* Parametros usados: `DRIVER`, `SERVER`, `DATABASE`, `UID`, `PWD`, `Encrypt`, `TrustServerCertificate` y `Connection Timeout`.
-* Defaults vigentes si no existen variables explicitas:
-  * `DB_ENCRYPT=no`
-  * `DB_TRUST_SERVER_CERTIFICATE=yes`
-  * `DB_TIMEOUT=10`
-* Los logs tecnicos muestran solo resumen seguro: driver, server, database, user, encrypt, trust_cert, timeout y tipo de error.
-
-La ruta de diagnostico no muestra credenciales y no esta disponible en `APP_ENV=PRODUCCION`.
-
-## Ejecucion manual de scripts SQL Server
-
-Los scripts de Fase 3B se encuentran en `database/` y ya fueron ejecutados correctamente de forma manual en SQL Server local para crear `APP_SCHEDULER_QA`.
-
-Orden:
-
-1. `database/migrations/001_crear_base_datos.sql`
-2. `database/migrations/002_crear_catalogos.sql`
-3. `database/migrations/003_crear_tablas_seguridad.sql`
-4. `database/migrations/004_crear_tablas_negocio.sql`
-5. `database/migrations/005_crear_tablas_ejecucion_logs.sql`
-6. `database/migrations/006_crear_indices.sql`
-7. `database/seeds/001_datos_iniciales_catalogos.sql`
-8. `database/seeds/002_roles_permisos_iniciales.sql`
-
-Consideraciones:
-
-* Validacion local realizada: tablas existentes, catalogos cargados, roles/permisos cargados y usuario `blizama` no creado en base de datos.
-* No ejecutar contra produccion sin respaldo y aprobacion.
-* No modificar scripts para incluir claves, usuarios o servidores reales.
-* El usuario inicial de aplicacion sigue validandose desde `.env`; los seeds no crean usuario `blizama`.
-* La conexion Flask-SQL Server existe desde Fase 3D mediante `.env` y `pyodbc`.
-
-## Release SQL limpio parametrizable
-
-El paquete consolidado para instalacion limpia esta en:
-
-```text
-database/release/
-```
-
-Desde la limpieza controlada previa a Fase 13C, `database/release/` es la fuente oficial de instalacion limpia. Los scripts incrementales antiguos fueron movidos a:
-
-```text
-database/legacy_pre_release_13B/
-```
-
-Esa carpeta es historica y no debe usarse para instalaciones nuevas sin revision tecnica.
-
-Desde Fase 13B.2 el nombre de base se define con SQLCMD variable `DB_NAME` en:
-
-```text
-database/release/000_ejecutar_instalacion_completa.sql
-```
-
-Uso manual en SSMS:
-
-1. Abrir SQL Server Management Studio.
-2. Activar `Query > SQLCMD Mode`.
-3. Editar `000_ejecutar_instalacion_completa.sql`.
-4. Definir `DB_NAME`, por ejemplo `APP_SCHEDULER_TEST_INSTALL`.
-5. Ejecutar el script maestro completo.
-6. Revisar la salida de `099_validacion_instalacion.sql`.
-
-Recomendaciones:
-
-* Usar `APP_SCHEDULER_TEST_INSTALL` para pruebas de instalacion limpia.
-* No apuntar a `APP_SCHEDULER_QA` salvo decision explicita, manual y con respaldo.
-* No ejecutar sobre una base con datos reales sin respaldo.
-* Mantener SQLCMD Mode activo; si no esta activo, `:setvar` y `$(DB_NAME)` no funcionaran.
-
-## Checklist formal de despliegue
-
-Antes de instalar o validar un ambiente nuevo, usar:
-
-```text
-docs/CHECKLIST_DESPLIEGUE.md
-```
-
-El checklist centraliza precondiciones, instalacion SQL limpia, configuracion `.env`, levantamiento de app, validacion funcional minima, validacion scheduler, rollback y evidencia sugerida.
-
-## Operacion del worker
-
-El diseno operativo del worker queda documentado en:
-
-```text
-docs/OPERACION_WORKER.md
-```
-
-Decision vigente:
-
-* El worker no debe ejecutarse dentro del proceso Flask.
-* Desarrollo local: `python scheduler_worker.py` en proceso separado.
-* QA/Produccion: proceso worker separado del servicio web.
-* Preferencia: Docker Compose con servicios `web` y `worker`.
-* Alternativa: systemd en Ubuntu sin Docker.
-* La consola visual futura dentro de la app debe ser solo monitoreo controlado, no una terminal real.
-* Desde Fase 14B.1 la salida operativa del worker se persiste tambien en `logs/worker_console.log` como buffer visual limitado.
-* Desde Fase 14C existen endpoints internos de solo lectura bajo `/api/worker/*` para estado, consola, eventos y ejecuciones recientes.
-
-## Docker
-
-Hito 13 define como runtime QA oficial:
-
-- `Dockerfile`
-- `docker-compose.yml`
-- `.dockerignore`
-
-Servicios reconstruidos:
-
-- `web`: ejecuta `python -m app_scheduler.web`
-- `worker`: ejecuta `python -m app_scheduler.worker.aplicacion` en modo
-  Scheduler+cola
-
-Comandos recomendados:
-
-```bash
-docker compose up -d --build
+```powershell
+if (!(Test-Path .env.docker)) { Copy-Item .env.docker.example .env.docker } else { Write-Host ".env.docker ya existe. No se sobrescribe." }
+docker compose config --quiet
+docker compose build web worker
+docker compose up -d web worker
 docker compose ps
-docker compose logs -f web
-docker compose logs -f worker
+```
+
+Comprobaciones:
+
+```powershell
+curl.exe --fail http://127.0.0.1:5000/salud
+docker compose logs --tail 200 web
+docker compose logs --tail 200 worker
+docker inspect --format='{{.State.Health.Status}}' app-scheduler-web
+docker inspect --format='{{.State.Health.Status}}' app-scheduler-worker
+```
+
+El Worker puede tardar hasta la ventana de `start_period` en registrar su primer
+heartbeat. El healthcheck Worker es read-only.
+
+## Reinicio y detencion
+
+```powershell
+docker compose restart web
 docker compose restart worker
 docker compose stop worker
 docker compose up -d worker
 docker compose down
 ```
 
+`restart: unless-stopped` recupera la caida del proceso principal. Una detencion
+manual persiste hasta volver a iniciar el servicio.
+
+## Variables
+
+Las plantillas `.env.example` y `.env.docker.example` contienen las claves
+vigentes para Flask, SQL, Worker, Scheduler, rutas, Graph y Factory Reset. Los
+valores reales se configuran manualmente por ambiente.
+
 Reglas:
 
-- no ejecutar `worker` dentro de Flask;
-- no escalar `worker` a mas de una replica;
-- ambos servicios usan `restart: unless-stopped`;
-- Web valida `/salud`; Worker valida heartbeat SQL del contenedor;
-- el healthcheck no inicia Scheduler ni consume cola;
-- mantener volumen compartido para `logs/worker_console.log`;
-- usar `.env.docker` y no versionarlo.
-- si la password SQL contiene `$`, Docker Compose puede requerir escape para el archivo usado por contenedores; no cambiar `.env` a ciegas ni mezclar ese ajuste con el uso local sin documentarlo.
+* `.env` corresponde a LOCAL;
+* `.env.docker` corresponde a QA Docker;
+* `DB_DATABASE` debe ser `APP_SCHEDULER_QA`;
+* `GRAPH_MAIL_ENABLED=false` es el default seguro;
+* `FACTORY_RESET_HABILITADO=false` es el default seguro;
+* no copies secretos entre archivos mediante scripts automaticos;
+* el Worker Docker anula credenciales Web y de mantenimiento que no necesita.
 
-Uso recomendado para separar local y Docker sin tocar `.env` real:
-
-```powershell
-Copy-Item .env.docker.example .env.docker
-docker compose up -d web
-```
-
-Notas:
-
-* `docker-compose.yml` carga `.env.docker` explicitamente y no selecciona otro archivo por variable.
-* `.env.docker` no debe versionarse.
-* Si la password real contiene `$$`, en Docker puede requerir escape `$$$$` para que dentro del contenedor llegue `$$`.
-* Fase 14F.4 valido el flujo Docker; la seleccion posterior se fijo directamente en `.env.docker`.
-* Hallazgo de esa validacion: `APP_SECRET_KEY` en `.env.docker` sigue con valor de plantilla o vacio; debe corregirse manualmente en el archivo real antes de uso sostenido.
-
-## Roadmap operativo
-
-Pendientes de Fase 13:
-
-* 13A Scripts operativos Windows/Linux.
-* 13B Preparacion QA Linux.
-* 13C Preparacion produccion.
-* 13D Worker como servicio.
-* 13E Docker Compose o systemd.
-
-Pendientes de Fase 14:
-
-* Retencion automatica.
-* Backups.
-* Exportaciones.
-* Notificaciones.
-* Reportes de operacion.
-
-## Volumenes
-
-* Scripts: `RUTA_BASE_SCRIPTS`
-* Env de scripts: `RUTA_BASE_ENV_SCRIPTS`
-* Logs de tareas: `RUTA_BASE_LOGS_TAREAS`
-* Logs de sistema: `RUTA_BASE_LOGS_SISTEMA`
-
-`env_scripts/` debe tratarse como volumen privado por ambiente. No debe versionarse, copiarse a repositorios ni exponerse por servidor web.
-
-Variables de tamano para Fase 7:
-
-```env
-MAX_SCRIPT_SIZE_MB=5
-MAX_ENV_SIZE_KB=100
-```
-
-`scripts/` contiene archivos cargados por usuarios y tambien debe tratarse como volumen de datos, no como codigo fuente del sistema.
-
-## Ejecucion manual Fase 8
-
-Antes de probar ejecuciones manuales con usuarios de base de datos, ejecutar manualmente en SSMS:
-
-```text
-database/seeds/006_permisos_ejecuciones.sql
-```
-
-El administrador desde `.env` puede acceder sin ejecutar el seed, porque tiene permisos totales de sesion.
-
-Rutas usadas por Fase 8:
-
-* Scripts cargados: `RUTA_BASE_SCRIPTS`.
-* Env por version: `RUTA_BASE_ENV_SCRIPTS`.
-* Logs de ejecucion: `RUTA_BASE_LOGS_TAREAS`.
-
-Los procesos se ejecutan con el interprete Python actual del entorno donde corre Flask. En Windows, levantar la app desde el entorno virtual correcto antes de ejecutar tareas.
-
-## Configuracion Scheduler Fase 9A
-
-Ejecutar manualmente en SSMS:
-
-```text
-database/migrations/010_crear_configuracion_scheduler.sql
-database/seeds/007_permisos_scheduler.sql
-```
-
-Luego abrir:
-
-```text
-http://127.0.0.1:5000/scheduler/configuracion
-```
-
-## Validacion manual del worker Fase 12B.2
-
-La configuracion del Programador en la app no inicia por si sola `scheduler_worker.py`. La app solo guarda reglas operativas; el proceso worker debe levantarse manualmente o, en Fase 13, mediante servicio/proceso gestionado.
-
-Validacion de una vuelta:
+## Checks de release
 
 ```powershell
-python scheduler_worker.py --once
+$env:PYTHONPATH="src"
+python -m pytest -q tests/reconstruccion
+python -m pytest -q
+python -m compileall app src scheduler_worker.py
+python -m app_scheduler.web --check
+python -m app_scheduler.worker.aplicacion --check
+python -m app_scheduler.worker.aplicacion --help
+docker compose config --quiet
+docker compose build web worker
 ```
 
-Validaciones API de monitoreo:
-
-```text
-GET /api/worker/estado
-GET /api/worker/consola
-GET /api/worker/monitor
-```
-
-Notas:
-
-* Requieren sesion autenticada con permiso `SCHEDULER_CONFIG_VER`.
-* No muestran secretos ni rutas absolutas.
-* `GET /api/worker/consola?limit=100` lee solo `logs/worker_console.log`.
-
-Validacion continua manual:
+Jinja:
 
 ```powershell
-python scheduler_worker.py
+python -c "from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(p.read_text(encoding='utf-8')) for p in Path('src/app_scheduler/presentacion/templates').rglob('*.html')]; print('JINJA_OK')"
 ```
 
-Detener con `CTRL+C` en la consola donde se ejecuto.
-
-Con Fase 14B, al correr el worker se espera:
-
-* salida visible en la terminal;
-* archivo `logs/worker_console.log`;
-* reinicio del archivo al iniciar una nueva sesion;
-* maximo de 300 lineas;
-* sin backups rotativos;
-* sin dependencias de Docker socket, terminal remota ni tabla nueva.
-
-Estados esperados:
-
-* Worker apagado: no ejecuta tareas aunque el Programador este activo.
-* Worker encendido + Programador inactivo: no ejecuta y registra omision del ciclo.
-* Worker encendido + ejecucion automatica deshabilitada: no ejecuta y registra omision del ciclo.
-* Worker encendido + modo mantenimiento: no ejecuta y registra omision del ciclo.
-* Worker encendido + Programador activo + ejecucion automatica habilitada: evalua tareas elegibles y puede crear ejecuciones `AUTOMATICA`.
-
-Validaciones manuales en SSMS despues de correr el worker:
-
-```sql
-SELECT TOP 30 id_ejecucion, id_tarea, origen_ejecucion, estado_ejecucion,
-       pid_proceso, codigo_salida, fecha_hora_inicio, fecha_hora_termino,
-       duracion_segundos
-FROM dbo.ejecuciones
-ORDER BY id_ejecucion DESC;
-```
-
-```sql
-SELECT TOP 50 id_evento, fecha_evento, tipo_evento, decision, motivo,
-       id_tarea, nombre_tarea, nombre_worker, detalle
-FROM dbo.scheduler_eventos
-ORDER BY id_evento DESC;
-```
-
-```sql
-SELECT TOP 20 *
-FROM dbo.scheduler_worker_heartbeat
-ORDER BY fecha_actualizacion DESC;
-```
-
-La configuracion operativa vive en SQL Server. No se requiere agregar variables a `.env` para controlar el scheduler.
-
-## Worker Scheduler Fase 9B
-
-Ejecutar manualmente en SSMS antes de levantar el worker:
-
-```text
-database/migrations/011_agregar_control_scheduler_ejecuciones.sql
-```
-
-Para Fase 11B, ejecutar tambien:
-
-```text
-database/migrations/014_crear_scheduler_worker_heartbeat.sql
-```
-
-La app web y el worker son procesos separados.
-
-Terminal 1:
+JavaScript:
 
 ```powershell
-python run.py
+Get-ChildItem src/app_scheduler/presentacion/static/js -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName }
 ```
 
-Terminal 2:
+## Troubleshooting
 
-```powershell
-python scheduler_worker.py
-```
+### Web no saludable
 
-Para probar un solo ciclo sin dejar el worker en ejecucion continua:
+Revisar `docker compose logs web`, variables requeridas, conectividad ODBC y
+`/salud`. No imprimir la connection string completa.
 
-```powershell
-python scheduler_worker.py --once
-```
+### Worker detenido o desconocido
 
-Con Fase 11B, `--once` crea o actualiza `scheduler_worker_heartbeat`, registra el ultimo ciclo y deja estado `DETENIDO` por salida controlada.
+Revisar `docker compose ps`, logs, heartbeat en **Estado del sistema** y modo
+mantenimiento. Scheduler OFF no significa necesariamente Worker detenido.
 
-Para validar heartbeat en loop:
+### Cola pendiente
 
-1. Ejecutar `python scheduler_worker.py`.
-2. Abrir `http://127.0.0.1:5000/scheduler/panel`.
-3. Revisar la seccion `Estado del worker`.
-4. Confirmar que `Ultimo heartbeat` se actualiza segun `intervalo_revision_segundos`.
+Una fila `PENDIENTE` espera claim y es recuperable. Iniciar Worker o usar
+`--queue-only`; no mutar estados por SQL.
 
-Antes de activar ejecucion automatica:
+### Worker cae durante EN_EJECUCION
 
-1. Abrir `/scheduler/configuracion`.
-2. Activar `scheduler_activo`.
-3. Activar `permitir_ejecucion_automatica`.
-4. Verificar que `modo_mantenimiento` este desactivado.
-5. Configurar intervalo y maximo concurrentes.
+No se aplica auto-retry. Revisar proceso, PID, log y efectos externos antes de
+decidir una accion operacional.
 
-El worker usa `.env` solo para conexion a SQL Server y rutas tecnicas. La configuracion operativa vive en `configuracion_scheduler`.
+### Graph
 
-## Feriados locales Fase 10A
+La disponibilidad exige kill switch ENV, secret y fila SQL activa. No habilitar
+para diagnosticos generales ni repetir un envio ambiguo.
 
-Ejecutar manualmente en SSMS:
+## Produccion
 
-```text
-database/migrations/012_crear_calendario_feriados.sql
-database/seeds/008_permisos_feriados.sql
-```
-
-Luego abrir:
-
-```text
-http://127.0.0.1:5000/feriados
-```
-
-La carga inicial de feriados es manual. No se conecta API externa ni se sincronizan feriados automaticamente en Fase 10A.
-
-## Sincronizacion feriados Fase 10B
-
-Ejecutar manualmente en SSMS:
-
-```text
-database/migrations/013_crear_reglas_feriados_irrenunciables.sql
-database/seeds/009_reglas_irrenunciables_chile.sql
-database/seeds/010_permisos_sincronizacion_feriados.sql
-```
-
-Instalar dependencias:
-
-```powershell
-pip install -r requirements.txt
-```
-
-Luego abrir:
-
-```text
-http://127.0.0.1:5000/feriados/sincronizar
-```
-
-La sincronizacion es manual y controlada. El scheduler no consulta Nager.Date.
-
-## Consideraciones de seguridad
-
-No subir secretos, logs reales, scripts productivos ni configuraciones privadas.
-
-## Instalacion SQL limpia Fase 13B
-
-Para la prueba de instalacion limpia de Fase 13B, usar el paquete consolidado:
-
-```text
-database/release/
-```
-
-Regla critica: esta prueba se ejecuta sobre `APP_SCHEDULER_TEST_INSTALL`, no sobre `APP_SCHEDULER_QA`.
-
-Ejecutar manualmente en SQL Server Management Studio, en este orden:
-
-```text
-database/release/001_crear_base_datos.sql
-database/release/002_schema_final.sql
-database/release/003_seed_roles_permisos.sql
-database/release/004_seed_catalogos_base.sql
-database/release/005_seed_configuracion_inicial.sql
-database/release/006_seed_feriados_base.sql
-database/release/099_validacion_instalacion.sql
-```
-
-Si la prueba tuvo errores previos, reiniciar desde una base limpia `APP_SCHEDULER_TEST_INSTALL` antes de reintentar. No corregir datos directamente en tablas; corregir los scripts release y volver a ejecutar el orden completo.
-
-`database/migrations/` y `database/seeds/` siguen siendo historial de desarrollo. Para instalaciones limpias no mezclar ambos caminos salvo decision tecnica controlada.
-
-El release no crea usuarios reales ni contiene credenciales. Despues de instalar la base, configurar `.env` manualmente por ambiente sin sobrescribirlo automaticamente.
-
-Codex no debe ejecutar automaticamente estos scripts. El resultado de cada script y la salida de `099_validacion_instalacion.sql` deben validarse manualmente en SSMS.
-
-La auditoria tecnica de Fase 13B.1 esta documentada en:
-
-```text
-database/release/AUDITORIA_RELEASE_SQL.md
-```
-
-Consultas complementarias recomendadas sobre `APP_SCHEDULER_TEST_INSTALL`:
-
-```sql
-SELECT name
-FROM sys.tables
-ORDER BY name;
-
-SELECT COUNT(*) AS total_roles FROM roles;
-SELECT COUNT(*) AS total_permisos FROM permisos;
-SELECT COUNT(*) AS total_roles_permisos FROM roles_permisos;
-SELECT COUNT(*) AS total_tareas FROM tareas;
-SELECT COUNT(*) AS total_scripts FROM scripts;
-SELECT COUNT(*) AS total_ejecuciones FROM ejecuciones;
-SELECT COUNT(*) AS total_logs_tareas FROM logs_tareas;
-SELECT COUNT(*) AS total_auditoria FROM auditoria_cambios;
-SELECT COUNT(*) AS total_config_programador FROM configuracion_scheduler;
-
-SELECT
-    cc.name AS constraint_name,
-    OBJECT_NAME(cc.parent_object_id) AS tabla,
-    cc.definition
-FROM sys.check_constraints cc
-ORDER BY tabla, constraint_name;
-```
-
-## Limpieza de eventos scheduler Fase 13A.1
-
-La limpieza de eventos del programador se ejecuta desde la app en:
-
-```text
-/scheduler/eventos
-```
-
-Requiere permiso `SCHEDULER_CONFIG_EDITAR`. No requiere migracion ni seed adicional.
-
-La accion permite limpiar ruido operativo antiguo de `scheduler_eventos`:
-
-* `CICLO_INICIADO`
-* `CICLO_FINALIZADO`
-* `TAREA_OMITIDA` con motivo `FUERA_DE_VENTANA`
-
-No elimina ejecuciones, logs, auditoria, heartbeat ni datos operativos. No ejecutar limpiezas directas en SQL Server salvo respaldo y aprobacion.
-
-Desde Fase 13A.1B la limpieza permite seleccionar categorias adicionales autorizadas y exige previsualizacion previa desde la interfaz. La app valida categorias contra whitelist backend y mantiene el mismo permiso `SCHEDULER_CONFIG_EDITAR`.
-
-No requiere migracion, seed ni actualizacion de `database/release/`.
+v1.0.0 define y valida LOCAL y QA Docker. Un despliegue productivo debe fijar
+TLS/cookies, gestion de secretos, backups, monitoreo, rotacion y procedimiento
+de rollback conforme a la infraestructura de destino; no debe reutilizar
+credenciales QA.

@@ -224,7 +224,7 @@ La auditoria se invoca desde los casos de uso dentro de la misma UoW, con actor 
 
 Hito 2 agrega 22 pruebas; la suite completa queda en 71 pruebas aprobadas.
 
-## Reconciliacion QA historica 462 vs bootstrap limpio 456
+## Reconciliacion historica y contrato final
 
 La diferencia se origino al ejecutar sobre la tabla antigua `database/legacy_pre_release_13B/migrations/018_crear_o_ajustar_auditoria_cambios.sql`. Esa migracion agrego las columnas canonicas, copio hacia ellas la informacion anterior y mantuvo las columnas legacy para no borrar historial. Una instalacion limpia crea directamente el contrato canonico en `database/release/002_schema_final.sql`, por lo que no necesita los seis aliases.
 
@@ -239,11 +239,16 @@ La diferencia se origino al ejecutar sobre la tabla antigua `database/legacy_pre
 
 Evidencia adicional: `app/repositorios/repositorio_auditoria.py` prefiere siempre las columnas canonicas y usa las legacy solo cuando aquellas no existen; al registrar sobre una QA historica escribe ambas para compatibilidad. No hay funcionalidad vigente que requiera las seis columnas en una base limpia. El DEFAULT e indices legacy asociados a `fecha_hora`, `tabla_afectada` e `id_registro` tampoco forman parte del contrato canonico.
 
-Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. El contrato definitivo permanece en 33 tablas y 456 columnas. No se modificaron bootstrap, release, migraciones ni QA.
+Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. Ese
+analisis cerro el contrato pre-ajuste en 456 columnas. El ajuste posterior de
+notificacion de exito agrego una columna canonica y dejo el contrato v1.0.0 en
+33 tablas y 457 columnas, validado por el bootstrap 19C.0 y su script 100.
 
 ## Deuda documentada
 
-* La compatibilidad de auditoria 462/456 quedo reconciliada; el detalle y la decision contractual se mantienen en la seccion anterior.
+* La compatibilidad de auditoria quedo reconciliada; los seis aliases no forman
+  parte del bootstrap limpio. La cifra vigente es 457 columnas por el ajuste
+  funcional posterior, no por columnas legacy.
 * `scripts.id_version_activa` y `scripts_versiones.es_activa` se actualizan en una unica UoW; el indice filtrado sigue siendo la garantia fisica de una sola activa.
 * El maximo de tres se controla por slots libres en servicio y por `CHECK(numero_version BETWEEN 1 AND 3)` mas `UNIQUE(id_script, numero_version)`.
 * Un slot no activo solo puede reemplazarse cuando `ejecuciones.id_version` no lo referencia. El esquema limpio no contiene otra columna funcional que apunte a `scripts_versiones.id_version`.
