@@ -71,12 +71,16 @@ La configuracion efectiva exige simultaneamente `GRAPH_MAIL_ENABLED=true`, fila 
 
 ## Gate Graph real Hito 14
 
-El resto de la QA integral se completo, pero el envio real no se intento porque
-el ambiente Docker conserva `GRAPH_MAIL_ENABLED=false` y no dispone de
-`GRAPH_CLIENT_SECRET`. La fila SQL global se dejo inactiva. Por politica, el
-gate no modifica `.env.docker`, no inventa credenciales y no solicita tokens
-cuando falta una precondicion. Hito 14 permanece bloqueado solo por este envio
-real; no existe correo parcial ni intento HTTP que limpiar.
+Con el ambiente configurado manualmente, el gate proceso exclusivamente la
+ejecucion `4`. Microsoft Graph acepto exactamente una `NOTIFICACION_EXITOSA`
+con HTTP 202 y request id, usando el template canonico, un unico TO configurado
+y sin CC, BCC, evidencia ni adjuntos. No se muestran ni documentan direcciones
+o credenciales.
+
+La revalidacion del mismo evento fue `OMITIDO` por la reserva at-most-once y no
+genero otra llamada HTTP. Luego se inactivo la fila SQL `MAIL_GRAPH` desde la
+Web; la disponibilidad efectiva quedo deshabilitada sin editar `.env.docker`.
+El Worker utilizado para el smoke se detuvo y no quedaron ejecuciones activas.
 
 ## Eventos y permisos
 

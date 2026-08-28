@@ -185,7 +185,7 @@ QA fueron validados sin iniciar Scheduler ni consumir ejecuciones.
 
 ### Hito 14 - QA integral
 
-Estado: BLOQUEADO SOLO POR ENVIO GRAPH REAL.
+Estado: CERRADO.
 
 La QA integral aprobo Factory Reset in-place real, contrato SQL post-reset,
 Docker QA, fixture funcional, ejecuciones manuales, recuperacion de cola,
@@ -195,10 +195,12 @@ opciones de sesion SQLCMD incompletas y demostro rollback SQL/filesystem; el
 segundo y ultimo intento autorizado aprobo tras declarar todas las opciones SET
 requeridas por indices filtrados.
 
-Bloqueo unico: `.env.docker` no entrega `GRAPH_CLIENT_SECRET` y mantiene
-`GRAPH_MAIL_ENABLED=false`. Por politica no se modificaron secretos ni el kill
-switch, no se solicito token y no se envio correo. Hito 15 no se inicia hasta
-completar un unico envio Graph real autorizado en un ambiente configurado.
+El gate final Graph proceso exclusivamente la ejecucion `4`, genero una sola
+`NOTIFICACION_EXITOSA` con el template canonico, sin evidencia, adjuntos, CC ni
+BCC, y Microsoft Graph la acepto con HTTP 202. La reserva at-most-once impidio
+un segundo despacho. Graph quedo deshabilitado nuevamente mediante la
+configuracion SQL de la aplicacion, sin modificar archivos de entorno. Hito 15
+permanece pendiente y no fue iniciado.
 
 ### Hito 15 - Documentacion, cutover y cierre
 

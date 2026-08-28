@@ -6,10 +6,34 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-13 cerrados como Release Candidate. Hito 14 validado salvo envio Graph real bloqueado por configuracion segura del ambiente.
+* Estado actual: Hitos 0-14 cerrados como Release Candidate. Hito 15 no iniciado.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Hito 14 BLOQUEADO solo por Graph real; Hito 15 no iniciado.
+* Fase actual: Hito 14 CERRADO; Hito 15 pendiente.
 * Ultima actualizacion: 2026-08-28
+
+## 2026-08-28 - Hito 14 / cierre smoke Microsoft Graph
+
+* Alcance: se continuo desde el unico bloqueo pendiente, sin repetir Factory
+  Reset ni los gates ya aprobados. Se uso exclusivamente la ejecucion `4`.
+* Precheck: ejecucion `PENDIENTE`, una sola pendiente global, cero intentos
+  previos para esa ejecucion, un unico destinatario TO, CC/BCC vacios,
+  notificacion de exito activa, evidencia inactiva, Scheduler OFF y Graph SQL
+  inicialmente inactivo.
+* Operacion: Mail Graph se activo temporalmente desde la Web, el Worker proceso
+  la ejecucion por el flujo normal y Microsoft Graph acepto una sola
+  `NOTIFICACION_EXITOSA` con HTTP 202 y request id. Se uso
+  `correos/exito.html`, sin evidencia, adjuntos, stdout completo ni secretos.
+* At-most-once: una segunda evaluacion controlada retorno `OMITIDO` antes de la
+  configuracion efectiva y no produjo otra llamada HTTP. La BD conserva una
+  sola fila `ENVIADO` para la ejecucion y un unico correo real total.
+* Postcondicion: ejecucion `4=EXITOSA`, codigo `0`; cero pendientes/en curso;
+  Scheduler OFF; Graph SQL y disponibilidad efectiva deshabilitados desde la
+  aplicacion; Worker del smoke detenido; contenedor auxiliar retirado.
+* Validacion final: `359 passed, 1 skipped`; compileall, Jinja, JavaScript,
+  `docker compose config --quiet` y Web healthy correctos.
+* Protecciones: Codex no modifico `.env` ni `.env.docker`, no mostro
+  destinatarios o secretos, no repitio Factory Reset y no inicio Hito 15.
+* Resultado: Hito 14 CERRADO.
 
 ## 2026-08-28 - Hito 14 / QA integral final
 

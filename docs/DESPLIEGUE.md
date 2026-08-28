@@ -28,10 +28,10 @@ persistentes para scripts, env, logs y control runtime.
 
 Gate Hito 14: Web y Worker oficiales aprobaron build, checks internos,
 healthcheck, recuperacion de cola y restart del proceso Worker sobre Docker QA.
-Al finalizar, Scheduler y ejecucion automatica quedaron deshabilitados. Graph
-solo puede probarse cuando `.env.docker` aporta el secret y habilita
-explicitamente su kill switch; esos valores nunca se completan de forma
-automatica.
+Al finalizar, Scheduler y ejecucion automatica quedaron deshabilitados. El
+smoke Graph real autorizado fue aceptado una unica vez con HTTP 202 y luego la
+fila SQL global se inactivo desde la Web. Los secretos permanecen solo en el
+archivo local del ambiente y nunca se completan ni documentan automaticamente.
 
 ## Produccion Ubuntu
 

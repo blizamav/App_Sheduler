@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-28 - Cierre Hito 14 / smoke Microsoft Graph real
+
+* Se habilito temporalmente la configuracion SQL Mail Graph mediante la Web y
+  se proceso exclusivamente la ejecucion `4` ya existente. No se creo otra
+  ejecucion ni se repitio Factory Reset.
+* La ejecucion termino `EXITOSA` con codigo `0`. Se registro exactamente una
+  `NOTIFICACION_EXITOSA`, aceptada por Microsoft Graph con HTTP 202 y request id
+  presente, usando `correos/exito.html`, un unico TO preconfigurado y sin CC,
+  BCC, evidencia ni adjuntos.
+* La revalidacion at-most-once devolvio `OMITIDO` antes de cualquier llamada
+  HTTP; la tabla conserva una sola fila para la ejecucion y el total de envios
+  reales del gate es uno.
+* Graph quedo deshabilitado mediante el mecanismo operativo de la aplicacion.
+  El Worker temporal se detuvo, no quedan ejecuciones pendientes o en curso y
+  Scheduler permanece apagado. `.env` y `.env.docker` no fueron modificados por
+  la aplicacion ni por Codex.
+* Gate final: `359 passed, 1 skipped`; compileall, Jinja, JavaScript, Compose y
+  Web healthy correctos. Hito 14 queda cerrado; Hito 15 no fue iniciado.
+
 ## 2026-08-28 - Hito 14 QA integral / bloqueado solo por Graph real
 
 * El primer Factory Reset real fallo antes del commit en
