@@ -60,6 +60,12 @@ estados de presencia, nunca valores.
 Los layouts usan todo el ancho disponible y cambian a una columna bajo 780 px;
 no generan overflow global en 390x844, 768 px, notebook ni 1440x900.
 
+El gate Hito 14 volvio a comprobar la pantalla de login en 1440x900, 768x900,
+390x844 y 844x390: no presenta overflow horizontal ni controles interactivos
+fuera del viewport. Las rutas autenticadas criticas respondieron correctamente
+en el smoke Web real; la validacion responsive integral cerrada en Hito 12 se
+mantiene vigente.
+
 La paleta evita mezclar azules desconectados: azul profundo identifica la
 navegacion, azul corporativo las acciones y cyan moderado solo el foco o detalle.
 Superficies, bordes y texto comparten la misma escala de grises frios. Los

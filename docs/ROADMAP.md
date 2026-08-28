@@ -185,9 +185,20 @@ QA fueron validados sin iniciar Scheduler ni consumir ejecuciones.
 
 ### Hito 14 - QA integral
 
-Ejecutar pruebas end-to-end con SQL real, permisos, seguridad, concurrencia,
-scheduler, worker, filesystem, Graph controlado, feriados, Factory Reset,
-responsive y regresion completa.
+Estado: BLOQUEADO SOLO POR ENVIO GRAPH REAL.
+
+La QA integral aprobo Factory Reset in-place real, contrato SQL post-reset,
+Docker QA, fixture funcional, ejecuciones manuales, recuperacion de cola,
+ejecucion automatica at-most-once, Scheduler/Worker, Papelera, seguridad,
+responsive y regresion completa. El primer reset fallo antes del commit por
+opciones de sesion SQLCMD incompletas y demostro rollback SQL/filesystem; el
+segundo y ultimo intento autorizado aprobo tras declarar todas las opciones SET
+requeridas por indices filtrados.
+
+Bloqueo unico: `.env.docker` no entrega `GRAPH_CLIENT_SECRET` y mantiene
+`GRAPH_MAIL_ENABLED=false`. Por politica no se modificaron secretos ni el kill
+switch, no se solicito token y no se envio correo. Hito 15 no se inicia hasta
+completar un unico envio Graph real autorizado en un ambiente configurado.
 
 ### Hito 15 - Documentacion, cutover y cierre
 

@@ -69,6 +69,15 @@ solicitudes de token, HTTP o correo.
 
 La configuracion efectiva exige simultaneamente `GRAPH_MAIL_ENABLED=true`, fila SQL activa, identificadores completos y secret presente. Ningun valor secreto se serializa en DTO publico, HTML, auditoria o logs.
 
+## Gate Graph real Hito 14
+
+El resto de la QA integral se completo, pero el envio real no se intento porque
+el ambiente Docker conserva `GRAPH_MAIL_ENABLED=false` y no dispone de
+`GRAPH_CLIENT_SECRET`. La fila SQL global se dejo inactiva. Por politica, el
+gate no modifica `.env.docker`, no inventa credenciales y no solicita tokens
+cuando falta una precondicion. Hito 14 permanece bloqueado solo por este envio
+real; no existe correo parcial ni intento HTTP que limpiar.
+
 ## Eventos y permisos
 
 | Modulo/accion | Permiso real | Ruta/metodo |

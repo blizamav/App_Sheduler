@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-28 - Hito 14 QA integral / bloqueado solo por Graph real
+
+* El primer Factory Reset real fallo antes del commit en
+  `002_schema_final.sql` porque la sesion SQLCMD no fijaba todas las opciones
+  SET requeridas por indices filtrados. SQL Server y filesystem revirtieron sin
+  perdida demostrada y el lock fail-closed se reviso antes de continuar.
+* El runner in-place ahora declara `QUOTED_IDENTIFIER`, `ANSI_NULLS`,
+  `ANSI_PADDING`, `ANSI_WARNINGS`, `CONCAT_NULL_YIELDS_NULL` y `ARITHABORT` en
+  `ON`, y `NUMERIC_ROUNDABORT` en `OFF`. Una regresion estatica protege el
+  contrato.
+* El segundo y ultimo reset autorizado termino correctamente. La instalacion
+  resultante conserva una sola `APP_SCHEDULER_QA`, 33 tablas, bootstrap
+  `19C.0`, Scheduler y Graph apagados por defecto, auditoria del reset y
+  filesystem limpio sin cuarentena residual.
+* Se validaron por la Web real el fixture QA final, ejecucion manual,
+  recuperacion de una solicitud `PENDIENTE`, ejecucion automatica unica,
+  Scheduler/Worker, logs, consola, Papelera y rutas criticas. Al cierre no hay
+  ejecuciones pendientes ni en curso y Scheduler vuelve a OFF.
+* Regresion: `333 passed, 1 skipped` en reconstruccion y `359 passed, 1
+  skipped` total; compileall, Jinja, JavaScript, Compose, builds y checks Web y
+  Worker correctos. El script protegido conserva su SHA-256 aprobado y sigue
+  fuera de Git.
+* Hito 14 queda bloqueado exclusivamente porque `.env.docker` no contiene
+  `GRAPH_CLIENT_SECRET` y `GRAPH_MAIL_ENABLED=false`. No se modificaron
+  secretos, no se obtuvo token y no se envio correo Graph.
+
 ## 2026-08-26 - Hito 13 Runtime Docker QA reconstruido
 
 * Dockerfile y Compose usan exclusivamente los entrypoints reconstruidos para

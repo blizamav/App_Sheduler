@@ -125,3 +125,25 @@ La implementacion se valida con pruebas simuladas; estas no ejecutan SQL ni Fact
 
 Estado Release Candidate: **implementacion cerrada**. El smoke destructivo real
 se ejecutara exclusivamente durante Hito 14 con autorizacion explicita.
+
+## Validacion real Hito 14
+
+El primer intento autorizado fallo antes del commit al crear indices filtrados:
+la sesion SQLCMD no declaraba explicitamente las opciones ANSI requeridas. La
+transaccion SQL y la cuarentena filesystem revirtieron de forma integra; no se
+intercambio ni creo otra base.
+
+El runner fija ahora, antes de abrir la transaccion:
+
+* `QUOTED_IDENTIFIER ON`;
+* `ANSI_NULLS ON`;
+* `ANSI_PADDING ON`;
+* `ANSI_WARNINGS ON`;
+* `CONCAT_NULL_YIELDS_NULL ON`;
+* `ARITHABORT ON`;
+* `NUMERIC_ROUNDABORT OFF`.
+
+El segundo y ultimo intento autorizado completo bootstrap, validacion,
+filesystem y auditoria. El resultado confirmado mantiene solamente
+`APP_SCHEDULER_QA`, 33 tablas y `BOOTSTRAP_SQL=19C.0`; no quedaron lock ni
+directorios de cuarentena operativos.

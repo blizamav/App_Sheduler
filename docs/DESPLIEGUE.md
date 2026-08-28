@@ -26,6 +26,13 @@ Runtime reconstruido oficial disponible con `Dockerfile` y
 `docker-compose.yml`. Usa `.env.docker`, SQL Server accesible y volumenes
 persistentes para scripts, env, logs y control runtime.
 
+Gate Hito 14: Web y Worker oficiales aprobaron build, checks internos,
+healthcheck, recuperacion de cola y restart del proceso Worker sobre Docker QA.
+Al finalizar, Scheduler y ejecucion automatica quedaron deshabilitados. Graph
+solo puede probarse cuando `.env.docker` aporta el secret y habilita
+explicitamente su kill switch; esos valores nunca se completan de forma
+automatica.
+
 ## Produccion Ubuntu
 
 Implementacion base disponible desde Fase 14E con Docker Compose preferentemente, o systemd como alternativa documental, volumenes persistentes, respaldo de base de datos, respaldo de scripts y respaldo de logs.

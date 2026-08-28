@@ -6,10 +6,42 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-13 cerrados como Release Candidate. El runtime historico permanece solo como referencia y no es el default Docker QA.
+* Estado actual: Hitos 0-13 cerrados como Release Candidate. Hito 14 validado salvo envio Graph real bloqueado por configuracion segura del ambiente.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Release Candidate - Hitos 11, 12 y 13 cerrados; Hito 14 no iniciado.
-* Ultima actualizacion: 2026-08-26
+* Fase actual: Hito 14 BLOQUEADO solo por Graph real; Hito 15 no iniciado.
+* Ultima actualizacion: 2026-08-28
+
+## 2026-08-28 - Hito 14 / QA integral final
+
+* Primer Factory Reset real: fallo antes del commit por opciones SET de sesion
+  SQLCMD incompletas al ejecutar `002_schema_final.sql`. Rollback SQL,
+  filesystem y fail-closed comprobados sin perdida.
+* Correccion: `000_reset_in_place.sql` declara todas las opciones requeridas
+  para indices filtrados; la regresion focal las exige explicitamente.
+* Segundo y ultimo intento autorizado: exitoso. Resultado canonico con una sola
+  `APP_SCHEDULER_QA`, 33 tablas, `BOOTSTRAP_SQL=19C.0`, configuraciones seguras
+  y auditoria Factory Reset.
+* QA funcional: fixture final creado por Web, manual EXITOSA, recuperacion de
+  cola EXITOSA, automatica EXITOSA exactamente una vez, Worker recuperado,
+  Scheduler nuevamente OFF, cero pendientes, logs/consola y Papelera
+  validados. El registro descartable de Papelera fue eliminado y su auditoria
+  se conservo.
+* Seguridad y UI: login invalido generico, CSRF rechazado, rutas criticas 200,
+  404 controlado y login responsive sin overflow en cuatro viewports. Las
+  suites cubren autorizacion, IDOR, XSS, inyecciones, confinamiento de rutas,
+  symlinks, concurrencia y at-most-once.
+* Pruebas: `333 passed, 1 skipped` en reconstruccion; `359 passed, 1 skipped`
+  total; compileall, Jinja, JavaScript, Compose, builds y checks Web/Worker OK.
+* Housekeeping: sin lock operativo ni cuarentena residual; contenedor auxiliar
+  retirado. Se conservaron los JSON/JSONL historicos de Factory Reset.
+* Protecciones: `.env`, `.env.docker`, `database/release/`,
+  `database/bootstrap/` y ejecuciones historicas protegidas intactas. El script
+  QA conserva SHA-256
+  `280AA16DCB5DEF5EDCE97EA003BA63EF9D813D23CE87E0B2DCB374C305478697` y sigue
+  fuera de Git.
+* Bloqueo unico: `GRAPH_CLIENT_SECRET` no esta disponible en `.env.docker` y
+  `GRAPH_MAIL_ENABLED=false`. No se solicito token, no hubo llamada Graph ni
+  correo. Hito 14 no se cierra y Hito 15 no se inicia.
 
 ## 2026-08-26 - Release Candidate / Hito 13 Docker QA
 

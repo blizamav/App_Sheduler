@@ -132,6 +132,23 @@ def test_manifiesto_in_place_excluye_creacion_y_operaciones_de_base():
     assert "USE [MASTER]" not in contenido
 
 
+def test_runner_configura_opciones_requeridas_por_indices_filtrados():
+    contenido = Path("database/factory_reset/000_reset_in_place.sql").read_text(
+        encoding="utf-8"
+    ).upper()
+
+    for sentencia in (
+        "SET QUOTED_IDENTIFIER ON;",
+        "SET ANSI_NULLS ON;",
+        "SET ANSI_PADDING ON;",
+        "SET ANSI_WARNINGS ON;",
+        "SET CONCAT_NULL_YIELDS_NULL ON;",
+        "SET ARITHABORT ON;",
+        "SET NUMERIC_ROUNDABORT OFF;",
+    ):
+        assert sentencia in contenido
+
+
 def test_factory_reset_happy_path_simulado_limpia_roots_y_lock(configuracion_factory):
     motor = MotorFactoryFake()
     servicio = _servicio(configuracion_factory, motor)
