@@ -75,7 +75,10 @@ class CapturadorEvidencia:
         if datos.get("estado") not in {"EXITOSO", "ERROR", "ADVERTENCIA"}: errores.append("Estado invalido.")
         if not datos.get("tipo_evidencia"): errores.append("Falta tipo_evidencia.")
         if not datos.get("titulo"): errores.append("Falta titulo.")
-        if not isinstance(resumen, list): errores.append("resumen debe ser una lista.")
+        if not isinstance(resumen, list):
+            errores.append("resumen debe ser una lista.")
+        else:
+            errores.extend(_validar_resumen(resumen))
         if not isinstance(problemas, list): errores.append("problemas debe ser una lista.")
         if not isinstance(adjuntos, list): errores.append("adjuntos debe ser una lista.")
         estado = "INVALIDA" if errores else "VALIDADA"
@@ -113,6 +116,21 @@ def _hash(texto: str) -> str:
 def _texto(valor, limite: int):
     texto = str(valor or "").strip()
     return texto[:limite] or None
+
+
+def _validar_resumen(resumen: list) -> list[str]:
+    """Valida el contrato 1.0: cada metrica usa campo y valor."""
+    errores = []
+    for indice, item in enumerate(resumen, start=1):
+        if not isinstance(item, dict):
+            errores.append(f"resumen[{indice}] debe ser un objeto con campo y valor.")
+            continue
+        campo = item.get("campo")
+        if not isinstance(campo, str) or not campo.strip():
+            errores.append(f"resumen[{indice}].campo es obligatorio.")
+        if "valor" not in item:
+            errores.append(f"resumen[{indice}].valor es obligatorio.")
+    return errores
 
 
 def _existe_adjunto_obligatorio_faltante(

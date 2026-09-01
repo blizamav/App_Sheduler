@@ -1,5 +1,25 @@
 # Modelo minimo de notificaciones y evidencias
 
+## Contrato vigente v1.0.1
+
+Las comunicaciones se modelan por tipo y no se enriquecen entre si:
+
+| Tipo de envio | Destinatarios | Template | Condicion |
+|---|---|---|---|
+| `NOTIFICACION_EXITOSA` | `EXITO` | `correos/exito.html` | Ejecucion exitosa y flag de exito activo |
+| `ALERTA_INTERNA` | `ALERTA` o global | `correos/alerta.html` | Ejecucion con error y alerta activa |
+| `EVIDENCIA_CLIENTE` | `EVIDENCIA` | `correos/evidencia.html` | Ejecucion exitosa, flag Evidencia activo y payload `VALIDADA` |
+
+Cada tipo reserva de forma independiente mediante
+`id_ejecucion + tipo_envio`. `EVIDENCIA_CLIENTE` no requiere
+`NOTIFICACION_EXITOSA`; si ambas estan activas pueden existir dos envios
+legitimos para la misma ejecucion.
+
+La migracion incremental `023_separar_destinatarios_exito_evidencia.sql`
+retira el CHECK historico, habilita el grupo `EXITO` y migra de forma
+fail-closed los destinatarios ambiguos. Los registros historicos de envios no
+se reinterpretan ni se eliminan.
+
 ## Reconstruccion Hito 7
 
 El motor reconstruido captura el bloque emitido por `stdout` solo cuando la tarea tiene habilitado `enviar_evidencia`. Exige un unico bloque, valida el contrato `1.0`, comprueba que los adjuntos obligatorios declarados existan dentro de la carpeta de la version y persiste exclusivamente metadatos, hash y conteos en `evidencias_ejecucion`. El JSON completo permanece en el log tecnico de la ejecucion y no se duplica en base de datos. El envio por Microsoft Graph no forma parte del Hito 7.
@@ -121,7 +141,7 @@ Proposito: destinatarios por configuracion, separados por tipo de envio y canal.
 |---|---:|---:|---|
 | `id_destinatario` | int identity | No | PK. |
 | `id_config_notificacion` | int | No | FK a configuracion. |
-| `tipo_destinatario` | varchar(20) | No | `EVIDENCIA` o `ALERTA`. |
+| `tipo_destinatario` | varchar(20) | No | `EXITO`, `EVIDENCIA` o `ALERTA`. |
 | `canal` | varchar(10) | No | `TO`, `CC`, `BCC`. |
 | `email` | nvarchar(320) | No | Dato personal; enmascarar en UI segun permiso. |
 | `nombre` | nvarchar(200) | Si | Nombre visible. |
@@ -145,7 +165,7 @@ Unicidad:
 
 CHECK:
 
-* `tipo_destinatario IN ('EVIDENCIA','ALERTA')`.
+* `tipo_destinatario IN ('EXITO','EVIDENCIA','ALERTA')`.
 * `canal IN ('TO','CC','BCC')`.
 * `email LIKE '%_@_%._%'` como validacion basica; la validacion real debe estar en servicio.
 
@@ -206,14 +226,15 @@ Indices:
 
 ## Tabla notificaciones_envios
 
-Proposito: registrar cada intento de envio por Graph, tanto evidencia a cliente como alerta interna.
+Proposito: registrar cada intento de envio por Graph para exito operacional,
+evidencia a cliente o alerta interna.
 
 | Columna | Tipo sugerido | Nulo | Observacion |
 |---|---:|---:|---|
 | `id_envio` | bigint identity | No | PK. |
 | `id_ejecucion` | bigint | No | FK a `ejecuciones`. |
 | `id_evidencia` | bigint | Si | FK a `evidencias_ejecucion`; nullable para alertas sin evidencia valida. |
-| `tipo_envio` | varchar(30) | No | `EVIDENCIA_CLIENTE` o `ALERTA_INTERNA`. |
+| `tipo_envio` | varchar(30) | No | `NOTIFICACION_EXITOSA`, `EVIDENCIA_CLIENTE` o `ALERTA_INTERNA`. |
 | `estado_envio` | varchar(30) | No | Estado del intento. |
 | `asunto` | nvarchar(300) | Si | Asunto final, revisar por datos sensibles. |
 | `destinatarios_to` | nvarchar(max) | Si | Lista final serializada simple; enmascarar en UI. |
@@ -248,7 +269,7 @@ Unicidad para evitar duplicar exitosos:
 
 CHECK:
 
-* `tipo_envio IN ('EVIDENCIA_CLIENTE','ALERTA_INTERNA')`.
+* `tipo_envio IN ('NOTIFICACION_EXITOSA','EVIDENCIA_CLIENTE','ALERTA_INTERNA')`.
 * `estado_envio IN ('PENDIENTE','ENVIADO','FALLIDO','OMITIDO','NO_REQUERIDO')`.
 * `intento >= 1`.
 * `graph_status_code IS NULL OR graph_status_code BETWEEN 100 AND 599`.

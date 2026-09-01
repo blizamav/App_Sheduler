@@ -47,10 +47,11 @@ def ejecutar_tarea(id_tarea):
 @bp_ejecuciones.get("/ejecuciones/<int:id_ejecucion>")
 @permiso_requerido("EJECUCIONES_VER")
 def detalle(id_ejecucion):
-    ejecucion = _servicio().obtener(id_ejecucion)
+    ejecucion, notificaciones = _servicio().obtener_panel(id_ejecucion)
     if ejecucion is None:
         flash("Ejecucion no encontrada.", "error"); return redirect(url_for("ejecuciones.listado"))
-    return render_template("ejecuciones/detalle.html", ejecucion=ejecucion)
+    return render_template("ejecuciones/detalle.html", ejecucion=ejecucion,
+                           notificaciones=notificaciones)
 
 
 @bp_ejecuciones.get("/ejecuciones/<int:id_ejecucion>/log")

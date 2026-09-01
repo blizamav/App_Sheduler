@@ -39,53 +39,64 @@ class ServicioDespachoNotificaciones:
             autoescape=select_autoescape(("html", "xml")),
         )
 
-    def procesar(self, id_ejecucion: int, evidencia: dict | None = None) -> str:
+    def procesar(self, id_ejecucion: int, evidencia: dict | None = None) -> dict[str, str]:
         with self.proveedor.conexion_lectura() as conexion:
             repo = self.tipo_repositorio(conexion)
             contexto = repo.obtener_contexto_envio(id_ejecucion)
             config = repo.obtener_configuracion_tarea(contexto["id_tarea"]) if contexto and contexto["id_tarea"] else None
         if contexto is None or config is None:
-            return "NO_REQUERIDO"
-        tipo = self._evento(contexto, config)
-        if tipo is None:
-            return "NO_REQUERIDO"
+            return {}
+        return {
+            tipo: self._procesar_tipo(tipo, contexto, config, evidencia)
+            for tipo in self._eventos(contexto, config)
+        }
+
+    def _procesar_tipo(self, tipo, contexto, config, evidencia):
         destinatarios = self._destinatarios(tipo, config)
         if tipo == "ALERTA_INTERNA" and not destinatarios["TO"] and config.usar_alerta_global:
             estado_graph = self.servicio_graph_config.obtener()
             destinatarios["TO"] = self._emails_globales(
                 estado_graph["efectiva"].get("alertas_destinatarios_default")
             )
+        if tipo == "EVIDENCIA_CLIENTE" and not self._evidencia_valida(contexto, evidencia):
+            motivo = contexto.get("error_evidencia") or "La ejecucion no emitio una Evidencia 1.0 valida."
+            self._log("EVIDENCIA_OMITIDA", contexto["id_ejecucion"],
+                      sanitizar_texto_externo(motivo, 500), "WARNING")
+            return self._omitir(
+                tipo, contexto, destinatarios,
+                "Evidencia cliente no generada: " + sanitizar_texto_externo(motivo, 500),
+                id_evidencia=contexto.get("id_evidencia"),
+            )
         if not destinatarios["TO"]:
-            self._log("GRAPH_ENVIO_ERROR", id_ejecucion,
+            self._log("GRAPH_ENVIO_ERROR", contexto["id_ejecucion"],
                       "Notificacion omitida: no existen destinatarios TO.", "WARNING")
-            return "OMITIDO"
-        evidencia_incluida = self._evidencia_incluida(tipo, contexto, config, evidencia)
-        if tipo == "NOTIFICACION_EXITOSA" and config.enviar_evidencia and not evidencia_incluida:
-            motivo = contexto.get("error_evidencia") or "La ejecucion no emitio una evidencia 1.0 valida."
-            self._log(
-                "EVIDENCIA_OMITIDA", id_ejecucion,
-                "La notificacion de exito se enviara sin evidencia: "
-                + sanitizar_texto_externo(motivo, 500),
-                "WARNING",
+            return self._omitir(
+                tipo, contexto, destinatarios,
+                "No existen destinatarios TO para este tipo de comunicacion.",
+                id_evidencia=(contexto.get("id_evidencia")
+                              if tipo == "EVIDENCIA_CLIENTE" else None),
             )
         adjuntos = []
-        if evidencia_incluida and config.adjuntar_archivos_declarados:
+        if tipo == "EVIDENCIA_CLIENTE" and config.adjuntar_archivos_declarados:
             try:
                 adjuntos = preparar_adjuntos(
                     evidencia or {}, Path(str(contexto["ruta_script_fisica"])).parent
                 )
             except ErrorAdjunto as error:
                 self._log(
-                    "EVIDENCIA_OMITIDA", id_ejecucion,
-                    "La notificacion de exito se enviara sin evidencia ni adjuntos: "
-                    + sanitizar_texto_externo(error, 500),
+                    "EVIDENCIA_OMITIDA", contexto["id_ejecucion"],
+                    "El correo de Evidencia fue omitido: " + sanitizar_texto_externo(error, 500),
                     "WARNING",
                 )
-                evidencia_incluida = False
-                adjuntos = []
-        asunto = self._asunto(tipo, contexto, config, evidencia_incluida)
-        cuerpo = self._cuerpo(tipo, contexto, evidencia if evidencia_incluida else None)
-        id_evidencia = contexto.get("id_evidencia") if evidencia_incluida else None
+                return self._omitir(
+                    tipo, contexto, destinatarios, sanitizar_texto_externo(error, 500),
+                    id_evidencia=contexto.get("id_evidencia"),
+                )
+        asunto = self._asunto(tipo, contexto, config)
+        cuerpo = self._cuerpo(
+            tipo, contexto, evidencia if tipo == "EVIDENCIA_CLIENTE" else None,
+        )
+        id_evidencia = contexto.get("id_evidencia") if tipo == "EVIDENCIA_CLIENTE" else None
         return self._despachar(
             tipo, contexto, asunto, destinatarios, cuerpo, adjuntos,
             id_evidencia=id_evidencia,
@@ -93,13 +104,8 @@ class ServicioDespachoNotificaciones:
 
     def _despachar(self, tipo, contexto, asunto, destinatarios, cuerpo, adjuntos,
                    *, id_evidencia=None):
-        serializados = {canal: ";".join(valores) or None for canal, valores in destinatarios.items()}
-        with self.fabrica_uow(self.proveedor) as uow:
-            id_envio = self.tipo_repositorio(uow.obtener_conexion()).reservar_envio(
-                int(contexto["id_ejecucion"]), id_evidencia, tipo,
-                asunto, serializados,
-            )
-            uow.confirmar()
+        id_envio = self._reservar(tipo, contexto, asunto, destinatarios,
+                                  id_evidencia=id_evidencia)
         if id_envio is None:
             return "OMITIDO"
         config_graph = self.servicio_graph_config.efectiva()
@@ -125,6 +131,28 @@ class ServicioDespachoNotificaciones:
                   f"Notificacion {tipo} aceptada por Microsoft Graph.")
         return "ENVIADO"
 
+    def _reservar(self, tipo, contexto, asunto, destinatarios, *, id_evidencia=None):
+        serializados = {
+            canal: ";".join(valores) or None
+            for canal, valores in destinatarios.items()
+        }
+        with self.fabrica_uow(self.proveedor) as uow:
+            id_envio = self.tipo_repositorio(uow.obtener_conexion()).reservar_envio(
+                int(contexto["id_ejecucion"]), id_evidencia, tipo,
+                asunto, serializados,
+            )
+            uow.confirmar()
+        return id_envio
+
+    def _omitir(self, tipo, contexto, destinatarios, motivo, *, id_evidencia=None):
+        asunto = self._asunto(tipo, contexto, None)
+        id_envio = self._reservar(
+            tipo, contexto, asunto, destinatarios, id_evidencia=id_evidencia,
+        )
+        if id_envio is not None:
+            self._cerrar(id_envio, "OMITIDO", error=sanitizar_texto_externo(motivo, 1000))
+        return "OMITIDO"
+
     def _cerrar(self, id_envio, estado, **datos):
         with self.fabrica_uow(self.proveedor) as uow:
             self.tipo_repositorio(uow.obtener_conexion()).finalizar_envio(
@@ -142,25 +170,32 @@ class ServicioDespachoNotificaciones:
             uow.confirmar()
 
     @staticmethod
-    def _evento(contexto, config):
+    def _eventos(contexto, config):
         if contexto["estado_ejecucion"] == "ERROR" and config.alerta_error_activa:
-            return "ALERTA_INTERNA"
-        if contexto["estado_ejecucion"] == "EXITOSA" and config.notificar_exito_activa:
-            return "NOTIFICACION_EXITOSA"
-        return None
+            return ("ALERTA_INTERNA",)
+        if contexto["estado_ejecucion"] != "EXITOSA":
+            return ()
+        resultado = []
+        if config.notificar_exito_activa:
+            resultado.append("NOTIFICACION_EXITOSA")
+        if config.enviar_evidencia:
+            resultado.append("EVIDENCIA_CLIENTE")
+        return tuple(resultado)
 
     @staticmethod
-    def _evidencia_incluida(tipo, contexto, config, evidencia):
+    def _evidencia_valida(contexto, evidencia):
         return bool(
-            tipo in {"NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE"}
-            and config.enviar_evidencia
-            and contexto.get("estado_evidencia") == "VALIDADA"
+            contexto.get("estado_evidencia") == "VALIDADA"
             and isinstance(evidencia, dict)
         )
 
     @staticmethod
     def _destinatarios(tipo, config):
-        clase = "EVIDENCIA" if tipo in {"NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE"} else "ALERTA"
+        clase = {
+            "NOTIFICACION_EXITOSA": "EXITO",
+            "EVIDENCIA_CLIENTE": "EVIDENCIA",
+            "ALERTA_INTERNA": "ALERTA",
+        }[tipo]
         resultado = {"TO": [], "CC": [], "BCC": []}
         for item in config.destinatarios:
             if item.tipo_destinatario == clase:
@@ -179,24 +214,30 @@ class ServicioDespachoNotificaciones:
         return resultado
 
     @staticmethod
-    def _asunto(tipo, contexto, config, evidencia_incluida=False):
-        if tipo in {"NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE"}:
-            if config.asunto_personalizado:
+    def _asunto(tipo, contexto, config):
+        if tipo == "NOTIFICACION_EXITOSA":
+            if config is not None and config.asunto_personalizado:
                 return sanitizar_texto_externo(config.asunto_personalizado, 255)
-            if (evidencia_incluida and config.usar_asunto_sugerido_script
-                    and contexto.get("asunto_sugerido")):
-                return sanitizar_texto_externo(contexto["asunto_sugerido"], 255)
             return sanitizar_texto_externo(
                 f"Ejecucion exitosa | {contexto['nombre_tarea']}", 255
+            )
+        if tipo == "EVIDENCIA_CLIENTE":
+            if (config is not None and config.usar_asunto_sugerido_script
+                    and contexto.get("asunto_sugerido")):
+                return sanitizar_texto_externo(contexto["asunto_sugerido"], 255)
+            if contexto.get("titulo_evidencia"):
+                return sanitizar_texto_externo(contexto["titulo_evidencia"], 255)
+            return sanitizar_texto_externo(
+                f"Evidencia de proceso | {contexto['nombre_tarea']}", 255
             )
         return sanitizar_texto_externo(f"Alerta APP Scheduler | {contexto['nombre_tarea']}", 255)
 
     def _cuerpo(self, tipo, contexto, evidencia):
-        plantilla = (
-            "correos/exito.html"
-            if tipo in {"NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE"}
-            else "correos/alerta.html"
-        )
+        plantilla = {
+            "NOTIFICACION_EXITOSA": "correos/exito.html",
+            "EVIDENCIA_CLIENTE": "correos/evidencia.html",
+            "ALERTA_INTERNA": "correos/alerta.html",
+        }[tipo]
         seguro = {
             clave: sanitizar_texto_externo(valor, 2000) if isinstance(valor, str) else valor
             for clave, valor in contexto.items()

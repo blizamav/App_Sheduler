@@ -1,4 +1,4 @@
-# Base de datos APP Scheduler v1.0.0
+# Base de datos APP Scheduler v1.0.1
 
 ## Contrato canonico
 
@@ -25,6 +25,25 @@ tabla vive en `docs/PERSISTENCIA_RECONSTRUCCION.md`.
 * `database/factory_reset/`: runner in-place que consume el bootstrap.
 * `database/migrations/`: correctivos incrementales historicos.
 * `database/legacy_pre_release_13B/`: referencia historica no ejecutable.
+
+## Migracion 023 aplicada en QA
+
+`database/migrations/023_separar_destinatarios_exito_evidencia.sql` desacopla
+Evidencia de la notificacion de exito y habilita el tipo de destinatario
+`EXITO`. No borra historial: copia destinatarios legacy al grupo operacional,
+desactiva la asignacion `EVIDENCIA` ambigua y apaga ese envio hasta que se
+configure explicitamente el cliente. Debe revisarse y ejecutarse manualmente
+antes de desplegar el runtime v1.0.1 sobre cualquier otra base existente.
+
+El 2026-09-01 se ejecuto y valido sobre `APP_SCHEDULER_QA`. Se retiro
+`CK_notif_config_evidencia_requiere_exito` y `CK_notif_dest_tipo` quedo activo,
+confiable y limitado a `EXITO`, `EVIDENCIA` y `ALERTA`. La migracion convirtio
+tres configuraciones legacy: creo sus destinatarios operacionales `EXITO`,
+desactivo las asignaciones `EVIDENCIA` ambiguas y no elimino filas.
+
+`database/bootstrap/` es fuente protegida de solo lectura y sigue representando
+el contrato v1.0.0. Una instalacion limpia o Factory Reset requiere una
+actualizacion canonica autorizada antes de utilizar esta separacion.
 
 ## Conexion
 

@@ -180,6 +180,27 @@ def test_ajuste_notificaciones_separa_exito_y_evidencia_sin_romper_legacy():
     assert "DELETE FROM dbo.notificaciones" not in migracion
 
 
+def test_migracion_023_desacopla_evidencia_y_migra_destinatarios_sin_borrar():
+    migracion = (
+        RAIZ / "database/migrations/023_separar_destinatarios_exito_evidencia.sql"
+    ).read_text(encoding="utf-8-sig")
+    normalizada = re.sub(r"\s+", " ", migracion).upper()
+
+    assert "DROP CONSTRAINT CK_NOTIF_CONFIG_EVIDENCIA_REQUIERE_EXITO" in normalizada
+    assert "N'EXITO', N'EVIDENCIA', N'ALERTA'" in normalizada
+    assert "INSERT INTO DBO.NOTIFICACIONES_DESTINATARIOS" in normalizada
+    assert "SET D.ACTIVO = 0" in normalizada
+    assert "SET C.ENVIAR_EVIDENCIA = 0" in normalizada
+    assert "DELETE" not in normalizada
+    assert "BEGIN TRANSACTION" in normalizada and "ROLLBACK TRANSACTION" in normalizada
+
+    repositorio = (
+        RAIZ / "src/app_scheduler/persistencia/repositorio_evidencias.py"
+    ).read_text(encoding="utf-8")
+    assert "CASE WHEN ? = 1 THEN 1 ELSE notificar_exito_activa END" not in repositorio
+    assert "int(configuracion.enviar_evidencia),\n                 0," in repositorio
+
+
 def test_migracion_022_declara_set_options_y_atomicidad_antes_del_ddl():
     migracion = (
         RAIZ / "database/migrations/022_separar_notificacion_estado_evidencia.sql"

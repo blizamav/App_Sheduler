@@ -6,9 +6,10 @@ Hito 2 construyo y cerro la persistencia funcional del runtime aislado
 `src/app_scheduler/`. Hito 7 la extiende con repositorio de ejecuciones, logs y
 evidencia; Hito 8 agrega consultas operativas y configuracion tipada; Hito 9
 agrega lectura de auditoria y Papelera; Hito 10 consume las tablas existentes de
-feriados y notificaciones. El ajuste contractual post-Hito 10 prepara la
-migracion incremental `022` y actualiza el bootstrap canonico; no se ha aplicado
-a QA ni sustituye `app/`, `run.py` o `scheduler_worker.py`.
+feriados y notificaciones. El parche v1.0.1 agrega la migracion incremental
+`023` para separar destinatarios `EXITO` y `EVIDENCIA` y retirar su dependencia.
+No se ha ejecutado sobre QA. El bootstrap permanece protegido y no incorpora
+todavia este contrato; requiere un cambio autorizado independiente.
 
 ## Persistencia Hito 10
 
@@ -56,7 +57,8 @@ La matriz de referencias, permisos y compensacion se mantiene en
   `configuracion_scheduler` por PK y allowlist; auditoria y cambio comparten UoW.
 * `RepositorioEvidencias`: upsert funcional sobre la configuracion activa de
   `notificaciones_config_tarea`, preservando el contrato `STDOUT_V1` y su indice
-  unico filtrado.
+  unico filtrado. Desde la migracion `023`, activar Evidencia no altera
+  `notificar_exito_activa`.
 * `RepositorioAuditoria` detecta dentro de la misma conexion si la QA historica
   conserva columnas legacy `NOT NULL`. En base limpia escribe solo el contrato
   canonico; en QA escribe simultaneamente columnas canonicas y aliases legacy,
@@ -129,7 +131,7 @@ La columna `Claves/reglas` resume UNIQUE, indices filtrados y CHECK relevantes. 
 | `feriados` | Calendario local | `id_feriado` | - | Fecha/pais activo unico filtrado; CHECK pais/origen | Calendario/Programador |
 | `reglas_feriados_irrenunciables` | Reglas locales mes/dia | `id_regla` | - | Pais/mes/dia activo unico filtrado; CHECK rangos | Calendario |
 | `notificaciones_config_tarea` | Politica de evidencia/alerta por tarea | `id_config_notificacion` | `id_tarea -> tareas` | Una config activa por tarea; CHECK `STDOUT_V1` | Notificaciones |
-| `notificaciones_destinatarios` | Destinatarios TO/CC/BCC | `id_destinatario` | config -> `notificaciones_config_tarea` | Un destinatario activo por config/tipo/canal/email; CHECK tipo/canal/email | Notificaciones |
+| `notificaciones_destinatarios` | Destinatarios TO/CC/BCC | `id_destinatario` | config -> `notificaciones_config_tarea` | Tipos `EXITO`, `EVIDENCIA`, `ALERTA`; un destinatario activo por config/tipo/canal/email | Notificaciones |
 | `evidencias_ejecucion` | Metadata minima de evidencia stdout | `id_evidencia` | `id_ejecucion -> ejecuciones` | UNIQUE `id_ejecucion`; CHECK estados/cantidades; hash sin JSON completo | Evidencias |
 | `notificaciones_envios` | Intentos de envio Graph | `id_envio` | ejecucion, evidencia y auto-FK de reintento | CHECK tipo/estado/intento/status; unico envio exitoso de cliente | Notificaciones |
 | `configuracion_mail_graph` | Configuracion global Mail Graph sin secret | `id_config_mail` | - | UNIQUE `MAIL_GRAPH`; una activa filtrada; secret solo `ENV`; scope/remitente validados | Configuracion/Graph |

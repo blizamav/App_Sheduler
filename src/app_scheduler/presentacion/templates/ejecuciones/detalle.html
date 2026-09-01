@@ -10,13 +10,23 @@
 </header>
 <section class="ejecucion-resumen" data-ejecucion="{{ ejecucion.id_ejecucion }}" data-log-url="{{ url_for('ejecuciones.log', id_ejecucion=ejecucion.id_ejecucion) }}">
   <div class="panel-operativo"><p class="eyebrow">Estado</p><strong data-estado>{{ ejecucion.estado_ejecucion|replace('_',' ') }}</strong><small data-resultado>{{ ejecucion.mensaje_error or 'Sin error registrado' }}</small></div>
-  <div class="panel-operativo"><p class="eyebrow">Proceso</p><strong>{{ ejecucion.nombre_worker or 'Pendiente de worker' }}</strong><small>PID {{ ejecucion.pid_proceso or '-' }}</small></div>
-  <div class="panel-operativo"><p class="eyebrow">Tiempo</p><strong>{{ ejecucion.duracion_segundos ~ ' segundos' if ejecucion.duracion_segundos is not none else 'En progreso' }}</strong><small>Salida {{ ejecucion.codigo_salida if ejecucion.codigo_salida is not none else '-' }}</small></div>
-  <div class="panel-operativo"><p class="eyebrow">Evidencia</p><strong>{{ ejecucion.estado_evidencia or 'NO REQUERIDA' }}</strong><small>Solo metadatos, hash y validacion</small></div>
+  <div class="panel-operativo"><p class="eyebrow">Proceso</p><strong data-worker>{{ ejecucion.nombre_worker or 'Pendiente de worker' }}</strong><small>PID <span data-pid>{{ ejecucion.pid_proceso or '-' }}</span></small></div>
+  <div class="panel-operativo"><p class="eyebrow">Tiempo</p><strong data-duracion>{{ ejecucion.duracion_segundos ~ ' segundos' if ejecucion.duracion_segundos is not none else 'En progreso' }}</strong><small>Salida <span data-codigo-salida>{{ ejecucion.codigo_salida if ejecucion.codigo_salida is not none else '-' }}</span></small></div>
+  <div class="panel-operativo"><p class="eyebrow">Evidencia</p><strong data-estado-evidencia>{{ ejecucion.estado_evidencia or 'NO REQUERIDA' }}</strong><small>Solo metadatos, hash y validacion</small></div>
 </section>
 {% if ejecucion.estado_ejecucion == 'EN_EJECUCION' and identidad.tiene_permiso('EJECUCIONES_DETENER') %}
 <form class="detencion-ejecucion" method="post" action="{{ url_for('ejecuciones.detener', id_ejecucion=ejecucion.id_ejecucion) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="campo"><span>Motivo opcional</span><input class="form-control" name="motivo" maxlength="500" placeholder="Motivo operativo de la detencion"></label><button class="btn btn-danger boton peligro" type="submit" data-confirmar data-titulo="Detener ejecucion" data-mensaje="El worker terminara exclusivamente el proceso que posee esta ejecucion." data-texto-procesando="Solicitando...">Solicitar detencion</button></form>
 {% endif %}
+<section class="notificaciones-ejecucion" data-notificaciones-seccion {% if not notificaciones %}hidden{% endif %} aria-labelledby="titulo-notificaciones-ejecucion">
+  <header><div><p class="eyebrow">Comunicaciones</p><h2 id="titulo-notificaciones-ejecucion">Notificaciones</h2><p>El resultado del script y el estado del correo son independientes.</p></div></header>
+  <div class="notificaciones-ejecucion-grid" data-notificaciones-lista aria-live="polite">
+    {% for item in notificaciones %}<article class="notificacion-ejecucion-card">
+      <div class="notificacion-ejecucion-cabecera"><h3>{{ item.tipo }}</h3><span class="badge {{ item.clase }}">{{ item.estado }}</span></div>
+      <p>{{ item.explicacion }}</p>
+      <dl><div><dt>Evidencia incluida</dt><dd>{{ 'Si' if item.evidencia_incluida else 'No' }}</dd></div><div><dt>Adjuntos seguros</dt><dd>{{ item.cantidad_adjuntos }}</dd></div></dl>
+    </article>{% endfor %}
+  </div>
+</section>
 <section class="consola-ejecucion">
   <header><div><p class="eyebrow">Salida en tiempo real</p><h2>Consola y logs</h2></div><div class="consola-acciones"><label><input class="form-check-input" type="checkbox" data-autoscroll checked> Seguir salida</label><span class="badge info" data-polling>Sincronizando</span></div></header>
   <pre data-consola aria-live="polite">Cargando log...</pre>

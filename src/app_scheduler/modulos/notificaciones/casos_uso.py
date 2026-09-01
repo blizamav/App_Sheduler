@@ -45,13 +45,16 @@ class ServicioNotificacionesTarea:
         enviar = formulario.get("enviar_evidencia") == "1"
         alerta = formulario.get("alerta_error_activa") == "1"
         usar_global = formulario.get("usar_alerta_global") == "1"
-        if enviar and not notificar_exito:
-            raise ErrorValidacion("Para incluir evidencia debes activar la notificacion de exito.")
         if notificar_exito and not any(
+            d.tipo_destinatario == "EXITO" and d.canal == "TO"
+            for d in destinatarios
+        ):
+            raise ErrorValidacion("Para la notificacion de exito configura al menos un destinatario TO.")
+        if enviar and not any(
             d.tipo_destinatario == "EVIDENCIA" and d.canal == "TO"
             for d in destinatarios
         ):
-            raise ErrorValidacion("Para notificar ejecuciones exitosas configura al menos un destinatario TO.")
+            raise ErrorValidacion("Para enviar Evidencia al cliente configura al menos un destinatario TO.")
         if alerta and not usar_global and not any(
             d.tipo_destinatario == "ALERTA" and d.canal == "TO" for d in destinatarios
         ):
@@ -93,7 +96,7 @@ class ServicioNotificacionesTarea:
     def _destinatarios(cls, formulario):
         resultado = []
         vistos = set()
-        for tipo in ("EVIDENCIA", "ALERTA"):
+        for tipo in ("EXITO", "ALERTA", "EVIDENCIA"):
             for canal in ("TO", "CC", "BCC"):
                 valor = str(formulario.get(f"{tipo.lower()}_{canal.lower()}") or "")
                 for bruto in re.split(r"[,;\r\n]+", valor):
@@ -112,7 +115,11 @@ class ServicioNotificacionesTarea:
 
     @staticmethod
     def _para_formulario(destinatarios):
-        resultado = {f"{tipo.lower()}_{canal.lower()}": "" for tipo in ("EVIDENCIA", "ALERTA") for canal in ("TO", "CC", "BCC")}
+        resultado = {
+            f"{tipo.lower()}_{canal.lower()}": ""
+            for tipo in ("EXITO", "ALERTA", "EVIDENCIA")
+            for canal in ("TO", "CC", "BCC")
+        }
         for item in destinatarios:
             clave = f"{item.tipo_destinatario.lower()}_{item.canal.lower()}"
             resultado[clave] = "\n".join(filter(None, (resultado[clave], item.email)))
@@ -147,6 +154,14 @@ class ServicioConfiguracionGraph:
         with self.proveedor.conexion_lectura() as conexion:
             sql = self.tipo_repositorio(conexion).obtener_configuracion_graph()
         return self._estado(sql)
+
+    def resumen_publico(self):
+        """Expone solo el estado operativo necesario fuera del modulo Graph."""
+        estado = self.obtener()
+        return {
+            "disponible_envio": bool(estado["disponible_envio"]),
+            "estado": str(estado["estado"]),
+        }
 
     def guardar(self, formulario, actor, contexto):
         if any("secret" in str(clave).lower() for clave in formulario.keys()):

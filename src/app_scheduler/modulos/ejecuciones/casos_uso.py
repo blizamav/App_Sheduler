@@ -12,6 +12,7 @@ from app_scheduler.compartido.unidad_trabajo import UnidadTrabajoSQL
 from app_scheduler.persistencia.modelos import Paginacion
 from app_scheduler.persistencia.repositorio_auditoria import RepositorioAuditoria
 from app_scheduler.persistencia.repositorio_ejecuciones import RepositorioEjecuciones
+from app_scheduler.persistencia.repositorio_notificaciones import RepositorioNotificaciones
 
 
 ESTADOS = frozenset({
@@ -24,12 +25,14 @@ ORIGENES = frozenset({"MANUAL", "AUTOMATICA"})
 class ServicioEjecuciones:
     def __init__(self, proveedor, configuracion, *, fabrica_uow=UnidadTrabajoSQL,
                  repositorio=RepositorioEjecuciones,
+                 repositorio_notificaciones=RepositorioNotificaciones,
                  repositorio_auditoria=RepositorioAuditoria,
                  control_runtime=factory_reset_bloquea):
         self.proveedor = proveedor
         self.configuracion = configuracion
         self.fabrica_uow = fabrica_uow
         self.tipo_repositorio = repositorio
+        self.tipo_notificaciones = repositorio_notificaciones
         self.tipo_auditoria = repositorio_auditoria
         self.control_runtime = control_runtime
         self.almacen = AlmacenArchivosProcesos(
@@ -104,23 +107,37 @@ class ServicioEjecuciones:
         with self.proveedor.conexion_lectura() as conexion:
             return self.tipo_repositorio(conexion).obtener_detalle(id_ejecucion)
 
+    def obtener_panel(self, id_ejecucion: int):
+        with self.proveedor.conexion_lectura() as conexion:
+            detalle = self.tipo_repositorio(conexion).obtener_detalle(id_ejecucion)
+            repo_notificaciones = self.tipo_notificaciones(conexion)
+            envios = (() if detalle is None else
+                      repo_notificaciones.listar_envios_ejecucion(id_ejecucion))
+            config = (None if detalle is None or detalle.id_tarea is None else
+                      repo_notificaciones.obtener_configuracion_tarea(detalle.id_tarea))
+        presentadas = tuple(self._presentar_notificacion(item) for item in envios)
+        return detalle, self._completar_notificaciones(detalle, config, presentadas)
+
     def leer_log(self, id_ejecucion: int, max_bytes=120 * 1024):
-        detalle = self.obtener(id_ejecucion)
+        detalle, notificaciones = self.obtener_panel(id_ejecucion)
         if detalle is None: raise ErrorValidacion("Ejecucion no encontrada.")
         if not detalle.ruta_fisica_log:
             contenido = "Log aun no disponible."
         else:
             raiz = Path(self.configuracion.ruta_base_logs_tareas).expanduser().resolve()
             ruta = Path(detalle.ruta_fisica_log).expanduser().resolve(strict=False)
-            try: ruta.relative_to(raiz)
-            except ValueError as error: raise ErrorValidacion("La ruta del log no es valida.") from error
-            if ruta.is_symlink() or not ruta.is_file():
-                contenido = "Log aun no disponible."
+            try:
+                ruta.relative_to(raiz)
+            except ValueError:
+                contenido = "Log no disponible en este entorno."
             else:
-                with ruta.open("rb") as archivo:
-                    archivo.seek(0, 2); tamano = archivo.tell()
-                    archivo.seek(max(0, tamano - max_bytes))
-                    contenido = archivo.read().decode("utf-8", errors="replace")
+                if ruta.is_symlink() or not ruta.is_file():
+                    contenido = "Log aun no disponible."
+                else:
+                    with ruta.open("rb") as archivo:
+                        archivo.seek(0, 2); tamano = archivo.tell()
+                        archivo.seek(max(0, tamano - max_bytes))
+                        contenido = archivo.read().decode("utf-8", errors="replace")
         return {
             "id_ejecucion": detalle.id_ejecucion,
             "estado": detalle.estado_ejecucion,
@@ -128,8 +145,105 @@ class ServicioEjecuciones:
                 "EXITOSA", "ERROR", "CANCELADA", "DETENIDA_MANUALMENTE",
             },
             "codigo_salida": detalle.codigo_salida,
+            "duracion_segundos": detalle.duracion_segundos,
+            "nombre_worker": detalle.nombre_worker or "",
+            "pid_proceso": detalle.pid_proceso,
+            "estado_evidencia": detalle.estado_evidencia or "NO REQUERIDA",
             "mensaje_error": detalle.mensaje_error or "",
+            "notificaciones": notificaciones,
             "log": contenido,
+        }
+
+    @staticmethod
+    def _presentar_notificacion(item):
+        if (item["tipo_envio"] == "EVIDENCIA_CLIENTE"
+                and item["estado_envio"] == "OMITIDO"
+                and item.get("estado_evidencia") not in {None, "VALIDADA"}):
+            return {
+                "estado": "NO GENERADA",
+                "clase": "advertencia",
+                "explicacion": "La ejecucion no genero una Evidencia 1.0 valida. No se envio correo al cliente.",
+                "tipo": "Evidencia cliente",
+                "evidencia_incluida": False,
+                "cantidad_adjuntos": 0,
+                "codigo_tipo": item["tipo_envio"],
+            }
+        estados = {
+            "ENVIADO": ("ENVIADA", "activo", "El correo fue aceptado por Microsoft Graph."),
+            "OMITIDO": ("OMITIDA", "advertencia", "El correo no fue enviado. Revisa la disponibilidad de Graph y los destinatarios configurados."),
+            "FALLIDO": ("ERROR", "error", "El correo no pudo enviarse. La ejecucion conserva su resultado."),
+            "PENDIENTE": ("PENDIENTE", "info", "El envio aun no ha finalizado."),
+            "NO_REQUERIDO": ("NO REQUERIDO", "inactivo", "Esta notificacion no requirio envio."),
+        }
+        tipos = {
+            "NOTIFICACION_EXITOSA": "Notificacion de exito",
+            "ALERTA_INTERNA": "Alerta de error",
+            "EVIDENCIA_CLIENTE": "Evidencia cliente",
+        }
+        codigo, clase, explicacion = estados.get(
+            item["estado_envio"], ("ERROR", "error", "El estado del correo no esta disponible."),
+        )
+        return {
+            "estado": codigo,
+            "clase": clase,
+            "explicacion": explicacion,
+            "tipo": tipos.get(item["tipo_envio"], "Notificacion"),
+            "evidencia_incluida": bool(item["evidencia_incluida"]),
+            "cantidad_adjuntos": int(item["cantidad_adjuntos"]),
+            "codigo_tipo": item["tipo_envio"],
+        }
+
+    @classmethod
+    def _completar_notificaciones(cls, detalle, config, presentadas):
+        if detalle is None:
+            return ()
+        por_tipo = {item["codigo_tipo"]: item for item in presentadas}
+        if detalle.estado_ejecucion == "EXITOSA":
+            if "NOTIFICACION_EXITOSA" not in por_tipo:
+                por_tipo["NOTIFICACION_EXITOSA"] = cls._estado_sintetico(
+                    "NOTIFICACION_EXITOSA",
+                    "PENDIENTE" if config and config.notificar_exito_activa else "NO_CONFIGURADA",
+                )
+            if "EVIDENCIA_CLIENTE" not in por_tipo:
+                if not config or not config.enviar_evidencia:
+                    estado_evidencia = "NO_CONFIGURADA"
+                elif detalle.estado_evidencia == "VALIDADA":
+                    estado_evidencia = "PENDIENTE"
+                else:
+                    estado_evidencia = "NO_GENERADA"
+                por_tipo["EVIDENCIA_CLIENTE"] = cls._estado_sintetico(
+                    "EVIDENCIA_CLIENTE", estado_evidencia,
+                )
+        orden = ("NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE", "ALERTA_INTERNA")
+        return tuple(
+            {clave: valor for clave, valor in por_tipo[tipo].items() if clave != "codigo_tipo"}
+            for tipo in orden if tipo in por_tipo
+        )
+
+    @staticmethod
+    def _estado_sintetico(tipo, estado):
+        nombres = {
+            "NOTIFICACION_EXITOSA": "Notificacion de exito",
+            "EVIDENCIA_CLIENTE": "Evidencia cliente",
+        }
+        presentacion = {
+            "NO_CONFIGURADA": (
+                "inactivo", "Este tipo de comunicacion no estaba configurado para la tarea."
+            ),
+            "NO_GENERADA": (
+                "advertencia", "La ejecucion no genero una Evidencia 1.0 valida. No se envio correo al cliente."
+            ),
+            "PENDIENTE": ("info", "El envio aun no ha finalizado."),
+        }
+        clase, explicacion = presentacion[estado]
+        return {
+            "estado": estado,
+            "clase": clase,
+            "explicacion": explicacion,
+            "tipo": nombres[tipo],
+            "evidencia_incluida": False,
+            "cantidad_adjuntos": 0,
+            "codigo_tipo": tipo,
         }
 
     @staticmethod

@@ -36,7 +36,7 @@ WHERE s.id_tarea = ? AND s.activo = 1 AND s.eliminado_operativo = 0
   adjuntar_log_tecnico, alerta_error_activa, usar_alerta_global, activo)
 VALUES (?, ?, ?, 'STDOUT_V1', ?, ?, 1, 1, 1)""",
                 (configuracion.id_tarea, int(configuracion.enviar_evidencia),
-                 int(configuracion.enviar_evidencia),
+                 0,
                  int(configuracion.adjuntar_archivos_declarados),
                  int(configuracion.adjuntar_log_tecnico)),
                 operacion="crear_configuracion_evidencia",
@@ -45,13 +45,11 @@ VALUES (?, ?, ?, 'STDOUT_V1', ?, ?, 1, 1, 1)""",
         if self.ejecutar(
             """UPDATE dbo.notificaciones_config_tarea
 SET enviar_evidencia = ?,
-    notificar_exito_activa = CASE WHEN ? = 1 THEN 1 ELSE notificar_exito_activa END,
     plantilla_evidencia = 'STDOUT_V1',
     adjuntar_archivos_declarados = ?, adjuntar_log_tecnico = ?,
     actualizado_en = SYSDATETIME()
 WHERE id_config_notificacion = ? AND id_tarea = ? AND activo = 1""",
-            (int(configuracion.enviar_evidencia), int(configuracion.enviar_evidencia),
-             int(configuracion.adjuntar_archivos_declarados),
+            (int(configuracion.enviar_evidencia), int(configuracion.adjuntar_archivos_declarados),
              int(configuracion.adjuntar_log_tecnico),
              configuracion.id_config_notificacion, configuracion.id_tarea),
             operacion="actualizar_configuracion_evidencia",

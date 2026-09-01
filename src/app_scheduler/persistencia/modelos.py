@@ -192,6 +192,7 @@ class Tarea:
     fecha_creacion: datetime
     fecha_actualizacion: datetime | None
     activo: bool
+    notificaciones_activas: bool = False
 
 
 @dataclass(frozen=True, slots=True)

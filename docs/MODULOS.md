@@ -40,12 +40,12 @@ runtime, referencia de rutas nuevas ni fuente de reglas actuales.
 | Tareas | `/tareas/` | Datos, flujo guiado y configuracion |
 | Scripts | `/scripts/`, detalle por tarea | Hub, versiones, activacion, `.env` y descarga |
 | Programaciones | `/programaciones/` | Agenda, zona horaria y calendario |
-| Ejecuciones | `/ejecuciones/` | Solicitud manual, historial, consola y detencion |
+| Ejecuciones | `/ejecuciones/` | Solicitud manual, historial, consola, notificaciones y detencion |
 | Operacion | `/operacion/estado`, `/logs/` | Estado, heartbeat y logs del sistema |
 | Configuracion | `/configuracion/` | Scheduler y Mail Graph global |
 | Feriados | `/feriados/` | Calendario local y sincronizacion manual |
 | Evidencias | integrado en tarea/worker | Validacion AST, captura stdout y metadata |
-| Notificaciones | integrado en tarea/worker | Destinatarios, reserva y despacho Graph |
+| Notificaciones | integrado en tarea/worker | Destinatarios, disponibilidad, reserva, despacho y estado Graph |
 | Auditoria | `/auditoria/` | Consulta inmutable de acciones humanas |
 | Papelera | `/papelera/` | Retiro, restauracion y eliminacion condicionada |
 | Factory Reset | `/administracion/factory-reset` | Preview y reset in-place fail-closed |
@@ -57,6 +57,19 @@ con tarea, script y version congelados. El Worker realiza el claim atomico,
 cambia a `EN_EJECUCION`, invoca el motor subprocess y persiste el estado final,
 logs, evidencia y notificacion. Esta separacion evita motores paralelos y
 mantiene recuperables las solicitudes que aun no fueron reclamadas.
+
+La disponibilidad efectiva de correo se calcula una sola vez en
+`ServicioConfiguracionGraph`. Tareas consume un resumen sin identificadores
+sensibles para advertir antes de una ejecucion; Ejecuciones consulta la
+trazabilidad segura de `notificaciones_envios`. El polling sincroniza todas las
+cards y mantiene separados el estado del script y el del correo.
+
+El dispatcher post-ejecucion evalua tipos independientes. Una ejecucion
+`EXITOSA` puede reservar `NOTIFICACION_EXITOSA`, `EVIDENCIA_CLIENTE`, ambos o
+ninguno segun su configuracion. Exito usa destinatarios `EXITO` y el template
+`correos/exito.html`; Evidencia usa destinatarios `EVIDENCIA`, exige payload
+runtime `VALIDADA` y renderiza `correos/evidencia.html`. Un fallo evalua
+exclusivamente `ALERTA_INTERNA`, con destinatarios `ALERTA` o globales.
 
 ## Persistencia
 

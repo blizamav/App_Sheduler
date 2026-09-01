@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "app-scheduler-reconstruccion"
-version = "1.0.0"
+version = "1.0.1"
 description = "Plataforma web para programar, ejecutar, monitorear y auditar tareas Python"
 requires-python = ">=3.11"
 

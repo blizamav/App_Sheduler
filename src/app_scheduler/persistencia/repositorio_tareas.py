@@ -11,7 +11,13 @@ class RepositorioTareas(RepositorioSQL):
     _SELECCION = """t.id_tarea, t.nombre_tarea, t.descripcion, t.observacion_tecnica,
     t.id_cliente, c.nombre_cliente, t.id_categoria, g.nombre_categoria,
     t.id_tipo, p.nombre_tipo, t.tipo_tarea, t.estado_tarea,
-    t.permite_ejecucion_manual, t.fecha_creacion, t.fecha_actualizacion, t.activo"""
+    t.permite_ejecucion_manual, t.fecha_creacion, t.fecha_actualizacion, t.activo,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM dbo.notificaciones_config_tarea n
+        WHERE n.id_tarea = t.id_tarea AND n.activo = 1
+          AND (n.notificar_exito_activa = 1 OR n.alerta_error_activa = 1
+               OR n.enviar_evidencia = 1)
+    ) THEN 1 ELSE 0 END"""
 
     def obtener_por_id(self, id_tarea: int) -> Tarea | None:
         fila = self.ejecutar_uno(

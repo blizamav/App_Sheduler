@@ -1,4 +1,4 @@
-# UI/UX APP Scheduler v1.0.0
+# UI/UX APP Scheduler v1.0.1
 
 ## Estado
 
@@ -52,6 +52,20 @@ El alta/edicion usa pasos independientes: Datos, Script, Evidencia,
 Notificaciones y Programacion. El stepper diferencia pantalla actual de estado
 funcional (`Completado`, `En curso`, `Pendiente`, `Requiere ajuste`). Evidencia
 es opcional y no bloquea una notificacion estandar de exito.
+
+Si una tarea tiene correos activos y Graph no esta disponible, el paso de
+Notificaciones y el modal de ejecucion explican que el proceso continuara sin
+correo. Solo usuarios con `CONFIGURACION_ADMIN` reciben el enlace de
+administracion. El detalle de ejecucion separa visualmente resultado del script
+y estado de notificacion (`ENVIADA`, `OMITIDA`, `ERROR` o `PENDIENTE`), y el
+polling actualiza ambas areas sin requerir recarga manual.
+
+La configuracion muestra tres bloques autonomos: Exito operacional, Error
+operacional y Evidencia al cliente. Cada uno posee TO/CC/BCC propios. Evidencia
+no depende del switch de Exito; si ambos estan activos, una ayuda informa que
+la ejecucion puede generar dos correos independientes. La compatibilidad
+estatica se denomina `Contrato Evidencia 1.0 declarado`, mientras el payload se
+presenta como validado solamente durante la ejecucion.
 
 ## Accesibilidad y seguridad visual
 

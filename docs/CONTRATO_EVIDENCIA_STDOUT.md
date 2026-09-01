@@ -1,5 +1,17 @@
 # Contrato de evidencia por stdout
 
+## Contrato vigente v1.0.1
+
+`EVIDENCIA_CLIENTE` es una comunicacion independiente de
+`NOTIFICACION_EXITOSA`. La primera usa destinatarios `EVIDENCIA`, el template
+`correos/evidencia.html` y un payload Evidencia 1.0 validado en runtime. La
+segunda usa destinatarios `EXITO`, el template `correos/exito.html` y nunca
+incluye resumen, problemas o adjuntos de Evidencia.
+
+La declaracion estatica del script confirma solamente que el contrato 1.0 esta
+declarado. La compatibilidad del JSON se determina despues de capturar el bloque
+real emitido durante cada ejecucion.
+
 ## Reconstruccion Hito 7
 
 El capturador ya esta implementado en el runtime aislado
@@ -100,6 +112,11 @@ Formato recomendado de `resumen`:
   { "campo": "Registros con error", "valor": 0 }
 ]
 ```
+
+Este formato es obligatorio. Cada elemento debe ser un objeto con las claves
+`campo` y `valor`; `campo` debe ser un string no vacio y `valor` debe existir,
+aunque sea `0`, `false` o `null`. Los aliases `nombre`, `clave`, `item` y el
+fallback visual `Dato` no forman parte del contrato 1.0.
 
 Formato recomendado de `adjuntos`:
 
@@ -230,12 +247,17 @@ Implementado en Fase 15I:
 * El remitente se obtiene desde la configuracion global Mail Graph (`send_mail_user`).
 * `GRAPH_CLIENT_SECRET` se lee exclusivamente desde entorno.
 * Los destinatarios `TO`, `CC` y `BCC` se obtienen desde la configuracion de notificaciones de la tarea, tipo `EVIDENCIA`.
-* El asunto se decide en este orden: `asunto_sugerido` del script si la tarea lo permite, `asunto_personalizado`, titulo de evidencia y asunto generico.
+* El asunto se decide en este orden: `asunto_sugerido` del script si la tarea lo permite, titulo de evidencia y asunto generico propio de Evidencia.
 * El cuerpo HTML se construye desde la evidencia parseada; no incluye JSON bruto.
 * El resultado se registra en `notificaciones_envios` como `ENVIADO`, `FALLIDO` u `OMITIDO`.
 * No se guarda token, secret, cuerpo HTML completo ni JSON completo.
 * No se envian adjuntos reales todavia.
 * No se implementan alertas internas por correo todavia.
+
+La notificacion operacional de exito se evalua por separado. Su asunto
+personalizado, destinatarios `EXITO` y cuerpo estandar no se reutilizan para
+Evidencia, ni viceversa. Ambas pueden estar activas y producir dos reservas
+at-most-once distintas para la misma ejecucion.
 
 ## Regla de alerta interna
 

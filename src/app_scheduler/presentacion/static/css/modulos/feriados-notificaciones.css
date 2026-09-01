@@ -89,6 +89,24 @@
     font-weight: 700;
 }
 
+.estado-graph small {
+    display: block;
+    margin-top: .2rem;
+    color: var(--color-texto-suave);
+    font-size: .72rem;
+}
+
+.graph-indisponible {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.graph-indisponible p {
+    margin: .25rem 0 0;
+}
+
 .destinatarios-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -138,6 +156,11 @@
     .estado-graph dl {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .graph-indisponible {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 

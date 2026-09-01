@@ -2,7 +2,7 @@
 
 ## Estado final
 
-**RECONSTRUCCION COMPLETADA - v1.0.0.** El runtime oficial es
+**RECONSTRUCCION COMPLETADA - v1.0.1.** El runtime oficial es
 `src/app_scheduler/`; Docker, Web y Worker usan exclusivamente los entrypoints
 reconstruidos. El runtime historico se conserva como referencia y no forma
 parte de la operacion oficial.
@@ -45,6 +45,14 @@ parte de la operacion oficial.
   ejecuciones pendientes o en curso.
 
 ## Post v1.0.0 / futuro
+
+El parche `v1.0.1` cierra la deuda UX de Microsoft Graph y corrige el modelo de
+comunicaciones: disponibilidad contextual, advertencia no bloqueante,
+trazabilidad segura, refresh completo y separacion entre exito, alerta y
+Evidencia cliente. No modifica el motor Graph ni el Worker/Scheduler. La
+migracion incremental `023` aplica el desacople en bases existentes; el
+bootstrap publicado permanece protegido y requiere una actualizacion
+canonica autorizada antes de incorporar este contrato a Factory Reset.
 
 Deuda real no bloqueante:
 

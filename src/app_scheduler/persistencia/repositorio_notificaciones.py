@@ -203,6 +203,29 @@ WHERE id_envio = ? AND estado_envio = N'PENDIENTE'""",
             operacion="finalizar_envio_notificacion",
         ) == 1
 
+    def listar_envios_ejecucion(self, id_ejecucion: int):
+        """Entrega trazabilidad segura sin destinatarios ni metadatos Graph."""
+        filas = self.ejecutar_lista(
+            """SELECT n.tipo_envio, n.estado_envio,
+CASE WHEN n.tipo_envio = N'EVIDENCIA_CLIENTE' AND ev.estado_evidencia = N'VALIDADA'
+     THEN 1 ELSE 0 END,
+CASE WHEN n.tipo_envio = N'EVIDENCIA_CLIENTE' AND ev.estado_evidencia = N'VALIDADA'
+     THEN COALESCE(ev.cantidad_adjuntos_declarados, 0) ELSE 0 END,
+ev.estado_evidencia
+FROM dbo.notificaciones_envios n
+LEFT JOIN dbo.evidencias_ejecucion ev ON ev.id_evidencia = n.id_evidencia
+WHERE n.id_ejecucion = ?
+ORDER BY n.fecha_intento, n.id_envio""",
+            (id_ejecucion,), operacion="listar_envios_ejecucion_seguro",
+        )
+        return tuple({
+            "tipo_envio": str(fila[0]),
+            "estado_envio": str(fila[1]),
+            "evidencia_incluida": bool(fila[2]),
+            "cantidad_adjuntos": max(0, int(fila[3] or 0)),
+            "estado_evidencia": fila[4],
+        } for fila in filas)
+
     def estado_integraciones(self):
         fila = self.ejecutar_uno(
             """SELECT

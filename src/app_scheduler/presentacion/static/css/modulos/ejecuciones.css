@@ -7,6 +7,18 @@
 .ejecucion-resumen .panel-operativo small { color: var(--color-texto-suave); overflow-wrap: anywhere; }
 .detencion-ejecucion { display: flex; align-items: end; gap: 10px; margin-bottom: 16px; padding: 14px; border: 1px solid var(--color-borde); background: var(--color-superficie); }
 .detencion-ejecucion .campo { flex: 1; }
+.notificaciones-ejecucion { margin-bottom: 16px; padding: 18px; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
+.notificaciones-ejecucion > header { margin-bottom: 12px; }
+.notificaciones-ejecucion h2 { margin: 2px 0 0; font-size: 1.15rem; }
+.notificaciones-ejecucion > header p:last-child { margin: 4px 0 0; color: var(--color-texto-suave); }
+.notificaciones-ejecucion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.notificacion-ejecucion-card { min-width: 0; padding: 15px; border: 1px solid var(--color-borde); border-radius: var(--radio-sm); background: var(--color-fondo); }
+.notificacion-ejecucion-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notificacion-ejecucion-card h3 { margin: 0; font-size: .95rem; }
+.notificacion-ejecucion-card > p { margin: 9px 0; color: var(--color-texto-suave); }
+.notificacion-ejecucion-card dl { display: flex; gap: 24px; margin: 0; }
+.notificacion-ejecucion-card dt { color: var(--color-texto-suave); font-size: .72rem; }
+.notificacion-ejecucion-card dd { margin: 2px 0 0; font-weight: 700; }
 .consola-ejecucion { overflow: hidden; border: 1px solid var(--color-borde); border-radius: var(--radio-md); background: #101820; box-shadow: var(--sombra-suave); }
 .consola-ejecucion > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; color: #fff; border-bottom: 1px solid #30404d; }
 .consola-ejecucion h2 { margin: 2px 0 0; font-size: 1rem; }
@@ -14,4 +26,4 @@
 .consola-acciones label { display: inline-flex; align-items: center; gap: 7px; color: #d7e4eb; font-size: .78rem; }
 .consola-ejecucion pre { min-height: 360px; max-height: 65vh; margin: 0; padding: 16px; overflow: auto; color: #d7e4eb; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 Consolas, "Courier New", monospace; }
 @media (max-width: 1000px) { .ejecucion-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .ejecuciones-filtros, .ejecucion-resumen { grid-template-columns: 1fr; } .detencion-ejecucion { align-items: stretch; flex-direction: column; } .consola-ejecucion > header { align-items: flex-start; flex-direction: column; } .consola-ejecucion pre { min-height: 300px; } }
+@media (max-width: 700px) { .ejecuciones-filtros, .ejecucion-resumen, .notificaciones-ejecucion-grid { grid-template-columns: 1fr; } .detencion-ejecucion { align-items: stretch; flex-direction: column; } .consola-ejecucion > header { align-items: flex-start; flex-direction: column; } .consola-ejecucion pre { min-height: 300px; } }

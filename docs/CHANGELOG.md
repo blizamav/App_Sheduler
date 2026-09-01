@@ -1,5 +1,80 @@
 # Changelog
 
+## v1.0.1 - 2026-08-31
+
+### Changed
+
+* `NOTIFICACION_EXITOSA`, `ALERTA_INTERNA` y `EVIDENCIA_CLIENTE` son
+  comunicaciones independientes, con destinatarios, template, reserva y estado
+  propios. Exito usa el nuevo grupo `EXITO`; Evidencia conserva `EVIDENCIA`.
+* La pantalla de tarea presenta tres bloques separados y explica que Exito +
+  Evidencia pueden generar dos correos para una misma ejecucion.
+* El contrato Evidencia 1.0 fija `resumen[].campo` y `resumen[].valor` como
+  estructura canonica; aliases como `nombre` o `clave` ya no se aceptan
+  silenciosamente.
+* La configuracion de notificaciones de una tarea advierte cuando los correos
+  estan activos pero Microsoft Graph no esta disponible; el acceso
+  administrativo se muestra solo con `CONFIGURACION_ADMIN`.
+* La confirmacion de ejecucion manual informa que Graph esta deshabilitado y
+  permite continuar explicitamente con `Ejecutar de todos modos`.
+* La pantalla Microsoft Graph prioriza `Correo habilitado/deshabilitado` y
+  explica los controles de entorno, credencial y configuracion global.
+* El detalle de ejecucion muestra trazabilidad segura de notificaciones sin
+  destinatarios, secretos ni identificadores tecnicos Graph.
+
+### Fixed
+
+* Corregido el bloqueo `SQLSTATE 23000` al guardar Notificaciones. QA mantenia
+  `CK_notif_config_evidencia_requiere_exito`, que rechazaba
+  `enviar_evidencia=1` con `notificar_exito_activa=0`, tanto en INSERT como en
+  UPDATE. La migracion 023 retiro esa dependencia y amplio
+  `CK_notif_dest_tipo` para aceptar el nuevo grupo `EXITO`.
+* Activar Evidencia ya no activa ni requiere la notificacion operacional de
+  exito. `correos/exito.html` no renderiza resumen ni adjuntos de Evidencia y
+  `correos/evidencia.html` queda reservado al correo cliente.
+* Se elimina el fallback visual `Dato`: las metricas validas conservan su nombre
+  canonico desde el parser hasta el template.
+* El polling de consola sincroniza estado, Worker, PID, duracion, salida,
+  evidencia y notificaciones; una ejecucion terminal ya no deja cards en
+  `PENDIENTE`, `Pendiente de worker` o `En progreso` hasta recargar.
+* Una ruta de log perteneciente a otro runtime ya no invalida el endpoint de
+  estado: se mantiene el confinamiento filesystem y se devuelve un mensaje
+  controlado para que el polling pueda finalizar.
+* El resultado de la ejecucion y el estado del correo se presentan de forma
+  independiente: una ejecucion `EXITOSA` puede mostrar notificacion `OMITIDA`.
+
+### Security
+
+* La migracion incremental
+  `023_separar_destinatarios_exito_evidencia.sql` copia destinatarios legacy a
+  `EXITO`, desactiva la asignacion `EVIDENCIA` ambigua y apaga ese envio hasta
+  que un usuario configure explicitamente el destinatario cliente. No elimina
+  historial ni ejecuta SQL automaticamente. Fue aplicada manualmente y
+  validada en `APP_SCHEDULER_QA` el 2026-09-01.
+* Los errores ODBC conservan internamente solo operacion, SQLSTATE, numero
+  nativo SQL Server y nombre seguro de constraint/indice; no serializan el
+  mensaje completo, destinatarios ni secretos. La UI mantiene el error
+  controlado.
+* El resumen Graph reutilizado por Tareas expone solo disponibilidad y estado.
+  La consulta de envios excluye destinatarios, asunto, request ID y errores
+  tecnicos del proveedor.
+
+### Validation
+
+* `355 passed, 1 skipped` en reconstruccion y `381 passed, 1 skipped` total.
+* Compileall, 38 templates Jinja, 8 JavaScript, Compose y builds Web/Worker
+  correctos.
+* QA Web real: crear configuracion para tarea 4, actualizarla y restaurar su
+  estado devolvieron `302` hacia Programacion; no reaparecio HTTP 503.
+* Revision live en desktop `1440x900` y movil `390x844`, sin overflow
+  horizontal en Notificaciones ni Detalle de ejecucion.
+
+### Pending release condition
+
+* `database/bootstrap/` permanece protegido y conserva el contrato v1.0.0.
+  Debe autorizarse su actualizacion canonica al contrato 023 antes de publicar
+  v1.0.1 como release estable o ejecutar Factory Reset con esta version.
+
 ## v1.0.0 - 2026-08-28
 
 ### Added

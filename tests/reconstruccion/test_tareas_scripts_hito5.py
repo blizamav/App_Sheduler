@@ -366,8 +366,10 @@ class AuthWeb:
 
 
 class TareasWeb:
-    def __init__(self): self.creaciones = []
-    def listar(self, **_): return Pagina((tarea(),), 1, 1, 25)
+    def __init__(self): self.creaciones = []; self.notificaciones_activas = False
+    def listar(self, **_):
+        item = replace(tarea(), notificaciones_activas=self.notificaciones_activas)
+        return Pagina((item,), 1, 1, 25)
     def catalogos(self): return {"clientes": ((2, "Cliente"),), "categorias": ((3, "Categoria"),), "tipos": ((4, "Tipo"),)}
     def obtener(self, identificador): return tarea() if identificador == 1 else None
     def crear(self, datos, actor_actual, _contexto): self.creaciones.append((datos, actor_actual.usuario)); return 1
@@ -400,13 +402,15 @@ class EvidenciasWeb:
 
 
 class NotificacionesWeb:
+    def __init__(self, activas=False): self.activas = activas
     def obtener(self, _):
         config = SimpleNamespace(id_config_notificacion=None, enviar_evidencia=False,
-                                 notificar_exito_activa=False, alerta_error_activa=False,
+                                 notificar_exito_activa=self.activas,
+                                 alerta_error_activa=self.activas,
                                  adjuntar_archivos_declarados=False,
                                  usar_asunto_sugerido_script=False,
                                  usar_alerta_global=True, asunto_personalizado=None)
-        vacios = {f"{tipo}_{canal}": "" for tipo in ("evidencia", "alerta")
+        vacios = {f"{tipo}_{canal}": "" for tipo in ("exito", "evidencia", "alerta")
                   for canal in ("to", "cc", "bcc")}
         return {"configuracion": config, "destinatarios": vacios}
 
@@ -438,6 +442,13 @@ class ObservabilidadWeb:
     def obtener_resumen_worker_seguro(self): return self.resumen
 
 
+class GraphWeb:
+    def __init__(self, disponible=False): self.disponible = disponible
+    def resumen_publico(self):
+        return {"disponible_envio": self.disponible,
+                "estado": "CONFIGURADO" if self.disponible else "DESHABILITADO"}
+
+
 def app_web(configuracion, identidad):
     app = crear_aplicacion(configuracion, ajustes={"TESTING": True, "PROPAGATE_EXCEPTIONS": False})
     auth = AuthWeb(identidad); app.extensions["cargador_identidad"] = auth.cargar_identidad
@@ -447,6 +458,7 @@ def app_web(configuracion, identidad):
     app.extensions["servicio_notificaciones_tarea"] = NotificacionesWeb()
     app.extensions["servicio_programaciones"] = ProgramacionesWeb()
     app.extensions["servicio_observabilidad"] = ObservabilidadWeb()
+    app.extensions["servicio_configuracion_graph"] = GraphWeb()
     return app, tareas, scripts
 
 
@@ -503,7 +515,12 @@ def test_edicion_separa_exito_error_y_evidencia_no_implementada(configuracion):
     assert b"Notificar cuando la ejecucion termine con error" in respuesta.data
     assert b"No implementada" in respuesta.data
     assert b"OPCIONAL" in respuesta.data
-    assert b"Las notificaciones de exito y error pueden utilizarse normalmente" in respuesta.data
+    assert b"Las notificaciones operacionales pueden utilizarse normalmente" in respuesta.data
+    assert b"Enviar Evidencia 1.0 al cliente" in respuesta.data
+    assert b"Incluir Evidencia en la notificacion de exito" not in respuesta.data
+    assert b'name="exito_to"' in respuesta.data
+    assert b'name="evidencia_to"' in respuesta.data
+    assert b'name="alerta_to"' in respuesta.data
     assert b'name="notificar_exito_activa"' in respuesta.data
     assert b'name="enviar_evidencia"' in respuesta.data and b"disabled" in respuesta.data
 
@@ -642,6 +659,49 @@ def test_worker_detenido_advierte_y_permite_reservar_pendiente(configuracion, tm
     assert b"Ejecucion bloqueada" not in respuesta.data
 
 
+def test_graph_off_advierte_en_tarea_y_modal_sin_bloquear(configuracion, tmp_path):
+    configuracion = replace(configuracion, ruta_control_runtime=tmp_path)
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "EJECUCIONES_EJECUTAR"}))
+    app, tareas, _ = app_web(configuracion, identidad)
+    tareas.notificaciones_activas = True
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+
+    respuesta = cliente.get("/tareas/")
+
+    assert respuesta.status_code == 200
+    assert b"Microsoft Graph no esta disponible" in respuesta.data
+    assert b'data-texto-confirmar="Ejecutar de todos modos"' in respuesta.data
+    assert b">Ejecutar</button>" in respuesta.data
+
+
+def test_graph_on_o_tarea_sin_notificaciones_no_muestra_advertencia(configuracion, tmp_path):
+    configuracion = replace(configuracion, ruta_control_runtime=tmp_path)
+    identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "EJECUCIONES_EJECUTAR"}))
+    app, tareas, _ = app_web(configuracion, identidad)
+    cliente = app.test_client(); iniciar_sesion(cliente, identidad)
+    assert b"Ejecutar de todos modos" not in cliente.get("/tareas/").data
+
+    tareas.notificaciones_activas = True
+    app.extensions["servicio_configuracion_graph"] = GraphWeb(disponible=True)
+    assert b"Ejecutar de todos modos" not in cliente.get("/tareas/").data
+
+
+def test_aviso_graph_en_notificaciones_respeta_permiso_administrativo(configuracion):
+    sin_admin = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR", "SCRIPTS_VER"}))
+    app, _, _ = app_web(configuracion, sin_admin)
+    app.extensions["servicio_notificaciones_tarea"] = NotificacionesWeb(activas=True)
+    cliente = app.test_client(); iniciar_sesion(cliente, sin_admin)
+    respuesta = cliente.get("/tareas/1/notificaciones")
+    assert b"Los correos estan configurados" in respuesta.data
+    assert b"Ir a Microsoft Graph" not in respuesta.data
+
+    con_admin = actor(frozenset({"PANEL_VER", "TAREAS_VER", "TAREAS_EDITAR",
+                                 "SCRIPTS_VER", "CONFIGURACION_ADMIN"}))
+    app.extensions["cargador_identidad"] = lambda _: con_admin
+    iniciar_sesion(cliente, con_admin)
+    assert b"Ir a Microsoft Graph" in cliente.get("/tareas/1/notificaciones").data
+
+
 def test_panel_versiones_explica_maximo_y_bloqueo(configuracion):
     identidad = actor(frozenset({"PANEL_VER", "TAREAS_VER", "SCRIPTS_VER", "SCRIPTS_REEMPLAZAR"}))
     app, _, _ = app_web(configuracion, identidad); cliente = app.test_client(); iniciar_sesion(cliente, identidad)
@@ -727,7 +787,7 @@ def test_upload_script_exige_csrf_y_transfiere_bytes(configuracion):
 
 def test_repositorio_tareas_pagina_parametrizada_sin_commit():
     fila = (1, "Proceso", None, None, 2, "Cliente", 3, "Categoria", 4, "Tipo",
-            "MANUAL", "ACTIVA", 1, FECHA, None, 1)
+            "MANUAL", "ACTIVA", 1, FECHA, None, 1, 0)
     conexion = ConexionProgramada(ResultadoSQL(fila=(1,)), ResultadoSQL(filas=[fila]))
     pagina = RepositorioTareas(conexion).listar_paginado(Paginacion(1, 25), busqueda="100%")
     assert pagina.elementos[0].nombre_tarea == "Proceso"

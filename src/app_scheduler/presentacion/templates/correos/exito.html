@@ -12,10 +12,6 @@
     {% if ejecucion.fecha_termino %}<dt>Termino</dt><dd>{{ ejecucion.fecha_termino }}</dd>{% endif %}
     {% if ejecucion.duracion_segundos is not none %}<dt>Duracion</dt><dd>{{ ejecucion.duracion_segundos }} segundos</dd>{% endif %}
   </dl>
-  {% if evidencia %}
-  <h2 style="font-size:16px">{{ evidencia.titulo or 'Evidencia del proceso' }}</h2>
-  {% if evidencia.resumen %}<ul>{% for item in evidencia.resumen %}<li>{% if item is mapping %}<strong>{{ item.nombre or item.clave or 'Dato' }}:</strong> {{ item.valor or item.detalle or '' }}{% else %}{{ item }}{% endif %}</li>{% endfor %}</ul>{% endif %}
-  {% endif %}
   <p style="color:#5d677a;font-size:12px">APP Scheduler</p>
 </body>
 </html>

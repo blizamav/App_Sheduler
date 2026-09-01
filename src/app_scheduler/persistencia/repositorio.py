@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import re
 from typing import Any
 
 from app_scheduler.compartido.base_datos import ConexionDBAPI
@@ -19,13 +20,40 @@ def _codigo_sql_seguro(error: Exception) -> str | None:
     return None
 
 
+def _diagnostico_sql_server_seguro(error: Exception) -> tuple[str | None, str | None]:
+    """Extrae numero nativo y objeto SQL sin conservar valores del mensaje."""
+    argumentos = getattr(error, "args", ())
+    if len(argumentos) < 2:
+        return None, None
+    detalle = str(argumentos[1])
+    numeros = re.findall(r"\((\d{3,6})\)\s*(?=\(|$)", detalle)
+    numero = numeros[-1] if numeros else None
+    objeto = None
+    coincidencia = re.search(
+        r"[\"']((?:CK|FK|PK|UQ|UX|IX)_[A-Za-z0-9_]{1,125})[\"']",
+        detalle,
+        flags=re.IGNORECASE,
+    )
+    if coincidencia:
+        objeto = coincidencia.group(1)
+    return numero, objeto
+
+
 class RepositorioSQL:
     def __init__(self, conexion: ConexionDBAPI):
         self.conexion = conexion
 
     def _error(self, error: Exception, operacion: str) -> ErrorPersistencia:
         codigo = _codigo_sql_seguro(error)
-        sufijo = f" SQLSTATE={codigo}." if codigo else "."
+        numero, objeto = _diagnostico_sql_server_seguro(error)
+        diagnostico = []
+        if codigo:
+            diagnostico.append(f"SQLSTATE={codigo}")
+        if numero:
+            diagnostico.append(f"SQLSERVER={numero}")
+        if objeto:
+            diagnostico.append(f"OBJETO={objeto}")
+        sufijo = f" {' '.join(diagnostico)}." if diagnostico else "."
         return ErrorPersistencia(
             detalle_tecnico=(
                 f"Fallo de persistencia en {operacion}: "

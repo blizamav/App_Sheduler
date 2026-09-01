@@ -189,6 +189,26 @@ def test_capturador_rechaza_bloque_ausente_e_invalido():
     assert capturador.procesar(0)["estado_evidencia"] == "INVALIDA"
 
 
+def test_capturador_exige_campo_y_valor_en_cada_metrica_resumen():
+    def procesar(resumen):
+        capturador = CapturadorEvidencia()
+        datos = {"version_contrato": "1.0", "estado": "EXITOSO",
+                 "tipo_evidencia": "QA", "titulo": "OK", "resumen": resumen,
+                 "problemas": [], "adjuntos": []}
+        capturador.recibir("###APP_SCHEDULER_EVIDENCIA_INICIO###")
+        capturador.recibir(json.dumps(datos))
+        capturador.recibir("###APP_SCHEDULER_EVIDENCIA_FIN###")
+        return capturador.procesar(0)
+
+    valido = procesar([{"campo": "Registros procesados", "valor": 125}])
+    invalido = procesar([{"nombre": "Registros procesados", "valor": 125}])
+
+    assert valido["estado_evidencia"] == "VALIDADA"
+    assert valido["evidencia"]["resumen"][0]["campo"] == "Registros procesados"
+    assert invalido["estado_evidencia"] == "INVALIDA"
+    assert "campo es obligatorio" in invalido["error_validacion"]
+
+
 def test_capturador_rechaza_multiples_bloques():
     capturador = CapturadorEvidencia()
     for _ in range(2):
@@ -389,10 +409,23 @@ def identidad(permisos):
 
 
 class ServicioWebFake:
-    def __init__(self): self.solicitudes = []; self.detenciones = []
+    def __init__(self):
+        self.solicitudes = []; self.detenciones = []
+        self.detalle = None; self.notificaciones = ()
     def solicitar_manual(self, id_tarea, actor, _contexto): self.solicitudes.append((id_tarea, actor.usuario)); return 77
     def solicitar_detencion(self, id_ejecucion, actor, _contexto, motivo): self.detenciones.append((id_ejecucion, actor.usuario, motivo))
     def obtener(self, _id): return None
+    def obtener_panel(self, _id): return self.detalle, self.notificaciones
+    def leer_log(self, _id):
+        return {"id_ejecucion": self.detalle.id_ejecucion,
+                "estado": self.detalle.estado_ejecucion, "es_final": True,
+                "codigo_salida": self.detalle.codigo_salida,
+                "duracion_segundos": self.detalle.duracion_segundos,
+                "nombre_worker": self.detalle.nombre_worker or "",
+                "pid_proceso": self.detalle.pid_proceso,
+                "estado_evidencia": self.detalle.estado_evidencia or "NO REQUERIDA",
+                "mensaje_error": self.detalle.mensaje_error or "",
+                "notificaciones": self.notificaciones, "log": "Proceso terminado"}
     def listar(self, **_): return Pagina((), 0, 1, 25)
 
 
@@ -435,6 +468,97 @@ def test_detencion_http_exige_permiso_y_csrf(configuracion):
     )
     assert respuesta.status_code == 302
     assert servicio.detenciones == [(5, "operador", "Prueba")]
+
+
+def detalle_final():
+    return DetalleEjecucion(
+        5, 1, "MANUAL", "EXITOSA", AHORA, AHORA, 3, 0,
+        "operador", "worker-qa", "Proceso", "Script", "script.py", "1",
+        2, 3, None, 456, None, None, None, None, None, False,
+        None, None, "VALIDADA",
+    )
+
+
+def test_detalle_diferencia_ejecucion_exitosa_de_notificacion_omitida(configuracion):
+    usuario = identidad({"EJECUCIONES_VER", "EJECUCIONES_LOG_VER"})
+    app, servicio = app_web(configuracion, usuario)
+    servicio.detalle = detalle_final()
+    servicio.notificaciones = ({
+        "estado": "OMITIDA", "clase": "advertencia",
+        "explicacion": "Microsoft Graph no estaba disponible al finalizar. No se envio correo.",
+        "tipo": "Notificacion de exito", "evidencia_incluida": False,
+        "cantidad_adjuntos": 0,
+    },)
+    cliente = app.test_client(); sesion_y_token(cliente, usuario)
+
+    respuesta = cliente.get("/ejecuciones/5")
+    estado = cliente.get("/ejecuciones/5/log").get_json()
+
+    assert respuesta.status_code == 200
+    assert b"EXITOSA" in respuesta.data and b"OMITIDA" in respuesta.data
+    assert b"El resultado del script y el estado del correo son independientes" in respuesta.data
+    assert estado["estado"] == "EXITOSA" and estado["notificaciones"][0]["estado"] == "OMITIDA"
+
+
+@pytest.mark.parametrize(
+    ("estado", "esperado"),
+    (("ENVIADO", "ENVIADA"), ("OMITIDO", "OMITIDA"),
+     ("FALLIDO", "ERROR"), ("PENDIENTE", "PENDIENTE")),
+)
+def test_presentacion_notificacion_usa_estados_amigables(estado, esperado):
+    item = ServicioEjecuciones._presentar_notificacion({
+        "tipo_envio": "NOTIFICACION_EXITOSA", "estado_envio": estado,
+        "evidencia_incluida": True, "cantidad_adjuntos": 2,
+    })
+    assert item["estado"] == esperado
+    assert item["tipo"] == "Notificacion de exito"
+    assert item["evidencia_incluida"] and item["cantidad_adjuntos"] == 2
+
+
+def test_detalle_completa_exito_no_configurado_y_evidencia_no_generada():
+    detalle = replace(detalle_final(), estado_evidencia="NO_EMITIDA")
+    config = SimpleNamespace(notificar_exito_activa=False, enviar_evidencia=True)
+
+    estados = ServicioEjecuciones._completar_notificaciones(detalle, config, ())
+
+    assert [(item["tipo"], item["estado"]) for item in estados] == [
+        ("Notificacion de exito", "NO_CONFIGURADA"),
+        ("Evidencia cliente", "NO_GENERADA"),
+    ]
+
+
+def test_polling_actualiza_todas_las_cards_terminales():
+    javascript = (Path(__file__).parents[2] /
+                  "src/app_scheduler/presentacion/static/js/ejecuciones.js").read_text("utf-8")
+    for selector in ("[data-worker]", "[data-pid]", "[data-duracion]",
+                     "[data-codigo-salida]", "[data-estado-evidencia]",
+                     "[data-notificaciones-lista]"):
+        assert selector in javascript
+    assert "renderizarNotificaciones(datos.notificaciones)" in javascript
+    assert "datos.duracion_segundos" in javascript
+
+
+def test_polling_con_log_de_otro_entorno_conserva_estado_sin_leer_ruta(tmp_path, configuracion):
+    detalle = replace(detalle_final(), ruta_fisica_log=str(tmp_path.parent / "externo.log"))
+    estado = SimpleNamespace(detalle=detalle)
+    class RepoDetalle:
+        def __init__(self, actual): self.actual = actual
+        def obtener_detalle(self, _id): return self.actual.detalle
+    class RepoNotificaciones:
+        def __init__(self, _actual): pass
+        def listar_envios_ejecucion(self, _id): return ()
+        def obtener_configuracion_tarea(self, _id):
+            return SimpleNamespace(notificar_exito_activa=False, enviar_evidencia=False)
+    servicio = ServicioEjecuciones(
+        ProveedorFake(estado), replace(configuracion, ruta_base_logs_tareas=tmp_path / "logs"),
+        repositorio=RepoDetalle, repositorio_notificaciones=RepoNotificaciones,
+    )
+
+    resultado = servicio.leer_log(5)
+
+    assert resultado["estado"] == "EXITOSA" and resultado["es_final"]
+    assert resultado["duracion_segundos"] == 3
+    assert resultado["log"] == "Log no disponible en este entorno."
 
 
 class EstadoManual:

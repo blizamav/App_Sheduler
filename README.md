@@ -1,13 +1,13 @@
 # APP Scheduler
 
-APP Scheduler v1.0.0 es una aplicacion web interna para programar, ejecutar,
+APP Scheduler v1.0.1 es una aplicacion web interna para programar, ejecutar,
 monitorear y auditar procesos Python de equipos TI. Centraliza tareas, scripts
 versionados, programaciones, ejecuciones, logs, evidencia opcional y
 notificaciones bajo autorizacion backend y trazabilidad SQL Server.
 
 ## Estado
 
-**Version estable: v1.0.0.** Los Hitos 0-15 de la reconstruccion estan
+**Version estable: v1.0.1.** Los Hitos 0-15 de la reconstruccion estan
 cerrados. El runtime oficial vive en `src/app_scheduler/`; `app/`, `run.py` y
 `scheduler_worker.py` se conservan unicamente como referencia historica y no
 son entrypoints operativos.
@@ -156,7 +156,11 @@ Microsoft Graph utiliza client credentials almacenadas en el entorno. Su kill
 switch ENV y la configuracion SQL deben estar activos simultaneamente. El
 despacho reserva en SQL antes de llamar Graph y no aplica retry automatico.
 Evidencia 1.0 es opcional y se captura desde stdout delimitado; el JSON completo
-no se persiste. Graph quedo deshabilitado al cerrar QA.
+no se persiste. La UI informa la disponibilidad efectiva antes de ejecutar y
+separa el resultado del script del estado del correo en el detalle de ejecucion.
+La notificacion operacional de exito y el correo de Evidencia al cliente son
+envios independientes, con destinatarios y templates separados.
+Graph quedo deshabilitado al cerrar QA.
 
 ## Seguridad
 

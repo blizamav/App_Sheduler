@@ -30,7 +30,7 @@ COLUMNAS_TAREA = (
     "id_tarea", "nombre_tarea", "descripcion", "observacion_tecnica",
     "id_cliente", "cliente", "id_categoria", "categoria", "id_tipo", "tipo",
     "tipo_tarea", "estado_tarea", "permite_ejecucion_manual", "fecha_creacion",
-    "fecha_actualizacion", "activo",
+    "fecha_actualizacion", "activo", "notificaciones_activas",
 )
 COLUMNAS_SCRIPT = (
     "id_script", "id_tarea", "nombre_script", "descripcion", "id_version_activa",
@@ -223,6 +223,7 @@ def mapear_tarea(fila: Sequence[Any]) -> Tarea:
         permite_ejecucion_manual=bool(datos["permite_ejecucion_manual"]),
         fecha_creacion=datos["fecha_creacion"], fecha_actualizacion=datos["fecha_actualizacion"],
         activo=bool(datos["activo"]),
+        notificaciones_activas=bool(datos["notificaciones_activas"]),
     )
 
 

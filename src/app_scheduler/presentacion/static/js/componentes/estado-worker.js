@@ -35,9 +35,10 @@ function aplicarCola(estado) {
 function aplicarConfirmaciones(estado) {
     document.querySelectorAll("[data-worker-confirmacion]").forEach((boton) => {
         const noDisponible = ESTADOS_NO_DISPONIBLES.has(estado.codigo);
-        boton.dataset.titulo = noDisponible
-            ? "Worker no disponible: reservar igualmente"
-            : "Reservar ejecucion manual";
+        const graphNoDisponible = boton.dataset.graphNoDisponible === "1";
+        boton.dataset.titulo = graphNoDisponible
+            ? "Ejecutar sin envio de correos"
+            : (noDisponible ? "Worker no disponible: reservar igualmente" : "Reservar ejecucion manual");
         boton.dataset.mensaje = noDisponible
             ? boton.dataset.mensajeDetenido
             : boton.dataset.mensajeOperativo;

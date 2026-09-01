@@ -18,6 +18,7 @@ export function prepararModal() {
         pendiente = { formulario, activador };
         modal.querySelector("[data-modal-titulo]").textContent = activador.dataset.titulo || "Confirmar accion";
         modal.querySelector("[data-modal-mensaje]").textContent = activador.dataset.mensaje || "Confirma si deseas continuar.";
+        confirmar.textContent = activador.dataset.textoConfirmar || "Confirmar";
         confirmar.className = `btn ${activador.classList.contains("peligro") || activador.classList.contains("btn-danger") ? "btn-danger" : "btn-primary"}`;
         instancia.show();
     });

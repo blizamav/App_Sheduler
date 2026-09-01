@@ -226,6 +226,30 @@ def test_error_sql_conserva_solo_sqlstate_seguro():
     assert conexion.cursores[0].cerrado is True
 
 
+def test_error_sql_conserva_numero_y_constraint_sin_filtrar_valores():
+    class ErrorODBC(Exception):
+        pass
+
+    error_driver = ErrorODBC(
+        "23000",
+        '[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The INSERT '
+        'statement conflicted with the CHECK constraint '
+        '"CK_notif_config_evidencia_requiere_exito". Valor '
+        'cliente@example.cl; password=secreto-no-visible (547) (SQLExecDirectW)',
+    )
+    conexion = ConexionProgramada(ResultadoSQL(error=error_driver))
+
+    with pytest.raises(ErrorPersistencia) as capturado:
+        RepositorioUsuarios(conexion).obtener_por_id(7)
+
+    detalle = capturado.value.detalle_tecnico
+    assert "SQLSTATE=23000" in detalle
+    assert "SQLSERVER=547" in detalle
+    assert "OBJETO=CK_notif_config_evidencia_requiere_exito" in detalle
+    assert "cliente@example.cl" not in detalle
+    assert "secreto-no-visible" not in detalle
+
+
 def test_auditoria_inserta_solo_columnas_canonicas_y_no_confirma():
     conexion = ConexionProgramada(ResultadoSQL(fila=(0,)), ResultadoSQL(fila=(41,)))
     evento = crear_evento_auditoria(

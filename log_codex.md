@@ -6,10 +6,86 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: Hitos 0-15 cerrados. APP Scheduler v1.0.0 publicada.
+* Estado actual: APP Scheduler v1.0.0 publicada; parche v1.0.1 validado
+  localmente y pendiente de publicacion.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: Hito 15 CERRADO; reconstruccion completada.
-* Ultima actualizacion: 2026-08-28
+* Fase actual: parche v1.0.1 de UX Graph y separacion de comunicaciones
+  validado; publicacion bloqueada por compatibilidad del bootstrap protegido.
+* Ultima actualizacion: 2026-09-01
+
+## 2026-09-01 - Parche v1.0.1 / Correccion SQLSTATE 23000 en Notificaciones
+
+* Causa exacta: `APP_SCHEDULER_QA` conservaba el CHECK historico
+  `CK_notif_config_evidencia_requiere_exito`, cuya expresion
+  `enviar_evidencia = 0 OR notificar_exito_activa = 1` rechazaba la combinacion
+  valida Evidencia ON / Exito OFF con error SQL Server 547, SQLSTATE 23000.
+  Afectaba INSERT y UPDATE porque ambos persisten los dos flags en
+  `notificaciones_config_tarea` antes de reemplazar destinatarios.
+* Incompatibilidad adicional corregida: `CK_notif_dest_tipo` solo permitia
+  `EVIDENCIA` y `ALERTA`, mientras el runtime v1.0.1 guarda destinatarios de
+  notificacion operacional bajo `EXITO`.
+* SQL QA: se ejecuto exclusivamente
+  `database/migrations/023_separar_destinatarios_exito_evidencia.sql` mediante
+  la cuenta de mantenimiento autorizada. Resultado: tres configuraciones
+  legacy migradas, tres destinatarios `EXITO` activos y cero destinatarios
+  `EVIDENCIA` ambiguos activos. No hubo DELETE ni Factory Reset.
+* Diagnostico seguro: la persistencia conserva internamente operacion,
+  SQLSTATE, numero SQL Server y nombre seguro de constraint/indice, sin incluir
+  mensaje completo del driver, emails, secretos o cadena de conexion. La UI
+  mantiene su respuesta controlada.
+* QA Web real: tarea 4 creo configuracion con `HTTP 302` a Programacion; el
+  UPDATE posterior y su restauracion tambien devolvieron `302` a Programacion.
+  La tarea 3 fue actualizada y restaurada durante la comprobacion inicial, sin
+  HTTP 503. No se ejecutaron tareas ni se activo Graph o Scheduler.
+* Regresion: `355 passed, 1 skipped` en `tests/reconstruccion`; `381 passed, 1
+  skipped` total; compileall y 38 templates Jinja correctos; JavaScript valido
+  con Node; Compose y builds Web/Worker correctos; `git diff --check` sin
+  errores.
+* Bootstrap: `database/bootstrap/` y `database/release/` permanecen sin cambios.
+  El bootstrap protegido sigue en contrato v1.0.0 y requiere autorizacion
+  separada antes de publicar v1.0.1 como release estable.
+
+## 2026-08-31 - Parche v1.0.1 / UX notificaciones y Microsoft Graph
+
+* Correccion funcional: `NOTIFICACION_EXITOSA` y `EVIDENCIA_CLIENTE` quedan
+  separadas. Exito usa destinatarios `EXITO` y template estandar; Evidencia usa
+  destinatarios `EVIDENCIA`, template cliente y payload runtime validado.
+* Independencia: `enviar_evidencia` ya no activa ni requiere
+  `notificar_exito_activa`. El dispatcher puede reservar dos tipos at-most-once
+  para una ejecucion exitosa y mantiene `ALERTA_INTERNA` separada en error.
+* Datos: se creo, sin ejecutar, la migracion incremental
+  `023_separar_destinatarios_exito_evidencia.sql`. Copia destinatarios legacy a
+  `EXITO`, desactiva asignaciones `EVIDENCIA` ambiguas y exige reconfiguracion
+  explicita del cliente. No elimina historial.
+* Contrato stdout: `resumen` exige objetos `campo` + `valor`; se retiro el
+  fallback `Dato` y el template cliente preserva nombres y valores, incluido 0.
+* Bootstrap: `database/bootstrap/` permanece protegido y sin cambios. Su
+  actualizacion al contrato 023 requiere autorizacion separada antes de un
+  Factory Reset o instalacion limpia con este parche.
+
+* Disponibilidad: `ServicioConfiguracionGraph` entrega un resumen publico
+  minimo reutilizado por Tareas; no expone tenant, client, remitente, secret ni
+  destinatarios.
+* Tareas: la configuracion advierte Graph OFF y limita el enlace administrativo
+  a `CONFIGURACION_ADMIN`; la ejecucion manual sigue permitida mediante modal
+  explicito `Ejecutar de todos modos`.
+* Ejecuciones: el detalle presenta cada envio con estado, tipo, evidencia y
+  cantidad declarada de adjuntos, sin datos sensibles. `EXITOSA` y `OMITIDA`
+  permanecen estados independientes.
+* Polling: se corrigio la actualizacion parcial; ahora sincroniza Worker, PID,
+  duracion, codigo de salida, evidencia y notificaciones junto con consola y
+  estado terminal.
+* Compatibilidad de runtime: una ruta fisica de log ajena al root local ya no
+  genera `404`; no se lee el archivo externo y el endpoint conserva el estado
+  terminal con un mensaje controlado.
+* Validacion: `349 passed, 1 skipped` en reconstruccion y `375 passed, 1
+  skipped` total; compileall, 38 templates Jinja, 8 JavaScript, Compose y builds
+  Web/Worker correctos. La revision live en desktop `1440x900` y movil
+  `390x844` confirmo los tres bloques independientes, ausencia de overflow
+  horizontal y estados separados de Exito/Evidencia en el detalle.
+* Alcance protegido: sin cambios en motor, Worker, Scheduler, contrato Graph,
+  at-most-once, Evidencia 1.0, `.env`, `.env.docker`, `database/release/` ni
+  `database/bootstrap/`; no se ejecuto SQL, Factory Reset o envio real.
 
 ## 2026-08-28 - Hito 15 / release v1.0.0
 

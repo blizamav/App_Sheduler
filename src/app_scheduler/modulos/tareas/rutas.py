@@ -14,6 +14,7 @@ bp_tareas = Blueprint("tareas", __name__, url_prefix="/tareas")
 def _servicio(): return current_app.extensions["servicio_tareas"]
 def _servicio_evidencias(): return current_app.extensions["servicio_evidencias"]
 def _servicio_notificaciones(): return current_app.extensions["servicio_notificaciones_tarea"]
+def _servicio_graph(): return current_app.extensions["servicio_configuracion_graph"]
 def _servicio_scripts(): return current_app.extensions["servicio_scripts"]
 def _servicio_programaciones(): return current_app.extensions["servicio_programaciones"]
 def _contexto(): return ContextoAuditoria(request.remote_addr, request.user_agent.string[:500] or None, request.path, request.method)
@@ -73,7 +74,7 @@ def listado():
     return render_template("tareas/listado.html", resultado=resultado,
         catalogos=_servicio().catalogos(), filtros={"buscar": request.args.get("buscar", ""),
         "estado": estado or "", "id_cliente": id_cliente or ""},
-        estado_worker=estado_worker)
+        estado_worker=estado_worker, estado_graph=_servicio_graph().resumen_publico())
 
 
 @bp_tareas.route("/nueva", methods=["GET", "POST"])
@@ -150,6 +151,7 @@ def notificaciones(id_tarea):
         "tareas/notificaciones.html", actual=actual, flujo=flujo,
         detalle_scripts=detalle_scripts, evidencia=evidencia_actual,
         notificaciones=notificaciones_actuales,
+        estado_graph=_servicio_graph().resumen_publico(),
     )
 
 
