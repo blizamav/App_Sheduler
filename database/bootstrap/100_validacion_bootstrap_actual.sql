@@ -38,8 +38,8 @@ IF (SELECT COUNT(*) FROM sys.columns c INNER JOIN sys.tables t ON t.object_id = 
 IF (SELECT COUNT(*) FROM sys.foreign_keys WHERE is_ms_shipped = 0) <> 25
     INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 25 claves foraneas.');
 
-IF (SELECT COUNT(*) FROM sys.check_constraints WHERE is_ms_shipped = 0) <> 39
-    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 39 restricciones CHECK.');
+IF (SELECT COUNT(*) FROM sys.check_constraints WHERE is_ms_shipped = 0) <> 38
+    INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 38 restricciones CHECK.');
 
 IF (SELECT COUNT(*) FROM sys.default_constraints) <> 118
     INSERT INTO @errores VALUES (N'METADATA', N'La base debe contener exactamente 118 restricciones DEFAULT.');
@@ -64,7 +64,6 @@ DECLARE @objetos_esperados TABLE (nombre sysname PRIMARY KEY);
 INSERT INTO @objetos_esperados (nombre)
 VALUES
     (N'PK_notificaciones_config_tarea'), (N'FK_notif_config_tareas'), (N'CK_notif_config_plantilla'),
-    (N'CK_notif_config_evidencia_requiere_exito'),
     (N'UX_notif_config_tarea_activa'), (N'IX_notif_config_tarea_activo'), (N'IX_notif_config_enviar_evidencia'),
     (N'PK_notificaciones_destinatarios'), (N'FK_notif_dest_config'), (N'CK_notif_dest_tipo'),
     (N'CK_notif_dest_canal'), (N'CK_notif_dest_email_basico'), (N'UX_notif_dest_activo'),
@@ -87,6 +86,25 @@ SELECT N'OBJETO_FALTANTE', e.nombre
 FROM @objetos_esperados e
 WHERE NOT EXISTS (SELECT 1 FROM sys.objects o WHERE o.name = e.nombre)
   AND NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = e.nombre);
+
+IF EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_notif_config_evidencia_requiere_exito'
+      AND parent_object_id = OBJECT_ID(N'dbo.notificaciones_config_tarea')
+)
+    INSERT INTO @errores VALUES (N'NOTIFICACIONES', N'Evidencia no debe depender de la notificacion de exito.');
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_notif_dest_tipo'
+      AND parent_object_id = OBJECT_ID(N'dbo.notificaciones_destinatarios')
+      AND definition LIKE N'%EXITO%'
+      AND definition LIKE N'%EVIDENCIA%'
+      AND definition LIKE N'%ALERTA%'
+      AND is_disabled = 0
+      AND is_not_trusted = 0
+)
+    INSERT INTO @errores VALUES (N'NOTIFICACIONES', N'Los grupos EXITO, EVIDENCIA y ALERTA deben estar permitidos y validados.');
 
 IF (SELECT COUNT(*) FROM dbo.roles WHERE activo = 1) <> 4
    OR EXISTS (SELECT 1 FROM dbo.roles WHERE codigo_rol NOT IN (N'SUPER_ADMIN', N'ADMIN', N'TI', N'TERCERO'))
@@ -159,8 +177,8 @@ IF (SELECT COUNT(*) FROM dbo.reglas_feriados_irrenunciables WHERE activo = 1 AND
 IF (SELECT COUNT(*) FROM dbo.configuracion_mail_graph WHERE clave_configuracion = N'MAIL_GRAPH') <> 1
     INSERT INTO @errores VALUES (N'MAIL_GRAPH', N'Debe existir exactamente una configuracion MAIL_GRAPH.');
 
-IF (SELECT COUNT(*) FROM dbo.configuracion_sistema WHERE clave = N'BOOTSTRAP_SQL' AND valor = N'19C.0' AND activo = 1) <> 1
-    INSERT INTO @errores VALUES (N'BOOTSTRAP', N'No existe la marca de version BOOTSTRAP_SQL 19C.0.');
+IF (SELECT COUNT(*) FROM dbo.configuracion_sistema WHERE clave = N'BOOTSTRAP_SQL' AND valor = N'19C.1' AND activo = 1) <> 1
+    INSERT INTO @errores VALUES (N'BOOTSTRAP', N'No existe la marca de version BOOTSTRAP_SQL 19C.1.');
 
 IF EXISTS (
     SELECT 1 FROM dbo.configuracion_mail_graph

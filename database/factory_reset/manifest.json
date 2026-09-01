@@ -1,6 +1,6 @@
 {
   "factory_reset": "APP_SCHEDULER_FACTORY_RESET_IN_PLACE_V1",
-  "version": "19C.0",
+  "version": "19C.1",
   "mode": "in_place",
   "runner": "database/factory_reset/000_reset_in_place.sql",
   "cleanup_script": "database/factory_reset/001_eliminar_esquema_aplicativo.sql",

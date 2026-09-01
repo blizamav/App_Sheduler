@@ -41,7 +41,7 @@ class RepoFactoryFake:
         return {"tareas": 2, "ejecuciones": 4}
 
     def obtener_version_bootstrap(self):
-        return "19C.0"
+        return "19C.1"
 
     def listar_ejecuciones_activas(self):
         return self.activas

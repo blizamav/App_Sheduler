@@ -4,6 +4,10 @@
 
 ### Changed
 
+* El bootstrap canonico `19C.1` incorpora directamente el contrato final de la
+  migracion 023: canales y destinatarios `EXITO`, `EVIDENCIA` y `ALERTA`
+  independientes, sin dependencia Evidencia -> Exito. Los manifiestos y la
+  validacion de Factory Reset exigen la misma version.
 * `NOTIFICACION_EXITOSA`, `ALERTA_INTERNA` y `EVIDENCIA_CLIENTE` son
   comunicaciones independientes, con destinatarios, template, reserva y estado
   propios. Exito usa el nuevo grupo `EXITO`; Evidencia conserva `EVIDENCIA`.
@@ -61,19 +65,21 @@
 
 ### Validation
 
-* `355 passed, 1 skipped` en reconstruccion y `381 passed, 1 skipped` total.
+* `37 passed` en la regresion focal de contrato SQL y Factory Reset;
+  `356 passed, 1 skipped` en reconstruccion y `382 passed, 1 skipped` total.
 * Compileall, 38 templates Jinja, 8 JavaScript, Compose y builds Web/Worker
   correctos.
+* Manifiestos bootstrap/Factory Reset validos y `git diff --check` correcto.
+  No se repitieron Compose/builds porque este cierre no modifica Docker.
 * QA Web real: crear configuracion para tarea 4, actualizarla y restaurar su
   estado devolvieron `302` hacia Programacion; no reaparecio HTTP 503.
 * Revision live en desktop `1440x900` y movil `390x844`, sin overflow
   horizontal en Notificaciones ni Detalle de ejecucion.
 
-### Pending release condition
+### Release
 
-* `database/bootstrap/` permanece protegido y conserva el contrato v1.0.0.
-  Debe autorizarse su actualizacion canonica al contrato 023 antes de publicar
-  v1.0.1 como release estable o ejecutar Factory Reset con esta version.
+* Cerrada la compatibilidad entre bases historicas actualizadas mediante la
+  migracion 023 y futuras instalaciones limpias mediante bootstrap `19C.1`.
 
 ## v1.0.0 - 2026-08-28
 

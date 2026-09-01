@@ -36,9 +36,9 @@ WHEN NOT MATCHED THEN
 GO
 
 UPDATE dbo.configuracion_sistema
-SET valor = N'19C.0',
+SET valor = N'19C.1',
     descripcion = N'Version del bootstrap limpio vigente validado para infraestructura Factory Reset.',
     fecha_actualizacion = SYSDATETIME(),
-    usuario_actualizacion = N'bootstrap_19C'
+    usuario_actualizacion = N'bootstrap_19C_1'
 WHERE clave = N'BOOTSTRAP_SQL';
 GO

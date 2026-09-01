@@ -13,11 +13,22 @@
     - No guarda secretos Graph, tokens, credenciales ni cadenas de conexion.
     - No ejecuta envios ni implementa Graph.
 
-    Definicion limpia derivada de la migracion 019.
+    Definicion limpia derivada de las migraciones 019, 022 y 023.
     Requiere SQLCMD y una base nueva creada por el paso 001 del manifiesto.
 */
 
 USE [$(DB_NAME)];
+GO
+
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
 GO
 
 IF OBJECT_ID(N'dbo.notificaciones_config_tarea', N'U') IS NULL
@@ -39,8 +50,7 @@ BEGIN
         actualizado_en datetime2(0) NULL,
         CONSTRAINT PK_notificaciones_config_tarea PRIMARY KEY (id_config_notificacion),
         CONSTRAINT FK_notif_config_tareas FOREIGN KEY (id_tarea) REFERENCES dbo.tareas(id_tarea),
-        CONSTRAINT CK_notif_config_plantilla CHECK (plantilla_evidencia IS NULL OR plantilla_evidencia IN (N'STDOUT_V1')),
-        CONSTRAINT CK_notif_config_evidencia_requiere_exito CHECK (enviar_evidencia = 0 OR notificar_exito_activa = 1)
+        CONSTRAINT CK_notif_config_plantilla CHECK (plantilla_evidencia IS NULL OR plantilla_evidencia IN (N'STDOUT_V1'))
     );
 END;
 GO
@@ -92,7 +102,7 @@ BEGIN
         creado_en datetime2(0) NOT NULL CONSTRAINT DF_notif_dest_creado_en DEFAULT SYSDATETIME(),
         CONSTRAINT PK_notificaciones_destinatarios PRIMARY KEY (id_destinatario),
         CONSTRAINT FK_notif_dest_config FOREIGN KEY (id_config_notificacion) REFERENCES dbo.notificaciones_config_tarea(id_config_notificacion),
-        CONSTRAINT CK_notif_dest_tipo CHECK (tipo_destinatario IN (N'EVIDENCIA', N'ALERTA')),
+        CONSTRAINT CK_notif_dest_tipo CHECK (tipo_destinatario IN (N'EXITO', N'EVIDENCIA', N'ALERTA')),
         CONSTRAINT CK_notif_dest_canal CHECK (canal IN (N'TO', N'CC', N'BCC')),
         CONSTRAINT CK_notif_dest_email_basico CHECK (email LIKE N'%_@_%._%')
     );

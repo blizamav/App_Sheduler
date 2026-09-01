@@ -67,5 +67,9 @@ El segundo y ultimo intento autorizado del Hito 14 finalizo correctamente:
 * sin lock o cuarentena residual;
 * runtime funcional validado posteriormente.
 
+El bootstrap canonico posterior queda en `19C.1`: conserva la misma estructura
+general y aplica directamente la separacion de destinatarios y canales definida
+por la migracion incremental 023. Un futuro Factory Reset validara esa marca.
+
 Factory Reset no se repite durante Hito 15 ni como healthcheck. Su uso futuro
 requiere respaldo, ventana, autorizacion explicita y plan de recuperacion.

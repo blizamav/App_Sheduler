@@ -6,12 +6,31 @@
 * Descripcion: Aplicacion web corporativa para programar, ejecutar, monitorear y auditar tareas Python de equipos TI.
 * Stack actual: Python, Flask, HTML, CSS, JavaScript, python-dotenv, pyodbc, SQL Server.
 * Base de datos: SQL Server `APP_SCHEDULER_QA`; release publicado protegido en `database/release/`, bootstrap limpio en `database/bootstrap/`, runner in-place en `database/factory_reset/` y migraciones correctivas fuera de la instalacion limpia.
-* Estado actual: APP Scheduler v1.0.0 publicada; parche v1.0.1 validado
-  localmente y pendiente de publicacion.
+* Estado actual: APP Scheduler v1.0.0 publicada; cierre de release v1.0.1 en
+  validacion final.
 * Ambiente actual: LOCAL Windows.
-* Fase actual: parche v1.0.1 de UX Graph y separacion de comunicaciones
-  validado; publicacion bloqueada por compatibilidad del bootstrap protegido.
+* Fase actual: bootstrap canonico 19C.1 alineado con la migracion 023 para el
+  cierre de v1.0.1.
 * Ultima actualizacion: 2026-09-01
+
+## 2026-09-01 - Cierre v1.0.1 / Bootstrap canonico 19C.1
+
+* Contrato limpio: `database/bootstrap/007_crear_notificaciones_evidencias.sql`
+  crea directamente los grupos independientes `EXITO`, `EVIDENCIA` y `ALERTA`
+  y ya no incluye `CK_notif_config_evidencia_requiere_exito`.
+* Equivalencia: una instalacion limpia 19C.1 y una base historica actualizada
+  mediante la migracion 023 representan el mismo contrato final. Exito,
+  Evidencia cliente y alerta interna mantienen destinatarios separados.
+* Validacion: el script 100 exige 38 CHECK, comprueba la ausencia de la
+  dependencia obsoleta, valida los tres grupos y exige la marca
+  `BOOTSTRAP_SQL=19C.1`.
+* Factory Reset: sus manifiestos y validacion final se alinearon a 19C.1. No se
+  ejecuto Factory Reset ni SQL sobre QA durante este cierre.
+* Seguridad: se conservaron los SET de sesion SQL Server necesarios antes del
+  DDL. `database/release/`, `.env` y `.env.docker` permanecen intactos.
+* Regresion: `37 passed` focales; `356 passed, 1 skipped` en reconstruccion;
+  `382 passed, 1 skipped` total; compileall, JSON y `git diff --check`
+  correctos. Docker no se repitio porque no hubo cambios de imagen o Compose.
 
 ## 2026-09-01 - Parche v1.0.1 / Correccion SQLSTATE 23000 en Notificaciones
 

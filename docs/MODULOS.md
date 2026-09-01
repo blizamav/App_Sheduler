@@ -76,7 +76,7 @@ exclusivamente `ALERTA_INTERNA`, con destinatarios `ALERTA` o globales.
 Los repositorios reciben una conexion de una unidad de trabajo; no abren commits
 ocultos. Los valores de usuario viajan como parametros `?` de pyodbc y las
 partes dinamicas se limitan a allowlists internas. El contrato canonico es el
-bootstrap 19C.0 de 33 tablas y 457 columnas documentado en
+bootstrap 19C.1 de 33 tablas, 457 columnas y 38 CHECK documentado en
 `docs/PERSISTENCIA_RECONSTRUCCION.md`.
 
 ## Seguridad transversal

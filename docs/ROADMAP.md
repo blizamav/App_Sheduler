@@ -50,9 +50,9 @@ El parche `v1.0.1` cierra la deuda UX de Microsoft Graph y corrige el modelo de
 comunicaciones: disponibilidad contextual, advertencia no bloqueante,
 trazabilidad segura, refresh completo y separacion entre exito, alerta y
 Evidencia cliente. No modifica el motor Graph ni el Worker/Scheduler. La
-migracion incremental `023` aplica el desacople en bases existentes; el
-bootstrap publicado permanece protegido y requiere una actualizacion
-canonica autorizada antes de incorporar este contrato a Factory Reset.
+migracion incremental `023` aplica el desacople en bases existentes y el
+bootstrap canonico `19C.1` lo crea directamente en instalaciones limpias y
+Factory Reset futuros.
 
 Deuda real no bloqueante:
 

@@ -1,9 +1,10 @@
-# Despliegue APP Scheduler v1.0.0
+# Despliegue APP Scheduler v1.0.1
 
 ## Prerrequisitos
 
 * Python 3.11 o superior;
-* SQL Server con `APP_SCHEDULER_QA` y bootstrap 19C.0;
+* SQL Server con `APP_SCHEDULER_QA` y bootstrap 19C.1, o una base historica con
+  la migracion incremental 023 aplicada;
 * ODBC Driver 17 for SQL Server;
 * Docker Desktop/Engine con Compose para QA;
 * acceso de red al SQL Server;

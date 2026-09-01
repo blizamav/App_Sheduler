@@ -63,12 +63,12 @@ parametrizado. La cuenta ordinaria opera la app; la cuenta de mantenimiento se
 usa solo por Factory Reset y tiene `db_owner` unicamente sobre
 `APP_SCHEDULER_QA`.
 
-Contrato bootstrap 19C.0 validado en Hito 14:
+Contrato bootstrap vigente 19C.1:
 
 * 33 tablas `dbo`;
 * 457 columnas;
 * 25 FK;
-* 39 CHECK;
+* 38 CHECK;
 * 118 DEFAULT;
 * 120 indices;
 * sin vistas, procedures, funciones o triggers propios.

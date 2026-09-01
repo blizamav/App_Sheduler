@@ -166,7 +166,7 @@ SELECT N'FACTORY_INPLACE_ENV|'
 SET NOCOUNT ON;
 IF (SELECT COUNT(*) FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id WHERE s.name=N'dbo') <> 33
     BEGIN THROW 51000, N'Cantidad de tablas invalida.', 1; END;
-IF NOT EXISTS (SELECT 1 FROM dbo.configuracion_sistema WHERE clave=N'BOOTSTRAP_SQL' AND valor=N'19C.0' AND activo=1)
+IF NOT EXISTS (SELECT 1 FROM dbo.configuracion_sistema WHERE clave=N'BOOTSTRAP_SQL' AND valor=N'19C.1' AND activo=1)
     BEGIN THROW 51000, N'Marca BOOTSTRAP_SQL invalida.', 1; END;
 IF NOT EXISTS (SELECT 1 FROM dbo.auditoria_cambios WHERE accion=N'FACTORY_RESET_COMPLETADO' AND id_entidad=N'{operacion}')
     BEGIN THROW 51000, N'Auditoria Factory Reset ausente.', 1; END;

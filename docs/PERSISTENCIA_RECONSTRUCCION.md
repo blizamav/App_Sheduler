@@ -94,7 +94,7 @@ El contrato se extrajo estaticamente, sin consultar QA, desde:
 4. `database/bootstrap/008_crear_configuracion_mail_graph.sql`.
 5. `database/bootstrap/100_validacion_bootstrap_actual.sql`.
 
-Contrato limpio preparado: 33 tablas `dbo`, 457 columnas, 25 FK, 39 CHECK, 118 DEFAULT y 120 indices. No existen vistas, procedures, funciones ni triggers propios en el bootstrap. El delta respecto del contrato cerrado de Hito 10 es una columna `BIT NOT NULL`, su DEFAULT, el CHECK Evidencia/Exito y el indice filtrado de envios exitosos.
+Contrato limpio preparado: 33 tablas `dbo`, 457 columnas, 25 FK, 38 CHECK, 118 DEFAULT y 120 indices. No existen vistas, procedures, funciones ni triggers propios en el bootstrap. El contrato 19C.1 elimina la dependencia artificial Evidencia/Exito, permite los grupos `EXITO`, `EVIDENCIA` y `ALERTA`, y conserva la columna `BIT NOT NULL`, su DEFAULT y los indices filtrados de envios exitosos.
 
 ## Inventario tecnico de las 33 tablas
 
@@ -244,7 +244,7 @@ Evidencia adicional: `app/repositorios/repositorio_auditoria.py` prefiere siempr
 Decision: las seis columnas quedan clasificadas como `C. REEMPLAZADA`. Ese
 analisis cerro el contrato pre-ajuste en 456 columnas. El ajuste posterior de
 notificacion de exito agrego una columna canonica y dejo el contrato v1.0.0 en
-33 tablas y 457 columnas, validado por el bootstrap 19C.0 y su script 100.
+33 tablas y 457 columnas, validado por el bootstrap 19C.1 y su script 100.
 
 ## Deuda documentada
 

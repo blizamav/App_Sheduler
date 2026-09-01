@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -156,11 +157,11 @@ def test_validacion_100_conserva_conteos_del_contrato_publicado():
         RAIZ / "database/bootstrap/100_validacion_bootstrap_actual.sql"
     ).read_text(encoding="utf-8-sig")
 
-    for cantidad in (33, 457, 25, 39, 118, 120):
+    for cantidad in (33, 457, 25, 38, 118, 120):
         assert f"<> {cantidad}" in validacion
 
 
-def test_ajuste_notificaciones_separa_exito_y_evidencia_sin_romper_legacy():
+def test_ajuste_notificaciones_022_conserva_compatibilidad_historica():
     _, ddl = _esquema()
     migracion = (
         RAIZ / "database/migrations/022_separar_notificacion_estado_evidencia.sql"
@@ -171,13 +172,68 @@ def test_ajuste_notificaciones_separa_exito_y_evidencia_sin_romper_legacy():
         ddl,
         flags=re.IGNORECASE | re.DOTALL,
     )
-    assert "enviar_evidencia = 0 OR notificar_exito_activa = 1" in ddl
+    assert "enviar_evidencia = 0 OR notificar_exito_activa = 1" in migracion
     for tipo in ("NOTIFICACION_EXITOSA", "EVIDENCIA_CLIENTE", "ALERTA_INTERNA"):
         assert tipo in ddl and tipo in migracion
     assert "WHERE enviar_evidencia = 1" in migracion
     assert "SET notificar_exito_activa = 1" in migracion
     assert "SET alerta_error_activa" not in migracion
     assert "DELETE FROM dbo.notificaciones" not in migracion
+
+
+def test_bootstrap_canonico_equivale_al_contrato_final_de_migracion_023():
+    _, ddl = _esquema()
+    bootstrap_notificaciones = (
+        RAIZ / "database/bootstrap/007_crear_notificaciones_evidencias.sql"
+    ).read_text(encoding="utf-8-sig")
+    migracion = (
+        RAIZ / "database/migrations/023_separar_destinatarios_exito_evidencia.sql"
+    ).read_text(encoding="utf-8-sig")
+    validacion = (
+        RAIZ / "database/bootstrap/100_validacion_bootstrap_actual.sql"
+    ).read_text(encoding="utf-8-sig")
+    ddl_normalizado = re.sub(r"\s+", " ", ddl).upper()
+    bootstrap_normalizado = re.sub(r"\s+", " ", bootstrap_notificaciones).upper()
+    migracion_normalizada = re.sub(r"\s+", " ", migracion).upper()
+
+    assert "CK_NOTIF_CONFIG_EVIDENCIA_REQUIERE_EXITO" not in ddl_normalizado
+    assert "DROP CONSTRAINT CK_NOTIF_CONFIG_EVIDENCIA_REQUIERE_EXITO" in migracion_normalizada
+    assert "N'EXITO', N'EVIDENCIA', N'ALERTA'" in ddl_normalizado
+    assert "N'EXITO', N'EVIDENCIA', N'ALERTA'" in migracion_normalizada
+    assert "CK_notif_config_evidencia_requiere_exito" in validacion
+    assert "definition LIKE N'%EXITO%'" in validacion
+
+    opciones = (
+        "SET ANSI_NULLS ON",
+        "SET ANSI_PADDING ON",
+        "SET ANSI_WARNINGS ON",
+        "SET ARITHABORT ON",
+        "SET CONCAT_NULL_YIELDS_NULL ON",
+        "SET QUOTED_IDENTIFIER ON",
+        "SET NUMERIC_ROUNDABORT OFF",
+        "SET XACT_ABORT ON",
+    )
+    primer_ddl = bootstrap_normalizado.index("CREATE TABLE")
+    for opcion in opciones:
+        assert opcion in bootstrap_normalizado
+        assert bootstrap_normalizado.index(opcion) < primer_ddl
+
+    manifiesto_bootstrap = json.loads(
+        (RAIZ / "database/bootstrap/manifest.json").read_text(encoding="utf-8")
+    )
+    manifiesto_reset = json.loads(
+        (RAIZ / "database/factory_reset/manifest.json").read_text(encoding="utf-8")
+    )
+    seed = (
+        RAIZ / "database/bootstrap/011_seed_permiso_factory_reset.sql"
+    ).read_text(encoding="utf-8-sig")
+    runtime_reset = (
+        RAIZ / "src/app_scheduler/modulos/factory_reset/sql.py"
+    ).read_text(encoding="utf-8")
+    assert manifiesto_bootstrap["version"] == "19C.1"
+    assert manifiesto_reset["version"] == "19C.1"
+    assert "N'19C.1'" in seed and "N'19C.1'" in validacion
+    assert "valor=N'19C.1'" in runtime_reset
 
 
 def test_migracion_023_desacopla_evidencia_y_migra_destinatarios_sin_borrar():

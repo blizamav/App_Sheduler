@@ -2,13 +2,14 @@
 
 ## Contrato canonico
 
-La unica base de la aplicacion es `APP_SCHEDULER_QA`. El Factory Reset real del
-Hito 14 reconstruyo y valido el bootstrap 19C.0 con:
+La unica base de la aplicacion es `APP_SCHEDULER_QA`. El contrato limpio vigente
+es el bootstrap 19C.1, derivado del bootstrap 19C.0 validado en el Hito 14 y del
+contrato incremental 023, con:
 
 * 33 tablas `dbo`;
 * 457 columnas;
 * 25 claves foraneas;
-* 39 restricciones CHECK;
+* 38 restricciones CHECK;
 * 118 restricciones DEFAULT;
 * 120 indices, incluidos PK y UNIQUE;
 * sin vistas, procedures, funciones o triggers propios.
@@ -41,9 +42,9 @@ confiable y limitado a `EXITO`, `EVIDENCIA` y `ALERTA`. La migracion convirtio
 tres configuraciones legacy: creo sus destinatarios operacionales `EXITO`,
 desactivo las asignaciones `EVIDENCIA` ambiguas y no elimino filas.
 
-`database/bootstrap/` es fuente protegida de solo lectura y sigue representando
-el contrato v1.0.0. Una instalacion limpia o Factory Reset requiere una
-actualizacion canonica autorizada antes de utilizar esta separacion.
+`database/bootstrap/` representa directamente este contrato final desde la
+version 19C.1. Una instalacion limpia o Factory Reset futuro crea separados los
+grupos `EXITO`, `EVIDENCIA` y `ALERTA`, sin requerir que Evidencia active Exito.
 
 ## Conexion
 

@@ -239,11 +239,11 @@ class FactoryResetInPlaceTest(unittest.TestCase):
         self.assertEqual(len(comandos), 1)
         self.assertIn("000_reset_in_place.sql", comandos[0][0][-1])
 
-    def test_bootstrap_deja_marca_19c(self):
+    def test_bootstrap_deja_marca_19c_1(self):
         seed = (BASE_DIR / "database/bootstrap/011_seed_permiso_factory_reset.sql").read_text(encoding="utf-8")
         validacion = (BASE_DIR / "database/bootstrap/100_validacion_bootstrap_actual.sql").read_text(encoding="utf-8")
-        self.assertIn("N'19C.0'", seed)
-        self.assertIn("N'19C.0'", validacion)
+        self.assertIn("N'19C.1'", seed)
+        self.assertIn("N'19C.1'", validacion)
 
     def test_runtime_declara_solo_fases_in_place(self):
         esperadas = {
